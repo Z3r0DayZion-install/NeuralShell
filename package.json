@@ -1,0 +1,25 @@
+{
+  "name": "neuralshell-desktop",
+  "version": "0.1.0",
+  "description": "NeuralShell™ Desktop – Electron wrapper for local-first AI shell",
+  "author": "NeuralEmpire",
+  "license": "MIT",
+
+  "main": "main.js",
+
+  "scripts": {
+    "dev":   "electron .",
+    "start": "electron .",
+    "pack":  "electron-builder --dir",
+    "dist":  "electron-builder"
+  },
+
+  "dependencies": {
+    "node-fetch": "^2.6.11"
+  },
+
+  "devDependencies": {
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0"
+  }
+}

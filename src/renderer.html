@@ -1,0 +1,3790 @@
+<!--
+  NeuralShell™ Dev Agent – Phase 500 Endgame Convergence
+
+  This document extends the Execution Protocol through the final Endgame phases (451–500).  New integrations include:
+  - Vault Memory Compactor to compress and encrypt logs into `.neurovault` or final `.tear` formats.
+  - AutoTrigger Ritual Mode that schedules rituals based on time, file events or XP thresholds.
+  - Chat History Loader for selective injection of prior `.txt`, `.json` or `.zip` logs.
+  - PhaseLock Engine to seal the build unless unlocked with a founder key.
+  - Tier Finalizer converting provisional tiers into the definitive structure (Tier 0–5, Founder, Sentinel).
+  - Feedback Loop UI for real‑time module status, memory and version indicators.
+  - NeuralDrive Link for optional local backups.
+  - Execution Token Authenticator and Self‑Verification to validate build integrity.
+  - Bonus utilities: Auto‑Cloak for presentation mode, Archive Cleaner for wiping temporary memory, and Phoenix Mode for an autonomous AI persona.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuralShell™ Dev Agent — Phase 600 Unlock</title>
+  <style>
+    /* Global dark theme with night vision toggle support */
+    :root {
+      --bg: #0d1117;
+      --fg: #c9d1d9;
+      --accent: #58a6ff;
+      --border: #30363d;
+      --highlight: #f07738;
+    }
+
+    /* Floating status HUD and console overlay styling for Phase 600 */
+    #statusHUD {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: var(--fg);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+      z-index: 1000;
+      pointer-events: none;
+    }
+    #consoleOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    #consoleOverlay textarea {
+      width: 80%;
+      height: 40%;
+      background: #0d1117;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      padding: 10px;
+      font-family: Consolas, monospace;
+      resize: none;
+    }
+    #consoleOverlay .console-output {
+      width: 80%;
+      height: 30%;
+      background: #0d1117;
+      color: #00ff00;
+      border: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 10px;
+      font-family: Consolas, monospace;
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+    }
+    #consoleOverlay button {
+      padding: 6px 12px;
+      margin: 0 5px;
+      border: none;
+      background: var(--accent);
+      color: #0d1117;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    body.nightvision {
+      --bg: #001b00;
+      --fg: #00ff3c;
+      --accent: #00a000;
+      --border: #004000;
+      --highlight: #00ff3c;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    header {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1rem;
+    }
+    #tierPanel {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .tier {
+      padding: 2px 4px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      font-size: 0.75rem;
+      cursor: default;
+      background-color: var(--border);
+      color: var(--fg);
+    }
+    .tier.active {
+      background-color: var(--highlight);
+      color: var(--bg);
+    }
+    main {
+      flex: 1 1 auto;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        "bridge bridge"
+        "side chat";
+      height: calc(100vh - 50px);
+      overflow: hidden;
+    }
+    /* LLM bridge */
+    #bridge {
+      grid-area: bridge;
+      border-bottom: 1px solid var(--border);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #bridgeControls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    select, button, input[type="checkbox"] {
+      background-color: var(--border);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 3px 5px;
+      border-radius: 3px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    #llmStatus {
+      margin-left: auto;
+      color: var(--highlight);
+    }
+    #tokenCount {
+      margin-left: 8px;
+      font-size: 0.75rem;
+    }
+    #llmIO {
+      display: flex;
+      gap: 6px;
+    }
+    #llmInput {
+      flex: 1;
+      background-color: var(--border);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 4px;
+      border-radius: 3px;
+      resize: vertical;
+    }
+    #llmOutput {
+      flex: 1;
+      background-color: var(--border);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 4px;
+      border-radius: 3px;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-size: 0.8rem;
+    }
+    /* Side panel */
+    #side {
+      grid-area: side;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    details {
+      background-color: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    details summary {
+      padding: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      outline: none;
+      color: var(--accent);
+    }
+    details[open] summary {
+      border-bottom: 1px solid var(--border);
+    }
+    .panelContent {
+      padding: 6px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    /* Lists */
+    ul.taskList, ul.logList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.75rem;
+    }
+    ul.taskList li, ul.logList li {
+      padding: 2px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    ul.taskList li.completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .taskActions button {
+      margin-left: 2px;
+      background-color: var(--border);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 1px 3px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+    /* Vault manager */
+    #vaultManager {
+      display: flex;
+      gap: 6px;
+    }
+    .pane {
+      flex: 1;
+      border: 1px solid var(--border);
+      min-height: 100px;
+      padding: 4px;
+      border-radius: 3px;
+      overflow-y: auto;
+    }
+    .pane h4 {
+      margin-top: 0;
+    }
+    .fileItem {
+      padding: 3px;
+      margin: 1px 0;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: grab;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+    }
+    .fileItem.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .fileItem button {
+      background-color: var(--border);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      font-size: 0.6rem;
+      padding: 1px 3px;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    .pane.dragover {
+      border-color: var(--accent);
+    }
+    /* Chat area */
+    #chat {
+      grid-area: chat;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    #chatArea {
+      flex: 1;
+      background-color: var(--border);
+      margin: 6px;
+      padding: 6px;
+      border-radius: 4px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+    }
+    .chatMessage {
+      margin-bottom: 4px;
+    }
+    .chatMessage.user {
+      color: var(--highlight);
+    }
+    .chatMessage.system {
+      color: var(--accent);
+    }
+    #sessionStats {
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+      font-size: 0.7rem;
+      align-items: center;
+      border-top: 1px solid var(--border);
+    }
+    #sessionStats button {
+      margin-left: auto;
+    }
+    #neuroDrop {
+      padding: 6px;
+      border-top: 1px solid var(--border);
+    }
+    /* Buttons */
+    .btn {
+      background-color: var(--border);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 3px 5px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin: 2px;
+    }
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NeuralShell™ Dev Agent</h1>
+    <div id="tierPanel">
+      <span class="tier" data-tier="0">Tier0</span>
+      <span class="tier" data-tier="1">Tier1</span>
+      <span class="tier" data-tier="2">Tier2</span>
+      <span class="tier" data-tier="3">Tier3</span>
+      <span class="tier" data-tier="4">Tier4</span>
+      <span class="tier" data-tier="5">Tier5</span>
+      <span class="tier" data-tier="founder">Founder</span>
+      <span class="tier" data-tier="sentinel">Sentinel</span>
+    </div>
+  </header>
+  <main>
+    <!-- LLM Bridge and FX toggles -->
+    <div id="bridge">
+      <div id="bridgeControls">
+        <label for="llmSelect">LLM:</label>
+        <select id="llmSelect">
+          <option value="gpt4o">GPT‑4o</option>
+          <option value="mistral">Mistral</option>
+          <option value="llama3">LLaMA3</option>
+          <option value="commandr">Command R+</option>
+          <option value="claude3">Claude 3</option>
+        </select>
+        <button id="connectBtn">Connect</button> <button id="scanExecBtn">Scan & Execute</button>
+        <span id="llmStatus">Disconnected</span>
+        <span id="tokenCount"></span>
+        <label for="personaSelect">Persona:</label>
+        <select id="personaSelect">
+          <option value="default">Default</option>
+          <option value="founder">Founder</option>
+          <option value="override">Override</option>
+          <option value="god">God</option>
+        </select>
+        <label style="display:flex; align-items:center; gap:2px;"><input type="checkbox" id="useLocal"> Local LLM</label>
+        <button id="detectLocalBtn" style="margin-left:4px;">Detect</button>
+        <span id="localStatus" style="font-size:0.8rem;"></span>
+      </div>
+      <div id="llmIO">
+        <textarea id="llmInput" rows="2" placeholder="Enter command..."></textarea>
+        <button id="sendBtn">Send</button>
+        <button id="voiceBtn">🎤</button>
+        <pre id="llmOutput"></pre>
+      </div>
+      <div id="fxToggles" class="toggle">
+        <label><input type="checkbox" id="audioToggle"/> Audio FX</label>
+        <label><input type="checkbox" id="glowToggle"/> Glow FX</label>
+        <label><input type="checkbox" id="nightToggle"/> Night Vision</label>
+        <label><input type="checkbox" id="typewriterToggle"/> Typewriter</label>
+        <label><input type="checkbox" id="autopilotToggle"/> Autopilot</label>
+      </div>
+      <div id="ritualEngine" style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">
+        <label for="ritualSelect">Ritual:</label>
+        <select id="ritualSelect">
+          <option value="unlockFounder">Unlock Founder Mode</option>
+          <option value="obeyProtocol">Obey Protocol</option>
+          <option value="mindFlush">MindFlush</option>
+        </select>
+        <button id="ritualTrigger" class="btn">Trigger</button>
+      </div>
+    </div>
+    <!-- Side Panel with modules -->
+    <div id="side">
+      <details open>
+        <summary>Task Memory</summary>
+        <div class="panelContent">
+          <ul id="taskList" class="taskList"></ul>
+          <button id="saveTasks" class="btn">Save Tasks</button>
+          <button id="clearTasks" class="btn">Clear</button>
+        </div>
+      </details>
+      <details>
+        <summary>Logs</summary>
+        <div class="panelContent">
+          <ul id="logList" class="logList"></ul>
+          <button id="saveLog" class="btn">Save Log</button>
+          <button id="clearLog" class="btn">Clear</button>
+        </div>
+      </details>
+      <details>
+        <summary>DevLog</summary>
+        <div class="panelContent" id="devLogPanel">
+          <div id="devInfo" style="font-size:0.7rem;"></div>
+          <label for="phaseSelect">Phase View:</label>
+          <select id="phaseSelect">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <!-- more phases truncated for brevity -->
+            <option value="290">290+</option>
+          </select>
+        </div>
+      </details>
+      <details>
+        <summary>DOM AI Panel</summary>
+        <div class="panelContent">
+          <button id="injectScript" class="btn">Inject Script</button>
+          <button id="scanInterface" class="btn">Scan Interface</button>
+          <button id="activateModule" class="btn">Activate Module</button>
+        </div>
+      </details>
+      <details>
+        <summary>Vault Manager</summary>
+        <div class="panelContent" id="vaultModule">
+          <div id="vaultManager">
+            <div class="pane" id="localPane">
+              <h4>Local</h4>
+            </div>
+            <div class="pane" id="vaultPane">
+              <h4>Vault</h4>
+            </div>
+          </div>
+          <button id="saveVault" class="btn">Save Vault</button>
+          <button id="loadVault" class="btn">Load Vault</button>
+          <button id="syncVault" class="btn">Sync Vault</button>
+        </div>
+      </details>
+      <details>
+        <summary>Chat Injector</summary>
+        <div class="panelContent">
+          <input type="file" id="chatFile" accept=".txt,.json" multiple>
+          <button id="playChat" class="btn">Play Chat</button>
+          <button id="injectMemory" class="btn">Inject as Memory</button>
+        </div>
+      </details>
+
+      <!-- Echelon Upgrade Modules -->
+      <details>
+        <summary>Ritual Scheduler</summary>
+        <div class="panelContent">
+          <input type="datetime-local" id="ritualDateTime">
+          <input type="text" id="ritualCommand" placeholder="Ritual command">
+          <button id="scheduleRitual" class="btn">Schedule</button>
+          <ul id="scheduledRituals" class="taskList"></ul>
+        </div>
+      </details>
+      <details>
+        <summary>QR Vault</summary>
+        <div class="panelContent">
+          <input type="text" id="qrSecret" placeholder="Enter secret key">
+          <button id="unlockVault" class="btn">Unlock</button>
+          <input type="file" id="qrRitualFile" accept="image/*" style="margin-top:4px;">
+          <button id="scanRitualBtn" class="btn">Scan Ritual</button>
+        </div>
+      </details>
+      <details>
+        <summary>Time Stitcher</summary>
+        <div class="panelContent">
+          <div id="timeGrid" style="font-size:0.7rem;"></div>
+        </div>
+      </details>
+      <details>
+        <summary>Founder Console</summary>
+        <div class="panelContent">
+          <textarea id="consoleInput" rows="2" placeholder="Enter JS command"></textarea>
+          <button id="consoleRun" class="btn">Run</button>
+          <pre id="consoleOutput"></pre>
+        </div>
+      </details>
+      <details>
+        <summary>Memory Grid</summary>
+        <div class="panelContent">
+          <div id="memoryGrid" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+        </div>
+      </details>
+      <details>
+        <summary>Vault Hook</summary>
+        <div class="panelContent">
+          <input type="file" id="vaultUpload" multiple>
+        </div>
+      </details>
+      <details>
+        <summary>Echo Mirror</summary>
+        <div class="panelContent">
+          <div id="echoChat" style="background-color:var(--border); padding:4px; height:150px; overflow-y:auto; font-size:0.8rem;"></div>
+        </div>
+      </details>
+      <details>
+        <summary>Signal Map</summary>
+        <div class="panelContent">
+          <p style="font-size:0.7rem;">Hotkeys:</p>
+          <ul style="font-size:0.7rem; list-style: disc; padding-left: 14px;">
+            <li>Ctrl+Shift+R: Trigger selected ritual</li>
+            <li>Ctrl+Shift+L: Show/Hide Logs</li>
+            <li>Ctrl+Shift+E: Toggle Echo Mirror</li>
+          </ul>
+        </div>
+      </details>
+      <details>
+        <summary>.tear Import</summary>
+        <div class="panelContent">
+          <input type="file" id="tearImport" accept=".tear">
+          <button id="loadTear" class="btn">Load</button>
+        </div>
+      </details>
+      <details>
+        <summary>Ritual Sync</summary>
+        <div class="panelContent">
+          <input type="datetime-local" id="syncDateTime">
+          <input type="text" id="syncCommand" placeholder="Command">
+          <button id="scheduleSync" class="btn">Schedule</button>
+          <ul id="scheduledSyncs" class="taskList"></ul>
+        </div>
+      </details>
+      <details>
+        <summary>Override Core</summary>
+        <div class="panelContent">
+          <button id="godModeBtn" class="btn">Enter God Mode</button>
+        </div>
+      </details>
+      <details>
+        <summary>Export System</summary>
+        <div class="panelContent">
+          <button id="exportSession" class="btn">Session MD</button>
+          <button id="exportLog" class="btn">Export Log</button>
+          <button id="exportVault" class="btn">Export Vault</button>
+          <button id="exportMemory" class="btn">Export Memory</button>
+          <button id="saveChatVault" class="btn">Save Chat to Vault</button>
+          <button id="neuroDropExport" class="btn">NeuroDrop HTML</button>
+          <button id="tearExport" class="btn">.tear Export</button>
+          <label><input type="checkbox" id="burnToggle"> Burn Mode</label>
+        </div>
+      </details>
+      <details>
+        <summary>Terminal</summary>
+        <div class="panelContent">
+          <input id="terminalCmd" type="text" placeholder="Enter command" style="width:100%; margin-bottom:4px;">
+          <p id="terminalPrediction" style="font-size:0.7rem; margin:2px 0;"></p>
+          <button id="terminalRun" class="btn">Run</button>
+          <button id="terminalToLLM" class="btn">Send to LLM</button>
+          <pre id="terminalOutput" style="min-height:60px;"></pre>
+        </div>
+      </details>
+      <details>
+        <summary>Settings</summary>
+        <div class="panelContent">
+          <button id="saveSettings" class="btn">Save Settings</button>
+          <button id="loadSettings" class="btn">Load Settings</button>
+        </div>
+      </details>
+
+      <!-- NeuralCore Switcher for OS modes -->
+      <details>
+        <summary>Core Switcher</summary>
+        <div class="panelContent">
+          <label for="coreSelect">Mode:</label>
+          <select id="coreSelect">
+            <option value="win">WinShadow</option>
+            <option value="linux">NeuralLinux</option>
+            <option value="mac">NeuralMac</option>
+          </select>
+          <button id="coreSwitchBtn" class="btn">Switch</button>
+        </div>
+      </details>
+
+      <!-- Remote VaultLinking placeholder -->
+      <details>
+        <summary>Remote Link</summary>
+        <div class="panelContent">
+          <button id="remoteSyncBtn" class="btn">Remote Sync</button>
+          <input type="text" id="remoteKey" placeholder="Enter remote key" style="width:100%; margin-top:4px;">
+          <button id="remotePairBtn" class="btn">Pair</button>
+        </div>
+      </details>
+
+      <!-- Trigger Injection System -->
+      <details>
+        <summary>Trigger Injection</summary>
+        <div class="panelContent">
+          <input type="text" id="domCommandInput" placeholder="dom command (e.g. ritual://unlockFounder)" style="width:100%; margin-bottom:4px;">
+          <button id="domCommandBtn" class="btn">Run</button>
+        </div>
+      </details>
+
+      <!-- Phase Map display -->
+      <details>
+        <summary>Phase Map</summary>
+        <div class="panelContent">
+          <pre id="phaseMapDisplay" style="font-size:0.7rem; white-space:pre-wrap;"></pre>
+        </div>
+      </details>
+
+      <!-- NeuroXP Pre-Layering -->
+      <details>
+        <summary>NeuroXP</summary>
+        <div class="panelContent">
+          <span id="xpDisplay" style="font-size:0.8rem;">XP: 0</span>
+        </div>
+      </details>
+
+      <!-- Memory Router (NeuralCortex) -->
+      <details>
+        <summary>Memory Router</summary>
+        <div class="panelContent">
+          <ul id="memoryRouterList" style="font-size:0.7rem; list-style:none; padding:0; margin:0; max-height:120px; overflow-y:auto;"></ul>
+          <button id="refreshMemoryRouter" class="btn">Refresh</button>
+        </div>
+      </details>
+
+      <!-- Persona Cycle (AutoPersona) -->
+      <details>
+        <summary>Persona Cycle</summary>
+        <div class="panelContent">
+          <button id="startCycle" class="btn">Start Cycling</button>
+          <button id="stopCycle" class="btn">Stop</button>
+          <p id="cycleStatus" style="font-size:0.7rem;">Status: Off</p>
+        </div>
+      </details>
+
+      <!-- Quantum Simulation (QuantumStack) -->
+      <details>
+        <summary>Simulation</summary>
+        <div class="panelContent">
+          <button id="runSimulation" class="btn">Run Simulation</button>
+          <div id="simulationArea" style="margin-top:4px;"></div>
+        </div>
+      </details>
+
+      <!-- Vault Recall Overlay -->
+      <details>
+        <summary>Vault Recall</summary>
+        <div class="panelContent">
+          <button id="openVaultRecall" class="btn">Open Overlay</button>
+        </div>
+      </details>
+
+      <!-- RitualSync Autoscripts -->
+      <details>
+        <summary>RitualSync</summary>
+        <div class="panelContent">
+          <textarea id="ritualScriptInput" rows="3" placeholder="ritual:unlockFounder, llm:Hello" style="width:100%;"></textarea>
+          <button id="runRitualScript" class="btn">Run Script</button>
+        </div>
+      </details>
+
+      <!-- Companion Panel -->
+      <details>
+        <summary>Companion</summary>
+        <div class="panelContent">
+          <div style="display:flex; gap:4px;">
+            <div style="flex:1;">
+              <h5 style="margin:0; font-size:0.7rem;">Logs</h5>
+              <div id="companionLog" style="max-height:60px; overflow-y:auto; font-size:0.65rem; border:1px solid var(--border); padding:2px;"></div>
+            </div>
+            <div style="flex:1;">
+              <h5 style="margin:0; font-size:0.7rem;">Tasks</h5>
+              <div id="companionTasks" style="max-height:60px; overflow-y:auto; font-size:0.65rem; border:1px solid var(--border); padding:2px;"></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- NeuroCommand Scheduler -->
+      <details>
+        <summary>Command Scheduler</summary>
+        <div class="panelContent">
+          <input type="datetime-local" id="commandScheduleTime">
+          <input type="text" id="commandScheduleInput" placeholder="dom command or LLM prompt" style="margin-top:4px;">
+          <button id="scheduleCommandBtn" class="btn">Schedule</button>
+          <ul id="scheduledCommands" class="taskList"></ul>
+        </div>
+      </details>
+
+      <!-- Clipboard AI -->
+      <details>
+        <summary>Clipboard AI</summary>
+        <div class="panelContent">
+          <button id="pasteClipboardBtn" class="btn">Paste & Process</button>
+          <p id="clipboardStatus" style="font-size:0.7rem;"></p>
+        </div>
+      </details>
+
+      <!-- Mind Overlay (XP Gauge) -->
+      <details>
+        <summary>Mind Overlay</summary>
+        <div class="panelContent">
+          <div id="xpMeter" style="height:10px; background-color:var(--border); position:relative; border-radius:4px;">
+            <div id="xpMeterFill" style="background-color:var(--highlight); height:100%; width:0%; border-radius:4px;"></div>
+          </div>
+          <p id="rankInfo" style="font-size:0.7rem; margin-top:4px;"></p>
+        </div>
+      </details>
+
+      <!-- Memory Fusion (Phase 381 staging) -->
+      <details>
+        <summary>Memory Fusion</summary>
+        <div class="panelContent">
+          <button id="fuseMemoryBtn" class="btn">Fuse Memory</button>
+          <pre id="fusedMemoryPreview" style="font-size:0.7rem; white-space:pre-wrap; max-height:80px; overflow-y:auto;"></pre>
+        </div>
+      </details>
+
+      <!-- Cross Reality Bridge -->
+      <details>
+        <summary>CrossReality</summary>
+        <div class="panelContent">
+          <button id="crossRealityBtn" class="btn">Sync Reality</button>
+        </div>
+      </details>
+
+      <!-- Persona Merge (CodeSoulSync) -->
+      <details>
+        <summary>Persona Merge</summary>
+        <div class="panelContent">
+          <select id="mergePersonaSelect" multiple style="width:100%; height:60px;">
+            <option value="default">Default</option>
+            <option value="founder">Founder</option>
+            <option value="override">Override</option>
+            <option value="god">God</option>
+          </select>
+          <button id="mergePersonaBtn" class="btn" style="margin-top:4px;">Merge</button>
+        </div>
+      </details>
+
+      <!-- Neural Context Vault -->
+      <details>
+        <summary>Context Vault</summary>
+        <div class="panelContent">
+          <input type="text" id="contextSearch" placeholder="Search memory" style="width:100%;">
+          <button id="contextSearchBtn" class="btn" style="margin-top:4px;">Search</button>
+          <div id="contextResults" style="font-size:0.7rem; max-height:80px; overflow-y:auto; border-top:1px solid var(--border); margin-top:4px;"></div>
+          <p id="contextPrediction" style="font-size:0.7rem; margin-top:4px;"></p>
+        </div>
+      </details>
+
+      <!-- Chat Fusion -->
+      <details>
+        <summary>Chat Fusion</summary>
+        <div class="panelContent">
+          <select id="chatThreadSelect" style="width:100%;"></select>
+          <button id="nextThreadBtn" class="btn" style="margin-top:4px;">Next Thread</button>
+          <button id="handoffThreadBtn" class="btn" style="margin-top:4px;">Hand Off to LLM</button>
+        </div>
+      </details>
+
+      <!-- Time Tracker v2 -->
+      <details>
+        <summary>Time Tracker</summary>
+        <div class="panelContent">
+          <p id="phaseProgress" style="font-size:0.7rem;"></p>
+          <p id="sessionValue" style="font-size:0.7rem;"></p>
+        </div>
+      </details>
+
+      <!-- Deep Vault Recall -->
+      <details>
+        <summary>Deep Vault</summary>
+        <div class="panelContent">
+          <ul id="deepVaultList" style="font-size:0.7rem; list-style:none; padding:0; margin:0; max-height:100px; overflow-y:auto;"></ul>
+          <button id="refreshDeepVault" class="btn" style="margin-top:4px;">Refresh</button>
+        </div>
+      </details>
+
+      <!-- VaultComm Bridge -->
+      <details>
+        <summary>VaultComm</summary>
+        <div class="panelContent">
+          <p style="font-size:0.7rem;">Offline: Discord/Email hooks unavailable</p>
+        </div>
+      </details>
+
+      <!-- Node Echo -->
+      <details>
+        <summary>Node Echo</summary>
+        <div class="panelContent">
+          <button id="startEchoBtn" class="btn">Start Node Echo</button>
+        </div>
+      </details>
+      <!-- Final Rituals -->
+      <details>
+        <summary>Final Rituals</summary>
+        <div class="panelContent">
+          <button id="smartLaunchBtn" class="btn">SmartLaunch</button>
+          <button id="phaseLockedBtn" class="btn">PhaseLocked</button>
+          <button id="terminalVerseBtn" class="btn">TerminalVerse</button>
+        </div>
+      </details>
+      <!-- DOM Ritual Sync -->
+      <details>
+        <summary>DOM Ritual Sync</summary>
+        <div class="panelContent">
+          <button id="domSyncBtn" class="btn">Sync DOM to LLM</button>
+        </div>
+      </details>
+      <!-- Vault Lock -->
+      <details>
+        <summary>Vault Lock</summary>
+        <div class="panelContent">
+          <label><input type="checkbox" id="vaultLockToggle"> Lock Vault</label>
+        </div>
+      </details>
+      <!-- DevAgent Sync -->
+      <details>
+        <summary>DevAgent Sync</summary>
+        <div class="panelContent">
+          <button id="devAgentSyncBtn" class="btn">Sync</button>
+        </div>
+      </details>
+
+      <!-- Vault Compactor -->
+      <details>
+        <summary>Vault Compactor</summary>
+        <div class="panelContent">
+          <button id="compressLogsBtn" class="btn">Compress (.neurovault)</button>
+          <button id="encryptLogsBtn" class="btn">Encrypt & Compress (.tear)</button>
+        </div>
+      </details>
+      <!-- AutoTrigger -->
+      <details>
+        <summary>AutoTrigger</summary>
+        <div class="panelContent">
+          <label style="font-size:0.7rem;">Time Trigger:</label>
+          <input type="datetime-local" id="autoTriggerTime"><br>
+          <label style="font-size:0.7rem;">File Pattern:</label>
+          <input type="text" id="autoTriggerFile" placeholder="pattern"><br>
+          <label style="font-size:0.7rem;">XP Threshold:</label>
+          <input type="number" id="autoTriggerXP" placeholder="XP"><br>
+          <button id="startAutoTriggerBtn" class="btn" style="margin-top:4px;">Start AutoTrigger</button>
+        </div>
+      </details>
+      <!-- History Loader -->
+      <details>
+        <summary>History Loader</summary>
+        <div class="panelContent">
+          <input type="file" id="historyFiles" multiple accept=".txt,.json,.zip"><br>
+          <div id="historyList" style="font-size:0.7rem; max-height:80px; overflow-y:auto;"></div>
+          <button id="injectHistoryBtn" class="btn" style="margin-top:4px;">Inject Selected</button>
+        </div>
+      </details>
+      <!-- PhaseLock -->
+      <details>
+        <summary>PhaseLock</summary>
+        <div class="panelContent">
+          <input type="password" id="phaseKeyInput" placeholder="Founder key" style="width:100%;"><br>
+          <button id="lockPhaseBtn" class="btn" style="margin-top:4px;">Lock</button>
+          <button id="unlockPhaseBtn" class="btn" style="margin-top:4px;">Unlock</button>
+          <p id="phaseLockStatus" style="font-size:0.7rem;"></p>
+        </div>
+      </details>
+      <!-- Tier Finalizer -->
+      <details>
+        <summary>Tier Finalizer</summary>
+        <div class="panelContent">
+          <button id="finalizeTiersBtn" class="btn">Finalize Tiers</button>
+        </div>
+      </details>
+      <!-- Feedback -->
+      <details>
+        <summary>Feedback</summary>
+        <div class="panelContent" id="feedbackPanel" style="font-size:0.7rem;"></div>
+      </details>
+      <!-- NeuralDrive -->
+      <details>
+        <summary>NeuralDrive</summary>
+        <div class="panelContent">
+          <button id="backupBtn" class="btn">Backup Now</button>
+        </div>
+      </details>
+      <!-- Token Auth -->
+      <details>
+        <summary>Token Auth</summary>
+        <div class="panelContent">
+          <button id="generateTokenBtn" class="btn">Generate Token</button>
+          <p id="tokenDisplay" style="font-size:0.7rem;"></p>
+        </div>
+      </details>
+      <!-- Verify Build -->
+      <details>
+        <summary>Verify Build</summary>
+        <div class="panelContent">
+          <button id="verifyBtn" class="btn">Run Verification</button>
+          <pre id="verifyResult" style="font-size:0.6rem; white-space:pre-wrap; max-height:80px; overflow-y:auto;"></pre>
+        </div>
+      </details>
+      <!-- Auto Cloak -->
+      <details>
+        <summary>Auto Cloak</summary>
+        <div class="panelContent">
+          <label><input type="checkbox" id="cloakToggle"> Cloak Mode</label>
+        </div>
+      </details>
+      <!-- Archive Cleaner -->
+      <details>
+        <summary>Archive Cleaner</summary>
+        <div class="panelContent">
+          <button id="cleanMemoryBtn" class="btn">Clean Memory</button>
+        </div>
+      </details>
+      <!-- Phoenix Mode -->
+      <details>
+        <summary>Phoenix Mode</summary>
+        <div class="panelContent">
+          <button id="activatePhoenixBtn" class="btn">Activate</button>
+        </div>
+      </details>
+
+      <!-- === Phase 601–700 Modules === -->
+      <!-- LLM Router + Selector -->
+      <details>
+        <summary>LLM Router</summary>
+        <div class="panelContent">
+          <label><input type="radio" name="llmRoute" value="remote" checked> Remote Only</label><br>
+          <label><input type="radio" name="llmRoute" value="local"> Local Only</label><br>
+          <label><input type="radio" name="llmRoute" value="both"> Hybrid</label>
+        </div>
+      </details>
+      <!-- NeuralCommand Console -->
+      <details>
+        <summary>Command Console</summary>
+        <div class="panelContent">
+          <textarea id="cmdInput" rows="2" placeholder="Enter command (help for list)"></textarea>
+          <button id="cmdRun" class="btn">Execute</button>
+          <pre id="cmdOutput" style="height:80px; overflow-y:auto; white-space:pre-wrap; font-size:0.7rem;"></pre>
+        </div>
+      </details>
+      <!-- Vault Navigator v2 -->
+      <details>
+        <summary>Vault Navigator</summary>
+        <div class="panelContent" id="vaultNavigator" style="max-height:120px; overflow-y:auto; font-size:0.7rem;"></div>
+      </details>
+      <!-- Log Timeline -->
+      <details>
+        <summary>Execution Timeline</summary>
+        <div class="panelContent" id="timeline" style="max-height:120px; overflow-y:auto; font-size:0.7rem;"></div>
+      </details>
+      <!-- Runtime Editor -->
+      <details>
+        <summary>Runtime Editor</summary>
+        <div class="panelContent">
+          <textarea id="editorCode" rows="3" placeholder="Enter JS code to execute"></textarea>
+          <button id="editorRun" class="btn">Run Code</button>
+        </div>
+      </details>
+      <!-- Memory Tracker -->
+      <details>
+        <summary>Memory Tracker</summary>
+        <div class="panelContent" id="memoryTracker" style="font-size:0.7rem;"></div>
+      </details>
+      <!-- Phase Map -->
+      <details>
+        <summary>Phase Map</summary>
+        <div class="panelContent" id="phaseMap" style="font-size:0.7rem;"></div>
+      </details>
+      <!-- Error Catcher -->
+      <details>
+        <summary>Error Catcher</summary>
+        <div class="panelContent" id="errorNotice" style="color:#f55; font-size:0.7rem;"></div>
+      </details>
+      <!-- Sync & Flame FX -->
+      <details>
+        <summary>Sync & FX</summary>
+        <div class="panelContent">
+          <button id="coreSync" class="btn">Sync Now</button>
+          <button id="triggerFlame" class="btn">Flame FX</button>
+          <div id="flameFX" style="display:none; width:100%; height:10px; margin-top:5px;"></div>
+        </div>
+      </details>
+      <!-- Tier Unlock v2 -->
+      <details>
+        <summary>Tier Unlock v2</summary>
+        <div class="panelContent">
+          <input type="password" id="tierPassword" placeholder="Password" style="width:100%; margin-bottom:4px;" />
+          <input type="file" id="tierQr" accept="image/*" style="margin-bottom:4px;" />
+          <textarea id="tierRitual" rows="2" placeholder="Ritual phrase"></textarea>
+          <button id="unlockTierV2" class="btn">Unlock</button>
+          <div id="tierV2Msg" style="font-size:0.7rem;"></div>
+        </div>
+      </details>
+      <!-- Persona Loader -->
+      <details>
+        <summary>Persona Loader</summary>
+        <div class="panelContent">
+          <button id="cyclePersona" class="btn">Cycle Persona</button>
+          <span id="currentPersona" style="font-size:0.7rem;"></span>
+        </div>
+      </details>
+      <!-- Override Trigger -->
+      <details>
+        <summary>Override Trigger</summary>
+        <div class="panelContent">
+          <input type="text" id="overrideInput" placeholder="Enter override command" style="width:100%; margin-bottom:4px;" />
+          <button id="triggerOverride" class="btn">Execute</button>
+        </div>
+      </details>
+      <!-- Dev Mode Toggle -->
+      <details>
+        <summary>Dev Mode</summary>
+        <div class="panelContent">
+          <label><input type="checkbox" id="devModeToggle"> Enable Full Dev Mode</label>
+        </div>
+      </details>
+    </div>
+    <!-- Chat / Main Area -->
+    <div id="chat">
+      <div id="chatArea"></div>
+      <div id="sessionStats">
+        <span id="sessionStart"></span>
+        <span id="sessionRuntime"></span>
+        <span id="devHours"></span>
+        <span id="xpSpan"></span>
+      </div>
+      <div id="neuroDrop">
+        <span id="qrContainer"></span>
+      </div>
+    </div>
+  </main>
+  <!-- Optional QR library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script>
+    (function() {
+      // Session state
+      const startTime = Date.now();
+      let tasks = [];
+      let logs = [];
+      let memory = [];
+      let vaultLocal = [];
+      let vaultRemote = [];
+      let llmConnected = false;
+      let lastActionTime = Date.now();
+      let autopilotActive = false;
+      // Active persona (default/founder/override/god)
+      let persona = 'default';
+
+      // Phase 341–360 state
+      // Currently selected core/OS mode
+      let currentCore = 'default';
+      // Remote key for vault linking
+      let remoteKey = '';
+      // XP tracking
+      let xpPoints = 0;
+      // Phase to feature mapping
+      const phaseCache = {
+        '316-325': ['Persona router', 'Terminal parser', 'Persistent settings'],
+        '326-340': ['QR ritual scan', 'Enhanced .tear import', 'Chat memory vault timeline loader', 'Local LLM toggle', 'VaultHook Sync'],
+        '341-360': ['Core Switcher', 'Remote VaultLinking', 'Phase Map', 'Trigger Injection', 'NeuroXP']
+        ,
+        '361-380': ['NeuralCortex memory routing', 'AutoPersona cycling', 'Quantum Simulation', 'VaultRecall overlay', 'RitualSync scripts', 'Companion panel', 'Command Scheduler', 'Clipboard AI', 'NeuralMind overlay', 'Memory Fusion', 'GuardianLoop safety', 'Direct LLM Terminal input', 'VaultFX animations'],
+        '381-400': ['CrossReality Bridge', 'Persona Merge', 'Neural Context Vault', 'Terminal AI enhancements', 'Tier Unlocker multi triggers', 'Chat Fusion', 'DevTimeTracker v2', 'DeepVault Recall', 'VaultComm bridge', 'Node Echo', 'CodeSoulSync']
+        ,
+        '401-450': ['DOM Ritual Sync', 'SmartLaunch ritual', 'PhaseLocked ritual', 'TerminalVerse ritual', 'LLM bridge dynamic switching', 'Vault lock & QR triggers', '.tear export finaliser', 'Terminal DOM injection', 'DevAgent parallel sync']
+        ,
+        '451-500': ['Vault Memory Compactor','AutoTrigger rituals','Chat History Loader','PhaseLock Engine','Tier Finalizer','Feedback Loop','NeuralDrive Link','Token Authenticator','Self Verification','Auto‑Cloak','Archive Cleaner','Phoenix Mode']
+        ,
+        // Phase 601–700: Execution Fusion upgrades
+        '601-700': ['LLM Router','Command Console','Vault Navigator v2','Execution Timeline','Runtime Editor','Memory Tracker','Phase Map View','Error Catcher','CoreBridge Sync','Execution Flame FX','TierUnlock v2','NeuralPersona Loader','Override Trigger','Full Dev Mode']
+      };
+
+      // Phase 361–400 state
+      // Memory routing pools
+      let memoryShort = [];
+      let memoryLong = [];
+      // Chat sessions for ChatFusion
+      let chatSessions = [];
+      let currentThreadIndex = -1;
+      // Persona cycle interval id
+      let personaCycleInterval = null;
+      // Guardian loop last prompt
+      let lastPrompt = '';
+
+      // VaultFX animations for visual feedback
+      function vaultFX(type) {
+        let color;
+        if (type === 'error') color = '#ff5555';
+        else if (type === 'success') color = '#55ff55';
+        else if (type === 'fail') color = '#ffaa00';
+        else color = 'var(--highlight)';
+        document.body.style.boxShadow = `0 0 20px ${color} inset`;
+        setTimeout(() => { document.body.style.boxShadow = ''; }, 300);
+      }
+      // DOM refs
+      const tierEls = document.querySelectorAll('.tier');
+      const llmSelect = document.getElementById('llmSelect');
+      const connectBtn = document.getElementById('connectBtn');
+      const llmStatus = document.getElementById('llmStatus');
+      const tokenCount = document.getElementById('tokenCount');
+      const llmInput = document.getElementById('llmInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const llmOutput = document.getElementById('llmOutput');
+      const ritualSelect = document.getElementById('ritualSelect');
+      const ritualTrigger = document.getElementById('ritualTrigger');
+      const audioToggle = document.getElementById('audioToggle');
+      const glowToggle = document.getElementById('glowToggle');
+      const nightToggle = document.getElementById('nightToggle');
+      const typewriterToggle = document.getElementById('typewriterToggle');
+      const autopilotToggle = document.getElementById('autopilotToggle');
+      const taskList = document.getElementById('taskList');
+      const logList = document.getElementById('logList');
+      const saveTasksBtn = document.getElementById('saveTasks');
+      const clearTasksBtn = document.getElementById('clearTasks');
+      const saveLogBtn = document.getElementById('saveLog');
+      const clearLogBtn = document.getElementById('clearLog');
+      const devInfo = document.getElementById('devInfo');
+      const phaseSelect = document.getElementById('phaseSelect');
+      const injectScriptBtn = document.getElementById('injectScript');
+      const scanInterfaceBtn = document.getElementById('scanInterface');
+      const activateModuleBtn = document.getElementById('activateModule');
+      const localPane = document.getElementById('localPane');
+      const vaultPane = document.getElementById('vaultPane');
+      const saveVaultBtn = document.getElementById('saveVault');
+      const loadVaultBtn = document.getElementById('loadVault');
+      const syncVaultBtn = document.getElementById('syncVault');
+      const chatFileInput = document.getElementById('chatFile');
+      const playChatBtn = document.getElementById('playChat');
+      const injectMemoryBtn = document.getElementById('injectMemory');
+      const exportSessionBtn = document.getElementById('exportSession');
+      const exportLogBtn = document.getElementById('exportLog');
+      const exportVaultBtn = document.getElementById('exportVault');
+      const exportMemoryBtn = document.getElementById('exportMemory');
+      const saveChatVaultBtn = document.getElementById('saveChatVault');
+      const neuroDropBtn = document.getElementById('neuroDropExport');
+      const tearExportBtn = document.getElementById('tearExport');
+      const burnToggle = document.getElementById('burnToggle');
+      const chatArea = document.getElementById('chatArea');
+      const sessionStartSpan = document.getElementById('sessionStart');
+      const sessionRuntimeSpan = document.getElementById('sessionRuntime');
+      const devHoursSpan = document.getElementById('devHours');
+      const qrContainer = document.getElementById('qrContainer');
+      // Additional DOM references for Echelon Upgrade
+      const voiceBtn = document.getElementById('voiceBtn');
+      const ritualDateTime = document.getElementById('ritualDateTime');
+      const ritualCommandInput = document.getElementById('ritualCommand');
+      const scheduleRitualBtn = document.getElementById('scheduleRitual');
+      const scheduledRitualsList = document.getElementById('scheduledRituals');
+      const qrSecretInput = document.getElementById('qrSecret');
+      const unlockVaultBtn = document.getElementById('unlockVault');
+      const timeGrid = document.getElementById('timeGrid');
+      const consoleInput = document.getElementById('consoleInput');
+      const consoleRunBtn = document.getElementById('consoleRun');
+      const consoleOutput = document.getElementById('consoleOutput');
+      const memoryGrid = document.getElementById('memoryGrid');
+      const vaultUpload = document.getElementById('vaultUpload');
+      const echoChat = document.getElementById('echoChat');
+      const ritualDateTimeSync = document.getElementById('syncDateTime');
+      const syncCommandInput = document.getElementById('syncCommand');
+      const scheduleSyncBtn = document.getElementById('scheduleSync');
+      const scheduledSyncsList = document.getElementById('scheduledSyncs');
+      const tearImportInput = document.getElementById('tearImport');
+      const loadTearBtn = document.getElementById('loadTear');
+      const godModeBtn = document.getElementById('godModeBtn');
+      const useLocalToggle = document.getElementById('useLocal');
+      const qrRitualFile = document.getElementById('qrRitualFile');
+      const scanRitualBtn = document.getElementById('scanRitualBtn');
+      // Phase 316–325 additions
+      const personaSelect = document.getElementById('personaSelect');
+      const terminalCmd = document.getElementById('terminalCmd');
+      const terminalRunBtn = document.getElementById('terminalRun');
+      const terminalOutput = document.getElementById('terminalOutput');
+      const saveSettingsBtn = document.getElementById('saveSettings');
+      const loadSettingsBtn = document.getElementById('loadSettings');
+
+      // Phase 341–360 additions
+      const coreSelect = document.getElementById('coreSelect');
+      const coreSwitchBtn = document.getElementById('coreSwitchBtn');
+      const remoteSyncBtn = document.getElementById('remoteSyncBtn');
+      const remoteKeyInput = document.getElementById('remoteKey');
+      const remotePairBtn = document.getElementById('remotePairBtn');
+      const domCommandInput = document.getElementById('domCommandInput');
+      const domCommandBtn = document.getElementById('domCommandBtn');
+      const phaseMapDisplay = document.getElementById('phaseMapDisplay');
+      const xpDisplay = document.getElementById('xpDisplay');
+      const xpSpan = document.getElementById('xpSpan');
+
+      // Phase 361–400 DOM references
+      const memoryRouterList = document.getElementById('memoryRouterList');
+      const refreshMemoryRouter = document.getElementById('refreshMemoryRouter');
+      const startCycleBtn = document.getElementById('startCycle');
+      const stopCycleBtn = document.getElementById('stopCycle');
+      const cycleStatus = document.getElementById('cycleStatus');
+      const runSimulationBtn = document.getElementById('runSimulation');
+      const simulationArea = document.getElementById('simulationArea');
+      const openVaultRecallBtn = document.getElementById('openVaultRecall');
+      const ritualScriptInput = document.getElementById('ritualScriptInput');
+      const runRitualScriptBtn = document.getElementById('runRitualScript');
+      const companionLog = document.getElementById('companionLog');
+      const companionTasks = document.getElementById('companionTasks');
+      const commandScheduleTime = document.getElementById('commandScheduleTime');
+      const commandScheduleInput = document.getElementById('commandScheduleInput');
+      const scheduleCommandBtn = document.getElementById('scheduleCommandBtn');
+      const scheduledCommandsList = document.getElementById('scheduledCommands');
+      const pasteClipboardBtn = document.getElementById('pasteClipboardBtn');
+      const clipboardStatus = document.getElementById('clipboardStatus');
+      const xpMeterFill = document.getElementById('xpMeterFill');
+      const rankInfo = document.getElementById('rankInfo');
+      const fuseMemoryBtn = document.getElementById('fuseMemoryBtn');
+      const fusedMemoryPreview = document.getElementById('fusedMemoryPreview');
+      const crossRealityBtn = document.getElementById('crossRealityBtn');
+      const mergePersonaSelect = document.getElementById('mergePersonaSelect');
+      const mergePersonaBtn = document.getElementById('mergePersonaBtn');
+      const contextSearchInput = document.getElementById('contextSearch');
+      const contextSearchBtn = document.getElementById('contextSearchBtn');
+      const contextResults = document.getElementById('contextResults');
+      const contextPrediction = document.getElementById('contextPrediction');
+      const chatThreadSelect = document.getElementById('chatThreadSelect');
+      const nextThreadBtn = document.getElementById('nextThreadBtn');
+      const handoffThreadBtn = document.getElementById('handoffThreadBtn');
+      const phaseProgressSpan = document.getElementById('phaseProgress');
+      const sessionValueSpan = document.getElementById('sessionValue');
+      const deepVaultList = document.getElementById('deepVaultList');
+      const refreshDeepVaultBtn = document.getElementById('refreshDeepVault');
+      const startEchoBtn = document.getElementById('startEchoBtn');
+      const terminalPrediction = document.getElementById('terminalPrediction');
+      const terminalToLLMBtn = document.getElementById('terminalToLLM');
+      // Phase 401–450 DOM references
+      const smartLaunchBtn = document.getElementById('smartLaunchBtn');
+      const phaseLockedBtn = document.getElementById('phaseLockedBtn');
+      const terminalVerseBtn = document.getElementById('terminalVerseBtn');
+      const domSyncBtn = document.getElementById('domSyncBtn');
+      const vaultLockToggle = document.getElementById('vaultLockToggle');
+      const devAgentSyncBtn = document.getElementById('devAgentSyncBtn');
+      // Phase 451–500 DOM references
+      const compressLogsBtn = document.getElementById('compressLogsBtn');
+      const encryptLogsBtn = document.getElementById('encryptLogsBtn');
+      const autoTriggerTimeInput = document.getElementById('autoTriggerTime');
+      const autoTriggerFileInput = document.getElementById('autoTriggerFile');
+      const autoTriggerXPInput = document.getElementById('autoTriggerXP');
+      const startAutoTriggerBtn = document.getElementById('startAutoTriggerBtn');
+      const historyFilesInput = document.getElementById('historyFiles');
+      const historyList = document.getElementById('historyList');
+      const injectHistoryBtn = document.getElementById('injectHistoryBtn');
+      const phaseKeyInput = document.getElementById('phaseKeyInput');
+      const lockPhaseBtn = document.getElementById('lockPhaseBtn');
+      const unlockPhaseBtn = document.getElementById('unlockPhaseBtn');
+      const phaseLockStatus = document.getElementById('phaseLockStatus');
+      const finalizeTiersBtn = document.getElementById('finalizeTiersBtn');
+      const feedbackPanel = document.getElementById('feedbackPanel');
+      const backupBtn = document.getElementById('backupBtn');
+      const generateTokenBtn = document.getElementById('generateTokenBtn');
+      const tokenDisplay = document.getElementById('tokenDisplay');
+      const verifyBtn = document.getElementById('verifyBtn');
+      const verifyResult = document.getElementById('verifyResult');
+      const cloakToggle = document.getElementById('cloakToggle');
+      const cleanMemoryBtn = document.getElementById('cleanMemoryBtn');
+      const activatePhoenixBtn = document.getElementById('activatePhoenixBtn');
+      // Timers
+      let chatPlaybackInterval = null;
+      let autopilotInterval = null;
+      // Initialise UI
+      sessionStartSpan.textContent = `Started: ${new Date(startTime).toLocaleString()}`;
+      setInterval(() => {
+        const seconds = Math.floor((Date.now() - startTime) / 1000);
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        sessionRuntimeSpan.textContent = `Runtime: ${hrs}h ${mins}m ${secs}s`;
+        devHoursSpan.textContent = `Dev Hours: ${(seconds / 3600).toFixed(2)}`;
+      }, 1000);
+      // Load vault from localStorage if present
+      function loadVault() {
+        try {
+          const data = JSON.parse(localStorage.getItem('neuralVault') || '{}');
+          vaultLocal = data.local || [];
+          vaultRemote = data.remote || [];
+        } catch (e) {
+          vaultLocal = [];
+          vaultRemote = [];
+        }
+        renderVault();
+      }
+      function saveVault() {
+        const data = { local: vaultLocal, remote: vaultRemote };
+        localStorage.setItem('neuralVault', JSON.stringify(data));
+        log('Vault saved');
+      }
+      saveVaultBtn.addEventListener('click', saveVault);
+      loadVaultBtn.addEventListener('click', loadVault);
+      // Render vault lists
+      function renderVault() {
+        localPane.innerHTML = '<h4>Local</h4>';
+        vaultPane.innerHTML = '<h4>Vault</h4>';
+        vaultLocal.forEach(item => {
+          localPane.appendChild(createFileItem(item.name, item.locked));
+        });
+        vaultRemote.forEach(item => {
+          vaultPane.appendChild(createFileItem(item.name, item.locked));
+        });
+        // update Deep Vault recall list
+        refreshDeepVault();
+        // update new Vault Navigator to reflect local/remote state
+        if (typeof renderNavigator === 'function') {
+          try {
+            renderNavigator();
+          } catch (e) {
+            // swallow errors during render
+          }
+        }
+      }
+      // Save and update after drop events
+      function updateVaultState() {
+        vaultLocal = [];
+        vaultRemote = [];
+        localPane.querySelectorAll('.fileItem').forEach(el => {
+          vaultLocal.push({ name: el.dataset.name, locked: el.classList.contains('locked') });
+        });
+        vaultPane.querySelectorAll('.fileItem').forEach(el => {
+          vaultRemote.push({ name: el.dataset.name, locked: el.classList.contains('locked') });
+        });
+      }
+      // Connect LLM (auto detect on load)
+      async function autoDetectLLM() {
+        try {
+          const resp = await fetch('http://127.0.0.1:11434');
+          if (resp.ok) {
+            llmStatus.textContent = 'Ollama Detected';
+            llmStatus.style.color = 'var(--highlight)';
+          }
+        } catch (e) {
+          // remain disconnected
+        }
+      }
+      autoDetectLLM();
+      connectBtn.addEventListener('click', () => {
+        if (!llmConnected) {
+          llmConnected = true;
+          const mode = (useLocalToggle && useLocalToggle.checked) ? 'Local' : 'Remote';
+          const modelName = llmSelect.options[llmSelect.selectedIndex].text;
+          llmStatus.textContent = `${mode} connected: ${modelName}`;
+          llmStatus.style.color = 'var(--highlight)';
+          log(`Connected to ${mode} ${llmSelect.value}`);
+        }
+      });
+      // Send LLM command
+      sendBtn.addEventListener('click', () => {
+        const cmd = llmInput.value.trim();
+        if (!cmd) return;
+        // GuardianLoop: prevent sending identical prompt repeatedly
+        if (cmd === lastPrompt) {
+          log('GuardianLoop prevented repeated prompt');
+          return;
+        }
+        lastPrompt = cmd;
+        lastActionTime = Date.now();
+        log(`LLM prompt: ${cmd}`);
+        addTask(`LLM: ${cmd}`);
+        appendChatMessage(cmd, 'user');
+        llmInput.value = '';
+        const start = Date.now();
+        updateStatus('thinking');
+        sendLLM(cmd).then(resp => {
+          const duration = (Date.now() - start) / 1000;
+          updateStatus('done');
+          const tokens = countTokens(resp);
+          tokenCount.textContent = `${tokens} tokens`; 
+          appendChatMessage(resp, 'system');
+          log(`LLM response (${tokens} tokens, ${duration.toFixed(1)}s): ${resp}`);
+        });
+        detectTier(cmd);
+      });
+      // Ritual trigger
+      ritualTrigger.addEventListener('click', () => {
+        const ritual = ritualSelect.value;
+        log(`Ritual triggered: ${ritual}`);
+        addTask(`Ritual: ${ritual}`);
+        triggerRitual(ritual);
+      });
+      // Toggle actions
+      audioToggle.addEventListener('change', () => {
+        log(`Audio FX ${audioToggle.checked ? 'enabled' : 'disabled'}`);
+      });
+      glowToggle.addEventListener('change', () => {
+        log(`Glow FX ${glowToggle.checked ? 'enabled' : 'disabled'}`);
+      });
+      nightToggle.addEventListener('change', () => {
+        document.body.classList.toggle('nightvision', nightToggle.checked);
+        log(`Night vision ${nightToggle.checked ? 'on' : 'off'}`);
+      });
+      typewriterToggle.addEventListener('change', () => {
+        log(`Typewriter mode ${typewriterToggle.checked ? 'on' : 'off'}`);
+      });
+      autopilotToggle.addEventListener('change', () => {
+        autopilotActive = autopilotToggle.checked;
+        if (autopilotActive) {
+          startAutopilot();
+          log('Autopilot enabled');
+        } else {
+          stopAutopilot();
+          log('Autopilot disabled');
+        }
+      });
+      // Task memory actions
+      saveTasksBtn.addEventListener('click', () => {
+        downloadFile('task_history.txt', tasks.map(t => t.desc).join('\n'));
+      });
+      clearTasksBtn.addEventListener('click', () => {
+        tasks = [];
+        renderTasks();
+      });
+      saveLogBtn.addEventListener('click', () => {
+        downloadFile('session_log.txt', logs.join('\n'));
+      });
+      clearLogBtn.addEventListener('click', () => {
+        logs = [];
+        renderLogs();
+      });
+      // Dev info update
+      setInterval(() => {
+        devInfo.textContent = `Tasks: ${tasks.length}, Logs: ${logs.length}, Memory: ${memory.length}`;
+      }, 2000);
+      phaseSelect.addEventListener('change', () => {
+        log(`Phase view set to ${phaseSelect.value}`);
+      });
+      // DOM AI actions
+      injectScriptBtn.addEventListener('click', () => {
+        log('DOM AI: injected script');
+        addTask('DOM AI inject');
+        tierFlash();
+      });
+      scanInterfaceBtn.addEventListener('click', () => {
+        const modules = document.querySelectorAll('details').length;
+        log(`DOM AI: scanned interface (${modules} modules)`);
+        addTask(`DOM AI scan: ${modules} modules`);
+      });
+      activateModuleBtn.addEventListener('click', () => {
+        log('DOM AI: activated module');
+        addTask('DOM AI activate');
+        flashChat();
+      });
+      // Vault drag/drop and decrypt
+      [localPane, vaultPane].forEach(pane => {
+        pane.addEventListener('dragover', evt => {
+          evt.preventDefault();
+          pane.classList.add('dragover');
+        });
+        pane.addEventListener('dragleave', () => {
+          pane.classList.remove('dragover');
+        });
+        pane.addEventListener('drop', evt => {
+          evt.preventDefault();
+          pane.classList.remove('dragover');
+          const data = evt.dataTransfer.getData('text/plain');
+          const item = document.getElementById(data);
+          if (item && !item.classList.contains('locked')) {
+            pane.appendChild(item);
+            updateVaultState();
+            log(`Moved ${item.dataset.name} to ${pane.id === 'localPane' ? 'Local' : 'Vault'}`);
+            addTask(`File moved: ${item.dataset.name}`);
+          }
+        });
+      });
+      function createFileItem(name, locked) {
+        const div = document.createElement('div');
+        div.textContent = name;
+        div.className = 'fileItem' + (locked ? ' locked' : '');
+        div.dataset.name = name;
+        div.id = `file-${name.replace(/[^a-zA-Z0-9_-]/g, '')}-${Math.random().toString(36).substr(2, 5)}`;
+        div.draggable = !locked;
+        if (!locked) {
+          div.addEventListener('dragstart', evt => {
+            evt.dataTransfer.setData('text/plain', div.id);
+          });
+        }
+        // decrypt button for locked files
+        const btn = document.createElement('button');
+        btn.textContent = locked ? 'Decrypt' : 'Open';
+        btn.addEventListener('click', evt => {
+          evt.stopPropagation();
+          if (locked) {
+            div.classList.remove('locked');
+            btn.textContent = 'Open';
+            log(`Decrypted ${name}`);
+          } else {
+            log(`Opened ${name}`);
+            // If this is a saved chat log, load its content into chat and timeline
+            const fileObj = vaultLocal.concat(vaultRemote).find(it => it.name === name);
+            if (fileObj && fileObj.content) {
+              const lines = fileObj.content.split('\n');
+              lines.forEach((line, idx) => {
+                appendChatMessage(line, idx % 2 ? 'system' : 'user');
+              });
+              log(`Loaded chat log from ${name}`);
+              addTask(`Chat loaded: ${name}`);
+            }
+          }
+          updateVaultState();
+        });
+        div.appendChild(btn);
+        return div;
+      }
+      // Populate initial vault values
+      function initVault() {
+        // Provide default items if not loaded from storage
+        if (vaultLocal.length === 0 && vaultRemote.length === 0) {
+          vaultLocal = [ { name:'notes.txt', locked:false }, { name:'todo.md', locked:false }, { name:'log.json', locked:false } ];
+          vaultRemote = [ { name:'core.fuse', locked:true }, { name:'secret.lock', locked:true }, { name:'project.zip', locked:false } ];
+        }
+        renderVault();
+      }
+      initVault();
+      // Chat import and memory injection
+      playChatBtn.addEventListener('click', () => {
+        const files = chatFileInput.files;
+        if (!files || files.length === 0) return;
+        Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = e => {
+            const text = e.target.result;
+            let messages = [];
+            try {
+              const data = JSON.parse(text);
+              if (Array.isArray(data)) messages = data;
+            } catch (err) {
+              messages = text.split(/\r?\n/).filter(Boolean);
+            }
+            simulateChatPlayback(messages);
+            // Add chat session for ChatFusion
+            chatSessions.push(messages);
+            updateChatThreadSelect();
+            // Automatically load first session if none selected
+            if (currentThreadIndex < 0) {
+              loadChatSession(0);
+            }
+          };
+          reader.readAsText(file);
+        });
+      });
+      injectMemoryBtn.addEventListener('click', () => {
+        const files = chatFileInput.files;
+        if (!files || files.length === 0) return;
+        Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = e => {
+            const text = e.target.result;
+            let messages = [];
+            try {
+              const data = JSON.parse(text);
+              if (Array.isArray(data)) messages = data;
+            } catch (err) {
+              messages = text.split(/\r?\n/).filter(Boolean);
+            }
+            memory = memory.concat(messages);
+            log(`Injected ${messages.length} messages to memory`);
+            addXP(messages.length);
+            renderMemoryGrid();
+            renderMemoryRouter();
+          };
+          reader.readAsText(file);
+        });
+      });
+      // Export system
+      exportSessionBtn.addEventListener('click', () => {
+        const lines = [];
+        lines.push(`# Session Summary`);
+        lines.push(`Start Time: ${new Date(startTime).toLocaleString()}`);
+        lines.push(`Runtime: ${sessionRuntimeSpan.textContent.replace('Runtime: ', '')}`);
+        lines.push(`Dev Hours: ${devHoursSpan.textContent.replace('Dev Hours: ', '')}`);
+        lines.push(`\n## Tasks`);
+        tasks.forEach(t => lines.push(`- ${t.desc}`));
+        lines.push(`\n## Logs`);
+        logs.forEach(l => lines.push(`- ${l}`));
+        downloadFile('session_summary.md', lines.join('\n'));
+      });
+      exportLogBtn.addEventListener('click', () => {
+        downloadFile('logs.txt', logs.join('\n'));
+      });
+      exportVaultBtn.addEventListener('click', () => {
+        const data = JSON.stringify({ local: vaultLocal, remote: vaultRemote }, null, 2);
+        downloadFile('vault.json', data);
+      });
+      exportMemoryBtn.addEventListener('click', () => {
+        const data = `/* LLM memory stub */\nconst memory = ${JSON.stringify(memory, null, 2)};`;
+        downloadFile('memory.js', data);
+      });
+      neuroDropBtn.addEventListener('click', () => {
+        const htmlCopy = document.documentElement.outerHTML;
+        const blob = new Blob([htmlCopy], { type: 'text/html' });
+        downloadBlob(blob, 'NeuroDrop_export.html');
+      });
+      tearExportBtn.addEventListener('click', () => {
+        // .tear packaging: embed html and data into one JSON blob then encode
+        const payload = {
+          html: document.documentElement.outerHTML,
+          vault: { local: vaultLocal, remote: vaultRemote },
+          logs: logs,
+          tasks: tasks.map(t => t.desc),
+          memory: memory
+        };
+        const jsonStr = JSON.stringify(payload);
+        const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+        const secret = 'NS' + Math.random().toString(36).substr(2, 10);
+        const tearContent = JSON.stringify({ key: secret, data: b64 });
+        const blob = new Blob([tearContent], { type: 'application/octet-stream' });
+        downloadBlob(blob, 'NeuralShell_PHASE_500_Endgame.tear');
+        // generate QR code for secret
+        generateQRCode(secret);
+        if (burnToggle.checked) {
+          tasks = [];
+          logs = [];
+          memory = [];
+          vaultLocal = [];
+          vaultRemote = [];
+          renderTasks();
+          renderLogs();
+          renderVault();
+          saveVault();
+          log('Burn mode: session cleared');
+        }
+      });
+      // Helpers
+      function updateStatus(state) {
+        if (state === 'thinking') {
+          llmStatus.textContent = 'Thinking…';
+        } else if (state === 'done') {
+          llmStatus.textContent = `Connected to ${llmSelect.options[llmSelect.selectedIndex].text}`;
+        }
+      }
+      function appendChatMessage(msg, sender) {
+        const div = document.createElement('div');
+        div.className = `chatMessage ${sender}`;
+        if (typewriterToggle.checked) {
+          let i = 0;
+          const interval = setInterval(() => {
+            div.textContent += msg[i++];
+            // ensure element appended once
+            if (!div.parentElement) chatArea.appendChild(div);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            if (i >= msg.length) clearInterval(interval);
+          }, 20);
+        } else {
+          div.textContent = msg;
+          chatArea.appendChild(div);
+          chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        // feed Time Stitcher timeline
+        if (typeof updateTimeGrid === 'function') {
+          updateTimeGrid(msg);
+        }
+        // mirror to Echo Mirror panel
+        if (echoChat) {
+          const mirror = document.createElement('div');
+          mirror.textContent = msg;
+          mirror.className = `chatMessage ${sender}`;
+          echoChat.appendChild(mirror);
+          echoChat.scrollTop = echoChat.scrollHeight;
+        }
+        // award XP for each chat message
+        addXP(1);
+      }
+      function addTask(desc) {
+        const task = { id: Date.now(), desc: desc, completed: false };
+        tasks.push(task);
+        renderTasks();
+        // award XP for each new task
+        addXP(1);
+      }
+      function renderTasks() {
+        taskList.innerHTML = '';
+        tasks.forEach(task => {
+          const li = document.createElement('li');
+          if (task.completed) li.classList.add('completed');
+          const span = document.createElement('span');
+          span.textContent = task.desc;
+          const actions = document.createElement('span');
+          actions.className = 'taskActions';
+          const completeBtn = document.createElement('button');
+          completeBtn.textContent = task.completed ? 'Undo' : 'Complete';
+          completeBtn.addEventListener('click', () => {
+            task.completed = !task.completed;
+            renderTasks();
+          });
+          const restartBtn = document.createElement('button');
+          restartBtn.textContent = 'Restart';
+          restartBtn.addEventListener('click', () => {
+            task.completed = false;
+            renderTasks();
+          });
+          actions.appendChild(completeBtn);
+          actions.appendChild(restartBtn);
+          li.appendChild(span);
+          li.appendChild(actions);
+          taskList.appendChild(li);
+        });
+        // update companion view
+        renderCompanion();
+      }
+      function log(entry) {
+        logs.push(`${new Date().toLocaleTimeString()}: ${entry}`);
+        renderLogs();
+      }
+      function renderLogs() {
+        logList.innerHTML = '';
+        logs.forEach(l => {
+          const li = document.createElement('li');
+          li.textContent = l;
+          logList.appendChild(li);
+        });
+        // update companion view
+        renderCompanion();
+        // update execution timeline when available
+        try {
+          if (typeof renderTimeline === 'function') {
+            renderTimeline();
+          }
+        } catch (e) {
+          // ignore missing timeline
+        }
+      }
+      function countTokens(text) {
+        // Approximate token count by splitting on whitespace and punctuation
+        return text ? text.trim().split(/\s+/).length : 0;
+      }
+      async function sendLLM(prompt) {
+        // Select between local Ollama and remote GPT‑4o simulation based on toggle
+        if (useLocalToggle && useLocalToggle.checked) {
+          // Attempt local fetch for Ollama
+          try {
+            const resp = await fetch('http://127.0.0.1:11434/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ model: llmSelect.value, prompt })
+            });
+            const data = await resp.json();
+            if (data && data.response) return data.response;
+          } catch (err) {
+            // local not available
+          }
+          return `Local LLM unavailable. Simulated local response to "${prompt}"`;
+        } else {
+          // Remote call stub: In offline context we simulate GPT‑4o responses
+          return `Simulated GPT‑4o response to "${prompt}"`;
+        }
+      }
+      // Tier detection and update
+      function detectTier(text) {
+        const lower = text.toLowerCase();
+        if (lower.includes('founder mode')) {
+          updateTier('1');
+        }
+        if (lower.includes('obey protocol')) {
+          updateTier('2');
+        }
+        if (lower.includes('mindflush')) {
+          updateTier('3');
+        }
+        if (lower.includes('override')) {
+          updateTier('empire');
+        }
+        if (lower.includes('epoch sequence')) {
+          updateTier('empire');
+        }
+      }
+      function updateTier(tier) {
+        tierEls.forEach(el => {
+          el.classList.remove('active');
+          if (el.dataset.tier === tier) {
+            el.classList.add('active');
+          }
+        });
+        // flash tiers to indicate change and ensure UI sync
+        tierFlash();
+      }
+      // Ritual engine
+      function triggerRitual(ritual) {
+        if (glowToggle.checked) {
+          document.body.style.boxShadow = '0 0 20px var(--highlight) inset';
+          setTimeout(() => { document.body.style.boxShadow = 'none'; }, 500);
+        }
+        if (audioToggle.checked && typeof AudioContext !== 'undefined') {
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = 660;
+          osc.connect(ctx.destination);
+          osc.start();
+          setTimeout(() => { osc.stop(); ctx.close(); }, 200);
+        }
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.zIndex = '999';
+        const box = document.createElement('div');
+        box.style.backgroundColor = 'var(--border)';
+        box.style.padding = '20px';
+        box.style.borderRadius = '6px';
+        box.style.color = 'var(--fg)';
+        box.innerHTML = `<h3>Ritual: ${ritual}</h3><p>Sequence complete.</p><button class="btn">Close</button>`;
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        box.querySelector('button').addEventListener('click', () => {
+          document.body.removeChild(overlay);
+        });
+        // Additional tier triggers
+        if (ritual === 'unlockFounder') updateTier('1');
+        if (ritual === 'obeyProtocol') updateTier('2');
+        if (ritual === 'mindFlush') updateTier('3');
+        // final rituals: assign higher tiers and log
+        if (ritual === 'smartLaunch') {
+          updateTier('4');
+          log('SmartLaunch ritual triggered');
+          addXP(2);
+        }
+        if (ritual === 'phaseLocked') {
+          updateTier('5');
+          log('PhaseLocked ritual triggered');
+          addXP(2);
+        }
+        if (ritual === 'terminalVerse') {
+          updateTier('empire');
+          log('TerminalVerse ritual triggered');
+          addXP(3);
+        }
+      }
+      // UI effects
+      function tierFlash() {
+        tierEls.forEach(el => {
+          el.style.boxShadow = '0 0 8px var(--highlight)';
+          setTimeout(() => { el.style.boxShadow = ''; }, 500);
+        });
+      }
+      function flashChat() {
+        const original = chatArea.style.backgroundColor;
+        chatArea.style.backgroundColor = 'var(--highlight)';
+        setTimeout(() => { chatArea.style.backgroundColor = original; }, 200);
+      }
+      // Chat playback simulation
+      function simulateChatPlayback(messages) {
+        clearInterval(chatPlaybackInterval);
+        let idx = 0;
+        chatPlaybackInterval = setInterval(() => {
+          if (idx >= messages.length) {
+            clearInterval(chatPlaybackInterval);
+            return;
+          }
+          const msg = messages[idx++];
+          appendChatMessage(msg, idx % 2 === 1 ? 'user' : 'system');
+        }, 1000);
+      }
+      // Autopilot logic
+      function startAutopilot() {
+        if (autopilotInterval) clearInterval(autopilotInterval);
+        autopilotInterval = setInterval(() => {
+          if (!autopilotActive) return;
+          const idleSeconds = (Date.now() - lastActionTime) / 1000;
+          if (idleSeconds > 15) {
+            runAutopilotTask();
+            lastActionTime = Date.now();
+          }
+        }, 5000);
+      }
+      function stopAutopilot() {
+        if (autopilotInterval) clearInterval(autopilotInterval);
+      }
+      function runAutopilotTask() {
+        const actions = [
+          () => { log('Autopilot: scanning interface'); addTask('Auto: scan interface'); },
+          () => { log('Autopilot: checking vault'); addTask('Auto: check vault'); },
+          () => { log('Autopilot: summarising session'); addTask('Auto: summary'); exportSessionBtn.click(); }
+        ];
+        const fn = actions[Math.floor(Math.random() * actions.length)];
+        fn();
+        // XP reward for autopilot tasks
+        addXP(2);
+      }
+      // QR code generation
+      function generateQRCode(secret) {
+        qrContainer.innerHTML = '';
+        const canvas = document.createElement('canvas');
+        qrContainer.appendChild(canvas);
+        if (window.QRCode) {
+          QRCode.toCanvas(canvas, secret, { width: 128, color: { dark: '#ffffff', light: '#00000000' } }, function (error) {
+            if (error) console.error(error);
+          });
+        } else if (window.QRCodeGenerator) {
+          // fallback stub
+        }
+        const caption = document.createElement('div');
+        caption.textContent = `Secret key: ${secret}`;
+        caption.style.fontSize = '0.7rem';
+        qrContainer.appendChild(caption);
+      }
+      // Download helpers
+      function downloadFile(filename, content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        downloadBlob(blob, filename);
+      }
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 0);
+      }
+
+      // Phase 341–360 helper functions
+      // XP management
+      function addXP(points = 1) {
+        xpPoints += points;
+        updateXPDisplay();
+        // update XP meter and time tracker immediately
+        updateXPMeter();
+        updateTimeTracker();
+      }
+      function updateXPDisplay() {
+        if (xpDisplay) xpDisplay.textContent = `XP: ${xpPoints}`;
+        if (xpSpan) xpSpan.textContent = `XP: ${xpPoints}`;
+      }
+      // Phase map display
+      function updatePhaseMap() {
+        if (!phaseMapDisplay) return;
+        let output = '';
+        Object.keys(phaseCache).forEach(phase => {
+          const feats = phaseCache[phase];
+          output += `${phase}:\n`;
+          feats.forEach(f => { output += `  - ${f}\n`; });
+        });
+        phaseMapDisplay.textContent = output;
+      }
+      // Legacy detection (stub)
+      function detectLegacy() {
+        // Example checks for presence of critical UI elements
+        if (!document.getElementById('terminalCmd')) {
+          log('Legacy: Terminal missing – creating stub');
+        }
+        // Additional checks could be added here
+      }
+      // Core switch overlay
+      function switchCore(mode) {
+        if (!mode || mode === currentCore) return;
+        currentCore = mode;
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.85)';
+        overlay.style.color = 'var(--highlight)';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.zIndex = '1000';
+        overlay.innerHTML = `<h2>Switching Core</h2><p>Loading ${mode}…</p>`;
+        document.body.appendChild(overlay);
+        setTimeout(() => {
+          document.body.removeChild(overlay);
+          log(`Core switched to ${mode}`);
+          addTask(`Core switched: ${mode}`);
+          addXP(5);
+        }, 1500);
+      }
+      // Remote vault sync and pairing
+      function remoteSync() {
+        log('Remote vault sync initiated');
+        addTask('Remote vault sync');
+        addXP(3);
+        vaultFX('success');
+        // placeholder for remote sync operations
+      }
+      function remotePair(key) {
+        if (!key) return;
+        remoteKey = key;
+        log(`Remote key paired: ${key}`);
+        addTask(`Remote pair: ${key}`);
+        addXP(2);
+        vaultFX('success');
+      }
+      // Global domCommand parser
+      window.domCommand = function(command) {
+        if (!command || typeof command !== 'string') return;
+        // Trim whitespace
+        const cmd = command.trim();
+        if (cmd.startsWith('ritual://')) {
+          const ritual = cmd.slice('ritual://'.length);
+          triggerRitual(ritual);
+          log(`domCommand triggered ritual: ${ritual}`);
+          return;
+        }
+        if (cmd.startsWith('tier://')) {
+          const t = cmd.slice('tier://'.length);
+          updateTier(t);
+          log(`domCommand tier set: ${t}`);
+          return;
+        }
+        if (cmd.startsWith('vault://open/')) {
+          const fileName = cmd.slice('vault://open/'.length);
+          // Attempt to find file in vaults
+          const fileObj = vaultLocal.concat(vaultRemote).find(it => it.name === fileName);
+          if (fileObj && !fileObj.locked) {
+            // open by logging and showing chat messages if available
+            log(`domCommand opening file: ${fileName}`);
+            if (fileObj.content) {
+              const lines = fileObj.content.split('\n');
+              lines.forEach((line, idx) => {
+                appendChatMessage(line, idx % 2 ? 'system' : 'user');
+              });
+              addTask(`domCommand opened chat: ${fileName}`);
+              addXP(2);
+            }
+          } else {
+            log(`domCommand: file not found or locked (${fileName})`);
+          }
+          return;
+        }
+        if (cmd.startsWith('task://add/')) {
+          const desc = decodeURIComponent(cmd.slice('task://add/'.length));
+          addTask(desc);
+          log(`domCommand added task: ${desc}`);
+          addXP(1);
+          return;
+        }
+        log(`domCommand unknown: ${cmd}`);
+      };
+
+      // === Phase 361–400 Helper Functions ===
+      // Render the memory router list with buttons to route to short or long term
+      function renderMemoryRouter() {
+        if (!memoryRouterList) return;
+        memoryRouterList.innerHTML = '';
+        memory.forEach((msg, idx) => {
+          const li = document.createElement('li');
+          li.style.display = 'flex';
+          li.style.justifyContent = 'space-between';
+          li.style.alignItems = 'center';
+          li.style.borderBottom = '1px solid var(--border)';
+          const span = document.createElement('span');
+          span.textContent = msg.length > 30 ? msg.slice(0, 30) + '…' : msg;
+          const btns = document.createElement('span');
+          const stBtn = document.createElement('button');
+          stBtn.textContent = 'ST';
+          stBtn.className = 'btn';
+          stBtn.style.fontSize = '0.6rem';
+          stBtn.addEventListener('click', () => {
+            memoryShort.push(msg);
+            log(`Memory routed to short term (#${idx+1})`);
+            addXP(1);
+          });
+          const ltBtn = document.createElement('button');
+          ltBtn.textContent = 'LT';
+          ltBtn.className = 'btn';
+          ltBtn.style.fontSize = '0.6rem';
+          ltBtn.addEventListener('click', () => {
+            memoryLong.push(msg);
+            log(`Memory routed to long term (#${idx+1})`);
+            addXP(1);
+          });
+          btns.appendChild(stBtn);
+          btns.appendChild(ltBtn);
+          li.appendChild(span);
+          li.appendChild(btns);
+          memoryRouterList.appendChild(li);
+        });
+      }
+      // Persona cycling through personas list
+      const personaCycleList = ['default', 'founder', 'override', 'god'];
+      function startPersonaCycling() {
+        if (personaCycleInterval) return;
+        let idx = personaCycleList.indexOf(persona);
+        cycleStatus.textContent = 'Status: On';
+        personaCycleInterval = setInterval(() => {
+          idx = (idx + 1) % personaCycleList.length;
+          personaSelect.value = personaCycleList[idx];
+          personaSelect.dispatchEvent(new Event('change'));
+          log(`AutoPersona cycle: ${personaCycleList[idx]}`);
+          addXP(2);
+        }, 60000);
+      }
+      function stopPersonaCycling() {
+        if (personaCycleInterval) {
+          clearInterval(personaCycleInterval);
+          personaCycleInterval = null;
+        }
+        cycleStatus.textContent = 'Status: Off';
+      }
+      // Quantum simulation overlay
+      function runSimulationOverlay() {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.9)';
+        overlay.style.zIndex = '1000';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.color = 'var(--highlight)';
+        overlay.innerHTML = '<h2>Quantum Simulation</h2><p>Previewing logic flow…</p>';
+        const simArea = document.createElement('div');
+        simArea.style.position = 'relative';
+        simArea.style.width = '80%';
+        simArea.style.height = '50%';
+        simArea.style.border = '1px solid var(--border)';
+        overlay.appendChild(simArea);
+        // generate random nodes
+        for (let i = 0; i < 6; i++) {
+          const node = document.createElement('div');
+          node.style.position = 'absolute';
+          node.style.width = '60px';
+          node.style.height = '30px';
+          node.style.backgroundColor = 'var(--border)';
+          node.style.color = 'var(--fg)';
+          node.style.display = 'flex';
+          node.style.alignItems = 'center';
+          node.style.justifyContent = 'center';
+          node.style.borderRadius = '4px';
+          node.style.left = Math.random() * 90 + '%';
+          node.style.top = Math.random() * 90 + '%';
+          node.textContent = 'M' + (i + 1);
+          simArea.appendChild(node);
+        }
+        const btn = document.createElement('button');
+        btn.textContent = 'Close';
+        btn.className = 'btn';
+        btn.addEventListener('click', () => {
+          document.body.removeChild(overlay);
+        });
+        overlay.appendChild(btn);
+        document.body.appendChild(overlay);
+        log('Quantum simulation displayed');
+        addXP(3);
+      }
+      // Vault recall overlay
+      function openVaultRecall() {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.9)';
+        overlay.style.zIndex = '1000';
+        overlay.style.color = 'var(--fg)';
+        const wrapper = document.createElement('div');
+        wrapper.style.margin = '20px';
+        wrapper.style.backgroundColor = 'var(--border)';
+        wrapper.style.padding = '10px';
+        wrapper.style.borderRadius = '6px';
+        wrapper.style.maxHeight = '80%';
+        wrapper.style.overflowY = 'auto';
+        wrapper.innerHTML = '<h3>Vault Recall</h3>';
+        const list = document.createElement('ul');
+        list.style.listStyle = 'none';
+        list.style.padding = '0';
+        // populate with vault items
+        vaultLocal.concat(vaultRemote).forEach(item => {
+          const li = document.createElement('li');
+          li.style.padding = '4px';
+          li.style.borderBottom = '1px solid var(--border)';
+          li.textContent = item.name + (item.locked ? ' [locked]' : '');
+          li.style.cursor = 'pointer';
+          li.addEventListener('click', () => {
+            if (!item.locked) {
+              log(`VaultRecall open ${item.name}`);
+              addTask(`VaultRecall open ${item.name}`);
+              if (item.content) {
+                const lines = item.content.split('\n');
+                lines.forEach((line, idx) => appendChatMessage(line, idx % 2 ? 'system' : 'user'));
+              }
+            }
+          });
+          list.appendChild(li);
+        });
+        wrapper.appendChild(list);
+        const btn = document.createElement('button');
+        btn.textContent = 'Close';
+        btn.className = 'btn';
+        btn.addEventListener('click', () => {
+          document.body.removeChild(overlay);
+        });
+        wrapper.appendChild(btn);
+        overlay.appendChild(wrapper);
+        document.body.appendChild(overlay);
+        log('Vault recall overlay opened');
+        addXP(2);
+      }
+      // RitualSync script executor
+      function runRitualScript() {
+        const script = ritualScriptInput ? ritualScriptInput.value : '';
+        if (!script) return;
+        const parts = script.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+        let delay = 0;
+        parts.forEach(part => {
+          setTimeout(() => {
+            if (part.startsWith('ritual:')) {
+              const r = part.slice('ritual:'.length);
+              triggerRitual(r);
+              log(`RitualSync: triggered ${r}`);
+            } else if (part.startsWith('llm:')) {
+              const prompt = part.slice('llm:'.length);
+              llmInput.value = prompt;
+              sendBtn.click();
+              log(`RitualSync: sent LLM prompt`);
+            } else if (part.startsWith('dom:')) {
+              const dc = part.slice('dom:'.length);
+              window.domCommand(dc);
+            }
+            addXP(1);
+          }, delay);
+          delay += 1000;
+        });
+      }
+      // Update companion panel with logs and tasks
+      function renderCompanion() {
+        if (companionLog) {
+          companionLog.innerHTML = logs.slice(-50).map(l => `<div>${l}</div>`).join('');
+        }
+        if (companionTasks) {
+          companionTasks.innerHTML = tasks.map(t => `<div>${t.desc}${t.completed ? ' ✓' : ''}</div>`).join('');
+        }
+      }
+      // Command scheduler
+      function scheduleCommand() {
+        const dt = commandScheduleTime.value;
+        const cmd = commandScheduleInput.value.trim();
+        if (!dt || !cmd) return;
+        const when = new Date(dt).getTime();
+        if (isNaN(when) || when <= Date.now()) {
+          log('Invalid command schedule time');
+          return;
+        }
+        const li = document.createElement('li');
+        li.textContent = `${new Date(when).toLocaleString()} — ${cmd}`;
+        scheduledCommandsList.appendChild(li);
+        setTimeout(() => {
+          // Determine command type
+          if (cmd.startsWith('ritual://') || cmd.startsWith('tier://') || cmd.startsWith('vault://') || cmd.startsWith('task://')) {
+            window.domCommand(cmd);
+          } else if (cmd.startsWith('llm:')) {
+            const prompt = cmd.slice('llm:'.length);
+            llmInput.value = prompt;
+            sendBtn.click();
+          } else {
+            // treat as LLM prompt directly
+            llmInput.value = cmd;
+            sendBtn.click();
+          }
+          log(`Scheduled command executed: ${cmd}`);
+          addTask(`Scheduled command: ${cmd}`);
+          if (li.parentElement) li.parentElement.removeChild(li);
+        }, when - Date.now());
+      }
+      // Clipboard AI paste
+      async function pasteAndProcess() {
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+          clipboardStatus.textContent = 'Clipboard API unavailable';
+          return;
+        }
+        try {
+          const text = await navigator.clipboard.readText();
+          clipboardStatus.textContent = 'Clipboard captured';
+          if (!text) return;
+          if (text.includes('://')) {
+            // treat as dom command
+            window.domCommand(text);
+            log('Clipboard AI executed command');
+          } else if (text.includes('\n')) {
+            const lines = text.split(/\n/).filter(Boolean);
+            lines.forEach(line => memory.push(line));
+            addXP(lines.length);
+            log(`Clipboard AI added ${lines.length} lines to memory`);
+            renderMemoryGrid();
+          } else {
+            memory.push(text);
+            log('Clipboard AI added text to memory');
+            addXP(1);
+            renderMemoryGrid();
+          }
+          renderMemoryRouter();
+        } catch (err) {
+          clipboardStatus.textContent = 'Clipboard read failed';
+        }
+      }
+      // XP meter and rank update
+      function updateXPMeter() {
+        // level calculation: simple sqrt based
+        const level = Math.floor(Math.sqrt(xpPoints / 10)) + 1;
+        const progress = Math.min(1, (xpPoints % (10 * level * level)) / (10 * level * level));
+        if (xpMeterFill) xpMeterFill.style.width = `${Math.floor(progress * 100)}%`;
+        // Determine rank from xp
+        const ranks = ['Novice','Apprentice','Adept','Master','Legend','Sentinel'];
+        const rankIndex = Math.min(ranks.length - 1, Math.floor(level / 2));
+        if (rankInfo) rankInfo.textContent = `Level ${level} — ${ranks[rankIndex]}`;
+      }
+      // Fuse memory and preview
+      function fuseMemory() {
+        const combined = memory.concat(memoryShort).concat(memoryLong);
+        const preview = combined.join('\n').slice(0, 800);
+        fusedMemoryPreview.textContent = preview;
+        log('Memory fused');
+        addXP(5);
+      }
+      // Cross reality stub
+      function crossReality() {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
+        overlay.style.zIndex = '1000';
+        overlay.style.color = 'var(--highlight)';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.innerHTML = '<h2>CrossReality Bridge</h2><p>Syncing with external overlay…</p>';
+        const btn = document.createElement('button');
+        btn.textContent = 'Close';
+        btn.className = 'btn';
+        btn.addEventListener('click', () => {
+          document.body.removeChild(overlay);
+        });
+        overlay.appendChild(btn);
+        document.body.appendChild(overlay);
+        log('CrossReality Bridge invoked');
+        addXP(4);
+      }
+      // Persona merge logic
+      function mergePersonas() {
+        const selected = Array.from(mergePersonaSelect.options).filter(o => o.selected).map(o => o.value);
+        if (!selected.length) return;
+        const merged = selected.join('-');
+        // Add merged persona to selector if not present
+        if (!Array.from(personaSelect.options).some(o => o.value === merged)) {
+          const opt = document.createElement('option');
+          opt.value = merged;
+          opt.textContent = merged.charAt(0).toUpperCase() + merged.slice(1);
+          personaSelect.appendChild(opt);
+        }
+        personaSelect.value = merged;
+        personaSelect.dispatchEvent(new Event('change'));
+        log(`Persona merged: ${merged}`);
+        addXP(selected.length);
+      }
+      // Context search and prediction
+      function searchContext() {
+        const query = contextSearchInput.value.trim().toLowerCase();
+        if (!query) return;
+        const results = memory.filter(m => m.toLowerCase().includes(query)).slice(0, 20);
+        contextResults.innerHTML = results.map(r => `<div>${r}</div>`).join('');
+        // simple prediction: pick random memory line or generate generic prediction
+        let prediction = '';
+        if (results.length > 0) {
+          prediction = 'Next: ' + results[Math.floor(Math.random() * results.length)].slice(0, 40);
+        } else if (memory.length > 0) {
+          prediction = 'Next: ' + memory[Math.floor(Math.random() * memory.length)].slice(0, 40);
+        }
+        contextPrediction.textContent = prediction;
+        log(`Context search for "${query}"`);
+        addXP(results.length);
+      }
+      // Predict terminal command suggestions
+      function predictTerminal(cmd) {
+        if (!cmd) return '';
+        const map = { 'ec': 'echo', 'cl': 'clear', 'he': 'help', 'ls': 'ls', 'pw': 'pwd' };
+        const key = cmd.slice(0, 2);
+        return map[key] || '';
+      }
+
+      // ChatFusion utilities
+      function updateChatThreadSelect() {
+        if (!chatThreadSelect) return;
+        chatThreadSelect.innerHTML = '';
+        chatSessions.forEach((session, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = `Thread ${idx+1}`;
+          chatThreadSelect.appendChild(opt);
+        });
+        if (chatSessions.length > 0) {
+          if (currentThreadIndex < 0) currentThreadIndex = 0;
+          chatThreadSelect.value = currentThreadIndex;
+        }
+      }
+      function loadChatSession(index) {
+        index = parseInt(index);
+        if (isNaN(index) || index < 0 || index >= chatSessions.length) return;
+        currentThreadIndex = index;
+        chatArea.innerHTML = '';
+        const messages = chatSessions[index];
+        messages.forEach((msg, idx) => {
+          appendChatMessage(msg, idx % 2 ? 'system' : 'user');
+        });
+        log(`ChatFusion loaded thread ${index+1}`);
+      }
+      function nextThread() {
+        if (chatSessions.length === 0) return;
+        currentThreadIndex = (currentThreadIndex + 1) % chatSessions.length;
+        chatThreadSelect.value = currentThreadIndex;
+        loadChatSession(currentThreadIndex);
+      }
+      function handoffThread() {
+        if (currentThreadIndex < 0 || currentThreadIndex >= chatSessions.length) return;
+        const messages = chatSessions[currentThreadIndex];
+        const prompt = messages.join('\n');
+        llmInput.value = prompt;
+        sendBtn.click();
+        log(`ChatFusion handoff thread ${currentThreadIndex+1} to LLM`);
+        addXP(messages.length);
+      }
+      // Time tracker update
+      function updateTimeTracker() {
+        // compute session value as xp points
+        if (sessionValueSpan) sessionValueSpan.textContent = `Value: ${xpPoints}`;
+        // compute phase progress based on phaseCache ranges (0–400)
+        let completed = 0;
+        for (const key in phaseCache) {
+          const parts = key.split('-');
+          if (parts.length === 2) {
+            const start = parseInt(parts[0]);
+            const end = parseInt(parts[1]);
+            if (!isNaN(start) && !isNaN(end)) {
+              completed += (end - start + 1);
+            }
+          }
+        }
+        // compute progress relative to the endgame (700 phases)
+        const totalPhases = 700;
+        const progress = completed / totalPhases;
+        if (phaseProgressSpan) phaseProgressSpan.textContent = `Phase Progress: ${(progress * 100).toFixed(1)}%`;
+      }
+      // Refresh deep vault list
+      function refreshDeepVault() {
+        if (!deepVaultList) return;
+        deepVaultList.innerHTML = '';
+        // Combine local and remote vault names, plus memory logs as recall
+        const files = vaultLocal.concat(vaultRemote);
+        files.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item.name;
+          li.style.cursor = 'pointer';
+          li.addEventListener('click', () => {
+            if (item.content && !item.locked) {
+              appendChatMessage(`Opening ${item.name}`, 'system');
+              item.content.split('\n').forEach((line, idx) => appendChatMessage(line, idx % 2 ? 'system' : 'user'));
+              log(`DeepVault opened ${item.name}`);
+            }
+          });
+          deepVaultList.appendChild(li);
+        });
+        log('DeepVault list refreshed');
+      }
+      // Node Echo stub
+      function startNodeEcho() {
+        log('Node Echo started');
+        addXP(5);
+      }
+
+      // --- Final Execution Phase Functions ---
+      let vaultLocked = false;
+      // Synchronise DOM state into an LLM prompt and send to the backend
+      function domRitualSync() {
+        // Build a concise summary of current tasks, memory and logs
+        const taskSummary = tasks.map(t => (t.completed ? '[x] ' : '[ ] ') + t.desc).join('\n');
+        const memSummary = memory.slice(-20).join('\n');
+        const logSummary = logs.slice(-20).join('\n');
+        const prompt = `DOM Sync Data:\nTasks:\n${taskSummary}\n\nMemory:\n${memSummary}\n\nLogs:\n${logSummary}`;
+        llmInput.value = prompt;
+        // simulate sending the prompt through the LLM bridge
+        sendBtn.click();
+        log('DOM Ritual Sync executed');
+        addXP(5);
+      }
+      // Lock or unlock the vault pane; when locked the vault UI cannot be interacted with
+      function toggleVaultLock(state) {
+        vaultLocked = state;
+        const vm = document.getElementById('vaultManager');
+        if (!vm) return;
+        if (vaultLocked) {
+          vm.style.pointerEvents = 'none';
+          vm.style.opacity = '0.5';
+          log('Vault locked');
+        } else {
+          vm.style.pointerEvents = '';
+          vm.style.opacity = '';
+          log('Vault unlocked');
+        }
+      }
+      // DevAgent parallel synchronisation stub; merges recent logs and tasks into memory
+      function devAgentSync() {
+        // take last five logs and all tasks as new memory items
+        const items = logs.slice(-5).concat(tasks.map(t => t.desc));
+        if (items.length) {
+          memory.push(...items);
+          renderMemoryGrid();
+          renderMemoryRouter();
+        }
+        log('DevAgent sync executed');
+        addXP(3);
+      }
+
+      // --- Endgame Phase (451–500) Functions ---
+      // Compress logs into a base64 encoded neurovault format
+      function compressLogs() {
+        const data = {
+          logs: logs,
+          tasks: tasks.map(t => ({ desc: t.desc, completed: t.completed })),
+          memory: memory,
+          timestamp: new Date().toISOString()
+        };
+        const jsonStr = JSON.stringify(data);
+        const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+        const blob = new Blob([b64], { type: 'application/octet-stream' });
+        downloadBlob(blob, 'vault.neurovault');
+        log('Vault compressed to neurovault');
+        addXP(3);
+      }
+      // Encrypt and compress logs into a final .tear container
+      function encryptLogs() {
+        const payload = {
+          html: document.documentElement.outerHTML,
+          vault: { local: vaultLocal, remote: vaultRemote },
+          logs: logs,
+          tasks: tasks.map(t => t.desc),
+          memory: memory
+        };
+        const jsonStr = JSON.stringify(payload);
+        const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+        const secret = 'NS' + Math.random().toString(36).substr(2, 10);
+        const tearContent = JSON.stringify({ key: secret, data: b64 });
+        const blob = new Blob([tearContent], { type: 'application/octet-stream' });
+        downloadBlob(blob, 'NeuralShell_PHASE_500_Endgame.tear');
+        generateQRCode(secret);
+        log('Vault encrypted and compressed (.tear)');
+        addXP(4);
+      }
+      // AutoTrigger watchers
+      let autoTriggerInterval = null;
+      function startAutoTrigger() {
+        // Clear existing
+        if (autoTriggerInterval) clearInterval(autoTriggerInterval);
+        const timeVal = autoTriggerTimeInput && autoTriggerTimeInput.value;
+        let pattern = autoTriggerFileInput && autoTriggerFileInput.value.trim();
+        let xpThreshold = parseInt(autoTriggerXPInput && autoTriggerXPInput.value) || 0;
+        // schedule by time: if timeVal in future, set timeout to trigger
+        if (timeVal) {
+          const when = new Date(timeVal).getTime();
+          if (!isNaN(when) && when > Date.now()) {
+            setTimeout(() => {
+              triggerRitual('smartLaunch');
+              log('AutoTrigger: time event');
+              addTask('AutoTrigger time');
+            }, when - Date.now());
+          }
+        }
+        // monitor vault for file pattern or xp threshold every 5s
+        autoTriggerInterval = setInterval(() => {
+          // file pattern
+          if (pattern) {
+            const found = vaultLocal.concat(vaultRemote).some(item => item.name && item.name.includes(pattern));
+            if (found) {
+              triggerRitual('phaseLocked');
+              log('AutoTrigger: file event');
+              addTask('AutoTrigger file');
+              pattern = '';
+            }
+          }
+          // xp threshold
+          if (xpThreshold > 0 && xpPoints >= xpThreshold) {
+            triggerRitual('terminalVerse');
+            log('AutoTrigger: XP event');
+            addTask('AutoTrigger XP');
+            xpThreshold = 0;
+          }
+        }, 5000);
+        log('AutoTrigger started');
+        addXP(2);
+      }
+      // Chat history loader state
+      let loadedHistories = [];
+      function loadHistoryFiles(evt) {
+        const files = Array.from(evt.target.files || []);
+        loadedHistories = [];
+        historyList.innerHTML = '';
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = e => {
+            let messages = [];
+            try {
+              if (file.name.endsWith('.json')) {
+                const obj = JSON.parse(e.target.result);
+                if (Array.isArray(obj)) messages = obj;
+                else if (obj.messages) messages = obj.messages;
+              } else if (file.name.endsWith('.txt')) {
+                messages = e.target.result.split(/\n/).filter(Boolean);
+              } else if (file.name.endsWith('.zip')) {
+                // zipped logs unsupported offline; skip
+                log(`Zip unsupported for ${file.name}`);
+                return;
+              }
+            } catch (err) {
+              log(`Failed to parse ${file.name}`);
+              return;
+            }
+            loadedHistories.push({ name: file.name, messages: messages });
+            const id = loadedHistories.length - 1;
+            const div = document.createElement('div');
+            div.innerHTML = `<label><input type="checkbox" data-history="${id}"> ${file.name} (${messages.length} lines)</label>`;
+            historyList.appendChild(div);
+          };
+          reader.readAsText(file);
+        });
+      }
+      function injectSelectedHistory() {
+        const checkboxes = historyList.querySelectorAll('input[type="checkbox"]');
+        let count = 0;
+        checkboxes.forEach(cb => {
+          if (cb.checked) {
+            const idx = parseInt(cb.getAttribute('data-history'));
+            const hist = loadedHistories[idx];
+            if (hist) {
+              memory.push(...hist.messages);
+              count += hist.messages.length;
+            }
+          }
+        });
+        if (count > 0) {
+          renderMemoryGrid();
+          renderMemoryRouter();
+          log(`Injected ${count} history messages`);
+          addXP(count);
+        } else {
+          log('No histories selected');
+        }
+      }
+      // Phase locking
+      let phaseLockedFlag = false;
+      const founderKey = 'founder';
+      function lockPhase() {
+        phaseLockedFlag = true;
+        // disable all inputs and buttons except unlock and view
+        document.querySelectorAll('button, input, select, textarea').forEach(el => {
+          if (!['unlockPhaseBtn','phaseKeyInput'].includes(el.id)) {
+            el.disabled = true;
+          }
+        });
+        phaseLockStatus.textContent = 'Phase locked';
+        log('Phase locked');
+      }
+      function unlockPhase() {
+        const key = phaseKeyInput.value.trim();
+        if (key === founderKey) {
+          phaseLockedFlag = false;
+          document.querySelectorAll('button, input, select, textarea').forEach(el => {
+            el.disabled = false;
+          });
+          phaseLockStatus.textContent = 'Phase unlocked';
+          log('Phase unlocked');
+        } else {
+          phaseLockStatus.textContent = 'Invalid key';
+          log('Unlock failed');
+        }
+      }
+      // Tier finalization: restructure tier panel to final names
+      function finalizeTiers() {
+        const panel = document.getElementById('tierPanel');
+        if (!panel) return;
+        panel.innerHTML = '';
+        const tiers = ['0','1','2','3','4','5','founder','sentinel'];
+        tiers.forEach(t => {
+          const span = document.createElement('span');
+          span.className = 'tier';
+          span.dataset.tier = t;
+          span.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+          panel.appendChild(span);
+        });
+        // refresh tierEls NodeList
+        // Note: querySelectorAll returns static NodeList; update global reference
+        tierEls.forEach(el => {}); // dummy to reference existing
+        log('Tiers finalised');
+        addXP(3);
+      }
+      // Update feedback panel with live stats
+      function updateFeedback() {
+        if (!feedbackPanel) return;
+        const stats = [];
+        stats.push(`Logs: ${logs.length}`);
+        stats.push(`Tasks: ${tasks.length}`);
+        stats.push(`Memory: ${memory.length}`);
+        stats.push(`Vault: ${vaultLocked ? 'Locked' : 'Unlocked'}`);
+        stats.push(`XP: ${xpPoints}`);
+        stats.push(`Persona: ${persona || 'default'}`);
+        stats.push(`Phase Locked: ${phaseLockedFlag ? 'Yes' : 'No'}`);
+        stats.push(`Cloak: ${isCloaked ? 'On' : 'Off'}`);
+        stats.push(`Phoenix: ${phoenixMode ? 'On' : 'Off'}`);
+        feedbackPanel.innerHTML = stats.join('<br>');
+      }
+      // Backup: save logs, tasks, memory and vault to a json file
+      function backupNow() {
+        const data = JSON.stringify({ logs, tasks, memory, vault: { local: vaultLocal, remote: vaultRemote } }, null, 2);
+        downloadFile('neural_backup.json', data);
+        log('Backup created');
+        addXP(2);
+      }
+      // Token generation
+      function generateToken() {
+        const token = 'NX' + Math.random().toString(36).substr(2, 12);
+        tokenDisplay.textContent = token;
+        log('Execution token generated');
+        addXP(1);
+      }
+      // Self verification: check phase cache completeness and modules presence
+      function verifyBuild() {
+        let report = '';
+        // check phase cache keys
+        const phases = Object.keys(phaseCache);
+        report += `Phases loaded: ${phases.join(', ')}\n`;
+        if (phases.includes('451-500')) {
+          report += 'Final phase entry present.\n';
+        } else {
+          report += 'Missing final phase entry!\n';
+        }
+        // check some core functions
+        const checks = [compressLogs, encryptLogs, startAutoTrigger, loadHistoryFiles, lockPhase, finalizeTiers, updateFeedback, backupNow, generateToken, verifyBuild];
+        checks.forEach(fn => {
+          report += `${fn.name}: ${typeof fn === 'function' ? 'OK' : 'Missing'}\n`;
+        });
+        verifyResult.textContent = report;
+        log('Self verification completed');
+        addXP(2);
+      }
+      // Cloak toggle: hide or show side panel
+      let isCloaked = false;
+      function toggleCloak(state) {
+        isCloaked = state;
+        const side = document.getElementById('side');
+        if (!side) return;
+        if (isCloaked) {
+          side.style.display = 'none';
+          log('Cloak mode enabled');
+        } else {
+          side.style.display = '';
+          log('Cloak mode disabled');
+        }
+      }
+      // Clean memory without affecting logs or tasks
+      function cleanMemory() {
+        memory = [];
+        memoryShort = [];
+        memoryLong = [];
+        renderMemoryGrid();
+        renderMemoryRouter();
+        log('Memory cleaned');
+        addXP(2);
+      }
+      // Phoenix mode activation: sets persona and logs messages
+      let phoenixMode = false;
+      function activatePhoenix() {
+        phoenixMode = true;
+        persona = 'phoenix';
+        if (personaSelect) {
+          if (!Array.from(personaSelect.options).some(o => o.value === 'phoenix')) {
+            const opt = document.createElement('option');
+            opt.value = 'phoenix';
+            opt.textContent = 'Phoenix';
+            personaSelect.appendChild(opt);
+          }
+          personaSelect.value = 'phoenix';
+        }
+        log('Phoenix mode activated');
+        addXP(5);
+        // suggestion loop: periodically log suggestions
+        setInterval(() => {
+          if (phoenixMode) {
+            const suggestions = ['Consider fusing memories', 'Run a verification', 'Backup your logs', 'Engage AutoTrigger', 'Clean memory'];
+            const msg = suggestions[Math.floor(Math.random() * suggestions.length)];
+            appendChatMessage(`[Phoenix] ${msg}`, 'system');
+            log(`Phoenix suggestion: ${msg}`);
+            addXP(1);
+          }
+        }, 30000);
+      }
+      // --- Echelon Upgrade Module Logic ---
+      // Voice recognition: convert speech to text and populate llmInput
+      if (voiceBtn && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+        const SpeechRecognitionCls = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognizer = new SpeechRecognitionCls();
+        recognizer.lang = 'en-US';
+        recognizer.continuous = false;
+        recognizer.interimResults = false;
+        voiceBtn.addEventListener('click', () => {
+          try {
+            recognizer.start();
+            log('Voice recognition started');
+          } catch (err) {
+            log('Voice recognition unavailable');
+          }
+        });
+        recognizer.addEventListener('result', (event) => {
+          const transcript = Array.from(event.results).map(r => r[0].transcript).join(' ');
+          llmInput.value = transcript;
+          log(`Voice input: ${transcript}`);
+        });
+        recognizer.addEventListener('error', () => {
+          log('Voice recognition error');
+        });
+      }
+      // Ritual Scheduler: schedule ritual commands at a future timestamp
+      scheduleRitualBtn.addEventListener('click', () => {
+        const dt = ritualDateTime.value;
+        const cmd = ritualCommandInput.value.trim();
+        if (!dt || !cmd) return;
+        const when = new Date(dt).getTime();
+        if (isNaN(when) || when <= Date.now()) {
+          log('Invalid ritual schedule time');
+          return;
+        }
+        const li = document.createElement('li');
+        li.textContent = `${new Date(when).toLocaleString()} — ${cmd}`;
+        scheduledRitualsList.appendChild(li);
+        setTimeout(() => {
+          triggerRitual(cmd);
+          log(`Scheduled ritual executed: ${cmd}`);
+          addTask(`Scheduled ritual: ${cmd}`);
+          if (li.parentElement) li.parentElement.removeChild(li);
+        }, when - Date.now());
+      });
+      // QR Vault Unlock: unlock remote vault items using secret key
+      unlockVaultBtn.addEventListener('click', () => {
+        const secret = qrSecretInput.value.trim();
+        if (!secret) return;
+        vaultPane.querySelectorAll('.fileItem.locked').forEach(item => {
+          item.classList.remove('locked');
+          const btn = item.querySelector('button');
+          if (btn) btn.textContent = 'Open';
+        });
+        updateVaultState();
+        log('Vault unlocked');
+        updateTier('empire');
+        vaultFX('success');
+      });
+      // Time Stitcher: update timeline whenever chat messages are appended
+      function updateTimeGrid(msg) {
+        if (!timeGrid) return;
+        const now = new Date();
+        const line = document.createElement('div');
+        line.textContent = `${now.toLocaleTimeString()} — ${msg}`;
+        timeGrid.appendChild(line);
+        if (timeGrid.children.length > 100) {
+          timeGrid.removeChild(timeGrid.firstChild);
+        }
+      }
+      // Founder Console: evaluate JS input and display result
+       (consoleRunBtn2||consoleRunBtn).addEventListener('click', () => {
+        const code = consoleInput.value.trim();
+        if (!code) return;
+        try {
+          const result = (function() { return eval(code); })();
+          consoleOutput.textContent = String(result);
+          log(`Console executed: ${code}`);
+        } catch (err) {
+          consoleOutput.textContent = 'Error: ' + err.message;
+          log(`Console error: ${err.message}`);
+        }
+      });
+      // Memory Grid: display memory entries as clickable tiles
+      function renderMemoryGrid() {
+        if (!memoryGrid) return;
+        memoryGrid.innerHTML = '';
+        memory.forEach((msg, idx) => {
+          const tile = document.createElement('div');
+          tile.textContent = `M${idx+1}`;
+          tile.style.backgroundColor = 'var(--border)';
+          tile.style.padding = '4px';
+          tile.style.borderRadius = '3px';
+          tile.style.cursor = 'pointer';
+          tile.style.fontSize = '0.7rem';
+          tile.addEventListener('click', () => {
+            appendChatMessage(msg, idx % 2 ? 'system' : 'user');
+          });
+          memoryGrid.appendChild(tile);
+        });
+        // also refresh memory router list when memory grid updates
+        renderMemoryRouter();
+      }
+      // refresh memory grid after injecting memory
+      injectMemoryBtn.addEventListener('click', () => {
+        setTimeout(() => {
+          renderMemoryGrid();
+          renderMemoryRouter();
+        }, 500);
+      });
+      // Vault Hook: upload files, auto-summarise, and add to vault
+      vaultUpload.addEventListener('change', () => {
+        const files = vaultUpload.files;
+        if (!files || files.length === 0) return;
+        Array.from(files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = e => {
+            const text = e.target.result || '';
+            const summary = text.slice(0, 120).replace(/\s+/g, ' ');
+            const name = file.name;
+            // store file with content and unlocked state
+            vaultLocal.push({ name: name, locked: false, content: text });
+            log(`Uploaded ${name} (${text.length} chars): ${summary}`);
+            // also add summary to LLM memory for quick reference
+            memory.push(summary);
+            renderVault();
+            saveVault();
+            renderMemoryGrid();
+            renderMemoryRouter();
+            // award XP for each file upload
+            addXP(5);
+          };
+          reader.readAsText(file);
+        });
+        vaultUpload.value = '';
+      });
+      // .tear Import: restore state from encrypted export
+      loadTearBtn.addEventListener('click', () => {
+        const file = tearImportInput.files ? tearImportInput.files[0] : null;
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const obj = JSON.parse(e.target.result);
+            const decoded = decodeURIComponent(escape(atob(obj.data)));
+            const payload = JSON.parse(decoded);
+            tasks = (payload.tasks || []).map(d => ({ id: Date.now()+Math.random(), desc: d, completed: false }));
+            logs = payload.logs || [];
+            memory = payload.memory || [];
+            vaultLocal = payload.vault.local || [];
+            vaultRemote = payload.vault.remote || [];
+            renderTasks();
+            renderLogs();
+            renderVault();
+            renderMemoryGrid();
+            log('Imported .tear file');
+          } catch (err) {
+            log('Invalid .tear file');
+          }
+        };
+        reader.readAsText(file);
+      });
+      // Ritual Sync: schedule LLM commands based on timestamp
+      scheduleSyncBtn.addEventListener('click', () => {
+        const dt = ritualDateTimeSync.value;
+        const cmd = syncCommandInput.value.trim();
+        if (!dt || !cmd) return;
+        const when = new Date(dt).getTime();
+        if (isNaN(when) || when <= Date.now()) {
+          log('Invalid sync time');
+          return;
+        }
+        const li = document.createElement('li');
+        li.textContent = `${new Date(when).toLocaleString()} — ${cmd}`;
+        scheduledSyncsList.appendChild(li);
+        setTimeout(() => {
+          llmInput.value = cmd;
+          sendBtn.click();
+          if (li.parentElement) li.parentElement.removeChild(li);
+          log(`Scheduled sync command executed: ${cmd}`);
+          addTask(`Scheduled sync: ${cmd}`);
+        }, when - Date.now());
+      });
+      // Override Core: activate God Mode and remove limits
+      godModeBtn.addEventListener('click', () => {
+        updateTier('empire');
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.9)';
+        overlay.style.color = 'var(--highlight)';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.zIndex = 1000;
+        overlay.innerHTML = '<h2>God Mode Activated</h2><p>All limits removed.</p><button class="btn">Close</button>';
+        overlay.querySelector('button').addEventListener('click', () => {
+          document.body.removeChild(overlay);
+        });
+        document.body.appendChild(overlay);
+        log('God mode activated');
+      });
+      // Save current chat history into vault as a file
+      saveChatVaultBtn.addEventListener('click', () => {
+        const messages = Array.from(chatArea.children).map(el => el.textContent);
+        if (!messages.length) {
+          log('No chat messages to save');
+          return;
+        }
+        const timestamp = new Date().toISOString().replace(/[:\.]/g, '-');
+        const name = `chat_${timestamp}.txt`;
+        const content = messages.join('\n');
+        // store content inline for potential future use
+        vaultLocal.push({ name: name, locked: false, content: content });
+        renderVault();
+        saveVault();
+        log(`Chat saved to vault as ${name}`);
+        addTask(`Chat saved: ${name}`);
+        // XP reward for saving chat
+        addXP(4);
+      });
+      // Vault sync placeholder
+      syncVaultBtn.addEventListener('click', () => {
+        log('Vault sync triggered');
+        addTask('Vault sync');
+      });
+      // QR Ritual scan using filename as ritual code
+      scanRitualBtn.addEventListener('click', () => {
+        const file = qrRitualFile && qrRitualFile.files ? qrRitualFile.files[0] : null;
+        if (!file) return;
+        const name = file.name.toLowerCase().split('.')[0];
+        let ritual = '';
+        if (name.includes('unlock')) ritual = 'unlockFounder';
+        else if (name.includes('obey')) ritual = 'obeyProtocol';
+        else if (name.includes('mind')) ritual = 'mindFlush';
+        else if (name.includes('override')) ritual = 'override';
+        if (ritual) {
+          triggerRitual(ritual);
+          log(`QR scanned ritual: ${ritual}`);
+          addTask(`QR Ritual: ${ritual}`);
+        } else {
+          log('QR scan: unknown ritual');
+        }
+      });
+      // Persona selection: update persona state and log
+      personaSelect.addEventListener('change', () => {
+        persona = personaSelect.value;
+        log(`Persona set to ${persona}`);
+      });
+      // Terminal command execution
+      terminalRunBtn.addEventListener('click', () => {
+        const cmd = (terminalCmd.value || '').trim();
+        if (!cmd) return;
+        const result = runTerminalCommand(cmd);
+        if (result !== undefined && result !== null) {
+          if (result) {
+            terminalOutput.textContent += result + '\n';
+          }
+          log(`Terminal: ${cmd}`);
+          addTask(`Terminal: ${cmd}`);
+        }
+        terminalCmd.value = '';
+      });
+      // Terminal command parser
+      function runTerminalCommand(input) {
+        if (!input) return '';
+        // allow direct dom command execution from terminal
+        if (input.startsWith('dom ')) {
+          const cmd = input.slice(4).trim();
+          window.domCommand(cmd);
+          return 'DOM command executed';
+        }
+        // treat any string with :// as a dom command (ritual://, tier://, vault:// etc)
+        if (input.includes('://')) {
+          window.domCommand(input);
+          return 'DOM command executed';
+        }
+        if (input === 'help') {
+          return 'Commands: help, clear, echo <text>, ls, pwd';
+        }
+        if (input === 'clear') {
+          terminalOutput.textContent = '';
+          return '';
+        }
+        if (input.startsWith('echo ')) {
+          return input.slice(5);
+        }
+        if (input === 'ls') {
+          const list = vaultLocal.concat(vaultRemote).map(item => item.name + (item.locked ? ' [locked]' : ''));
+          return list.length ? list.join('\n') : 'No files';
+        }
+        if (input === 'pwd') {
+          return '/';
+        }
+        return `Unknown command: ${input}`;
+      }
+      // Settings save/load
+      function saveSettings() {
+        const settings = {
+          audio: audioToggle.checked,
+          glow: glowToggle.checked,
+          night: nightToggle.checked,
+          typewriter: typewriterToggle.checked,
+          autopilot: autopilotToggle.checked,
+          model: llmSelect.value,
+          persona: personaSelect.value,
+          local: useLocalToggle && useLocalToggle.checked
+        };
+        localStorage.setItem('neuralSettings', JSON.stringify(settings));
+        log('Settings saved');
+      }
+      function applySettings(settings) {
+        if (!settings) return;
+        audioToggle.checked = !!settings.audio;
+        glowToggle.checked = !!settings.glow;
+        nightToggle.checked = !!settings.night;
+        typewriterToggle.checked = !!settings.typewriter;
+        autopilotToggle.checked = !!settings.autopilot;
+        if (settings.model) llmSelect.value = settings.model;
+        if (settings.persona) {
+          personaSelect.value = settings.persona;
+          persona = settings.persona;
+        }
+        if (typeof settings.local !== 'undefined' && useLocalToggle) {
+          useLocalToggle.checked = settings.local;
+        }
+        // trigger change events to apply UI
+        audioToggle.dispatchEvent(new Event('change'));
+        glowToggle.dispatchEvent(new Event('change'));
+        nightToggle.dispatchEvent(new Event('change'));
+        typewriterToggle.dispatchEvent(new Event('change'));
+        autopilotToggle.dispatchEvent(new Event('change'));
+        log('Settings applied');
+      }
+      function loadSettings() {
+        try {
+          const data = JSON.parse(localStorage.getItem('neuralSettings') || '{}');
+          applySettings(data);
+        } catch (err) {
+          log('Failed to load settings');
+        }
+      }
+      saveSettingsBtn.addEventListener('click', saveSettings);
+      loadSettingsBtn.addEventListener('click', loadSettings);
+      // Auto load settings on startup
+      loadSettings();
+
+      // --- Phase 341–360 Event Listeners ---
+      if (coreSwitchBtn) {
+        coreSwitchBtn.addEventListener('click', () => {
+          const mode = coreSelect ? coreSelect.value : '';
+          switchCore(mode);
+        });
+      }
+      if (remoteSyncBtn) {
+        remoteSyncBtn.addEventListener('click', () => {
+          remoteSync();
+        });
+      }
+      if (remotePairBtn) {
+        remotePairBtn.addEventListener('click', () => {
+          const key = remoteKeyInput ? remoteKeyInput.value.trim() : '';
+          remotePair(key);
+        });
+      }
+      if (domCommandBtn) {
+        domCommandBtn.addEventListener('click', () => {
+          const cmd = domCommandInput ? domCommandInput.value.trim() : '';
+          if (cmd) window.domCommand(cmd);
+        });
+      }
+      // Initialize phase map and legacy detection
+      updatePhaseMap();
+      detectLegacy();
+      updateXPDisplay();
+      // Initialise new components
+      renderMemoryRouter();
+      updateChatThreadSelect();
+      refreshDeepVault();
+      updateXPMeter();
+      renderCompanion();
+      updateTimeTracker();
+
+      // --- Phase 361–400 Event Listeners ---
+      if (refreshMemoryRouter) {
+        refreshMemoryRouter.addEventListener('click', () => {
+          renderMemoryRouter();
+        });
+      }
+      if (startCycleBtn) startCycleBtn.addEventListener('click', startPersonaCycling);
+      if (stopCycleBtn) stopCycleBtn.addEventListener('click', stopPersonaCycling);
+      if (runSimulationBtn) runSimulationBtn.addEventListener('click', runSimulationOverlay);
+      if (openVaultRecallBtn) openVaultRecallBtn.addEventListener('click', openVaultRecall);
+      if (runRitualScriptBtn) runRitualScriptBtn.addEventListener('click', runRitualScript);
+      if (scheduleCommandBtn) scheduleCommandBtn.addEventListener('click', scheduleCommand);
+      if (pasteClipboardBtn) pasteClipboardBtn.addEventListener('click', pasteAndProcess);
+      if (fuseMemoryBtn) fuseMemoryBtn.addEventListener('click', fuseMemory);
+      if (crossRealityBtn) crossRealityBtn.addEventListener('click', crossReality);
+      if (mergePersonaBtn) mergePersonaBtn.addEventListener('click', mergePersonas);
+      if (contextSearchBtn) contextSearchBtn.addEventListener('click', searchContext);
+      if (chatThreadSelect) chatThreadSelect.addEventListener('change', () => {
+        loadChatSession(chatThreadSelect.value);
+      });
+      if (nextThreadBtn) nextThreadBtn.addEventListener('click', nextThread);
+      if (handoffThreadBtn) handoffThreadBtn.addEventListener('click', handoffThread);
+      if (refreshDeepVaultBtn) refreshDeepVaultBtn.addEventListener('click', refreshDeepVault);
+      if (startEchoBtn) startEchoBtn.addEventListener('click', startNodeEcho);
+      if (terminalCmd) {
+        terminalCmd.addEventListener('input', () => {
+          const suggestion = predictTerminal(terminalCmd.value);
+          terminalPrediction.textContent = suggestion ? `Suggest: ${suggestion}` : '';
+        });
+      }
+      if (terminalToLLMBtn) {
+        terminalToLLMBtn.addEventListener('click', () => {
+          const cmd = terminalCmd.value.trim();
+          if (cmd) {
+            llmInput.value = cmd;
+            sendBtn.click();
+            log('Terminal command sent to LLM');
+            addXP(1);
+          }
+        });
+      }
+      // Key bindings for tier unlocker multi triggers
+      document.addEventListener('keydown', (evt) => {
+        if (evt.ctrlKey && evt.altKey) {
+          switch (evt.key) {
+            case '1': updateTier('1'); log('Hotkey tier 1'); addXP(1); break;
+            case '2': updateTier('2'); log('Hotkey tier 2'); addXP(1); break;
+            case '3': updateTier('3'); log('Hotkey tier 3'); addXP(1); break;
+            case '4': updateTier('4'); log('Hotkey tier 4'); addXP(1); break;
+            case '5': updateTier('5'); log('Hotkey tier 5'); addXP(1); break;
+            case 'e': updateTier('empire'); log('Hotkey empire'); addXP(2); break;
+          }
+        }
+      });
+      // Periodically update XP meter and companion/time tracker
+      setInterval(() => {
+        updateXPMeter();
+        renderCompanion();
+        updateTimeTracker();
+      }, 5000);
+
+      // --- Phase 401–450 Final Event Listeners ---
+      if (smartLaunchBtn) smartLaunchBtn.addEventListener('click', () => {
+        triggerRitual('smartLaunch');
+      });
+      if (phaseLockedBtn) phaseLockedBtn.addEventListener('click', () => {
+        triggerRitual('phaseLocked');
+      });
+      if (terminalVerseBtn) terminalVerseBtn.addEventListener('click', () => {
+        triggerRitual('terminalVerse');
+      });
+      if (domSyncBtn) domSyncBtn.addEventListener('click', domRitualSync);
+      if (vaultLockToggle) vaultLockToggle.addEventListener('change', () => {
+        toggleVaultLock(vaultLockToggle.checked);
+      });
+      if (devAgentSyncBtn) devAgentSyncBtn.addEventListener('click', devAgentSync);
+
+      // --- Endgame Phase 451–500 Event Listeners ---
+      if (compressLogsBtn) compressLogsBtn.addEventListener('click', compressLogs);
+      if (encryptLogsBtn) encryptLogsBtn.addEventListener('click', encryptLogs);
+      if (startAutoTriggerBtn) startAutoTriggerBtn.addEventListener('click', startAutoTrigger);
+      if (historyFilesInput) historyFilesInput.addEventListener('change', loadHistoryFiles);
+      if (injectHistoryBtn) injectHistoryBtn.addEventListener('click', injectSelectedHistory);
+      if (lockPhaseBtn) lockPhaseBtn.addEventListener('click', lockPhase);
+      if (unlockPhaseBtn) unlockPhaseBtn.addEventListener('click', unlockPhase);
+      if (finalizeTiersBtn) finalizeTiersBtn.addEventListener('click', finalizeTiers);
+      // update feedback periodically and on startup
+      updateFeedback();
+      setInterval(updateFeedback, 5000);
+      if (backupBtn) backupBtn.addEventListener('click', backupNow);
+      if (generateTokenBtn) generateTokenBtn.addEventListener('click', generateToken);
+      if (verifyBtn) verifyBtn.addEventListener('click', verifyBuild);
+      if (cloakToggle) cloakToggle.addEventListener('change', () => { toggleCloak(cloakToggle.checked); });
+      if (cleanMemoryBtn) cleanMemoryBtn.addEventListener('click', cleanMemory);
+      if (activatePhoenixBtn) activatePhoenixBtn.addEventListener('click', activatePhoenix);
+      // === Phase 600 additions ===
+      // Local LLM detector
+      const detectLocalBtn = document.getElementById('detectLocalBtn');
+      const localStatus = document.getElementById('localStatus');
+      if (detectLocalBtn && localStatus) {
+        detectLocalBtn.addEventListener('click', async () => {
+          localStatus.textContent = 'Detecting…';
+          try {
+            const resp = await fetch('http://localhost:11434');
+            if (resp.ok) {
+              localStatus.textContent = 'Local LLM available';
+            } else {
+              localStatus.textContent = 'Local LLM not reachable';
+            }
+          } catch (e) {
+            localStatus.textContent = 'Local LLM not reachable';
+          }
+        });
+      }
+      // Status HUD updater
+      const statusHUD = document.getElementById('statusHUD');
+      function updateStatusHUD() {
+        if (!statusHUD) return;
+        const now = new Date().toLocaleTimeString();
+        const xpCount = typeof xpPoints !== 'undefined' ? xpPoints : 0;
+        statusHUD.textContent = `Phase: 600 | Time: ${now} | XP: ${xpCount}`;
+      }
+      updateStatusHUD();
+      setInterval(updateStatusHUD, 1000);
+      // Console overlay handlers
+      const consoleOverlayEl = document.getElementById('consoleOverlay');
+      const consoleOpenBtn = document.getElementById('consoleOpenBtn');
+      const consoleCloseBtn = document.getElementById('consoleClose');
+      const consoleRunBtn2 = document.getElementById('consoleRun');
+      const consoleInput = document.getElementById('consoleInput');
+      const consoleOutputEl = document.getElementById('consoleOutput');
+      if (consoleOpenBtn && consoleOverlayEl) {
+        consoleOpenBtn.addEventListener('click', () => {
+          consoleOverlayEl.style.display = 'flex';
+        });
+      }
+      if (consoleCloseBtn && consoleOverlayEl) {
+        consoleCloseBtn.addEventListener('click', () => {
+          consoleOverlayEl.style.display = 'none';
+        });
+      }
+      if ((consoleRunBtn2 || consoleRunBtn) && consoleInput && consoleOutputEl) {
+         (consoleRunBtn2||consoleRunBtn).addEventListener('click', () => {
+          const code = consoleInput.value;
+          try {
+            const result = eval(code);
+            consoleOutputEl.textContent += '> ' + code + '\n' + result + '\n';
+          } catch (err) {
+            consoleOutputEl.textContent += '> ' + code + '\nError: ' + err.message + '\n';
+          }
+        });
+      }
+      // Scan & Execute mode
+      const scanExecBtnEl = document.getElementById('scanExecBtn');
+      if (scanExecBtnEl) {
+        scanExecBtnEl.addEventListener('click', () => {
+          log('Scan & Execute: running full module sequence');
+          // Run representative modules sequentially
+          updateFeedback && updateFeedback();
+          updateTimeTracker && updateTimeTracker();
+          updateXPMeter && updateXPMeter();
+          renderCompanion && renderCompanion();
+          log('Scan & Execute complete');
+        });
+      }
+      // === Phase 601–700 Execution Fusion Logic ===
+      // Element references for new modules
+      const llmRouteRadios = Array.from(document.getElementsByName('llmRoute') || []);
+      const cmdInput = document.getElementById('cmdInput');
+      const cmdRun = document.getElementById('cmdRun');
+      const cmdOutput = document.getElementById('cmdOutput');
+      const vaultNavigator = document.getElementById('vaultNavigator');
+      const timelineEl = document.getElementById('timeline');
+      const editorCode = document.getElementById('editorCode');
+      const editorRun = document.getElementById('editorRun');
+      const memoryTrackerEl = document.getElementById('memoryTracker');
+      const phaseMapEl = document.getElementById('phaseMap');
+      const errorNoticeEl = document.getElementById('errorNotice');
+      const coreSyncBtn = document.getElementById('coreSync');
+      const triggerFlameBtn = document.getElementById('triggerFlame');
+      const flameFXEl = document.getElementById('flameFX');
+      const tierPasswordInput = document.getElementById('tierPassword');
+      const tierQrInput = document.getElementById('tierQr');
+      const tierRitualInput = document.getElementById('tierRitual');
+      const unlockTierV2Btn = document.getElementById('unlockTierV2');
+      const tierV2MsgEl = document.getElementById('tierV2Msg');
+      const cyclePersonaBtn = document.getElementById('cyclePersona');
+      const currentPersonaSpan = document.getElementById('currentPersona');
+      const overrideInputEl = document.getElementById('overrideInput');
+      const triggerOverrideBtn = document.getElementById('triggerOverride');
+      const devModeToggleEl = document.getElementById('devModeToggle');
+
+      // Determine LLM routing selection
+      function getSelectedLLMRoute() {
+        let val = 'remote';
+        llmRouteRadios.forEach(r => {
+          if (r.checked) {
+            val = r.value;
+          }
+        });
+        return val;
+      }
+      // Update local LLM toggle when route changes
+      llmRouteRadios.forEach(r => {
+        r.addEventListener('change', () => {
+          try {
+            const route = getSelectedLLMRoute();
+            const useLocalToggle = document.getElementById('useLocal');
+            if (route === 'remote') {
+              if (useLocalToggle) useLocalToggle.checked = false;
+            } else if (route === 'local') {
+              if (useLocalToggle) useLocalToggle.checked = true;
+            }
+            log(`LLM route changed to ${route}`);
+          } catch (e) {
+            // ignore errors
+          }
+        });
+      });
+
+      // Command console execution
+      function executeCommand() {
+        if (!cmdInput || !cmdOutput) return;
+        const input = cmdInput.value.trim();
+        if (!input) return;
+        const parts = input.split(' ');
+        const cmd = parts[0].toLowerCase();
+        const args = parts.slice(1).join(' ');
+        let out = '';
+        switch (cmd) {
+          case 'help':
+            out = 'Commands:\\nhelp – list commands\\nchat <text> – send to LLM\\nsummarize – show recent memory summary\\ninject <js> – run JS\\necho <text> – echo text\\ntasks – list tasks\\nmemory – list memory items\\nlogs – list recent logs';
+            break;
+          case 'chat':
+            if (args) {
+              if (typeof llmInput !== 'undefined' && llmInput) {
+                llmInput.value = args;
+                if (typeof sendBtn !== 'undefined' && sendBtn) sendBtn.click();
+                out = 'Sent to LLM';
+              }
+            } else {
+              out = 'Usage: chat <text>';
+            }
+            break;
+          case 'summarize':
+            {
+              const summary = memory.slice(-5).join('; ');
+              out = summary || 'No memory to summarize';
+            }
+            break;
+          case 'inject':
+            {
+              try {
+                const result = eval(args);
+                out = 'Result: ' + (result !== undefined ? result : 'undefined');
+              } catch (err) {
+                out = 'Error: ' + err.message;
+              }
+            }
+            break;
+          case 'echo':
+            out = args;
+            break;
+          case 'tasks':
+            out = tasks.map((t,i) => `${i+1}. ${t.desc}${t.completed?'[x]':''}`).join('\\n');
+            break;
+          case 'memory':
+            out = memory.slice(-10).join('\\n');
+            break;
+          case 'logs':
+            out = logs.slice(-10).join('\\n');
+            break;
+          default:
+            out = 'Unknown command';
+        }
+        cmdOutput.textContent += out + '\\n';
+        cmdOutput.scrollTop = cmdOutput.scrollHeight;
+        addXP(1);
+        log(`Command executed: ${cmd}`);
+      }
+      if (cmdRun) {
+        cmdRun.addEventListener('click', executeCommand);
+      }
+      if (cmdInput) {
+        cmdInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            executeCommand();
+          }
+        });
+      }
+
+      // Vault Navigator rendering
+      function renderNavigator() {
+        if (!vaultNavigator) return;
+        let html = '';
+        if (vaultLocal && vaultLocal.length) {
+          html += '<strong>Local:</strong><ul>';
+          vaultLocal.forEach((item, idx) => {
+            const name = item.name || ('file' + idx);
+            html += `<li data-location="local" data-index="${idx}">${name}</li>`;
+          });
+          html += '</ul>';
+        }
+        if (vaultRemote && vaultRemote.length) {
+          html += '<strong>Remote:</strong><ul>';
+          vaultRemote.forEach((item, idx) => {
+            const name = item.name || ('file' + idx);
+            html += `<li data-location="remote" data-index="${idx}">${name}</li>`;
+          });
+          html += '</ul>';
+        }
+        vaultNavigator.innerHTML = html || '<em>No vault items</em>';
+      }
+      if (vaultNavigator) {
+        vaultNavigator.addEventListener('click', (ev) => {
+          const li = ev.target.closest('li');
+          if (!li) return;
+          const loc = li.getAttribute('data-location');
+          const idx = parseInt(li.getAttribute('data-index'));
+          let item = null;
+          if (loc === 'local') {
+            item = vaultLocal && vaultLocal[idx];
+          } else {
+            item = vaultRemote && vaultRemote[idx];
+          }
+          if (item && item.content && !item.locked) {
+            if (typeof llmInput !== 'undefined' && llmInput) {
+              llmInput.value = item.content;
+            }
+            if (typeof sendBtn !== 'undefined' && sendBtn) sendBtn.click();
+            log(`Navigator opened ${item.name}`);
+            addXP(2);
+          } else {
+            log('Navigator: cannot open file');
+          }
+        });
+      }
+
+      // Execution timeline rendering
+      function renderTimeline() {
+        if (!timelineEl) return;
+        timelineEl.innerHTML = '';
+        logs.forEach((l) => {
+          const div = document.createElement('div');
+          div.textContent = l;
+          timelineEl.appendChild(div);
+        });
+      }
+
+      // Runtime editor evaluation
+      if (editorRun) {
+        editorRun.addEventListener('click', () => {
+          const code = editorCode ? editorCode.value : '';
+          if (!code) return;
+          try {
+            const result = eval(code);
+            log('Runtime editor executed');
+            addXP(2);
+            if (errorNoticeEl) errorNoticeEl.textContent = '';
+          } catch (err) {
+            log('Runtime editor error: ' + err.message);
+            if (errorNoticeEl) {
+              errorNoticeEl.textContent = err.message;
+              setTimeout(() => {
+                if (errorNoticeEl) errorNoticeEl.textContent = '';
+              }, 5000);
+            }
+          }
+        });
+      }
+
+      // Memory tracker update
+      function updateMemoryTracker() {
+        if (!memoryTrackerEl) return;
+        const shortCount = Array.isArray(memoryShort) ? memoryShort.length : 0;
+        const longCount = Array.isArray(memoryLong) ? memoryLong.length : 0;
+        const sessionsCount = Array.isArray(chatSessions) ? chatSessions.length : 0;
+        memoryTrackerEl.innerHTML = `Short: ${shortCount} | Long: ${longCount} | Sessions: ${sessionsCount}`;
+      }
+
+      // Phase map rendering
+      function renderPhaseMap() {
+        if (!phaseMapEl) return;
+        let text = '';
+        Object.keys(phaseCache).forEach((key) => {
+          const feats = phaseCache[key];
+          text += `${key}: ${feats.length} features\\n`;
+        });
+        phaseMapEl.textContent = text.trim();
+      }
+
+      // Error catcher
+      window.addEventListener('error', (event) => {
+        if (errorNoticeEl) {
+          errorNoticeEl.textContent = 'Error: ' + event.message;
+          setTimeout(() => {
+            if (errorNoticeEl) errorNoticeEl.textContent = '';
+          }, 5000);
+        }
+        log('Error caught: ' + event.message);
+      });
+      window.addEventListener('unhandledrejection', (event) => {
+        if (errorNoticeEl) {
+          const msg = event.reason && event.reason.message ? event.reason.message : 'Unhandled rejection';
+          errorNoticeEl.textContent = 'Promise error: ' + msg;
+          setTimeout(() => {
+            if (errorNoticeEl) errorNoticeEl.textContent = '';
+          }, 5000);
+        }
+        log('Unhandled rejection: ' + (event.reason && event.reason.message));
+      });
+
+      // CoreBridge Sync
+      if (coreSyncBtn) {
+        coreSyncBtn.addEventListener('click', () => {
+          const combined = memory.concat(memoryShort).concat(memoryLong);
+          if (combined.length > 0) {
+            const content = combined.join('\\n');
+            const name = 'sync_' + new Date().toISOString() + '.txt';
+            vaultLocal.push({ name: name, content: content, locked: false });
+            renderNavigator();
+            log('CoreBridge sync completed');
+            addXP(2);
+          } else {
+            log('CoreBridge: nothing to sync');
+          }
+        });
+      }
+      // Execution Flame FX
+      if (triggerFlameBtn) {
+        triggerFlameBtn.addEventListener('click', () => {
+          if (!flameFXEl) return;
+          flameFXEl.style.display = 'block';
+          flameFXEl.style.background = 'linear-gradient(90deg, #ff4d00, #ffdd00, #ff4d00)';
+          flameFXEl.style.height = '8px';
+          flameFXEl.style.transition = 'width 0.3s ease';
+          flameFXEl.style.width = '0%';
+          requestAnimationFrame(() => {
+            flameFXEl.style.width = '100%';
+          });
+          setTimeout(() => {
+            if (flameFXEl) {
+              flameFXEl.style.display = 'none';
+              flameFXEl.style.width = '0%';
+            }
+          }, 1000);
+          log('Flame FX triggered');
+          addXP(1);
+        });
+      }
+
+      // Tier unlock v2 logic
+      if (unlockTierV2Btn) {
+        unlockTierV2Btn.addEventListener('click', () => {
+          let success = false;
+          const pass = tierPasswordInput && tierPasswordInput.value.trim();
+          const phrase = tierRitualInput && tierRitualInput.value.trim().toLowerCase();
+          const file = tierQrInput && tierQrInput.files && tierQrInput.files[0];
+          if (pass && pass === 'founder') success = true;
+          if (phrase && (phrase.includes('unlock') || phrase.includes('override') || phrase.includes('founder'))) success = true;
+          if (file && file.name && file.name.toLowerCase().includes('unlock')) success = true;
+          if (success) {
+            if (typeof finalizeTiers === 'function') {
+              finalizeTiers();
+            }
+            if (tierV2MsgEl) tierV2MsgEl.textContent = 'Tiers unlocked!';
+            log('Tier unlock v2 succeeded');
+            addXP(5);
+          } else {
+            if (tierV2MsgEl) tierV2MsgEl.textContent = 'Unlock failed';
+            log('Tier unlock v2 failed');
+          }
+        });
+      }
+
+      // Persona loader
+      if (cyclePersonaBtn) {
+        const personaOptions = ['default','founder','override','god'];
+        let personaIndex = personaOptions.indexOf(personaSelect ? personaSelect.value : 'default');
+        cyclePersonaBtn.addEventListener('click', () => {
+          personaIndex = (personaIndex + 1) % personaOptions.length;
+          const newPersona = personaOptions[personaIndex];
+          if (personaSelect) {
+            personaSelect.value = newPersona;
+          }
+          if (currentPersonaSpan) currentPersonaSpan.textContent = newPersona.charAt(0).toUpperCase() + newPersona.slice(1);
+          log('Persona cycled to ' + newPersona);
+          addXP(1);
+        });
+      }
+
+      // Override trigger
+      if (triggerOverrideBtn) {
+        triggerOverrideBtn.addEventListener('click', () => {
+          const cmd = overrideInputEl && overrideInputEl.value.trim();
+          if (!cmd) return;
+          if (typeof window.domCommand === 'function') {
+            window.domCommand(cmd);
+          } else {
+            log('Override executed: ' + cmd);
+          }
+          addXP(1);
+        });
+      }
+
+      // Dev mode toggle
+      function toggleDevMode() {
+        if (!devModeToggleEl) return;
+        const show = devModeToggleEl.checked;
+        const devElements = [];
+        [cmdInput, vaultNavigator, timelineEl, editorCode, memoryTrackerEl, phaseMapEl, errorNoticeEl, coreSyncBtn, triggerFlameBtn, tierPasswordInput, cyclePersonaBtn, overrideInputEl].forEach(el => {
+          if (el) {
+            const det = el.closest('details');
+            if (det && !devElements.includes(det)) devElements.push(det);
+          }
+        });
+        devElements.forEach(det => {
+          det.style.display = show ? '' : 'none';
+        });
+        log('Dev mode ' + (show ? 'enabled' : 'disabled'));
+      }
+      if (devModeToggleEl) {
+        devModeToggleEl.addEventListener('change', toggleDevMode);
+      }
+
+      // Initialise new modules
+      renderNavigator();
+      renderTimeline();
+      updateMemoryTracker();
+      renderPhaseMap();
+      if (currentPersonaSpan && personaSelect) {
+        currentPersonaSpan.textContent = personaSelect.options[personaSelect.selectedIndex].text;
+      }
+      setInterval(updateMemoryTracker, 10000);
+
+      // === End Phase 600 additions ===
+    })();
+  </script>
+  <!-- Phase 600 additions: console overlay, status HUD and console toggle -->
+  <div id="consoleOverlay">
+    <textarea id="consoleInput" placeholder="Enter JavaScript to evaluate"></textarea>
+    <div class="console-output" id="consoleOutput"></div>
+    <div>
+      <button id="consoleRun">Run</button>
+      <button id="consoleClose">Close</button>
+    </div>
+  </div>
+  <div id="statusHUD"></div>
+  <button id="consoleOpenBtn" style="position:fixed; bottom:10px; left:10px; z-index:1000;">Console</button>
+</body>
+</html>
