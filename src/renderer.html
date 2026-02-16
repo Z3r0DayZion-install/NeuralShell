@@ -1,21 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuralShell</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuralShell Desktop</title>
+  <link rel="icon" type="image/svg+xml" href="assets/app.svg">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div id="container">
-        <textarea id="consoleOutput" readonly></textarea>
-        <textarea id="consoleInput" placeholder="Type your prompt here..."></textarea>
-        <button id="sendBtn">Send</button>
-        <button id="connectBtn">Connect</button>
-        <label id="llmStatus">Status: Disconnected</label>
+<body data-theme="dark">
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+  <header class="topbar">
+    <div class="brand">
+      <h1>NeuralShell</h1>
+      <p id="appClock">--:--:--</p>
     </div>
+    <div class="status-group">
+      <span id="llmStatus" class="status status-offline">Disconnected</span>
+      <button id="connectBtn">Connect</button>
+      <button id="runSelfTestBtn">Self Test</button>
+      <button id="runButtonAuditBtn">Button Audit</button>
+    </div>
+  </header>
 
-    <script src="main.js"></script>
-    <script src="preload.js"></script>
+  <main class="layout">
+    <aside class="panel">
+      <h2>Sessions</h2>
+      <div class="row">
+        <input id="sessionSearchInput" type="text" placeholder="Search sessions">
+        <button id="newSessionBtn">New</button>
+      </div>
+      <div class="row">
+        <button id="renameSessionBtn">Rename</button>
+        <button id="duplicateSessionBtn">Duplicate</button>
+        <button id="deleteSessionBtn">Delete</button>
+      </div>
+      <ul id="sessionList" class="list"></ul>
+    </aside>
+
+    <section class="panel chat-panel">
+      <h2>Chat</h2>
+      <div class="row chat-toolbar">
+        <label for="modelSelect">Model</label>
+        <select id="modelSelect">
+          <option value="llama3">llama3</option>
+          <option value="mistral">mistral</option>
+          <option value="qwen2.5">qwen2.5</option>
+        </select>
+        <label for="temperatureInput">Temperature</label>
+        <input id="temperatureInput" type="number" min="0" max="2" step="0.1" value="0.4">
+      </div>
+      <textarea id="systemPromptInput" rows="2" placeholder="System prompt (optional)"></textarea>
+      <div id="chatWindow" class="chat-window"></div>
+      <textarea id="llmInput" rows="3" placeholder="Message... (Enter to send, Shift+Enter new line)"></textarea>
+      <div class="row chat-actions">
+        <button id="sendBtn">Send</button>
+        <button id="retryBtn">Retry Last</button>
+        <button id="clearChatBtn">Clear Chat</button>
+        <button id="exportChatBtn">Export Chat</button>
+        <button id="importChatBtn">Import Chat</button>
+        <input id="importChatFile" type="file" accept=".json" hidden>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <h2>Logs</h2>
+      <div class="row">
+        <button id="clearLogsBtn">Clear Logs</button>
+        <button id="exportLogsBtn">Export Logs</button>
+        <button id="clearHistoryBtn">Clear All History</button>
+      </div>
+      <pre id="logOutput" class="output"></pre>
+
+      <h2>Diagnostics</h2>
+      <pre id="diagnosticOutput" class="output"></pre>
+
+      <h2>Settings</h2>
+      <div class="row">
+        <label for="themeSelect">Theme</label>
+        <select id="themeSelect">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+        <button id="saveSettingsBtn">Save</button>
+      </div>
+
+      <h2>Autonomous Agent</h2>
+      <div class="row">
+        <input id="autoGoalInput" type="text" placeholder="Autonomous goal (e.g., build login API)">
+      </div>
+      <div class="row">
+        <label for="autoIntervalInput">Interval (sec)</label>
+        <input id="autoIntervalInput" type="number" min="5" max="120" step="1" value="20">
+        <button id="toggleAutoBtn">Start Auto</button>
+      </div>
+
+      <h2>Coding Copilot</h2>
+      <div class="row">
+        <textarea id="codeTaskInput" rows="3" placeholder="Describe code you want generated..."></textarea>
+      </div>
+      <div class="row">
+        <button id="generateCodeBtn">Generate Code</button>
+        <button id="copyCodeBtn">Copy Code</button>
+        <button id="exportCodeBtn">Export Code</button>
+      </div>
+      <pre id="codeOutput" class="output"></pre>
+
+      <h2>TEAR Format</h2>
+      <div class="row">
+        <button id="exportTearBtn">Export .tear</button>
+        <button id="importTearBtn">Import .tear</button>
+        <button id="previewTearBtn">Preview Merge</button>
+        <select id="tearMergeMode">
+          <option value="replace">Replace State</option>
+          <option value="merge">Merge Sessions + Logs</option>
+        </select>
+        <input id="importTearFile" type="file" accept=".tear,.json" hidden>
+      </div>
+      <div class="row">
+        <input id="tearSecretInput" type="password" placeholder="TEAR secret (optional)">
+        <input id="tearHintInput" type="text" placeholder="TEAR hint (optional)">
+      </div>
+      <div class="row">
+        <label><input id="tearRevealToggle" type="checkbox"> Show secret</label>
+        <button id="clearTearSecretBtn">Clear Secret</button>
+      </div>
+      <pre id="tearPreviewOutput" class="output"></pre>
+
+      <h2>Memory Store</h2>
+      <div class="row">
+        <input id="memoryQueryInput" type="text" placeholder="Search memory records">
+      </div>
+      <div class="row">
+        <button id="memorySearchBtn">Search Memory</button>
+        <button id="memoryCompactBtn">Compact Memory</button>
+      </div>
+      <pre id="memoryOutput" class="output"></pre>
+
+      <h2>Settings Profiles</h2>
+      <div class="row">
+        <input id="profileNameInput" type="text" placeholder="Profile name">
+        <button id="saveProfileBtn">Save Profile</button>
+      </div>
+      <div class="row">
+        <select id="profileSelect"></select>
+        <button id="loadProfileBtn">Load</button>
+        <button id="deleteProfileBtn">Delete</button>
+      </div>
+
+      <h2>Checkpoints</h2>
+      <div class="row">
+        <button id="saveCheckpointBtn">Save Checkpoint</button>
+        <button id="listCheckpointsBtn">List</button>
+        <button id="recoverCheckpointBtn">Recover Latest</button>
+      </div>
+      <pre id="checkpointOutput" class="output"></pre>
+
+      <h2>Streaming</h2>
+      <div class="row">
+        <button id="startStreamBtn">Start Stream</button>
+        <button id="cancelStreamBtn">Cancel Stream</button>
+        <button id="resumeStreamBtn">Resume Stream</button>
+      </div>
+
+      <h2>Permissions</h2>
+      <div class="row">
+        <button id="refreshPermissionsBtn">Refresh</button>
+        <button id="toggleAutoPermBtn">Toggle Auto</button>
+        <button id="toggleStreamPermBtn">Toggle Stream</button>
+      </div>
+      <pre id="permissionsOutput" class="output"></pre>
+
+      <h2>Telemetry</h2>
+      <div class="row">
+        <button id="refreshTelemetryBtn">Refresh Telemetry</button>
+      </div>
+      <pre id="telemetryOutput" class="output"></pre>
+
+      <h2>Auth</h2>
+      <div class="row">
+        <input id="authPinInput" type="password" placeholder="PIN">
+        <button id="authLoginBtn">Login</button>
+        <button id="authLogoutBtn">Logout</button>
+      </div>
+      <div class="row">
+        <input id="authRecoverConfirmInput" type="text" placeholder="Type RESET PIN to recover">
+        <button id="authRecoverBtn">Recover PIN</button>
+      </div>
+      <pre id="authOutput" class="output"></pre>
+
+      <h2>Vault</h2>
+      <div class="row">
+        <button id="vaultLoadSecretBtn">Load Secret</button>
+        <button id="vaultSaveSecretBtn">Save Secret</button>
+        <button id="vaultClearSecretBtn">Clear Secret</button>
+      </div>
+
+      <h2>Cloud Sync</h2>
+      <div class="row">
+        <input id="syncEndpointInput" type="text" placeholder="https://example.com/sync">
+        <input id="syncTokenInput" type="password" placeholder="Bearer token">
+      </div>
+      <div class="row">
+        <button id="syncPushBtn">Push State</button>
+        <button id="syncPullBtn">Pull State</button>
+      </div>
+      <pre id="syncOutput" class="output"></pre>
+
+      <h2>Updater</h2>
+      <div class="row">
+        <input id="updateFeedInput" type="text" placeholder="https://example.com/latest.yml">
+        <button id="checkUpdateBtn">Check Update</button>
+      </div>
+      <pre id="updateOutput" class="output"></pre>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+  <script src="stateSchema.js"></script>
+  <script src="scripts/helpers.js"></script>
+  <script src="scripts/tear.js"></script>
+  <script src="scripts/panels.js"></script>
+  <script src="renderer.js"></script>
 </body>
 </html>

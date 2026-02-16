@@ -1,17 +1,60 @@
 {
-  "name": "neuralshell_desktop",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "neuralshell-desktop",
+  "version": "0.2.0",
+  "description": "NeuralShell Desktop - hardened local-first AI shell UI",
+  "author": "NeuralEmpire",
+  "license": "MIT",
+  "main": "main.js",
   "type": "commonjs",
+  "scripts": {
+    "icons:generate": "node bin/generate-icons.js",
+    "dev": "electron .",
+    "dev:headless": "set NS_HEADLESS=1&& electron .",
+    "start": "electron .",
+    "start:headless": "set NS_HEADLESS=1&& electron .",
+    "test": "node --test tests",
+    "lint:js": "node --check main.js && node --check preload.js && node --check src/renderer.js",
+    "release:all": "npm run lint:js && npm test && npm run build:win && npm run build:portable",
+    "build:win": "set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win nsis",
+    "build:portable": "set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win portable",
+    "dist:tear": "set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win nsis --publish never"
+  },
   "dependencies": {
-    "axios": "^1.13.5",
-    "electron": "^40.4.1"
+    "node-fetch": "^2.6.11"
+  },
+  "devDependencies": {
+    "electron": "^40.4.1",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "com.neuralshell.desktop",
+    "productName": "NeuralShell TEAR",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "src/assets/app.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "NeuralShell-TEAR-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "NeuralShell-TEAR-Portable-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "src/assets/app.ico",
+      "uninstallerIcon": "src/assets/app.ico",
+      "artifactName": "NeuralShell-TEAR-Setup-${version}.${ext}"
+    }
   }
 }

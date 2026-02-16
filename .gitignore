@@ -1,1 +1,8 @@
 node_modules/
+<<<<<<< HEAD
+=======
+dist/
+win-unpacked/
+build/
+*.exe
+>>>>>>> eb00e77b604fd8822c94b1f5fcac8d6acb45d05c
