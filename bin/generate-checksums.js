@@ -6,27 +6,38 @@ const crypto = require("crypto");
 
 const cwd = process.cwd();
 const distDir = path.join(cwd, "dist");
-const files = [
-  "NeuralShell-TEAR-Setup-0.2.0.exe",
-  "NeuralShell-TEAR-Portable-0.2.0.exe"
-];
 
 if (!fs.existsSync(distDir)) {
   throw new Error("dist directory not found");
 }
 
-const rows = [];
-for (const name of files) {
-  const full = path.join(distDir, name);
-  if (!fs.existsSync(full)) continue;
-  const data = fs.readFileSync(full);
-  const hash = crypto.createHash("sha256").update(data).digest("hex");
-  const size = fs.statSync(full).size;
-  rows.push({ name, hash, size });
+function newestMatch(regex) {
+  const candidates = fs.readdirSync(distDir)
+    .filter((name) => regex.test(name))
+    .map((name) => {
+      const full = path.join(distDir, name);
+      const st = fs.statSync(full);
+      return { name, full, mtimeMs: st.mtimeMs };
+    })
+    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  return candidates[0] || null;
 }
 
-if (!rows.length) {
+const selected = [
+  newestMatch(/^NeuralShell-TEAR-Setup-.*\.exe$/i),
+  newestMatch(/^NeuralShell-TEAR-Portable-.*\.exe$/i)
+].filter(Boolean);
+
+if (!selected.length) {
   throw new Error("no release artifacts found in dist");
+}
+
+const rows = [];
+for (const item of selected) {
+  const data = fs.readFileSync(item.full);
+  const hash = crypto.createHash("sha256").update(data).digest("hex");
+  const size = fs.statSync(item.full).size;
+  rows.push({ name: item.name, hash, size });
 }
 
 const out = ["# Release Checksums", ""];
@@ -40,4 +51,3 @@ for (const row of rows) {
   console.log(`${row.name} ${row.hash}`);
 }
 console.log(`Wrote ${path.relative(cwd, outPath)}`);
-
