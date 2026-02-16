@@ -23,4 +23,5 @@ If you forget the PIN, enter a new PIN, type `RESET PIN`, and use `Recover PIN` 
 ## Utility Scripts
 ```bash
 npm run lint:js
+npm run checksums
 ```

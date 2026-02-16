@@ -8,6 +8,7 @@
   "type": "commonjs",
   "scripts": {
     "icons:generate": "node bin/generate-icons.js",
+    "checksums": "node bin/generate-checksums.js",
     "dev": "electron .",
     "dev:headless": "set NS_HEADLESS=1&& electron .",
     "start": "electron .",
