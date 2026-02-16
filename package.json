@@ -15,7 +15,7 @@
     "start:headless": "set NS_HEADLESS=1&& electron .",
     "test": "node --test tests",
     "lint:js": "node --check main.js && node --check preload.js && node --check src/renderer.js",
-    "release:all": "npm run lint:js && npm test && npm run build:win && npm run build:portable",
+    "release:all": "npm run lint:js && npm test && npm run build:win && npm run build:portable && npm run checksums",
     "build:win": "set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win nsis",
     "build:portable": "set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win portable",
     "dist:tear": "set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win nsis --publish never"
