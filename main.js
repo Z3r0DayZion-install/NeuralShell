@@ -31,6 +31,10 @@ let secretVault;
 const syncClient = new SyncClient();
 const updateService = new UpdateService();
 
+if (process.env.NS_USER_DATA_DIR) {
+  app.setPath("userData", path.resolve(process.env.NS_USER_DATA_DIR));
+}
+
 function emit(channel, payload) {
   for (const win of windows) {
     if (!win.isDestroyed()) {
@@ -57,6 +61,61 @@ function createWindow() {
   win.loadFile("src/renderer.html");
   windows.add(win);
   win.on("closed", () => windows.delete(win));
+  return win;
+}
+
+async function runRecoverySmoke(win) {
+  if (!win || win.isDestroyed()) {
+    app.exit(1);
+    return;
+  }
+  try {
+    const result = await win.webContents.executeJavaScript(`
+      (async () => {
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+        const get = (id) => document.getElementById(id);
+        await sleep(800);
+        const pin = get("authPinInput");
+        const loginBtn = get("authLoginBtn");
+        const logoutBtn = get("authLogoutBtn");
+        const recoverInput = get("authRecoverConfirmInput");
+        const recoverBtn = get("authRecoverBtn");
+        const output = get("authOutput");
+        if (!pin || !loginBtn || !logoutBtn || !recoverInput || !recoverBtn || !output) {
+          return { ok: false, reason: "missing-auth-controls" };
+        }
+
+        pin.value = "2468";
+        loginBtn.click();
+        await sleep(600);
+        if (!/Logged in/i.test(output.textContent || "")) {
+          return { ok: false, reason: "initial-login-failed", output: output.textContent || "" };
+        }
+
+        logoutBtn.click();
+        await sleep(300);
+
+        pin.value = "8642";
+        recoverInput.value = "RESET PIN";
+        recoverBtn.click();
+        await sleep(900);
+        if (!/PIN recovered/i.test(output.textContent || "")) {
+          return { ok: false, reason: "recover-flow-failed", output: output.textContent || "" };
+        }
+
+        pin.value = "8642";
+        loginBtn.click();
+        await sleep(600);
+        if (!/Logged in/i.test(output.textContent || "")) {
+          return { ok: false, reason: "post-recovery-login-failed", output: output.textContent || "" };
+        }
+        return { ok: true };
+      })();
+    `);
+    app.exit(result?.ok ? 0 : 1);
+  } catch {
+    app.exit(1);
+  }
 }
 
 function assertPath(input) {
@@ -169,11 +228,18 @@ app.whenReady().then(async () => {
   secretVault = new SecretVault(path.join(dataDir, "vault"));
   await Promise.all([memoryStore.init(), permissionManager.init(), checkpointManager.init(), authManager.init(), secretVault.init()]);
 
+  let firstWindow = null;
   if (!HEADLESS) {
-    createWindow();
+    firstWindow = createWindow();
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
+  }
+
+  if (process.env.NS_E2E_RECOVERY_SMOKE === "1") {
+    setTimeout(() => {
+      void runRecoverySmoke(firstWindow);
+    }, 200);
   }
 
   registerHandle("read-file", async (_evt, filePath) => {

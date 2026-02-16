@@ -7,15 +7,15 @@ const os = require("os");
 const fs = require("fs");
 const { spawn } = require("node:child_process");
 
-test("Electron app launches and exits in smoke mode", async () => {
+test("Electron auth recovery UI flow succeeds in recovery smoke mode", async () => {
   const electronPath = require("electron");
   const appDir = path.resolve(__dirname, "..");
 
   await new Promise((resolve, reject) => {
-    const userDataDir = path.join(os.tmpdir(), `neuralshell_e2e_smoke_${Date.now()}`);
+    const userDataDir = path.join(os.tmpdir(), `neuralshell_e2e_recovery_${Date.now()}`);
     fs.mkdirSync(userDataDir, { recursive: true });
     const child = spawn(electronPath, [appDir], {
-      env: { ...process.env, NS_E2E_SMOKE: "1", NS_USER_DATA_DIR: userDataDir },
+      env: { ...process.env, NS_E2E_RECOVERY_SMOKE: "1", NS_USER_DATA_DIR: userDataDir },
       windowsHide: true
     });
 
@@ -25,8 +25,8 @@ test("Electron app launches and exits in smoke mode", async () => {
       if (settled) return;
       settled = true;
       child.kill("SIGTERM");
-      reject(new Error("Smoke launch timed out"));
-    }, 15000);
+      reject(new Error("Recovery smoke launch timed out"));
+    }, 20000);
 
     child.stderr.on("data", (d) => {
       stderr += String(d);

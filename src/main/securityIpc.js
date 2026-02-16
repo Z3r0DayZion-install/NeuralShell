@@ -28,16 +28,18 @@ function registerSecurityIpcHandlers({
   registerHandle("auth:recover-pin", async (_evt, pin, confirmation) => {
     const phrase = String(confirmation || "").trim().toUpperCase();
     if (phrase !== "RESET PIN") throw new Error("Type RESET PIN to confirm");
-    const result = await dialog.showMessageBox({
-      type: "warning",
-      buttons: ["Cancel", "Recover PIN"],
-      defaultId: 0,
-      cancelId: 0,
-      title: "Recover PIN",
-      message: "Recover local admin PIN?",
-      detail: "This signs out current sessions and rotates your local PIN. Type RESET PIN in the app to continue."
-    });
-    if (result.response !== 1) throw new Error("PIN recovery cancelled");
+    if (process.env.NS_E2E_RECOVERY_SMOKE !== "1") {
+      const result = await dialog.showMessageBox({
+        type: "warning",
+        buttons: ["Cancel", "Recover PIN"],
+        defaultId: 0,
+        cancelId: 0,
+        title: "Recover PIN",
+        message: "Recover local admin PIN?",
+        detail: "This signs out current sessions and rotates your local PIN. Type RESET PIN in the app to continue."
+      });
+      if (result.response !== 1) throw new Error("PIN recovery cancelled");
+    }
     return authManager.recoverPin(pin, "renderer-recovery");
   });
 
@@ -65,4 +67,3 @@ function registerSecurityIpcHandlers({
 }
 
 module.exports = { registerSecurityIpcHandlers };
-
