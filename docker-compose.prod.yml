@@ -1,0 +1,70 @@
+version: '3.9'
+
+services:
+  neuralshell-router:
+    image: neuralshell:latest
+    container_name: neuralshell-router
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      REQUEST_TIMEOUT_MS: 5000
+      MAX_CONCURRENT_REQUESTS: 32
+      REQUESTS_PER_WINDOW: 120
+      RATE_LIMIT_WINDOW_MS: 60000
+      ENABLE_SECURITY_HEADERS: 'true'
+      PERSIST_VOLATILE_STATE: 'true'
+      # Admin token (use strong secret in production)
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-change-me-in-production}
+      # Prompt API token (use strong secret in production)
+      PROMPT_API_TOKEN: ${PROMPT_API_TOKEN:-change-me-in-production}
+      # OpenAI API key (optional)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Endpoints configuration (JSON array)
+      ROUTER_ENDPOINTS_JSON: '[{"name":"ollama-local","url":"http://ollama:11434/api/generate","model":"llama3"}]'
+    volumes:
+      - neuralshell-state:/app/state
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    # Optional: for development with hot reload
+    # develop:
+    #   watch:
+    #     - action: sync
+    #       path: ./src
+    #       target: /app/src
+    #     - action: rebuild
+    #       path: ./package.json
+    networks:
+      - neuralshell-network
+
+  # Optional: Ollama local LLM service
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_MODELS=/ollama/models
+    volumes:
+      - ollama-models:/ollama/models
+    restart: unless-stopped
+    networks:
+      - neuralshell-network
+    # Pull a model on startup (optional)
+    # command: ollama pull llama3
+
+volumes:
+  neuralshell-state:
+    driver: local
+  ollama-models:
+    driver: local
+
+networks:
+  neuralshell-network:
+    driver: bridge

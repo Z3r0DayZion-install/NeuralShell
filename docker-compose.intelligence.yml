@@ -1,0 +1,178 @@
+version: '3.8'
+
+services:
+  # Kafka Cluster for Event Store
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: neuralshell-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - intelligence-network
+
+  kafka-1:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka-1
+    container_name: neuralshell-kafka-1
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:19092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 2160  # 90 days
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824  # 1GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+    networks:
+      - intelligence-network
+
+  kafka-2:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka-2
+    container_name: neuralshell-kafka-2
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9093"
+      - "19093:19093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9093,PLAINTEXT_HOST://localhost:19093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 2160  # 90 days
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824  # 1GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+    networks:
+      - intelligence-network
+
+  kafka-3:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka-3
+    container_name: neuralshell-kafka-3
+    depends_on:
+      - zookeeper
+    ports:
+      - "9094:9094"
+      - "19094:19094"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9094,PLAINTEXT_HOST://localhost:19094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_LOG_RETENTION_HOURS: 2160  # 90 days
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824  # 1GB
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+    networks:
+      - intelligence-network
+
+  # Kafka topic initialization
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # Wait for Kafka to be ready
+      echo 'Waiting for Kafka to be ready...'
+      cub kafka-ready -b kafka-1:9092 1 60
+      
+      # Create decision events topic with partitioning by decision_type
+      kafka-topics --create --if-not-exists \
+        --bootstrap-server kafka-1:9092 \
+        --topic decision-events \
+        --partitions 12 \
+        --replication-factor 3 \
+        --config retention.ms=7776000000 \
+        --config segment.ms=86400000 \
+        --config min.insync.replicas=2 \
+        --config compression.type=lz4
+      
+      echo 'Kafka topics created successfully'
+      "
+    networks:
+      - intelligence-network
+
+  # TimescaleDB for Time-Series metrics
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    hostname: timescaledb
+    container_name: neuralshell-timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: neuralshell_metrics
+      POSTGRES_USER: neuralshell
+      POSTGRES_PASSWORD: ${TIMESCALE_PASSWORD:-neuralshell_dev_password}
+      POSTGRES_HOST_AUTH_METHOD: md5
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+      - ./k8s/timescaledb-init.sql:/docker-entrypoint-initdb.d/01-timescaledb-init.sql
+      - ./k8s/event-indexes-init.sql:/docker-entrypoint-initdb.d/02-event-indexes-init.sql
+    networks:
+      - intelligence-network
+    command: postgres -c shared_preload_libraries=timescaledb
+
+  # Grafana Tempo for distributed tracing
+  tempo:
+    image: grafana/tempo:latest
+    hostname: tempo
+    container_name: neuralshell-tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./monitoring/tempo-config.yaml:/etc/tempo.yaml
+      - tempo-data:/var/tempo
+    networks:
+      - intelligence-network
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  timescaledb-data:
+  tempo-data:
+
+networks:
+  intelligence-network:
+    driver: bridge

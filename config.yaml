@@ -1,0 +1,34 @@
+# NeuralShell Local-Only Configuration
+version: "1.0.0"
+
+server:
+  port: 3000
+  host: "127.0.0.1" # Listen on localhost only for max security
+
+endpoints:
+  - name: "my-digital-clone"
+    url: "http://localhost:11434/api/chat"
+    model: "my-clone"
+    weight: 100
+    priority: 0
+    enabled: true
+  - name: "ollama-local"
+    url: "http://localhost:11434/api/chat"
+    model: "llama3"
+    weight: 10
+    priority: 1
+    enabled: true
+
+routing:
+  strategy: "failover"
+  adaptive: false
+
+rateLimit:
+  enabled: true
+  requestsPerWindow: 1000
+  windowMs: 60000
+
+features:
+  dryRun: false
+  streaming: false
+  idempotency: true

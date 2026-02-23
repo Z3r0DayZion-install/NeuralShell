@@ -1,0 +1,41 @@
+name: Router Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  proofs_windows:
+    name: Proof Gate (Windows verify:all)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install Desktop
+        run: |
+          node <<'NODE'
+          const { spawn } = require('node:child_process');
+          const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
+          const args = process.platform === 'win32' ? ['/d','/s','/c','npm','ci','--ignore-scripts'] : ['ci','--ignore-scripts'];
+          const child = spawn(cmd, args, { stdio: 'inherit', cwd: 'NeuralShell_Desktop', shell: false });
+          child.on('close', (code) => process.exit(code ?? 1));
+          NODE
+      - run: npm run verify:all
+
+  release:
+    runs-on: ubuntu-latest
+    needs: proofs_windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - run: npm run bench:router

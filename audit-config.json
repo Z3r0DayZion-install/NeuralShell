@@ -1,0 +1,17 @@
+{
+  "audit": {
+    "level": "moderate",
+    "allowlist": []
+  },
+  "vulnerabilities": {
+    "production": {
+      "max": 0,
+      "severity": "moderate"
+    },
+    "dev": {
+      "max": 5,
+      "severity": "low"
+    }
+  },
+  "snapshotTime": "2026-02-18"
+}

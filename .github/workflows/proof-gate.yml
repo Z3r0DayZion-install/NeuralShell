@@ -1,0 +1,52 @@
+name: Proof Gate (No-Fake Pass)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  proof:
+    name: Verify Spine (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        node: [20.x, 22.x]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install (root)
+        run: npm ci --ignore-scripts
+
+      - name: Install (Desktop)
+        run: npm ci --ignore-scripts
+        working-directory: NeuralShell_Desktop
+
+      - name: Verify All (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run verify:all
+
+      - name: Verify Subset (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm run test:root
+          npm run proof:spawn
+          npm run proof:runtime
+          npm run proof:tear
+
+      - name: Upload proof artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proof-artifacts-${{ matrix.os }}-node-${{ matrix.node }}
+          path: |
+            state/proofs/**
+            .github/workflows/**

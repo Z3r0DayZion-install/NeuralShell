@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  neuralshell:
+    build: .
+    container_name: neuralshell-core
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - SWARM_ENABLED=1
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    ports:
+      - "127.0.0.1:3000:3000" # Bind to localhost only, Nginx handles public
+    volumes:
+      - ./state:/app/state # Persist Brain & Ledger
+      - ./deployments:/app/deployments # Persist Spun Apps
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+    depends_on:
+      - redis
+    networks:
+      - internal_net
+
+  redis:
+    image: redis:alpine
+    container_name: neuralshell-redis
+    restart: always
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal_net
+
+  nginx:
+    image: nginx:alpine
+    container_name: neuralshell-gateway
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./k8s/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - neuralshell
+    networks:
+      - internal_net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: neuralshell-monitor
+    restart: always
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - internal_net
+
+volumes:
+  redis_data:
+
+networks:
+  internal_net:
+    driver: bridge

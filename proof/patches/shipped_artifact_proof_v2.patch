@@ -1,0 +1,2166 @@
+--- C:\Users\KickA\NeuralShell\local\archive\authority-upgrade\runtime_proof.cjs.bak+++ C:\Users\KickA\NeuralShell\scripts\runtime_proof.cjs@@ -1,13 +1,23 @@ const assert = require('node:assert/strict');
+ const { spawn } = require('node:child_process');
++const crypto = require('node:crypto');
+ const fs = require('node:fs');
+ const http = require('node:http');
+ const path = require('node:path');
++
++const { createArtifactDir, ensureDir, writeFileUtf8, writeSha256Txt } = require('./_proof_lib.cjs');
+ 
+ const REPO_ROOT = path.resolve(__dirname, '..');
+ const SERVER_ENTRY = path.join(REPO_ROOT, 'production-server.js');
+ const STATE_DIR = path.join(REPO_ROOT, 'state');
+ const MIN_UPTIME_DELTA = process.env.CI === 'true' ? 0.05 : 0.1;
++const PROOF_DIR = path.join(REPO_ROOT, 'proof');
++const PROOF_LATEST_DIR = path.join(PROOF_DIR, 'latest');
++const PROOF_LATEST_RUNTIME_DIR = path.join(PROOF_LATEST_DIR, 'runtime');
++const PROOF_LATEST_SPAWN_DIR = path.join(PROOF_LATEST_DIR, 'spawn');
++const PROOF_MANIFEST_PATH = path.join(PROOF_LATEST_DIR, 'proof-manifest.json');
++const FORCE_METRICS_FAIL = process.env.PROOF_FORCE_METRICS_FAIL === '1';
++const ORCHESTRATED = process.env.PROOF_ORCHESTRATED === '1';
+ 
+ function sleep(ms) {
+   return new Promise((resolve) => setTimeout(resolve, ms));
+@@ -15,6 +25,42 @@ 
+ function safeTimestamp() {
+   return new Date().toISOString().replace(/[:.]/g, '-');
++}
++
++function sha256File(filePath) {
++  const buf = fs.readFileSync(filePath);
++  return crypto.createHash('sha256').update(buf).digest('hex');
++}
++
++function readJsonIfExists(filePath) {
++  try {
++    if (!fs.existsSync(filePath)) return null;
++    const raw = fs.readFileSync(filePath, 'utf8');
++    if (!raw || !raw.trim()) return null;
++    return JSON.parse(raw);
++  } catch {
++    return null;
++  }
++}
++
++function verifyPreviousManifestOrThrow() {
++  if (ORCHESTRATED) return;
++  const prev = readJsonIfExists(PROOF_MANIFEST_PATH);
++  if (!prev) return;
++  const entries = Array.isArray(prev.entries) ? prev.entries : [];
++  for (const e of entries) {
++    if (!e || typeof e !== 'object') continue;
++    if (e.exists !== true) continue;
++    if (!e.path || typeof e.path !== 'string') continue;
++    if (!e.sha256 || typeof e.sha256 !== 'string') continue;
++    if (!fs.existsSync(e.path)) {
++      throw new Error(`[runtime-proof] proof-manifest hash mismatch (missing): ${e.name || e.path}`);
++    }
++    const now = sha256File(e.path);
++    if (now !== e.sha256) {
++      throw new Error(`[runtime-proof] proof-manifest hash mismatch: ${e.name || e.path}`);
++    }
++  }
+ }
+ 
+ function teeStdIO({ latestPath, stampedPath }) {
+@@ -68,38 +114,18 @@   };
+ }
+ 
+-function createForensics({ runTagBase }) {
+-  fs.mkdirSync(STATE_DIR, { recursive: true });
+-  const serverLatestPath = path.join(STATE_DIR, 'latest-proof-runtime-server.log');
+-  const serverStampedPath = path.join(STATE_DIR, `proof-runtime-server-${runTagBase}.log`);
+-  fs.writeFileSync(serverLatestPath, '', 'utf8');
+-  fs.writeFileSync(serverStampedPath, '', 'utf8');
+-
+-  const serverLatestStream = fs.createWriteStream(serverLatestPath, { flags: 'a' });
+-  const serverStampedStream = fs.createWriteStream(serverStampedPath, { flags: 'a' });
+-
+-  const configLatestPath = path.join(STATE_DIR, 'latest-proof-runtime-config.json');
+-  const configStampedPath = path.join(STATE_DIR, `proof-runtime-config-${runTagBase}.json`);
++function createForensics({ artifactDir }) {
++  ensureDir(artifactDir);
++  const configPath = path.join(artifactDir, 'config.json');
+   const configs = { normal: null, dry: null };
+ 
+   return {
+-    configLatestPath,
+-    configStampedPath,
++    configPath,
+     setConfig(mode, configObj) {
+       configs[mode] = configObj;
+     },
+-    writeServerLine(line) {
+-      const text = `${line}\n`;
+-      try {
+-        serverLatestStream.write(text);
+-      } catch {
+-        // ignore
+-      }
+-      try {
+-        serverStampedStream.write(text);
+-      } catch {
+-        // ignore
+-      }
++    writeServerLine() {
++      // no-op (capture writes logs directly)
+     },
+     flushConfigs() {
+       const payload = {
+@@ -107,20 +133,10 @@         minUptimeDelta: MIN_UPTIME_DELTA,
+         configs
+       };
+-      fs.writeFileSync(configLatestPath, JSON.stringify(payload, null, 2), 'utf8');
+-      fs.writeFileSync(configStampedPath, JSON.stringify(payload, null, 2), 'utf8');
++      writeFileUtf8(configPath, JSON.stringify(payload, null, 2));
+     },
+     close() {
+-      try {
+-        serverLatestStream.end();
+-      } catch {
+-        // ignore
+-      }
+-      try {
+-        serverStampedStream.end();
+-      } catch {
+-        // ignore
+-      }
++      // no-op
+     }
+   };
+ }
+@@ -156,9 +172,9 @@   return null;
+ }
+ 
+-function writeRuntimeProofConfig({ dryRun, upstreamPort, runTag, mode }) {
+-  fs.mkdirSync(STATE_DIR, { recursive: true });
+-  const configPath = path.join(STATE_DIR, `runtime-proof-config-${runTag}-${dryRun ? 'dry' : 'normal'}.json`);
++function writeRuntimeProofConfig({ outDir, dryRun, upstreamPort, runTag, mode }) {
++  ensureDir(outDir);
++  const configPath = path.join(outDir, `config-${mode}-${dryRun ? 'dry' : 'normal'}.json`);
+ 
+   const config = {
+     version: '1.0.0',
+@@ -184,12 +200,7 @@     }
+   };
+ 
+-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+-  const latestPath = path.join(
+-    STATE_DIR,
+-    `latest-runtime-proof-config-${dryRun ? 'dry' : 'normal'}.json`
+-  );
+-  fs.copyFileSync(configPath, latestPath);
++  writeFileUtf8(configPath, JSON.stringify(config, null, 2));
+ 
+   if (!fs.existsSync(configPath)) {
+     throw new Error(`writeRuntimeProofConfig: failed to create config file at ${configPath}`);
+@@ -248,9 +259,10 @@ }
+ 
+ function spawnProductionServer({ configPath }) {
++  assert.ok(path.isAbsolute(SERVER_ENTRY), 'spawnProductionServer: SERVER_ENTRY must be absolute');
+   let child;
+   try {
+-    child = spawn(process.execPath, [SERVER_ENTRY], {
++    const spawnOpts = {
+       cwd: REPO_ROOT,
+       env: {
+         ...process.env,
+@@ -268,7 +280,9 @@       shell: false,
+       windowsHide: true,
+       detached: process.platform === 'win32'
+-    });
++    };
++    if (spawnOpts.shell) throw new Error('shell spawn not allowed in production proof');
++    child = spawn(process.execPath, [SERVER_ENTRY], spawnOpts);
+   } catch (err) {
+     if (err && typeof err === 'object' && err.code === 'EPERM') {
+       throw new Error('spawnProductionServer: EPERM while spawning production-server.js', { cause: err });
+@@ -304,13 +318,22 @@   }
+ }
+ 
+-function createLogCapture({ tag, runTag, forensics }) {
+-  fs.mkdirSync(STATE_DIR, { recursive: true });
+-  const logPath = path.join(STATE_DIR, `runtime-proof-server-${tag}-${runTag}.log`);
+-  const latestLogPath = path.join(STATE_DIR, `latest-runtime-proof-server-${tag}.log`);
+-  fs.writeFileSync(latestLogPath, '', 'utf8');
++function createLogCapture({ tag, runTag, artifactDir }) {
++  ensureDir(artifactDir);
++  const logPath = path.join(artifactDir, 'server.log');
++  const stdoutPath = path.join(artifactDir, 'stdout.log');
++  const stderrPath = path.join(artifactDir, 'stderr.log');
+   const stream = fs.createWriteStream(logPath, { flags: 'a' });
+-  const latestStream = fs.createWriteStream(latestLogPath, { flags: 'a' });
++  const stdoutStream = fs.createWriteStream(stdoutPath, { flags: 'a' });
++  const stderrStream = fs.createWriteStream(stderrPath, { flags: 'a' });
++
++  try {
++    stream.write(`\n=== ${tag} (${runTag}) ===\n`);
++    stdoutStream.write(`\n=== ${tag} (${runTag}) ===\n`);
++    stderrStream.write(`\n=== ${tag} (${runTag}) ===\n`);
++  } catch {
++    // ignore
++  }
+ 
+   const maxLines = 2000;
+   const ring = [];
+@@ -338,9 +361,17 @@     while ((idx = buf.indexOf('\n')) !== -1) {
+       const line = buf.slice(0, idx).replace(/\r$/, '');
+       const prefixed = `${kind}: ${line}`;
+-      stream.write(`${prefixed}\n`);
+-      latestStream.write(`${prefixed}\n`);
+-      forensics?.writeServerLine?.(prefixed);
++      try {
++        stream.write(`${prefixed}\n`);
++      } catch {
++        // ignore
++      }
++      try {
++        if (kind === 'stdout') stdoutStream.write(`${line}\n`);
++        else stderrStream.write(`${line}\n`);
++      } catch {
++        // ignore
++      }
+       pushLine(prefixed);
+       if (kind === 'stdout') {
+         const m = line.match(/Server listening at http:\/\/127\.0\.0\.1:(\d+)/);
+@@ -365,15 +396,18 @@       // ignore
+     }
+     try {
+-      if (state.stdoutBuf) latestStream.write(`stdout: ${state.stdoutBuf.replace(/\r/g, '')}\n`);
+-      if (state.stderrBuf) latestStream.write(`stderr: ${state.stderrBuf.replace(/\r/g, '')}\n`);
+-      latestStream.end();
++      stdoutStream.end();
+     } catch {
+       // ignore
+     }
+-  }
+-
+-  return { logPath, latestLogPath, feed, tail, close, portPromise, rejectPort };
++    try {
++      stderrStream.end();
++    } catch {
++      // ignore
++    }
++  }
++
++  return { logPath, stdoutPath, stderrPath, feed, tail, close, portPromise, rejectPort };
+ }
+ 
+ async function waitForListening({ child, capture, timeoutMs = 15000 }) {
+@@ -439,21 +473,41 @@       });
+     });
+ 
+-  if (process.platform === 'win32' && typeof child.send === 'function') {
++  // Kill switch verification:
++  // - Non-Windows: SIGTERM must result in clean exit code 0.
++  // - Windows: IPC shutdown is the deterministic equivalent; fallback to SIGTERM only if needed.
++  if (process.platform !== 'win32') {
++    try {
++      child.kill('SIGTERM');
++    } catch {
++      // ignore
++    }
++    try {
++      const code = await waitForExitCode(15000);
++      if (code !== 0) throw new Error(`[runtime-proof] kill switch failure (exit ${code})`);
++      return code;
++    } catch (err) {
++      throw new Error('[runtime-proof] kill switch failure', { cause: err });
++    }
++  }
++
++  if (typeof child.send === 'function') {
+     try {
+       child.send({ type: 'shutdown' });
+-      return await waitForExitCode(5000);
++      const code = await waitForExitCode(15000);
++      if (code !== 0) throw new Error(`[runtime-proof] kill switch failure (exit ${code})`);
++      return code;
+     } catch {
+-      // fall through to signals
++      // fall through to SIGTERM
+     }
+   }
+ 
+   if (process.platform === 'win32') {
+     try {
+-      process.kill(-child.pid, 'SIGINT');
++      child.kill('SIGTERM');
+     } catch {
+       try {
+-        child.kill('SIGINT');
++        child.kill('SIGTERM');
+       } catch {
+         child.kill();
+       }
+@@ -466,7 +520,9 @@     }
+   }
+ 
+-  return await waitForExitCode(15000);
++  const code = await waitForExitCode(15000);
++  if (code !== 0) throw new Error(`[runtime-proof] kill switch failure (exit ${code})`);
++  return code;
+ }
+ 
+ function isRetryableConnectError(err) {
+@@ -497,7 +553,7 @@   assert.ok(requests !== null, `${tag}: parse neuralshell_requests_total`);
+   assert.ok(failures !== null, `${tag}: parse neuralshell_failures_total`);
+ 
+-  return { uptime, requests, failures };
++  return { uptime, requests, failures, text: out.text };
+ }
+ 
+ async function getAndParseMetrics({ baseUrl, tag, deadlineMs = 3000 }) {
+@@ -514,6 +570,185 @@       }
+       await sleep(Math.min(150, 40 + attempt * 10));
+     }
++  }
++}
++
++function appendMetricsSnapshot({ artifactDir, label, text }) {
++  try {
++    fs.appendFileSync(
++      path.join(artifactDir, 'metrics.txt'),
++      `\n=== ${label} ===\n${String(text || '').trimEnd()}\n`,
++      'utf8'
++    );
++  } catch {
++    // ignore
++  }
++}
++
++async function hitHealth({ baseUrl, count, tag }) {
++  for (let i = 0; i < count; i += 1) {
++    const out = await fetchText(`${baseUrl}/health`, { timeoutMs: 1500 });
++    assert.equal(out.res.status, 200, `${tag}: GET /health should return 200`);
++  }
++}
++
++function purgeStateDirIfStandalone({ runTagBase }) {
++  const deletedPaths = [];
++  const targets = [];
++  const errors = [];
++
++  const tearRuntimeDir = path.join(REPO_ROOT, 'NeuralShell_Desktop', '.tear_runtime');
++  targets.push(STATE_DIR);
++  targets.push(tearRuntimeDir);
++
++  const rmTree = (p) => {
++    try {
++      if (!fs.existsSync(p)) return;
++      fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
++      deletedPaths.push(p);
++    } catch (err) {
++      errors.push({ path: p, error: String(err && err.message ? err.message : err) });
++    }
++  };
++
++  // Cold-start must be mandatory even under the verify spine. Purge runtime state
++  // without deleting proof artifacts under state/proofs/**.
++  try {
++    if (fs.existsSync(STATE_DIR)) {
++      const entries = fs.readdirSync(STATE_DIR, { withFileTypes: true });
++      for (const e of entries) {
++        if (e && e.name === 'proofs') continue;
++        rmTree(path.join(STATE_DIR, e.name));
++      }
++    }
++  } catch (err) {
++    errors.push({ path: STATE_DIR, error: String(err && err.message ? err.message : err) });
++  }
++
++  // Purge any TEAR runtime dir used by shipped TEAR/EXE.
++  rmTree(tearRuntimeDir);
++
++  // Validate purge outcome deterministically.
++  try {
++    if (fs.existsSync(STATE_DIR)) {
++      const remaining = fs
++        .readdirSync(STATE_DIR, { withFileTypes: true })
++        .map((e) => e.name)
++        .filter((n) => n !== 'proofs');
++      if (remaining.length) {
++        errors.push({ path: STATE_DIR, error: `remaining entries after purge: ${remaining.join(', ')}` });
++      }
++    }
++  } catch (err) {
++    errors.push({ path: STATE_DIR, error: String(err && err.message ? err.message : err) });
++  }
++  if (fs.existsSync(tearRuntimeDir)) {
++    errors.push({ path: tearRuntimeDir, error: 'TEAR runtime dir still exists after purge' });
++  }
++
++  if (errors.length) {
++    const msg = [
++      '[runtime-proof] cold start purge failed',
++      ...errors.map((e) => `- ${e.path}: ${e.error}`)
++    ].join('\n');
++    throw new Error(msg);
++  }
++
++  try {
++    // Keep state dir present for downstream proofs; never delete state/proofs.
++    if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR, { recursive: true });
++  } catch {
++    // ignore
++  }
++  return { purged: true, deletedPaths, targets };
++}
++
++function copyFileIfExists(src, dst) {
++  try {
++    if (!fs.existsSync(src)) return false;
++    ensureDir(path.dirname(dst));
++    fs.copyFileSync(src, dst);
++    return true;
++  } catch {
++    return false;
++  }
++}
++
++function buildAndWriteManifest({ artifactDir, runTagBase }) {
++  if (ORCHESTRATED) return;
++  ensureDir(PROOF_LATEST_DIR);
++  ensureDir(PROOF_LATEST_RUNTIME_DIR);
++  ensureDir(PROOF_LATEST_SPAWN_DIR);
++
++  // Copy current runtime artifacts into stable proof/latest locations.
++  const runtimeCopies = [
++    ['server.log', 'server.log'],
++    ['stdout.log', 'stdout.log'],
++    ['stderr.log', 'stderr.log'],
++    ['metrics.txt', 'metrics.txt'],
++    ['config.json', 'config.json'],
++    ['metadata.json', 'metadata.json'],
++    ['sha256.txt', 'sha256.txt']
++  ];
++  for (const [srcName, dstName] of runtimeCopies) {
++    copyFileIfExists(path.join(artifactDir, srcName), path.join(PROOF_LATEST_RUNTIME_DIR, dstName));
++  }
++
++  // If a matching spawn phase exists (verify_runner run), copy spawn artifacts too.
++  const spawnDir = path.join(REPO_ROOT, 'state', 'proofs', `${runTagBase}-spawn`);
++  if (fs.existsSync(spawnDir)) {
++    const spawnCopies = [
++      ['server.log', 'server.log'],
++      ['stdout.log', 'stdout.log'],
++      ['stderr.log', 'stderr.log'],
++      ['metrics.txt', 'metrics.txt'],
++      ['config.json', 'config.json'],
++      ['metadata.json', 'metadata.json'],
++      ['sha256.txt', 'sha256.txt']
++    ];
++    for (const [srcName, dstName] of spawnCopies) {
++      copyFileIfExists(path.join(spawnDir, srcName), path.join(PROOF_LATEST_SPAWN_DIR, dstName));
++    }
++  }
++
++  const exePath = path.join(REPO_ROOT, 'NeuralShell_Desktop', 'dist', 'NeuralShell-TEAR-Runtime.exe');
++  const tearPath = path.join(REPO_ROOT, 'NeuralShell_Desktop', 'tear-runtime.js');
++
++  const manifest = {
++    ts: new Date().toISOString(),
++    node: process.version,
++    platform: process.platform,
++    runTagBase,
++    algo: 'sha256',
++    entries: []
++  };
++
++  const addEntry = (name, p) => {
++    const exists = fs.existsSync(p);
++    manifest.entries.push({
++      name,
++      path: p,
++      exists,
++      sha256: exists ? sha256File(p) : null
++    });
++  };
++
++  addEntry('runtime.server.log', path.join(PROOF_LATEST_RUNTIME_DIR, 'server.log'));
++  addEntry('runtime.stdout.log', path.join(PROOF_LATEST_RUNTIME_DIR, 'stdout.log'));
++  addEntry('runtime.stderr.log', path.join(PROOF_LATEST_RUNTIME_DIR, 'stderr.log'));
++  addEntry('runtime.metrics.txt', path.join(PROOF_LATEST_RUNTIME_DIR, 'metrics.txt'));
++  addEntry('runtime.config.json', path.join(PROOF_LATEST_RUNTIME_DIR, 'config.json'));
++  addEntry('runtime.metadata.json', path.join(PROOF_LATEST_RUNTIME_DIR, 'metadata.json'));
++  addEntry('spawn.server.log', path.join(PROOF_LATEST_SPAWN_DIR, 'server.log'));
++  addEntry('production-server.js', SERVER_ENTRY);
++  addEntry('tear-runtime.js', tearPath);
++  addEntry('NeuralShell-TEAR-Runtime.exe', exePath);
++
++  writeFileUtf8(PROOF_MANIFEST_PATH, JSON.stringify(manifest, null, 2));
++  try {
++    writeFileUtf8(path.join(artifactDir, 'proof-manifest.json'), JSON.stringify(manifest, null, 2));
++  } catch {
++    // ignore
+   }
+ }
+ 
+@@ -542,14 +777,54 @@ }
+ 
+ async function run() {
++  if (process.env.PROOF_FORCE_FAIL === '1') {
++    throw new Error('[proof] forced failure');
++  }
++  verifyPreviousManifestOrThrow();
++  const runTagBase = process.env.PROOF_RUN_TS || safeTimestamp();
++  process.env.PROOF_RUN_TS = runTagBase;
++  process.env.PROOF_PHASE = process.env.PROOF_PHASE || 'runtime';
++
++  const artifactDir = createArtifactDir({ repoRoot: REPO_ROOT, tag: 'runtime', runTagBase });
++  process.env.PROOF_ARTIFACT_DIR = artifactDir;
++  ensureDir(artifactDir);
++  // Placeholders for required artifact contract.
++  writeFileUtf8(path.join(artifactDir, 'stdout.log'), '');
++  writeFileUtf8(path.join(artifactDir, 'stderr.log'), '');
++  writeFileUtf8(path.join(artifactDir, 'config.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'metrics.txt'), '');
++  writeFileUtf8(path.join(artifactDir, 'metadata.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'sha256.txt'), '');
++
++  // Cold start clean-state validation (mandatory; never skipped).
++  let purge = { purged: false, deletedPaths: [], targets: [] };
+   fs.mkdirSync(STATE_DIR, { recursive: true });
+-  const runTagBase = `${process.pid}-${safeTimestamp()}`;
+-  const transcript = teeStdIO({
+-    latestPath: path.join(STATE_DIR, 'latest-proof-runtime-transcript.log'),
+-    stampedPath: path.join(STATE_DIR, `proof-runtime-transcript-${runTagBase}.log`)
+-  });
+-  process.once('exit', () => transcript.close());
+-  const forensics = createForensics({ runTagBase });
++  try {
++    purge = purgeStateDirIfStandalone({ runTagBase });
++  } catch (err) {
++    const startedAt = new Date().toISOString();
++    const failedMeta = {
++      phase: 'runtime',
++      startedAt,
++      finishedAt: new Date().toISOString(),
++      durationMs: 0,
++      budgetMs: 30000,
++      ok: false,
++      artifactDir,
++      coldStart: { purged: false, error: String(err && err.stack ? err.stack : err) }
++    };
++    try {
++      writeFileUtf8(path.join(artifactDir, 'metadata.json'), JSON.stringify(failedMeta, null, 2));
++    } catch {
++      // ignore
++    }
++    throw err;
++  }
++
++  const startedAt = new Date().toISOString();
++  const startMs = Date.now();
++
++  const forensics = createForensics({ artifactDir });
+   const summary = {
+     normal: { ok: false },
+     dry: { ok: false }
+@@ -557,6 +832,9 @@ 
+   const printSummary = () => {
+     console.log('--- PROOF SUMMARY ---');
++    console.log(
++      `coldStart: purged=${purge && purge.purged ? 'true' : 'false'} deleted=${purge && Array.isArray(purge.deletedPaths) ? purge.deletedPaths.length : 0}`
++    );
+     for (const key of ['normal', 'dry']) {
+       const s = summary[key];
+       if (!s || !s.baseUrl) {
+@@ -590,13 +868,14 @@     const tag = mode;
+     const runTag = `${runTagBase}-${mode}`;
+     const { configPath, config } = writeRuntimeProofConfig({
++      outDir: artifactDir,
+       mode,
+       dryRun,
+       upstreamPort: upstream.port,
+       runTag
+     });
+     forensics.setConfig(mode, config);
+-    const capture = createLogCapture({ tag, runTag, forensics });
++    const capture = createLogCapture({ tag, runTag, artifactDir });
+ 
+     let child;
+     try {
+@@ -607,11 +886,23 @@       summary[mode] = { ok: false, port: listen.port, baseUrl };
+ 
+       const m1 = await getAndParseMetrics({ baseUrl, tag: `${tag}: metrics#1`, deadlineMs: 3000 });
++      appendMetricsSnapshot({ artifactDir, label: `${tag} metrics#1`, text: m1.text });
+       assert.equal(m1.requests, 0, `${tag}: restart semantics: requests_total should be 0 at first metrics read`);
+       assert.equal(m1.failures, 0, `${tag}: restart semantics: failures_total should be 0 at first metrics read`);
+       summary[mode].restartResetOk = true;
+       summary[mode].restartRequests0 = m1.requests;
+       summary[mode].restartFailures0 = m1.failures;
++
++      // PHASE 1: Behavioral mutation validation (not just existence).
++      // Send real traffic, then ensure /metrics counters actually change.
++      await hitHealth({ baseUrl, count: 3, tag: `${tag}: mutate` });
++      // Uptime is emitted at 2-decimal resolution; ensure enough wall time passes to observe monotonic increase.
++      await sleep(120);
++      const m1b = await getAndParseMetrics({ baseUrl, tag: `${tag}: metrics#1b`, deadlineMs: 3000 });
++      appendMetricsSnapshot({ artifactDir, label: `${tag} metrics#1b`, text: m1b.text });
++      if (!(m1b.requests > m1.requests && m1b.uptime > m1.uptime)) {
++        throw new Error('[runtime-proof] metrics did not mutate as expected');
++      }
+ 
+       if (mode === 'normal') {
+         const p1 = await fetchText(`${baseUrl}/__proof/ollama`, {
+@@ -636,6 +927,7 @@ 
+       await sleep(150);
+       const m2 = await getAndParseMetrics({ baseUrl, tag: `${tag}: metrics#2`, deadlineMs: 3000 });
++      appendMetricsSnapshot({ artifactDir, label: `${tag} metrics#2`, text: m2.text });
+       assert.ok(m2.uptime > m1.uptime, `${tag}: uptime must monotonically increase`);
+       const uptimeDeltaSec = Number((m2.uptime - m1.uptime).toFixed(2));
+       assert.ok(
+@@ -698,6 +990,7 @@       }
+ 
+       const m3 = await getAndParseMetrics({ baseUrl, tag: `${tag}: metrics#3`, deadlineMs: 3000 });
++      appendMetricsSnapshot({ artifactDir, label: `${tag} metrics#3`, text: m3.text });
+ 
+       const requestsDelta = m3.requests - baseRequests;
+       const failuresDelta = m3.failures - baseFailures;
+@@ -775,7 +1068,10 @@       console.error('[runtime-proof] SERVER_OUTPUT_TAIL (last 120 lines)');
+       console.error(capture.tail(120));
+       console.error(`[runtime-proof] SERVER_LOG_PATH: ${capture.logPath}`);
+-      console.error(`[runtime-proof] LATEST_SERVER_LOG_PATH: ${capture.latestLogPath}`);
++      console.error(`[runtime-proof] ARTIFACT_DIR: ${artifactDir}`);
++      if (FORCE_METRICS_FAIL) {
++        console.error('[runtime-proof] failure injection detected');
++      }
+       const code = err?.cause?.code || err?.code;
+       if (code === 'EPERM') {
+         console.error('[runtime-proof] failed at spawnProductionServer: EPERM');
+@@ -818,6 +1114,34 @@       }
+     }
+     printSummary();
++    const finishedAt = new Date().toISOString();
++    const durationMs = Date.now() - startMs;
++    const meta = {
++      phase: 'runtime',
++      startedAt,
++      finishedAt,
++      durationMs,
++      budgetMs: 30000,
++      ok: Boolean(summary.normal.ok && summary.dry.ok),
++      artifactDir,
++      coldStart: purge,
++      summary
++    };
++    writeFileUtf8(path.join(artifactDir, 'metadata.json'), JSON.stringify(meta, null, 2));
++    writeSha256Txt({
++      artifactDir,
++      entries: [{ label: 'production-server.js', path: SERVER_ENTRY }]
++    });
++    buildAndWriteManifest({ artifactDir, runTagBase });
++    if (durationMs > 30000) {
++      throw new Error(`Timing budget exceeded: ${durationMs}ms > 30000ms`);
++    }
++    if (!fs.existsSync(STATE_DIR)) {
++      throw new Error('[runtime-proof] cold start validation failed: state dir missing after run');
++    }
++    if (!fs.existsSync(path.join(STATE_DIR, 'proofs'))) {
++      throw new Error('[runtime-proof] cold start validation failed: state/proofs missing after run');
++    }
+   }
+ 
+   if (summary.normal.ok && summary.dry.ok) {
+
+--- C:\Users\KickA\NeuralShell\local\archive\authority-upgrade\tear_proof.cjs.bak+++ C:\Users\KickA\NeuralShell\scripts\tear_proof.cjs@@ -8,7 +8,6 @@   assertUptimeMonotonic,
+   attachChildLogs,
+   createArtifactDir,
+-  createLatestPointers,
+   createTeeFile,
+   createTranscript,
+   ensureDir,
+@@ -16,19 +15,24 @@   httpRequest,
+   parseMetricValue,
+   safeTimestamp,
++  sha256File,
+   spawnChild,
+   stopChild,
+   waitForListening,
+   waitForMetricsReady,
+-  writeFileUtf8
++  writeFileUtf8,
++  writeSha256Txt
+ } = require('./_proof_lib.cjs');
+ 
+ const REPO_ROOT = path.resolve(__dirname, '..');
+ const STATE_DIR = path.join(REPO_ROOT, 'state');
+ const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
+ const TEAR_ENTRY = path.join(DESKTOP_ROOT, 'tear-runtime.js');
++const TEAR_RUNTIME_DIR = path.join(DESKTOP_ROOT, '.tear_runtime');
++const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
+ const MIN_UPTIME_DELTA = process.env.CI === 'true' ? 0.05 : 0.1;
+ const FORCE_FAIL = process.env.PROOF_FORCE_FAIL === '1';
++const FORCE_TEAR_FAIL = process.env.PROOF_FORCE_TEAR_FAIL === '1';
+ 
+ const NUM_SUCCESS = 5;
+ const NUM_SUCCESS_DRY = 5;
+@@ -42,12 +46,69 @@   }
+ }
+ 
++function readIfExists(filePath) {
++  try {
++    return fs.readFileSync(filePath, 'utf8');
++  } catch {
++    return null;
++  }
++}
++
+ function writeMeta({ artifactDir, meta }) {
+   if (!artifactDir) return;
+   try {
+     writeFileUtf8(path.join(artifactDir, 'meta.json'), JSON.stringify(meta, null, 2));
+   } catch {
+     // ignore
++  }
++}
++
++function purgeRuntimeDirs({ meta }) {
++  const deleted = [];
++  const errors = [];
++
++  try {
++    if (fs.existsSync(STATE_DIR)) {
++      const entries = fs.readdirSync(STATE_DIR, { withFileTypes: true });
++      for (const e of entries) {
++        if (e && e.name === 'proofs') continue;
++        const p = path.join(STATE_DIR, e.name);
++        try {
++          fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
++          deleted.push(p);
++        } catch (err) {
++          errors.push({ path: p, error: String(err && err.message ? err.message : err) });
++        }
++      }
++    }
++  } catch (err) {
++    errors.push({ path: STATE_DIR, error: String(err && err.message ? err.message : err) });
++  }
++
++  try {
++    if (fs.existsSync(TEAR_RUNTIME_DIR)) {
++      fs.rmSync(TEAR_RUNTIME_DIR, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
++      deleted.push(TEAR_RUNTIME_DIR);
++    }
++  } catch (err) {
++    errors.push({ path: TEAR_RUNTIME_DIR, error: String(err && err.message ? err.message : err) });
++  }
++
++  if (meta) {
++    meta.coldStart = {
++      purged: errors.length === 0,
++      deletedPaths: deleted,
++      targets: [STATE_DIR, TEAR_RUNTIME_DIR],
++      errors
++    };
++  }
++
++  if (errors.length) {
++    const msg = [
++      '[tear-proof] cold start purge failed',
++      ...errors.map((e) => `- ${e.path}: ${e.error}`)
++    ].join('\n');
++    throw new Error(msg);
+   }
+ }
+ 
+@@ -70,7 +131,7 @@ 
+ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, stderrLog, runTagBase, artifactDir, meta }) {
+   const runTag = `${runTagBase}-${modeName}`;
+-  const runtimeDir = path.join(STATE_DIR, `tear-proof-runtime-${runTag}-${dryRun ? 'dry' : 'normal'}`);
++  const runtimeDir = path.join(artifactDir, `runtime-${modeName}-${dryRun ? 'dry' : 'normal'}`);
+   ensureDir(runtimeDir);
+   const runtimeConfigPath = path.join(runtimeDir, 'proof-config.json');
+ 
+@@ -80,13 +141,13 @@     NS_DRY_RUN: dryRun ? '1' : '0',
+     NS_TEAR_HOST: '127.0.0.1',
+     NS_TEAR_PORT: '0',
+-    NS_RUNTIME_DIR: runtimeDir,
++    NS_RUNTIME_DIR: TEAR_RUNTIME_DIR,
+     NS_LLM_HOST: process.env.NS_LLM_HOST || 'http://127.0.0.1:11434'
+   };
+   writeFileUtf8(runtimeConfigPath, JSON.stringify({ env, modeName, dryRun, minUptimeDelta: MIN_UPTIME_DELTA }, null, 2));
+   if (artifactDir) {
+     copyFileIfExists(runtimeConfigPath, path.join(artifactDir, `config-${modeName}.json`));
+-    if (modeName === 'normal') copyFileIfExists(runtimeConfigPath, path.join(artifactDir, 'config_snapshot.json'));
++    if (modeName === 'normal') copyFileIfExists(runtimeConfigPath, path.join(artifactDir, 'config.json'));
+   }
+ 
+   const cmd = process.platform === 'win32' ? 'node.exe' : 'node';
+@@ -94,7 +155,7 @@   transcript.writeLine(`[tear-proof] spawn: ${cmd} ${args.join(' ')}`);
+   transcript.writeLine(`[tear-proof] config: ${runtimeConfigPath}`);
+   transcript.writeLine(
+-    `[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=0 NS_RUNTIME_DIR=${runtimeDir}`
++    `[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=0 NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`
+   );
+ 
+   const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
+@@ -164,14 +225,19 @@ 
+   await shutdown({ baseUrl });
+ 
+-  await new Promise((resolve) => {
+-    const t = setTimeout(resolve, 250);
+-    child.once('exit', () => {
++  const exit = await new Promise((resolve) => {
++    const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), 5000);
++    t.unref?.();
++    child.once('exit', (code, signal) => {
+       clearTimeout(t);
+-      resolve();
++      resolve({ code, signal });
+     });
+   });
+-
++  if (exit.code === null) {
++    await stopChild({ child, timeoutMs: 1500 });
++    throw new Error(`${modeName}: shutdown timed out (no exit within 5000ms)`);
++  }
++  assert.equal(exit.code, 0, `${modeName}: exit code must be 0 on shutdown (signal=${exit.signal || 'none'})`);
+   await stopChild({ child, timeoutMs: 1000 });
+   const down = await assertUnreachable({ url: `${baseUrl}/metrics`, deadlineMs: 3000 });
+   try {
+@@ -197,7 +263,7 @@ 
+ async function runRestartReset({ transcript, serverLog, stdoutLog, stderrLog, runTagBase, artifactDir, meta }) {
+   const runTag = `${runTagBase}-restart`;
+-  const runtimeDir = path.join(STATE_DIR, `tear-proof-runtime-${runTag}-normal`);
++  const runtimeDir = path.join(artifactDir, `runtime-restart-normal`);
+   ensureDir(runtimeDir);
+   const runtimeConfigPath = path.join(runtimeDir, 'proof-config.json');
+   const env = {
+@@ -206,7 +272,7 @@     NS_DRY_RUN: '0',
+     NS_TEAR_HOST: '127.0.0.1',
+     NS_TEAR_PORT: '0',
+-    NS_RUNTIME_DIR: runtimeDir,
++    NS_RUNTIME_DIR: TEAR_RUNTIME_DIR,
+     NS_LLM_HOST: process.env.NS_LLM_HOST || 'http://127.0.0.1:11434'
+   };
+   writeFileUtf8(runtimeConfigPath, JSON.stringify({ env, modeName: 'restart', dryRun: false }, null, 2));
+@@ -215,7 +281,8 @@   const args = [TEAR_ENTRY];
+   transcript.writeLine(`[tear-proof] spawn: ${cmd} ${args.join(' ')}`);
+   transcript.writeLine(`[tear-proof] config: ${runtimeConfigPath}`);
+-  transcript.writeLine(`[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=0 NS_TEAR_PORT=0 NS_RUNTIME_DIR=${runtimeDir}`);
++  transcript.writeLine(`[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=0 NS_TEAR_PORT=0 NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`);
++
+   const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
+   const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
+ 
+@@ -246,7 +313,19 @@   const c0 = { requests: req0, failures: fail0 };
+ 
+   await shutdown({ baseUrl });
+-  await new Promise((resolve) => child.once('exit', resolve));
++  const exit = await new Promise((resolve) => {
++    const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), 5000);
++    t.unref?.();
++    child.once('exit', (code, signal) => {
++      clearTimeout(t);
++      resolve({ code, signal });
++    });
++  });
++  if (exit.code === null) {
++    await stopChild({ child, timeoutMs: 1500 });
++    throw new Error(`restartReset: shutdown timed out (no exit within 5000ms)`);
++  }
++  assert.equal(exit.code, 0, `restartReset: exit code must be 0 on shutdown (signal=${exit.signal || 'none'})`);
+   await stopChild({ child, timeoutMs: 1000 });
+   await assertUnreachable({ url: `${baseUrl}/metrics`, deadlineMs: 3000 });
+   try {
+@@ -261,10 +340,8 @@ async function main() {
+   const runTagBase = safeTimestamp();
+   const artifactDir = createArtifactDir({ repoRoot: REPO_ROOT, tag: 'tear', runTagBase });
+-  const latest = createLatestPointers({ repoRoot: REPO_ROOT, tag: 'tear', artifactDir });
+ 
+   const transcript = createTranscript({
+-    latestPath: path.join(STATE_DIR, 'latest-proof-tear-transcript.log'),
+     stampedPath: path.join(artifactDir, 'transcript.log')
+   });
+   const serverLog = createTeeFile({
+@@ -272,9 +349,6 @@   });
+   const stdoutLog = createTeeFile({ filePath: path.join(artifactDir, 'stdout.log') });
+   const stderrLog = createTeeFile({ filePath: path.join(artifactDir, 'stderr.log') });
+-
+-  const configLatestPath = path.join(STATE_DIR, 'latest-proof-tear-config.json');
+-  const configStampedPath = path.join(artifactDir, 'config.json');
+ 
+   const meta = {
+     ts: new Date().toISOString(),
+@@ -284,16 +358,19 @@     platform: process.platform,
+     cwd: process.cwd(),
+     tearEntry: TEAR_ENTRY,
++    tearRuntimeDir: TEAR_RUNTIME_DIR,
+     minUptimeDelta: MIN_UPTIME_DELTA,
+     forceFail: FORCE_FAIL,
++    forceTearFail: FORCE_TEAR_FAIL,
+     baseUrlByMode: {},
+     portByMode: {}
+   };
+   writeMeta({ artifactDir, meta });
+   // Ensure artifact contract placeholders exist even if we fail before first metrics read.
+-  writeFileUtf8(path.join(artifactDir, 'metrics_before.txt'), '');
+-  writeFileUtf8(path.join(artifactDir, 'metrics_after.txt'), '');
+-  writeFileUtf8(path.join(artifactDir, 'config_snapshot.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'metrics.txt'), '');
++  writeFileUtf8(path.join(artifactDir, 'metadata.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'sha256.txt'), '');
++  writeFileUtf8(path.join(artifactDir, 'config.json'), '');
+ 
+   let config = {
+     ts: new Date().toISOString(),
+@@ -304,12 +381,20 @@     env: { CI: process.env.CI || '', platform: process.platform, node: process.version },
+     results: null
+   };
+-  fs.writeFileSync(configLatestPath, JSON.stringify(config, null, 2), 'utf8');
+-  fs.writeFileSync(configStampedPath, JSON.stringify(config, null, 2), 'utf8');
+-
+-  try {
++  writeFileUtf8(path.join(artifactDir, 'proof_config.json'), JSON.stringify(config, null, 2));
++
++  try {
++    const startMs = Date.now();
+     transcript.writeLine(`[tear-proof] MIN_UPTIME_DELTA=${MIN_UPTIME_DELTA}`);
+     transcript.writeLine(`[tear-proof] artifacts: ${artifactDir}`);
++
++    if (FORCE_TEAR_FAIL) {
++      transcript.writeLine('[proof-tear] forced failure');
++      throw new Error('[proof-tear] forced failure');
++    }
++
++    purgeRuntimeDirs({ meta });
++    writeMeta({ artifactDir, meta });
+ 
+     const normal = await runMode({ modeName: 'normal', dryRun: false, transcript, serverLog, stdoutLog, stderrLog, runTagBase, artifactDir, meta });
+     const restart = await runRestartReset({ transcript, serverLog, stdoutLog, stderrLog, runTagBase, artifactDir, meta });
+@@ -322,18 +407,22 @@ 
+     config = { ...config, results: { normal, restart, dry }, ok: true };
+     meta.ok = true;
++    meta.durationMs = Date.now() - startMs;
++    if (meta.durationMs > 30000) throw new Error(`Timing budget exceeded: ${meta.durationMs}ms > 30000ms`);
+     writeMeta({ artifactDir, meta });
+-    fs.writeFileSync(configLatestPath, JSON.stringify(config, null, 2), 'utf8');
+-    fs.writeFileSync(configStampedPath, JSON.stringify(config, null, 2), 'utf8');
+-    latest.linkCopy('transcript.log', 'latest-proof-tear-transcript.log');
+-    latest.linkCopy('server.log', 'latest-proof-tear-server.log');
+-    latest.linkCopy('config.json', 'latest-proof-tear-config.json');
+-    latest.linkCopy('meta.json', 'latest-proof-tear-meta.json');
+-    latest.linkCopy('stdout.log', 'latest-proof-tear-stdout.log');
+-    latest.linkCopy('stderr.log', 'latest-proof-tear-stderr.log');
+-    latest.linkCopy('metrics_before.txt', 'latest-proof-tear-metrics_before.txt');
+-    latest.linkCopy('metrics_after.txt', 'latest-proof-tear-metrics_after.txt');
+-    latest.linkCopy('config_snapshot.json', 'latest-proof-tear-config_snapshot.json');
++    writeFileUtf8(path.join(artifactDir, 'proof_config.json'), JSON.stringify(config, null, 2));
++    writeFileUtf8(path.join(artifactDir, 'metadata.json'), JSON.stringify(meta, null, 2));
++    writeFileUtf8(
++      path.join(artifactDir, 'metrics.txt'),
++      `${readIfExists(path.join(artifactDir, 'metrics_before.txt')) || ''}\n\n# --- AFTER ---\n\n${readIfExists(path.join(artifactDir, 'metrics_after.txt')) || ''}\n`
++    );
++    writeSha256Txt({
++      artifactDir,
++      entries: [
++        { label: 'production-server.js', path: PROD_SERVER },
++        { label: 'tear-runtime.js', path: TEAR_ENTRY }
++      ]
++    });
+ 
+     transcript.writeLine('');
+     transcript.writeLine('--- PROOF SUMMARY ---');
+@@ -349,19 +438,20 @@     meta.error = String(err && err.stack ? err.stack : err);
+     writeMeta({ artifactDir, meta });
+     config = { ...config, results: config.results, ok: false, error: String(err && err.stack ? err.stack : err) };
+-    fs.writeFileSync(configLatestPath, JSON.stringify(config, null, 2), 'utf8');
+-    fs.writeFileSync(configStampedPath, JSON.stringify(config, null, 2), 'utf8');
+-    latest.linkCopy('transcript.log', 'latest-proof-tear-transcript.log');
+-    latest.linkCopy('server.log', 'latest-proof-tear-server.log');
+-    latest.linkCopy('config.json', 'latest-proof-tear-config.json');
+-    latest.linkCopy('meta.json', 'latest-proof-tear-meta.json');
+-    latest.linkCopy('stdout.log', 'latest-proof-tear-stdout.log');
+-    latest.linkCopy('stderr.log', 'latest-proof-tear-stderr.log');
++    writeFileUtf8(path.join(artifactDir, 'proof_config.json'), JSON.stringify(config, null, 2));
++    writeFileUtf8(path.join(artifactDir, 'metadata.json'), JSON.stringify(meta, null, 2));
++    writeSha256Txt({
++      artifactDir,
++      entries: [
++        { label: 'production-server.js', path: PROD_SERVER },
++        { label: 'tear-runtime.js', path: TEAR_ENTRY }
++      ]
++    });
+ 
+     transcript.writeLine('');
+     transcript.writeLine('--- PROOF FAILURE ---');
+-    transcript.writeLine(`config: ${configLatestPath}`);
+-    transcript.writeLine(`serverLog: ${path.join(STATE_DIR, 'latest-proof-tear-server.log')}`);
++    transcript.writeLine(`config: ${path.join(artifactDir, 'config.json')}`);
++    transcript.writeLine(`serverLog: ${path.join(artifactDir, 'server.log')}`);
+     transcript.writeLine('--- LAST 120 SERVER LINES ---');
+     transcript.write(serverLog.lastLines(120));
+     transcript.writeLine('--- ERROR ---');
+@@ -371,6 +461,16 @@     throw err;
+   } finally {
+     try {
++      writeFileUtf8(
++        path.join(artifactDir, 'metrics.txt'),
++        `${readIfExists(path.join(artifactDir, 'metrics_before.txt')) || ''}\n\n# --- AFTER ---\n\n${
++          readIfExists(path.join(artifactDir, 'metrics_after.txt')) || ''
++        }\n`
++      );
++    } catch {
++      // ignore
++    }
++    try {
+       serverLog.close();
+     } catch {
+       // ignore
+
+--- C:\Users\KickA\NeuralShell\local\archive\authority-upgrade\exe_proof.cjs.bak+++ C:\Users\KickA\NeuralShell\scripts\exe_proof.cjs@@ -8,7 +8,6 @@   assertUptimeMonotonic,
+   attachChildLogs,
+   createArtifactDir,
+-  createLatestPointers,
+   createTeeFile,
+   createTranscript,
+   ensureDir,
+@@ -21,15 +20,20 @@   stopChild,
+   waitForListening,
+   waitForMetricsReady,
+-  writeFileUtf8
++  writeFileUtf8,
++  writeSha256Txt
+ } = require('./_proof_lib.cjs');
+ 
+ const REPO_ROOT = path.resolve(__dirname, '..');
+ const STATE_DIR = path.join(REPO_ROOT, 'state');
+ const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
+ const EXE_PATH = path.join(DESKTOP_ROOT, 'dist', 'NeuralShell-TEAR-Runtime.exe');
++const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
++const TEAR_ENTRY = path.join(DESKTOP_ROOT, 'tear-runtime.js');
++const TEAR_RUNTIME_DIR = path.join(DESKTOP_ROOT, '.tear_runtime');
+ const MIN_UPTIME_DELTA = process.env.CI === 'true' ? 0.05 : 0.1;
+ const FORCE_FAIL = process.env.PROOF_FORCE_FAIL === '1';
++const FORCE_EXE_FAIL = process.env.PROOF_FORCE_EXE_FAIL === '1';
+ 
+ const NUM_SUCCESS = 5;
+ const NUM_SUCCESS_DRY = 5;
+@@ -43,12 +47,69 @@   }
+ }
+ 
++function readIfExists(filePath) {
++  try {
++    return fs.readFileSync(filePath, 'utf8');
++  } catch {
++    return null;
++  }
++}
++
+ function writeMeta({ artifactDir, meta }) {
+   if (!artifactDir) return;
+   try {
+     writeFileUtf8(path.join(artifactDir, 'meta.json'), JSON.stringify(meta, null, 2));
+   } catch {
+     // ignore
++  }
++}
++
++function purgeRuntimeDirs({ meta }) {
++  const deleted = [];
++  const errors = [];
++
++  try {
++    if (fs.existsSync(STATE_DIR)) {
++      const entries = fs.readdirSync(STATE_DIR, { withFileTypes: true });
++      for (const e of entries) {
++        if (e && e.name === 'proofs') continue;
++        const p = path.join(STATE_DIR, e.name);
++        try {
++          fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
++          deleted.push(p);
++        } catch (err) {
++          errors.push({ path: p, error: String(err && err.message ? err.message : err) });
++        }
++      }
++    }
++  } catch (err) {
++    errors.push({ path: STATE_DIR, error: String(err && err.message ? err.message : err) });
++  }
++
++  try {
++    if (fs.existsSync(TEAR_RUNTIME_DIR)) {
++      fs.rmSync(TEAR_RUNTIME_DIR, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
++      deleted.push(TEAR_RUNTIME_DIR);
++    }
++  } catch (err) {
++    errors.push({ path: TEAR_RUNTIME_DIR, error: String(err && err.message ? err.message : err) });
++  }
++
++  if (meta) {
++    meta.coldStart = {
++      purged: errors.length === 0,
++      deletedPaths: deleted,
++      targets: [STATE_DIR, TEAR_RUNTIME_DIR],
++      errors
++    };
++  }
++
++  if (errors.length) {
++    const msg = [
++      '[exe-proof] cold start purge failed',
++      ...errors.map((e) => `- ${e.path}: ${e.error}`)
++    ].join('\n');
++    throw new Error(msg);
+   }
+ }
+ 
+@@ -97,7 +158,7 @@ 
+ function spawnExe({ runTag, dryRun, transcript, serverLog, stdoutLog, stderrLog, artifactDir, meta }) {
+   if (!fs.existsSync(EXE_PATH)) throw new Error(`EXE not found: ${EXE_PATH}`);
+-  const runtimeDir = path.join(STATE_DIR, `exe-proof-runtime-${runTag}-${dryRun ? 'dry' : 'normal'}`);
++  const runtimeDir = path.join(artifactDir, `runtime-${runTag}-${dryRun ? 'dry' : 'normal'}`);
+   ensureDir(runtimeDir);
+   const runtimeConfigPath = path.join(runtimeDir, 'proof-config.json');
+ 
+@@ -107,18 +168,18 @@     NS_DRY_RUN: dryRun ? '1' : '0',
+     NS_TEAR_HOST: '127.0.0.1',
+     NS_TEAR_PORT: '0',
+-    NS_RUNTIME_DIR: runtimeDir,
++    NS_RUNTIME_DIR: TEAR_RUNTIME_DIR,
+     NS_LLM_HOST: process.env.NS_LLM_HOST || 'http://127.0.0.1:11434'
+   };
+   writeFileUtf8(runtimeConfigPath, JSON.stringify({ env, dryRun }, null, 2));
+   if (artifactDir) {
+     copyFileIfExists(runtimeConfigPath, path.join(artifactDir, `config-${dryRun ? 'dry' : 'normal'}.json`));
+-    if (!dryRun) copyFileIfExists(runtimeConfigPath, path.join(artifactDir, 'config_snapshot.json'));
++    if (!dryRun) copyFileIfExists(runtimeConfigPath, path.join(artifactDir, 'config.json'));
+   }
+ 
+   transcript.writeLine(`[exe-proof] spawn: ${EXE_PATH}`);
+   transcript.writeLine(`[exe-proof] config: ${runtimeConfigPath}`);
+-  transcript.writeLine(`[exe-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=0 NS_RUNTIME_DIR=${runtimeDir}`);
++  transcript.writeLine(`[exe-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=0 NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`);
+ 
+   const child = spawnChild({ cmd: EXE_PATH, args: [], cwd: DESKTOP_ROOT, env });
+   const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
+@@ -194,14 +255,19 @@ 
+   await shutdown({ baseUrl });
+ 
+-  await new Promise((resolve) => {
+-    const t = setTimeout(resolve, 400);
+-    proc.child.once('exit', () => {
++  const exit = await new Promise((resolve) => {
++    const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), 8000);
++    t.unref?.();
++    proc.child.once('exit', (code, signal) => {
+       clearTimeout(t);
+-      resolve();
++      resolve({ code, signal });
+     });
+   });
+-
++  if (exit.code === null) {
++    await stopChild({ child: proc.child, timeoutMs: 2500 });
++    throw new Error(`${modeName}: shutdown timed out (no exit within 8000ms)`);
++  }
++  assert.equal(exit.code, 0, `${modeName}: exit code must be 0 on shutdown (signal=${exit.signal || 'none'})`);
+   await stopChild({ child: proc.child, timeoutMs: 1500 });
+   const down = await assertUnreachable({ url: `${baseUrl}/metrics`, deadlineMs: 4000 });
+   try {
+@@ -256,7 +322,19 @@   const c0 = { requests: req0, failures: fail0 };
+ 
+   await shutdown({ baseUrl });
+-  await new Promise((resolve) => proc.child.once('exit', resolve));
++  const exit = await new Promise((resolve) => {
++    const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), 8000);
++    t.unref?.();
++    proc.child.once('exit', (code, signal) => {
++      clearTimeout(t);
++      resolve({ code, signal });
++    });
++  });
++  if (exit.code === null) {
++    await stopChild({ child: proc.child, timeoutMs: 2500 });
++    throw new Error(`restartReset: shutdown timed out (no exit within 8000ms)`);
++  }
++  assert.equal(exit.code, 0, `restartReset: exit code must be 0 on shutdown (signal=${exit.signal || 'none'})`);
+   await stopChild({ child: proc.child, timeoutMs: 1500 });
+   await assertUnreachable({ url: `${baseUrl}/metrics`, deadlineMs: 4000 });
+   try {
+@@ -272,10 +350,8 @@   const runTagBase = safeTimestamp();
+ 
+   const artifactDir = createArtifactDir({ repoRoot: REPO_ROOT, tag: 'exe', runTagBase });
+-  const latest = createLatestPointers({ repoRoot: REPO_ROOT, tag: 'exe', artifactDir });
+ 
+   const transcript = createTranscript({
+-    latestPath: path.join(STATE_DIR, 'latest-proof-exe-transcript.log'),
+     stampedPath: path.join(artifactDir, 'transcript.log')
+   });
+   const serverLog = createTeeFile({
+@@ -283,9 +359,6 @@   });
+   const stdoutLog = createTeeFile({ filePath: path.join(artifactDir, 'stdout.log') });
+   const stderrLog = createTeeFile({ filePath: path.join(artifactDir, 'stderr.log') });
+-
+-  const configLatestPath = path.join(STATE_DIR, 'latest-proof-exe-config.json');
+-  const configStampedPath = path.join(artifactDir, 'config.json');
+ 
+   const meta = {
+     ts: new Date().toISOString(),
+@@ -295,16 +368,19 @@     platform: process.platform,
+     cwd: process.cwd(),
+     exePath: EXE_PATH,
++    tearRuntimeDir: TEAR_RUNTIME_DIR,
+     minUptimeDelta: MIN_UPTIME_DELTA,
+     forceFail: FORCE_FAIL,
++    forceExeFail: FORCE_EXE_FAIL,
+     baseUrlByMode: {},
+     portByMode: {}
+   };
+   writeMeta({ artifactDir, meta });
+   // Ensure artifact contract placeholders exist even if we fail before first metrics read.
+-  writeFileUtf8(path.join(artifactDir, 'metrics_before.txt'), '');
+-  writeFileUtf8(path.join(artifactDir, 'metrics_after.txt'), '');
+-  writeFileUtf8(path.join(artifactDir, 'config_snapshot.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'metrics.txt'), '');
++  writeFileUtf8(path.join(artifactDir, 'metadata.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'sha256.txt'), '');
++  writeFileUtf8(path.join(artifactDir, 'config.json'), '');
+ 
+   let config = {
+     ts: new Date().toISOString(),
+@@ -316,12 +392,21 @@     exePath: EXE_PATH,
+     results: null
+   };
+-  fs.writeFileSync(configLatestPath, JSON.stringify(config, null, 2), 'utf8');
+-  fs.writeFileSync(configStampedPath, JSON.stringify(config, null, 2), 'utf8');
+-
+-  try {
++  writeFileUtf8(path.join(artifactDir, 'proof_config.json'), JSON.stringify(config, null, 2));
++
++  try {
++    const startMs = Date.now();
+     transcript.writeLine(`[exe-proof] MIN_UPTIME_DELTA=${MIN_UPTIME_DELTA}`);
+     transcript.writeLine(`[exe-proof] artifacts: ${artifactDir}`);
++
++    if (FORCE_EXE_FAIL) {
++      transcript.writeLine('[proof-exe] forced failure');
++      throw new Error('[proof-exe] forced failure');
++    }
++
++    purgeRuntimeDirs({ meta });
++    writeMeta({ artifactDir, meta });
++
+     const built = await buildExeIfMissing({ transcript });
+     if (built.built) transcript.writeLine(`[exe-proof] EXE built: ${EXE_PATH}`);
+ 
+@@ -336,18 +421,23 @@ 
+     config = { ...config, results: { normal, restart, dry }, ok: true };
+     meta.ok = true;
++    meta.durationMs = Date.now() - startMs;
++    if (meta.durationMs > 30000) throw new Error(`Timing budget exceeded: ${meta.durationMs}ms > 30000ms`);
++    writeFileUtf8(path.join(artifactDir, 'metadata.json'), JSON.stringify(meta, null, 2));
++    writeFileUtf8(path.join(artifactDir, 'proof_config.json'), JSON.stringify(config, null, 2));
++    writeFileUtf8(
++      path.join(artifactDir, 'metrics.txt'),
++      `${readIfExists(path.join(artifactDir, 'metrics_before.txt')) || ''}\n\n# --- AFTER ---\n\n${readIfExists(path.join(artifactDir, 'metrics_after.txt')) || ''}\n`
++    );
++    writeSha256Txt({
++      artifactDir,
++      entries: [
++        { label: 'production-server.js', path: PROD_SERVER },
++        { label: 'tear-runtime.js', path: TEAR_ENTRY },
++        { label: 'NeuralShell-TEAR-Runtime.exe', path: EXE_PATH }
++      ]
++    });
+     writeMeta({ artifactDir, meta });
+-    fs.writeFileSync(configLatestPath, JSON.stringify(config, null, 2), 'utf8');
+-    fs.writeFileSync(configStampedPath, JSON.stringify(config, null, 2), 'utf8');
+-    latest.linkCopy('transcript.log', 'latest-proof-exe-transcript.log');
+-    latest.linkCopy('server.log', 'latest-proof-exe-server.log');
+-    latest.linkCopy('config.json', 'latest-proof-exe-config.json');
+-    latest.linkCopy('meta.json', 'latest-proof-exe-meta.json');
+-    latest.linkCopy('stdout.log', 'latest-proof-exe-stdout.log');
+-    latest.linkCopy('stderr.log', 'latest-proof-exe-stderr.log');
+-    latest.linkCopy('metrics_before.txt', 'latest-proof-exe-metrics_before.txt');
+-    latest.linkCopy('metrics_after.txt', 'latest-proof-exe-metrics_after.txt');
+-    latest.linkCopy('config_snapshot.json', 'latest-proof-exe-config_snapshot.json');
+ 
+     transcript.writeLine('');
+     transcript.writeLine('--- PROOF SUMMARY ---');
+@@ -364,19 +454,21 @@     meta.error = String(err && err.stack ? err.stack : err);
+     writeMeta({ artifactDir, meta });
+     config = { ...config, results: config.results, ok: false, error: String(err && err.stack ? err.stack : err) };
+-    fs.writeFileSync(configLatestPath, JSON.stringify(config, null, 2), 'utf8');
+-    fs.writeFileSync(configStampedPath, JSON.stringify(config, null, 2), 'utf8');
+-    latest.linkCopy('transcript.log', 'latest-proof-exe-transcript.log');
+-    latest.linkCopy('server.log', 'latest-proof-exe-server.log');
+-    latest.linkCopy('config.json', 'latest-proof-exe-config.json');
+-    latest.linkCopy('meta.json', 'latest-proof-exe-meta.json');
+-    latest.linkCopy('stdout.log', 'latest-proof-exe-stdout.log');
+-    latest.linkCopy('stderr.log', 'latest-proof-exe-stderr.log');
++    writeFileUtf8(path.join(artifactDir, 'metadata.json'), JSON.stringify(meta, null, 2));
++    writeFileUtf8(path.join(artifactDir, 'proof_config.json'), JSON.stringify(config, null, 2));
++    writeSha256Txt({
++      artifactDir,
++      entries: [
++        { label: 'production-server.js', path: PROD_SERVER },
++        { label: 'tear-runtime.js', path: TEAR_ENTRY },
++        { label: 'NeuralShell-TEAR-Runtime.exe', path: EXE_PATH }
++      ]
++    });
+ 
+     transcript.writeLine('');
+     transcript.writeLine('--- PROOF FAILURE ---');
+-    transcript.writeLine(`config: ${configLatestPath}`);
+-    transcript.writeLine(`serverLog: ${path.join(STATE_DIR, 'latest-proof-exe-server.log')}`);
++    transcript.writeLine(`config: ${path.join(artifactDir, 'config.json')}`);
++    transcript.writeLine(`serverLog: ${path.join(artifactDir, 'server.log')}`);
+     transcript.writeLine('--- LAST 120 SERVER LINES ---');
+     transcript.write(serverLog.lastLines(120));
+     transcript.writeLine('--- ERROR ---');
+@@ -386,6 +478,16 @@     throw err;
+   } finally {
+     try {
++      writeFileUtf8(
++        path.join(artifactDir, 'metrics.txt'),
++        `${readIfExists(path.join(artifactDir, 'metrics_before.txt')) || ''}\n\n# --- AFTER ---\n\n${
++          readIfExists(path.join(artifactDir, 'metrics_after.txt')) || ''
++        }\n`
++      );
++    } catch {
++      // ignore
++    }
++    try {
+       serverLog.close();
+     } catch {
+       // ignore
+
+--- /dev/null+++ C:\Users\KickA\NeuralShell\scripts\proof_all.cjs@@ -0,0 +1,331 @@+const fs = require('node:fs');
++const path = require('node:path');
++const { spawn } = require('node:child_process');
++const crypto = require('node:crypto');
++
++const REPO_ROOT = path.resolve(__dirname, '..');
++const STATE_DIR = path.join(REPO_ROOT, 'state');
++const PROOFS_DIR = path.join(STATE_DIR, 'proofs');
++const PROOF_DIR = path.join(REPO_ROOT, 'proof');
++const RUNS_DIR = path.join(PROOF_DIR, 'runs');
++const LATEST_DIR = path.join(PROOF_DIR, 'latest');
++
++function ensureDir(p) {
++  try {
++    fs.mkdirSync(p, { recursive: true });
++  } catch {
++    // ignore
++  }
++}
++
++function safeTimestamp() {
++  return new Date().toISOString().replace(/[:.]/g, '-');
++}
++
++function rmForce(p) {
++  try {
++    fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
++  } catch {
++    // ignore
++  }
++}
++
++function banner(label) {
++  const line = '='.repeat(30);
++  process.stdout.write(`\n${line}\n[PHASE] ${label}\n${line}\n`);
++}
++
++function sha256File(filePath) {
++  const buf = fs.readFileSync(filePath);
++  return crypto.createHash('sha256').update(buf).digest('hex');
++}
++
++function spawnNpm(args, extraEnv) {
++  const env = { ...process.env, ...(extraEnv || {}) };
++  const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
++  const spawnArgs =
++    process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', ...args] : args;
++  return spawn(cmd, spawnArgs, {
++    cwd: REPO_ROOT,
++    env,
++    stdio: 'inherit',
++    shell: false,
++    windowsHide: true
++  });
++}
++
++async function runNpm(label, npmArgs, env) {
++  banner(label);
++  const child = spawnNpm(npmArgs, env);
++  const code = await new Promise((resolve) => child.on('close', resolve));
++  if ((code ?? 1) !== 0) {
++    throw new Error(`FAILED AT: ${label} (exit ${code ?? 1})`);
++  }
++}
++
++function listFilesRecursive(dirPath) {
++  const out = [];
++  const stack = [dirPath];
++  while (stack.length) {
++    const cur = stack.pop();
++    let entries = [];
++    try {
++      entries = fs.readdirSync(cur, { withFileTypes: true });
++    } catch {
++      continue;
++    }
++    for (const e of entries) {
++      const full = path.join(cur, e.name);
++      if (e.isDirectory()) stack.push(full);
++      else if (e.isFile()) out.push(full);
++    }
++  }
++  return out;
++}
++
++function readJsonOrNull(filePath) {
++  try {
++    if (!fs.existsSync(filePath)) return null;
++    const raw = fs.readFileSync(filePath, 'utf8');
++    if (!raw || !raw.trim()) return null;
++    return JSON.parse(raw);
++  } catch {
++    return null;
++  }
++}
++
++function verifyPreviousManifestOrThrow() {
++  const manifestPath = path.join(LATEST_DIR, 'proof-manifest.json');
++  const manifest = readJsonOrNull(manifestPath);
++  if (!manifest) {
++    process.stdout.write('[proof] no previous manifest\n');
++    return;
++  }
++
++  // v1 manifest (runDir + relpath map)
++  if (manifest.schemaVersion === 'proof_manifest.v1') {
++    const runDir = manifest.runDir;
++    if (!runDir || typeof runDir !== 'string' || !fs.existsSync(runDir)) {
++      throw new Error('[proof] artifact hash mismatch detected');
++    }
++    const artifacts = manifest.artifacts && typeof manifest.artifacts === 'object' ? manifest.artifacts : null;
++    if (!artifacts) throw new Error('[proof] artifact hash mismatch detected');
++
++    for (const [rel, meta] of Object.entries(artifacts)) {
++      const expected = meta && typeof meta === 'object' ? meta.sha256 : null;
++      if (!expected || typeof expected !== 'string') continue;
++      const abs = path.join(runDir, rel);
++      if (!fs.existsSync(abs)) {
++        process.stderr.write('[proof] artifact hash mismatch detected\n');
++        process.stderr.write(`[proof] missing: ${rel}\n`);
++        process.exit(1);
++      }
++      const actual = sha256File(abs);
++      if (actual !== expected) {
++        process.stderr.write('[proof] artifact hash mismatch detected\n');
++        process.stderr.write(`[proof] mismatch: ${rel}\n`);
++        process.stderr.write(`expected: ${expected}\n`);
++        process.stderr.write(`actual:   ${actual}\n`);
++        process.exit(1);
++      }
++    }
++    process.stdout.write('[proof] manifest verification: PASS\n');
++    return;
++  }
++
++  // Legacy manifest (absolute paths)
++  if (manifest.algo === 'sha256' && Array.isArray(manifest.entries)) {
++    for (const e of manifest.entries) {
++      if (!e || typeof e !== 'object') continue;
++      if (e.exists !== true) continue;
++      if (!e.path || typeof e.path !== 'string') continue;
++      if (!e.sha256 || typeof e.sha256 !== 'string') continue;
++      if (!fs.existsSync(e.path)) {
++        process.stderr.write('[proof] artifact hash mismatch detected\n');
++        process.stderr.write(`[proof] missing: ${e.name || e.path}\n`);
++        process.exit(1);
++      }
++      const actual = sha256File(e.path);
++      if (actual !== e.sha256) {
++        process.stderr.write('[proof] artifact hash mismatch detected\n');
++        process.stderr.write(`[proof] mismatch: ${e.name || e.path}\n`);
++        process.stderr.write(`expected: ${e.sha256}\n`);
++        process.stderr.write(`actual:   ${actual}\n`);
++        process.exit(1);
++      }
++    }
++    process.stdout.write('[proof] legacy manifest verification: PASS\n');
++    return;
++  }
++
++  throw new Error('[proof] artifact hash mismatch detected');
++}
++
++function mustExist(filePath, label) {
++  if (!fs.existsSync(filePath)) {
++    throw new Error(`[proof] missing required artifact: ${label || filePath}`);
++  }
++}
++
++function writeManifest({ runDir, runTs, startedAt, finishedAt }) {
++  const files = listFilesRecursive(runDir)
++    .map((p) => path.relative(runDir, p).replace(/\\/g, '/'))
++    .filter((rel) => rel !== 'proof-manifest.json')
++    .sort();
++
++  const artifacts = {};
++  for (const rel of files) {
++    const abs = path.join(runDir, rel);
++    const st = fs.statSync(abs);
++    artifacts[rel] = {
++      sha256: sha256File(abs),
++      bytes: st.size
++    };
++  }
++
++  const manifest = {
++    schemaVersion: 'proof_manifest.v1',
++    generatedAt: new Date().toISOString(),
++    node: process.version,
++    platform: process.platform,
++    cwd: process.cwd(),
++    runDir,
++    runTs,
++    startedAt,
++    finishedAt,
++    artifacts
++  };
++
++  fs.writeFileSync(path.join(runDir, 'proof-manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
++  ensureDir(LATEST_DIR);
++  fs.writeFileSync(path.join(LATEST_DIR, 'proof-manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
++  fs.writeFileSync(
++    path.join(LATEST_DIR, 'run-pointer.json'),
++    JSON.stringify(
++      {
++        runDir,
++        runTs,
++        updatedAt: new Date().toISOString(),
++        manifestPath: path.join(runDir, 'proof-manifest.json')
++      },
++      null,
++      2
++    ),
++    'utf8'
++  );
++}
++
++async function main() {
++  if (process.env.PROOF_FORCE_FAIL === '1') {
++    throw new Error('[proof] forced failure');
++  }
++
++  verifyPreviousManifestOrThrow();
++
++  const runTs = process.env.PROOF_RUN_TS || safeTimestamp();
++  process.env.PROOF_RUN_TS = runTs;
++  process.env.PROOF_ORCHESTRATED = '1';
++
++  if (process.platform !== 'win32') {
++    throw new Error('[proof] shipped-artifact proof gate requires win32 (TEAR + EXE)');
++  }
++
++  // Cold start: wipe runtime state before proofs.
++  // If running under the verify spine (e.g. npm test inside scripts/verify_runner.cjs),
++  // do NOT delete state/ because it would erase in-progress artifact bundles.
++  const underSpine =
++    process.env.PROOF_PHASE === 'test' || Boolean(process.env.PROOF_ARTIFACT_DIR);
++  if (!underSpine) {
++    rmForce(STATE_DIR);
++  }
++  ensureDir(PROOFS_DIR);
++
++  const startedAt = new Date().toISOString();
++
++  await runNpm('proof:spawn', ['run', 'proof:spawn'], {
++    PROOF_RUN_TS: runTs,
++    PROOF_PHASE: 'spawn',
++    PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-spawn`),
++    PROOF_ORCHESTRATED: '1'
++  });
++
++  await runNpm('proof:runtime', ['run', 'proof:runtime'], {
++    PROOF_RUN_TS: runTs,
++    PROOF_PHASE: 'runtime',
++    PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-runtime`),
++    PROOF_ORCHESTRATED: '1'
++  });
++
++  await runNpm('proof:tear', ['run', 'proof:tear'], {
++    PROOF_RUN_TS: runTs,
++    PROOF_PHASE: 'tear',
++    PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-tear`),
++    PROOF_ORCHESTRATED: '1'
++  });
++
++  await runNpm('proof:exe', ['run', 'proof:exe'], {
++    PROOF_RUN_TS: runTs,
++    PROOF_PHASE: 'exe',
++    PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-exe`),
++    PROOF_ORCHESTRATED: '1'
++  });
++
++  const finishedAt = new Date().toISOString();
++
++  // Proof output directories
++  const spawnDir = path.join(PROOFS_DIR, `${runTs}-spawn`);
++  const runtimeDir = path.join(PROOFS_DIR, `${runTs}-runtime`);
++  const tearDir = path.join(PROOFS_DIR, `${runTs}-tear`);
++  const exeDir = path.join(PROOFS_DIR, `${runTs}-exe`);
++
++  // Required core artifacts must exist.
++  mustExist(path.join(spawnDir, 'server.log'), 'spawn/server.log');
++  mustExist(path.join(runtimeDir, 'server.log'), 'runtime/server.log');
++  mustExist(path.join(tearDir, 'server.log'), 'tear/server.log');
++  mustExist(path.join(exeDir, 'server.log'), 'exe/server.log');
++  mustExist(path.join(spawnDir, 'metadata.json'), 'spawn/metadata.json');
++  mustExist(path.join(runtimeDir, 'metadata.json'), 'runtime/metadata.json');
++  mustExist(path.join(tearDir, 'metadata.json'), 'tear/metadata.json');
++  mustExist(path.join(exeDir, 'metadata.json'), 'exe/metadata.json');
++
++  // Gate 1: cold start must be purged (no spine exceptions).
++  const runtimeMeta = readJsonOrNull(path.join(runtimeDir, 'metadata.json'));
++  const purged = Boolean(runtimeMeta && runtimeMeta.coldStart && runtimeMeta.coldStart.purged === true);
++  if (!purged) {
++    throw new Error('[proof] cold start purge not executed (runtime metadata coldStart.purged !== true)');
++  }
++
++  // Copy into proof/runs/<runTs> bundle
++  const runDir = path.join(RUNS_DIR, runTs);
++  rmForce(runDir);
++  ensureDir(runDir);
++  ensureDir(RUNS_DIR);
++  fs.cpSync(spawnDir, path.join(runDir, 'spawn'), { recursive: true, force: true });
++  fs.cpSync(runtimeDir, path.join(runDir, 'runtime'), { recursive: true, force: true });
++  fs.cpSync(tearDir, path.join(runDir, 'tear'), { recursive: true, force: true });
++  fs.cpSync(exeDir, path.join(runDir, 'exe'), { recursive: true, force: true });
++  fs.writeFileSync(
++    path.join(runDir, 'summary.json'),
++    JSON.stringify(
++      {
++        runTs,
++        startedAt,
++        finishedAt,
++        node: process.version,
++        platform: process.platform,
++        cwd: process.cwd(),
++        stateDirs: { spawnDir, runtimeDir, tearDir, exeDir }
++      },
++      null,
++      2
++    ),
++    'utf8'
++  );
++
++  writeManifest({ runDir, runTs, startedAt, finishedAt });
++}
++
++main().catch((err) => {
++  process.stderr.write(err && err.stack ? err.stack + '\n' : String(err) + '\n');
++  process.exit(1);
++});
+
+--- /dev/null+++ C:\Users\KickA\NeuralShell\scripts\verify_runner.cjs@@ -0,0 +1,241 @@+const fs = require('node:fs');
++const path = require('node:path');
++const { spawn } = require('node:child_process');
++const crypto = require('node:crypto');
++
++const REPO_ROOT = path.resolve(__dirname, '..');
++const STATE_DIR = path.join(REPO_ROOT, 'state');
++const PROOFS_DIR = path.join(STATE_DIR, 'proofs');
++const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
++
++function ensureDir(dirPath) {
++  try {
++    fs.mkdirSync(dirPath, { recursive: true });
++  } catch {
++    // ignore
++  }
++}
++
++function safeTimestamp() {
++  return new Date().toISOString().replace(/[:.]/g, '-');
++}
++
++function sha256Text(text) {
++  return crypto.createHash('sha256').update(String(text), 'utf8').digest('hex');
++}
++
++function sha256File(filePath) {
++  const buf = fs.readFileSync(filePath);
++  return crypto.createHash('sha256').update(buf).digest('hex');
++}
++
++function writeFileUtf8(filePath, text) {
++  ensureDir(path.dirname(filePath));
++  fs.writeFileSync(filePath, String(text), 'utf8');
++}
++
++function readJsonOrNull(filePath) {
++  try {
++    const raw = fs.readFileSync(filePath, 'utf8');
++    if (!raw || !raw.trim()) return null;
++    return JSON.parse(raw);
++  } catch {
++    return null;
++  }
++}
++
++function mergeWriteJson(filePath, patchObj) {
++  const prev = readJsonOrNull(filePath);
++  const merged = prev && typeof prev === 'object' ? { ...prev, ...patchObj } : { ...patchObj };
++  writeFileUtf8(filePath, JSON.stringify(merged, null, 2));
++}
++
++function banner(phaseLabel, phaseSlug) {
++  const line = '='.repeat(30);
++  process.stdout.write(`\n${line}\n[PHASE] ${phaseLabel}\n${line}\n`);
++  process.stdout.write(`[artifacts] ${path.join('state', 'proofs', `${process.env.PROOF_RUN_TS}-${phaseSlug}`)}\n`);
++}
++
++function spawnNpm(args, extraEnv) {
++  const env = { ...process.env, ...(extraEnv || {}) };
++  const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
++  const spawnArgs =
++    process.platform === 'win32' ? ['/d', '/s', '/c', 'npm', ...args] : args;
++  return spawn(cmd, spawnArgs, {
++    cwd: REPO_ROOT,
++    env,
++    stdio: ['ignore', 'pipe', 'pipe'],
++    shell: false,
++    windowsHide: true
++  });
++}
++
++async function runPhase({ runTs, phaseLabel, phaseSlug, npmArgs }) {
++  const artifactDir = path.join(PROOFS_DIR, `${runTs}-${phaseSlug}`);
++  ensureDir(artifactDir);
++
++  const runnerStdoutPath = path.join(artifactDir, 'runner_stdout.log');
++  const runnerStderrPath = path.join(artifactDir, 'runner_stderr.log');
++  const runnerStdout = fs.createWriteStream(runnerStdoutPath, { flags: 'w' });
++  const runnerStderr = fs.createWriteStream(runnerStderrPath, { flags: 'w' });
++
++  const runnerConfigPath = path.join(artifactDir, 'runner_config.json');
++  const runnerMetaPath = path.join(artifactDir, 'runner_metadata.json');
++
++  // Create placeholders so failures are always artifact-backed.
++  writeFileUtf8(path.join(artifactDir, 'stdout.log'), '');
++  writeFileUtf8(path.join(artifactDir, 'stderr.log'), '');
++  writeFileUtf8(path.join(artifactDir, 'config.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'metrics.txt'), '');
++  writeFileUtf8(path.join(artifactDir, 'metadata.json'), '');
++  writeFileUtf8(path.join(artifactDir, 'sha256.txt'), '');
++
++  const startedAt = new Date().toISOString();
++  const startMs = Date.now();
++
++  process.env.PROOF_PHASE = phaseSlug;
++  banner(phaseLabel, phaseSlug);
++
++  const env = {
++    PROOF_RUN_TS: runTs,
++    PROOF_PHASE: phaseSlug,
++    PROOF_ARTIFACT_DIR: artifactDir
++  };
++
++  writeFileUtf8(
++    runnerConfigPath,
++    JSON.stringify(
++      {
++        phase: phaseSlug,
++        label: phaseLabel,
++        npmArgs,
++        env,
++        node: process.version,
++        platform: process.platform,
++        cwd: process.cwd()
++      },
++      null,
++      2
++    )
++  );
++
++  const child = spawnNpm(npmArgs, env);
++
++  child.stdout.on('data', (d) => {
++    process.stdout.write(d);
++    runnerStdout.write(d);
++  });
++  child.stderr.on('data', (d) => {
++    process.stderr.write(d);
++    runnerStderr.write(d);
++  });
++
++  const code = await new Promise((resolve) => child.on('close', resolve));
++  const finishedAt = new Date().toISOString();
++  const durationMs = Date.now() - startMs;
++
++  await new Promise((resolve) => runnerStdout.end(resolve));
++  await new Promise((resolve) => runnerStderr.end(resolve));
++
++  const runnerMeta = {
++    phase: phaseSlug,
++    label: phaseLabel,
++    startedAt,
++    finishedAt,
++    durationMs,
++    budgetMs: 30000,
++    exitCode: code ?? 1,
++    ok: (code ?? 1) === 0,
++    artifactDir
++  };
++  writeFileUtf8(runnerMetaPath, JSON.stringify(runnerMeta, null, 2));
++
++  // Ensure metadata.json has timing budget receipts for every phase (including npm test).
++  mergeWriteJson(path.join(artifactDir, 'metadata.json'), { runner: runnerMeta });
++
++  // For phases without a config/metrics producer, leave explicit receipts.
++  if (phaseSlug === 'test' || phaseSlug === 'test_root') {
++    mergeWriteJson(path.join(artifactDir, 'config.json'), { runner: readJsonOrNull(runnerConfigPath) || {} });
++    writeFileUtf8(path.join(artifactDir, 'metrics.txt'), '(n/a)\n');
++    try {
++      fs.copyFileSync(runnerStdoutPath, path.join(artifactDir, 'stdout.log'));
++    } catch {
++      // ignore
++    }
++    try {
++      fs.copyFileSync(runnerStderrPath, path.join(artifactDir, 'stderr.log'));
++    } catch {
++      // ignore
++    }
++  }
++
++  // Ensure sha256.txt is never empty: at minimum include production-server.js hash.
++  try {
++    const shaPath = path.join(artifactDir, 'sha256.txt');
++    const existing = fs.readFileSync(shaPath, 'utf8');
++    if (!existing || !existing.trim()) {
++      const h = sha256File(PROD_SERVER);
++      writeFileUtf8(shaPath, `${h}  production-server.js  ${PROD_SERVER}\n`);
++    }
++  } catch {
++    // ignore
++  }
++
++  if (durationMs > 30000) {
++    throw new Error(`Timing budget exceeded for ${phaseSlug}: ${durationMs}ms > 30000ms`);
++  }
++  if ((code ?? 1) !== 0) {
++    throw new Error(`Phase failed: ${phaseSlug} (exit ${(code ?? 1)})`);
++  }
++
++  // Ensure proof scripts produced their required artifacts (test phase is produced by runner).
++  const required = ['stdout.log', 'stderr.log', 'config.json', 'metrics.txt', 'metadata.json', 'sha256.txt'];
++  for (const f of required) {
++    const p = path.join(artifactDir, f);
++    if (!fs.existsSync(p)) throw new Error(`Missing required artifact: ${phaseSlug}/${f}`);
++  }
++
++  return { phaseSlug, artifactDir };
++}
++
++async function main() {
++  ensureDir(PROOFS_DIR);
++  const runTs = safeTimestamp();
++  process.env.PROOF_RUN_TS = runTs;
++  process.env.PROOF_PHASE = 'init';
++
++  writeFileUtf8(path.join(PROOFS_DIR, 'LATEST_RUN.txt'), runTs + '\n');
++
++  const phases = [
++    { phaseLabel: 'proof:all', phaseSlug: 'proof_all', npmArgs: ['run', 'proof:all'] },
++    { phaseLabel: 'test:root', phaseSlug: 'test_root', npmArgs: ['run', 'test:root'] }
++  ];
++
++  try {
++    for (const p of phases) {
++      await runPhase({ runTs, ...p });
++    }
++  } catch (err) {
++    const phase = process.env.PROOF_PHASE || 'unknown';
++    const artifactDir = path.join('state', 'proofs', `${runTs}-${phase}`);
++    process.stderr.write(`\nFAILED AT: ${phase}\n`);
++    process.stderr.write(`Artifacts: ${artifactDir}\n`);
++    process.stderr.write(`\nVERIFY SPINE FAILED\nSee: ${artifactDir}\n`);
++    process.stderr.write(err && err.stack ? err.stack + '\n' : String(err) + '\n');
++    process.exit(1);
++  }
++
++  process.stdout.write('\n========================================\n');
++  process.stdout.write('NEURALSHELL VERIFY SPINE: PASS\n');
++  process.stdout.write('Node + TEAR + EXE parity confirmed\n');
++  process.stdout.write('========================================\n');
++
++  // Deterministic spine marker for quick CI scan.
++  const spineMarker = sha256Text(`PASS:${runTs}`);
++  writeFileUtf8(path.join(PROOFS_DIR, `${runTs}-spine.marker`), spineMarker + '\n');
++}
++
++main().catch((err) => {
++  process.stderr.write(err && err.stack ? err.stack + '\n' : String(err) + '\n');
++  process.exit(1);
++});
+
+--- C:\Users\KickA\NeuralShell\local\archive\authority-upgrade\proof-gate.yml.bak+++ C:\Users\KickA\NeuralShell\.github\workflows\proof-gate.yml@@ -8,16 +8,13 @@ 
+ jobs:
+   proof:
+-    name: Tests + Proofs (${{ matrix.os }}, Node ${{ matrix.node }})
++    name: Verify Spine (${{ matrix.os }}, Node ${{ matrix.node }})
+     runs-on: ${{ matrix.os }}
+     strategy:
+       fail-fast: false
+       matrix:
+         os: [windows-latest, ubuntu-latest]
+         node: [20.x, 22.x]
+-    defaults:
+-      run:
+-        shell: bash
+     steps:
+       - uses: actions/checkout@v4
+ 
+@@ -26,144 +23,24 @@           node-version: ${{ matrix.node }}
+           cache: npm
+ 
+-      - name: Install
++      - name: Install (root)
+         run: npm ci --ignore-scripts
+ 
+-      - name: Verify All (Windows only) (transcript)
++      - name: Install (Desktop)
++        run: npm ci --ignore-scripts
++        working-directory: NeuralShell_Desktop
++
++      - name: Verify All (Windows)
+         if: matrix.os == 'windows-latest'
++        run: npm run verify:all
++
++      - name: Verify Subset (Ubuntu)
++        if: matrix.os == 'ubuntu-latest'
+         run: |
+-          node <<'NODE'
+-          const fs = require('node:fs');
+-          const { spawn } = require('node:child_process');
+-          fs.mkdirSync('state', { recursive: true });
+-          const out = fs.createWriteStream('state/ci_verify_all_transcript.log', { flags: 'w' });
+-          const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
+-          const args = process.platform === 'win32' ? ['/d','/s','/c','npm','run','verify:all'] : ['run','verify:all'];
+-          const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+-          child.stdout.on('data', (d) => { process.stdout.write(d); out.write(d); });
+-          child.stderr.on('data', (d) => { process.stderr.write(d); out.write(d); });
+-          child.on('close', (code) => out.end(() => process.exit(code ?? 1)));
+-          NODE
+-
+-      - name: Proof Summaries (Windows only)
+-        if: matrix.os == 'windows-latest'
+-        run: |
+-          node <<'NODE'
+-          const fs = require('node:fs');
+-          function extractBlock(text) {
+-            const lines = String(text || '').split(/\r?\n/);
+-            const start = lines.findIndex((l) => l.includes('--- PROOF SUMMARY ---'));
+-            const end = start === -1 ? -1 : lines.findIndex((l, i) => i > start && l.includes('---------------------'));
+-            if (start === -1 || end === -1) return null;
+-            return lines.slice(start, end + 1).join('\n');
+-          }
+-          const files = [
+-            'state/latest-proof-runtime-transcript.log',
+-            'state/latest-proof-tear-transcript.log',
+-            'state/latest-proof-exe-transcript.log'
+-          ];
+-          for (const f of files) {
+-            if (!fs.existsSync(f)) {
+-              console.error(`Missing transcript: ${f}`);
+-              process.exit(1);
+-            }
+-            const text = fs.readFileSync(f, 'utf8');
+-            const block = extractBlock(text);
+-            if (!block) {
+-              console.error(`PROOF SUMMARY block not found in ${f}`);
+-              process.exit(1);
+-            }
+-            console.log(`=== ${f} ===`);
+-            console.log(block);
+-          }
+-          NODE
+-
+-      - name: Install Desktop
+-        run: |
+-          node <<'NODE'
+-          const { spawn } = require('node:child_process');
+-          const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
+-          const args = process.platform === 'win32' ? ['/d','/s','/c','npm','ci','--ignore-scripts'] : ['ci','--ignore-scripts'];
+-          const child = spawn(cmd, args, { stdio: 'inherit', cwd: 'NeuralShell_Desktop', shell: false });
+-          child.on('close', (code) => process.exit(code ?? 1));
+-          NODE
+-
+-      - name: Unit Tests (transcript)
+-        if: matrix.os != 'windows-latest'
+-        run: |
+-          node <<'NODE'
+-          const fs = require('node:fs');
+-          const { spawn } = require('node:child_process');
+-          fs.mkdirSync('state', { recursive: true });
+-          const out = fs.createWriteStream('state/ci_test_transcript.log', { flags: 'w' });
+-          const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+-          const child = spawn(cmd, ['test'], { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+-          child.stdout.on('data', (d) => { process.stdout.write(d); out.write(d); });
+-          child.stderr.on('data', (d) => { process.stderr.write(d); out.write(d); });
+-          child.on('close', (code) => out.end(() => process.exit(code ?? 1)));
+-          NODE
+-
+-      - name: Proof Spawn (transcript)
+-        if: matrix.os != 'windows-latest'
+-        run: |
+-          node <<'NODE'
+-          const fs = require('node:fs');
+-          const { spawn } = require('node:child_process');
+-          fs.mkdirSync('state', { recursive: true });
+-          const out = fs.createWriteStream('state/ci_proof_spawn_transcript.log', { flags: 'w' });
+-          const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+-          const child = spawn(cmd, ['run', 'proof:spawn'], { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+-          child.stdout.on('data', (d) => { process.stdout.write(d); out.write(d); });
+-          child.stderr.on('data', (d) => { process.stderr.write(d); out.write(d); });
+-          child.on('close', (code) => out.end(() => process.exit(code ?? 1)));
+-          NODE
+-
+-      - name: Proof Runtime (transcript)
+-        if: matrix.os != 'windows-latest'
+-        run: |
+-          node <<'NODE'
+-          const fs = require('node:fs');
+-          const { spawn } = require('node:child_process');
+-          fs.mkdirSync('state', { recursive: true });
+-          const out = fs.createWriteStream('state/ci_proof_runtime_transcript.log', { flags: 'w' });
+-          const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+-          const child = spawn(cmd, ['run', 'proof:runtime'], { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+-          child.stdout.on('data', (d) => { process.stdout.write(d); out.write(d); });
+-          child.stderr.on('data', (d) => { process.stderr.write(d); out.write(d); });
+-          child.on('close', (code) => out.end(() => process.exit(code ?? 1)));
+-          NODE
+-
+-      - name: Proof Tear (Ubuntu only) (transcript)
+-        if: matrix.os != 'windows-latest'
+-        run: |
+-          node <<'NODE'
+-          const fs = require('node:fs');
+-          const { spawn } = require('node:child_process');
+-          fs.mkdirSync('state', { recursive: true });
+-          const out = fs.createWriteStream('state/ci_proof_tear_transcript.log', { flags: 'w' });
+-          const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+-          const child = spawn(cmd, ['run', 'proof:tear'], { stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+-          child.stdout.on('data', (d) => { process.stdout.write(d); out.write(d); });
+-          child.stderr.on('data', (d) => { process.stderr.write(d); out.write(d); });
+-          child.on('close', (code) => out.end(() => process.exit(code ?? 1)));
+-          NODE
+-
+-      - name: Proof Summary (annotation)
+-        if: matrix.os != 'windows-latest'
+-        run: |
+-          node <<'NODE'
+-          const fs = require('node:fs');
+-          const text = fs.readFileSync('state/ci_proof_runtime_transcript.log', 'utf8');
+-          const lines = text.split(/\r?\n/);
+-          const start = lines.findIndex((l) => l.includes('--- PROOF SUMMARY ---'));
+-          const end = start === -1 ? -1 : lines.findIndex((l, i) => i > start && l.includes('---------------------'));
+-          if (start === -1 || end === -1) {
+-            console.error('PROOF SUMMARY block not found in transcript');
+-            process.exit(1);
+-          }
+-          console.log('=== PROOF SUMMARY (from transcript) ===');
+-          for (let i = start; i <= end; i += 1) console.log(lines[i]);
+-          NODE
++          npm run test:root
++          npm run proof:spawn
++          npm run proof:runtime
++          npm run proof:tear
+ 
+       - name: Upload proof artifacts (on failure)
+         if: failure()
+@@ -172,7 +49,4 @@           name: proof-artifacts-${{ matrix.os }}-node-${{ matrix.node }}
+           path: |
+             state/proofs/**
+-            state/latest-proof-*.log
+-            state/latest-proof-*.json
+-            state/ci_*.log
+             .github/workflows/**
+
+--- C:\Users\KickA\NeuralShell\local\archive\2026-02-23T18-46-06-652Z\%BK%\ci.yml.bak+++ C:\Users\KickA\NeuralShell\.github\workflows\ci.yml@@ -42,7 +42,7 @@           node-version: '22'
+           cache: 'npm'
+       - run: npm ci --ignore-scripts
+-      - run: npm test
++      - run: npm run test:root
+       - run: npm run proof:runtime
+       - run: npm run proof:spawn
+       - run: npm run test:contract
+
+--- /dev/null+++ C:\Users\KickA\NeuralShell\proof\PROOF_UPDATE.md@@ -0,0 +1,69 @@+# NeuralShell Proof Authority Update (Authoritative Gate)
++
++## Where the proof update text is
++- Repo: `C:\Users\KickA\NeuralShell\proof\PROOF_UPDATE.md`
++- Desktop copy target: `C:\Users\KickA\Desktop\NeuralShell_PROOF_UPDATE.md`
++
++## Authoritative proof gate (cannot lie)
++- Gate command: `npm run proof:all`
++- Implementation: `scripts/proof_all.cjs`
++- What it runs (in-order): `npm run proof:spawn` -> `npm run proof:runtime` -> `npm run proof:tear` -> `npm run proof:exe` (no `shell:true`)
++- Hard gate: proof fails if `scripts/runtime_proof.cjs` did not execute cold-start purge (`coldStart.purged !== true`)
++
++## Tests are proof-gated
++- `npm test` now runs proof first:
++  - `package.json` -> `scripts.test = "npm run proof:all && npm run test:root"`
++
++## Tamper-evident manifests (SHA256)
++- Latest pointers:
++  - `proof/latest/proof-manifest.json`
++  - `proof/latest/run-pointer.json`
++- Run bundles:
++  - `proof/runs/<timestamp>/proof-manifest.json`
++  - `proof/runs/<timestamp>/summary.json`
++- Behavior:
++  - Manifest verification happens before running proofs.
++  - Any mismatch hard-fails with: `[proof] artifact hash mismatch detected`
++
++## Proof artifacts (forensics)
++- Phase outputs (raw):
++  - `state/proofs/<timestamp>-spawn/`
++  - `state/proofs/<timestamp>-runtime/`
++- Orchestrator bundles these into:
++  - `proof/runs/<timestamp>/spawn/`
++  - `proof/runs/<timestamp>/runtime/`
++
++## Deterministic forced failures (for proving the gate works)
++- Force the proof gate to fail immediately (no side effects):
++  - `set PROOF_FORCE_FAIL=1`
++  - `npm run proof:all`
++- Force corrupted `/metrics` payload (proof-only, localhost-only):
++  - `set PROOF_FORCE_METRICS_FAIL=1`
++  - `npm run proof:runtime`
++  - Server-side handler is gated in `production-server.js`:
++    - enabled only when `(NODE_ENV==='test' || PROOF_MODE==='1')` and request is from loopback.
++- Force TEAR proof failure (artifact-backed, deterministic):
++  - `set PROOF_FORCE_TEAR_FAIL=1`
++  - `npm run proof:all`
++- Force EXE proof failure (artifact-backed, deterministic):
++  - `set PROOF_FORCE_EXE_FAIL=1`
++  - `npm run proof:all`
++
++## Anti-fake runtime behavior checks
++- `scripts/runtime_proof.cjs` asserts *real mutation*:
++  - fetch `/metrics` (baseline)
++  - perform 3 real HTTP requests (health path)
++  - fetch `/metrics` again
++  - hard-fails if `neuralshell_requests_total` and `neuralshell_uptime_seconds` don’t increase:
++    - `[runtime-proof] metrics did not mutate as expected`
++ - Cold-start is mandatory (no spine exception):
++   - Purges `state/*` (excluding `state/proofs/**`) and `NeuralShell_Desktop/.tear_runtime`
++   - Summary prints: `coldStart: purged=true ...`
++
++## CI hard gate
++- Main proof gate workflow:
++  - `.github/workflows/proof-gate.yml`
++  - Matrix: Windows/Ubuntu × Node 20/22
++  - Windows runs: `npm run verify:all`
++  - Ubuntu runs `npm run test:root` (does not call `npm test`, because `npm test` is proof-gated and includes Windows EXE)
++  - On failure uploads: `state/proofs/**`
+

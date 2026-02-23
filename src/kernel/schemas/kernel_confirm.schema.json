@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "action": { "type": "string", "maxLength": 100 },
+    "details": { "type": "string", "maxLength": 500 }
+  },
+  "required": ["action", "details"],
+  "additionalProperties": false
+}

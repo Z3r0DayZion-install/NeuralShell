@@ -1,0 +1,109 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Testing
+test/
+tests/
+*.test.js
+*.spec.js
+coverage/
+.nyc_output/
+test_output.txt
+
+# Documentation
+docs/
+*.md
+!README.md
+LICENSE
+
+# Build artifacts
+dist/
+build/
+releases/
+*.tar.gz
+*.zip
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime
+.tear_runtime/
+state/
+tmp/
+temp/
+
+# Desktop app
+NeuralShell_Desktop/
+
+# Kubernetes
+k8s/
+
+# Monitoring configs
+monitoring/
+
+# Scripts (keep only essential)
+scripts/bench_router.mjs
+scripts/benchmark.mjs
+scripts/canary_router.mjs
+scripts/load_router.mjs
+scripts/performance-test-suite.mjs
+
+# SDK examples
+sdk/
+
+# Misc
+.prettierrc
+.eslintrc.json
+.eslintignore
+tsconfig.json
+audit-config.json
+snyk_code.json
+Makefile
+snapshot.sh
+quickstart.sh
+
+# Completion docs
+*COMPLETE*.md
+*IMPROVEMENTS*.md
+*SUMMARY*.md
+*CERTIFICATE*.md
+*INDEX*.md
+*CHECKLIST*.md

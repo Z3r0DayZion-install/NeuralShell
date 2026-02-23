@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEURALSHELL // MISSION CONTROL</title>
+  <script src="/public/lib/vue.global.prod.js"></script>
+  <script src="/public/lib/axios.min.js"></script>
+  <script src="/public/lib/chart.min.js"></script>
+  <script src="/public/lib/3d-force-graph.min.js"></script>
+  <link rel="stylesheet" href="/public/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #050505;
+      --bg-secondary: #0a0f14;
+      --bg-panel: #11161d;
+      --border: #1e2630;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent-cyan: #00f0ff;
+      --accent-green: #39ff14;
+      --accent-red: #ff2a6d;
+      --accent-yellow: #fcee0a;
+      --accent-purple: #b026ff;
+      --glow-cyan: 0 0 10px rgba(0, 240, 255, 0.5);
+      --glow-red: 0 0 10px rgba(255, 42, 109, 0.5);
+      --scanline: rgba(0, 240, 255, 0.03);
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: 'JetBrains Mono', monospace; 
+      background: var(--bg-primary); 
+      color: var(--text-primary); 
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        linear-gradient(var(--scanline) 1px, transparent 1px),
+        linear-gradient(90deg, var(--scanline) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+    .header {
+      background: rgba(10, 15, 20, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--accent-cyan);
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.1);
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-shadow: var(--glow-cyan);
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 300px 1fr 350px;
+      gap: 20px;
+      height: calc(100vh - 60px);
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel-header {
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      border-left: 2px solid transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+    .nav-item.active { border-left-color: var(--accent-cyan); background: rgba(0, 240, 255, 0.05); color: var(--accent-cyan); }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+    .metric-card { background: rgba(0,0,0,0.3); padding: 16px; border: 1px solid var(--border); border-radius: 4px; text-align: center; }
+    .metric-val { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 8px 0; }
+    .metric-label { font-size: 10px; text-transform: uppercase; color: var(--text-secondary); }
+
+    .terminal { background: #000; border: 1px solid var(--border); padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; height: 100%; overflow-y: auto; color: #33ff00; }
+    .log-line { margin-bottom: 4px; word-break: break-all; display: flex; gap: 10px; }
+    .log-ts { color: #666; min-width: 70px; }
+    .log-tag { font-weight: bold; }
+    .log-tag.INFO { color: var(--accent-cyan); }
+    .log-tag.WARN { color: var(--accent-yellow); }
+    .log-tag.ERROR { color: var(--accent-red); }
+    .log-tag.SECURITY { color: var(--accent-purple); }
+
+    .quality-stream { display: flex; gap: 2px; height: 60px; align-items: flex-end; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 4px; overflow: hidden; }
+    .quality-bar { flex: 1; min-width: 4px; background: var(--accent-cyan); transition: height 0.2s; opacity: 0.8; }
+    .quality-bar.low { background: var(--accent-red); }
+    .quality-bar.med { background: var(--accent-yellow); }
+    .quality-bar.high { background: var(--accent-green); }
+
+    .btn { background: transparent; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 8px 16px; font-family: inherit; font-size: 12px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .btn:hover { background: var(--accent-cyan); color: #000; box-shadow: var(--glow-cyan); }
+    .btn.danger { border-color: var(--accent-red); color: var(--accent-red); }
+    .btn.danger:hover { background: var(--accent-red); color: #000; box-shadow: var(--glow-red); }
+
+    .endpoint-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+    .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .status-badge.healthy { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+    
+    .card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+    .card-header { padding: 12px 16px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+    .card-body { padding: 16px; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; margin-bottom: 6px; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
+    .form-input { width: 100%; padding: 10px; background: #000; border: 1px solid var(--border); color: var(--text-primary); font-family: inherit; }
+    
+    .table { width: 100%; border-collapse: collapse; }
+    .table th { text-align: left; padding: 10px; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .table td { padding: 10px; border-bottom: 1px solid var(--border); }
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="brand">
+        <span class="status-indicator" :style="{ background: connectionStatus === 'CONNECTED' ? 'var(--accent-green)' : 'var(--accent-red)' }"></span>
+        NEURALSHELL // CORE
+      </div>
+      <div style="font-size: 12px; color: var(--accent-cyan);">
+        {{ connectionStatus }}
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="panel">
+        <div class="panel-header">System Control</div>
+        <div class="panel-body" style="padding: 0;">
+          <div class="nav-item" :class="{ active: view === 'overview' }" @click="view = 'overview'">
+            <i class="fas fa-th-large"></i> Overview
+          </div>
+          <div class="nav-item" :class="{ active: view === 'chaos' }" @click="view = 'chaos'">
+            <i class="fas fa-biohazard"></i> Chaos Engineering
+          </div>
+          <div class="nav-item" :class="{ active: view === 'brain' }" @click="view = 'brain'">
+            <i class="fas fa-brain"></i> Brain Dump
+          </div>
+          <div class="nav-item" :class="{ active: view === 'swarm' }" @click="view = 'swarm'">
+            <i class="fas fa-network-wired"></i> Swarm Status
+          </div>
+          <div class="nav-item" :class="{ active: view === 'tools' }" @click="view = 'tools'">
+            <i class="fas fa-tools"></i> Swarm Tools
+          </div>
+          <div class="nav-item" :class="{ active: view === 'genesis' }" @click="view = 'genesis'">
+            <i class="fas fa-hammer"></i> Genesis Engine
+          </div>
+          <div class="nav-item" :class="{ active: view === 'economy' }" @click="view = 'economy'">
+            <i class="fas fa-coins"></i> Economy
+          </div>
+          <div class="nav-item" :class="{ active: view === 'store' }" @click="view = 'store'">
+            <i class="fas fa-shopping-cart"></i> Neural Store
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span>{{ view }} View</span>
+        </div>
+        <div class="panel-body">
+          <div v-if="view === 'overview'">
+            <div class="metric-grid">
+              <div class="metric-card"><div class="metric-label">Quality Score</div><div class="metric-val">{{ avgQuality }}</div></div>
+              <div class="metric-card"><div class="metric-label">RPM</div><div class="metric-val">{{ rpm }}</div></div>
+              <div class="metric-card"><div class="metric-label">Latency</div><div class="metric-val">{{ p95Latency }}ms</div></div>
+              <div class="metric-card"><div class="metric-label">Threats</div><div class="metric-val">{{ threats }}</div></div>
+            </div>
+            <div class="quality-stream">
+              <div v-for="(s, i) in qualityHistory" :key="i" class="quality-bar" :class="{ low: s<50, med: s>=50 && s<80, high: s>=80 }" :style="{ height: s+'%' }"></div>
+            </div>
+            <div style="height: 300px;"><canvas id="trafficChart"></canvas></div>
+          </div>
+
+          <div v-if="view === 'brain'">
+            <div class="card" style="height: 400px; position: relative;"><div id="3d-graph" style="width: 100%; height: 100%;"></div></div>
+            <div class="card" style="margin-top: 20px;">
+              <div class="card-header">Knowledge Injection</div>
+              <div class="card-body">
+                <textarea v-model="newMemory" class="form-input" rows="3"></textarea>
+                <button class="btn" style="margin-top: 10px;" @click="injectMemory">Memorize</button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="view === 'swarm'">
+            <div class="metric-grid">
+              <div class="metric-card"><div class="metric-label">Active Agents</div><div class="metric-val">4</div></div>
+              <div class="metric-card"><div class="metric-label">Swarm GDP</div><div class="metric-val">{{ economy.gdp }} NC</div></div>
+              <div class="metric-card"><div class="metric-label">Tasks Pending</div><div class="metric-val">{{ pendingTasks }}</div></div>
+              <div class="metric-card"><div class="metric-label">Uptime</div><div class="metric-val">100%</div></div>
+            </div>
+            
+            <div class="card" style="margin-bottom: 20px;">
+              <div class="card-header">Cognitive Stream (Live Thoughts)</div>
+              <div class="card-body" style="height: 150px; overflow-y: auto; background: #000; font-family: monospace; color: #00f0ff;">
+                <div v-for="(thought, i) in thoughtStream" :key="i" style="margin-bottom: 8px; border-bottom: 1px dashed #333; padding-bottom: 4px;">
+                  <span style="opacity: 0.5;">[{{ thought.agent }}]</span> {{ thought.content }}
+                </div>
+              </div>
+            </div>
+
+            <div class="card"><div class="card-header">Agent Matrix</div><div class="card-body">
+              <div class="endpoint-item">
+                <div>Researcher-01 <span class="status-badge healthy">ONLINE</span></div>
+                <div style="font-size: 10px; color: #888;">State: {{ agentStates.researcher || 'IDLE' }}</div>
+              </div>
+              <div class="endpoint-item">
+                <div>Coder-01 <span class="status-badge healthy">ONLINE</span></div>
+                <div style="font-size: 10px; color: #888;">State: {{ agentStates.coder || 'IDLE' }}</div>
+              </div>
+              <div class="endpoint-item">
+                <div>Architect-01 <span class="status-badge healthy">ONLINE</span></div>
+                <div style="font-size: 10px; color: #888;">State: {{ agentStates.architect || 'IDLE' }}</div>
+              </div>
+              <div class="endpoint-item">
+                <div>Dreamer-01 <span class="status-badge healthy">ONLINE</span></div>
+                <div style="font-size: 10px; color: #888;">State: {{ agentStates.dreamer || 'DREAMING' }}</div>
+              </div>
+            </div></div>
+          </div>
+
+          <div v-if="view === 'tools'">
+            <div class="card">
+              <div class="card-header">Invention Forge</div>
+              <div class="card-body">
+                <div style="display: flex; gap: 10px;">
+                  <input v-model="newToolName" class="form-input" placeholder="Name">
+                  <input v-model="newToolSpec" class="form-input" placeholder="Capability spec...">
+                  <button class="btn" @click="inventTool">INVENT</button>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top: 20px;">
+              <div class="card-header">Swarm Library</div>
+              <div class="card-body">
+                <div v-for="t in swarmTools" :key="t.name" class="endpoint-item">
+                  <div><strong>{{ t.name }}</strong><br><small>{{ t.description }}</small></div>
+                  <span class="status-badge healthy">READY</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="view === 'genesis'">
+            <div class="card">
+              <div class="card-header">App Spawner</div>
+              <div class="card-body">
+                <div style="display: flex; gap: 10px;">
+                  <input v-model="genesisPrompt" class="form-input" placeholder="Describe app...">
+                  <button class="btn" @click="spawnApp">SPAWN</button>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top: 20px;"><div class="card-body">
+              <div v-for="a in spawnedApps" :key="a.id" class="endpoint-item">
+                {{ a.name }} <a :href="a.url" target="_blank">{{ a.url }}</a>
+              </div>
+            </div></div>
+          </div>
+
+          <div v-if="view === 'economy'">
+            <div class="metric-grid">
+              <div class="metric-card"><div class="metric-label">GDP</div><div class="metric-val">{{ economy.gdp }}</div></div>
+              <div class="metric-card"><div class="metric-label">TX Vol</div><div class="metric-val">{{ economy.txCount }}</div></div>
+            </div>
+            <div class="card"><div class="card-body">
+              <table class="table"><thead><tr><th>Agent</th><th>Balance</th></tr></thead>
+              <tbody><tr v-for="(b, a) in economy.balances" :key="a"><td>{{ a }}</td><td>{{ b }} NC</td></tr></tbody>
+              </table>
+            </div></div>
+          </div>
+
+          <div v-if="view === 'store'">
+            <div class="card"><div class="card-header">Neural Store</div><div class="card-body">
+              <div v-for="item in storeListings" :key="item.id" class="endpoint-item">
+                <div><strong>{{ item.name }}</strong><br><small>{{ item.description }}</small></div>
+                <button class="btn btn-sm" @click="buyItem(item)">BUY {{ item.price }} NC</button>
+              </div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">Neural Link <i class="fas fa-bolt"></i></div>
+        <div class="panel-body" style="padding: 0;">
+          <div class="terminal">
+            <div v-for="(l, i) in logs" :key="i" class="log-line">
+              <span class="log-ts">{{ l.ts }}</span> <span class="log-tag" :class="l.type">{{ l.type }}</span> {{ l.msg }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, computed, watch } = Vue;
+    createApp({
+      setup() {
+        const view = ref('overview');
+        const logs = ref([]);
+        const qualityHistory = ref([]);
+        const autonomyStatus = ref({});
+        const rpm = ref(0);
+        const p95Latency = ref(0);
+        const threats = ref(0);
+        const connectionStatus = ref('CONNECTING...');
+        const brainResults = ref([]);
+        const newMemory = ref('');
+        const economy = ref({ balances: {}, gdp: 0, txCount: 0 });
+        const storeListings = ref([]);
+        const swarmTools = ref([]);
+        const newToolName = ref('');
+        const newToolSpec = ref('');
+        const genesisPrompt = ref('');
+        const spawnedApps = ref([]);
+        const pendingTasks = ref(0);
+        const thoughtStream = ref([]);
+        const agentStates = ref({ researcher: 'IDLE', coder: 'IDLE', architect: 'IDLE', dreamer: 'DREAMING' });
+
+        const addLog = (type, msg) => {
+          const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
+          logs.value.unshift({ ts, type, msg });
+          if (logs.value.length > 50) logs.value.pop();
+        };
+
+        const fetchData = async () => {
+          try {
+            const res = await axios.get('/metrics/prometheus', { timeout: 2000 });
+            connectionStatus.value = 'CONNECTED';
+            const lines = res.data.split('\n');
+            const parse = (n) => { const l = lines.find(x => x.startsWith(n)); return l ? parseFloat(l.split(' ')[1]) : 0; };
+            rpm.value = Math.floor(parse('neuralshell_requests_total') / 10);
+            threats.value = parse('neuralshell_admin_forbidden_total') + parse('neuralshell_prompt_auth_failures_total');
+            
+            // Mock swarm activity for dashboard vitality
+            if (Math.random() > 0.7) {
+              const thoughts = [
+                { agent: 'Orchestrator', content: 'Analyzing user intent: "Create a fractal visualizer"...' },
+                { agent: 'Architect', content: 'Reviewing src/agents/coder.js for optimization patterns.' },
+                { agent: 'Coder', content: 'Generating boilerplate for WebGL context...' },
+                { agent: 'Dreamer', content: 'Imagine: A marketplace for AI-generated poetry.' },
+                { agent: 'Genesis', content: 'Building Docker container: ns-app-fractal-01' }
+              ];
+              thoughtStream.value.unshift(thoughts[Math.floor(Math.random() * thoughts.length)]);
+              if (thoughtStream.value.length > 10) thoughtStream.value.pop();
+              
+              pendingTasks.value = Math.floor(Math.random() * 5);
+              agentStates.value.coder = Math.random() > 0.5 ? 'CODING' : 'IDLE';
+            }
+
+            if (Math.random() > 0.8) {
+              const s = Math.floor(Math.random() * 30) + 70;
+              qualityHistory.value.push(s);
+              if (qualityHistory.value.length > 50) qualityHistory.value.shift();
+            }
+          } catch (e) { connectionStatus.value = 'OFFLINE'; }
+        };
+
+        const fetchEconomy = async () => {
+          try {
+            const res = await axios.get('/api/economy/ledger');
+            economy.value.balances = res.data.balances;
+            economy.value.txCount = res.data.history.length;
+            economy.value.gdp = Object.values(res.data.balances).reduce((a, b) => a + b, 0);
+          } catch (e) {}
+        };
+
+        const fetchStore = async () => { try { const res = await axios.get('/api/economy/market'); storeListings.value = res.data.listings; } catch (e) {} };
+        const fetchTools = async () => { try { const res = await axios.get('/api/swarm/tools'); swarmTools.value = res.data.tools; } catch (e) {} };
+
+        const buyItem = async (item) => {
+          try {
+            const res = await axios.post('/api/economy/buy', { listingId: item.id });
+            addLog('INFO', `Purchased: ${item.name}`);
+            window.open(res.data.asset.url, '_blank');
+          } catch (e) { addLog('ERROR', 'Purchase failed'); }
+        };
+
+        const inventTool = async () => {
+          if (!newToolName.value) return;
+          addLog('WARN', `Tasking Swarm to forge "${newToolName.value}"...`);
+          try { await axios.post('/api/swarm/tools/invent', { name: newToolName.value, spec: newToolSpec.value }); newToolName.value = ''; newToolSpec.value = ''; } catch (e) { addLog('ERROR', 'Invention failed'); }
+        };
+
+        const injectMemory = async () => {
+          try { await axios.post('/api/knowledge', { text: newMemory.value }); addLog('INFO', 'Memory Injected'); newMemory.value = ''; initGraph(); } catch (e) { addLog('ERROR', 'Injection failed'); }
+        };
+
+        const spawnApp = async () => {
+          if (!genesisPrompt.value) return;
+          addLog('WARN', `Spawning "${genesisPrompt.value}"...`);
+          try {
+            const res = await axios.post('/api/genesis/spawn', { prompt: genesisPrompt.value });
+            if (res.data.success) { spawnedApps.value.push(res.data.deployment); addLog('INFO', `Deployed ${res.data.deployment.name}`); genesisPrompt.value = ''; }
+          } catch (e) { addLog('ERROR', 'Spawn failed'); }
+        };
+
+        const initGraph = async () => {
+          try {
+            const res = await axios.get('/api/knowledge/graph');
+            const el = document.getElementById('3d-graph');
+            if (el) ForceGraph3D()(el).graphData(res.data).nodeAutoColorBy('group').nodeLabel('name').linkWidth(l => l.value * 2);
+          } catch (e) {}
+        };
+
+        watch(view, (v) => { if (v === 'brain') setTimeout(initGraph, 100); });
+
+        const avgQuality = computed(() => { if (qualityHistory.value.length === 0) return 0; return Math.round(qualityHistory.value.reduce((a, b) => a + b, 0) / qualityHistory.value.length); });
+
+        onMounted(() => {
+          setInterval(fetchData, 2000);
+          setInterval(fetchEconomy, 2000);
+          setInterval(fetchStore, 5000);
+          setInterval(fetchTools, 5000);
+          addLog('INFO', 'Mission Control Online');
+        });
+
+        return { view, logs, qualityHistory, avgQuality, rpm, threats, p95Latency, connectionStatus, economy, storeListings, swarmTools, newToolName, newToolSpec, genesisPrompt, spawnedApps, pendingTasks, thoughtStream, agentStates, buyItem, inventTool, injectMemory, spawnApp };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

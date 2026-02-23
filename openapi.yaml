@@ -1,0 +1,289 @@
+openapi: 3.0.3
+info:
+  title: NeuralShell Router API
+  version: 1.0.0
+  description: Intelligent request router for AI model inference with failover and rate limiting
+  contact:
+    name: NeuralShell Team
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://api.example.com
+    description: Production
+
+tags:
+  - name: Health
+    description: Server health and readiness checks
+  - name: Prompt
+    description: Prompt routing and inference
+  - name: Metrics
+    description: Observability and metrics
+  - name: Admin
+    description: Administrative operations (token-gated)
+  - name: Configuration
+    description: Runtime configuration
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealth
+      parameters:
+        - name: details
+          in: query
+          schema:
+            type: string
+            enum: ['0', '1']
+          description: Include detailed health information
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  degraded:
+                    type: boolean
+                  uptimeSec:
+                    type: number
+                  inFlight:
+                    type: integer
+
+  /ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      operationId: getReady
+      responses:
+        '200':
+          description: Server is ready to accept requests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  degraded:
+                    type: boolean
+
+  /version:
+    get:
+      tags: [Health]
+      summary: Get version information
+      operationId: getVersion
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  startedAt:
+                    type: string
+                    format: date-time
+
+  /prompt:
+    post:
+      tags: [Prompt]
+      summary: Send a prompt to configured endpoints
+      operationId: postPrompt
+      security:
+        - promptToken: []
+      parameters:
+        - name: x-client-request-id
+          in: header
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9._:-]{1,128}$'
+          description: Optional client request ID
+        - name: x-idempotency-key
+          in: header
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9._:-]{8,128}$'
+          description: Optional idempotency key for deduplication
+        - name: x-dry-run
+          in: header
+          schema:
+            type: string
+            enum: ['0', '1']
+          description: Skip upstream call and return mock response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [content]
+                    properties:
+                      role:
+                        type: string
+                        enum: [system, user, assistant, tool]
+                        default: user
+                      content:
+                        type: string
+                        minLength: 1
+      responses:
+        '200':
+          description: Prompt processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requestId:
+                    type: string
+                  endpoint:
+                    type: string
+                  message:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                      content:
+                        type: string
+                      truncated:
+                        type: boolean
+        '400':
+          description: Invalid request (payload validation failed)
+        '401':
+          description: Unauthorized (missing or invalid token)
+        '429':
+          description: Rate limited or overloaded
+        '502':
+          description: All endpoints failed
+        '503':
+          description: No active endpoints
+
+    options:
+      tags: [Prompt]
+      summary: CORS preflight for prompt endpoint
+      responses:
+        '204':
+          description: Preflight OK
+
+  /metrics:
+    get:
+      tags: [Metrics]
+      summary: Get Prometheus-format metrics
+      operationId: getMetricsPrometheus
+      responses:
+        '200':
+          description: Prometheus metrics in text format
+          content:
+            text/plain:
+              schema:
+                type: string
+ 
+  /metrics/json:
+    get:
+      tags: [Metrics]
+      summary: Get JSON metrics
+      operationId: getMetricsJson
+      responses:
+        '200':
+          description: Current metrics snapshot (JSON)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalRequests:
+                    type: integer
+                  successRequests:
+                    type: integer
+                  failedRequests:
+                    type: integer
+                  rateLimitedRequests:
+                    type: integer
+                  inFlight:
+                    type: integer
+                  memoryRssBytes:
+                    type: integer
+                  endpointStats:
+                    type: array
+
+  /metrics/prometheus:
+    get:
+      tags: [Metrics]
+      summary: Get Prometheus-format metrics
+      operationId: getPrometheusMetrics
+      produces:
+        - text/plain
+      responses:
+        '200':
+          description: Prometheus metrics in text format
+
+  /config:
+    get:
+      tags: [Configuration]
+      summary: Get effective runtime configuration
+      operationId: getConfig
+      security:
+        - adminToken: []
+      responses:
+        '200':
+          description: Runtime configuration
+        '403':
+          description: Forbidden (admin token required)
+
+  /endpoints:
+    get:
+      tags: [Configuration]
+      summary: Get endpoint status
+      operationId: getEndpoints
+      security:
+        - adminToken: []
+      responses:
+        '200':
+          description: Endpoint status list
+
+  /admin/audit/recent:
+    get:
+      tags: [Admin]
+      summary: Get recent audit log entries
+      operationId: getAuditRecent
+      security:
+        - adminToken: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: Recent audit entries
+
+components:
+  securitySchemes:
+    promptToken:
+      type: apiKey
+      in: header
+      name: x-prompt-token
+      description: Prompt API token for authentication
+    adminToken:
+      type: apiKey
+      in: header
+      name: x-admin-token
+      description: Admin token for administrative operations

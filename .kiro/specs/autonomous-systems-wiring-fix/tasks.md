@@ -1,0 +1,144 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Fault Condition** - Autonomous Modules Not Wired to Runtime
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate autonomous modules are disconnected from runtime
+  - **Scoped PBT Approach**: Test concrete failing cases - modules not imported, /metrics/autonomy returns 404, no autonomous responses to failures
+  - Test that production-server.js does not import AutonomyController (from Fault Condition in design)
+  - Test that /metrics/autonomy endpoint returns 404 Not Found
+  - Test that simulated endpoint failures do not trigger self-healing responses
+  - Test that simulated high load does not trigger auto-scaling decisions
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists)
+  - Document counterexamples found: no imports, no metrics endpoint, no autonomous responses
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 1.1, 1.2, 1.3, 1.4_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Non-Autonomous Functionality Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-autonomous operations:
+    - HTTP requests to /prompt route correctly
+    - /metrics and /metrics/prometheus return existing metrics
+    - /health endpoints return 200 OK with status
+    - Application starts and shuts down gracefully
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements:
+    - For all HTTP requests to existing routes, responses match unfixed behavior
+    - For all metrics queries, output format and values match unfixed behavior
+    - For all health check queries, responses match unfixed behavior
+    - Application lifecycle (startup/shutdown) matches unfixed behavior
+  - Property-based testing generates many test cases for stronger guarantees
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+
+- [x] 3. Implement autonomous systems wiring fix
+
+  - [x] 3.1 Create AutonomyController
+    - Create src/router/autonomyController.js with centralized controller class
+    - Implement constructor that accepts feature flags (AUTO_HEALING, AUTO_SCALING, etc.)
+    - Implement module instantiation logic based on enabled flags
+    - Implement start() method to begin autonomous operations
+    - Implement stop() method for graceful cleanup
+    - Implement getMetrics() method to aggregate metrics from all modules
+    - Wire event handlers to connect modules to system events (endpoint failures, traffic metrics, load metrics)
+    - Support DRY_RUN mode for testing without taking actions
+    - Support AUTONOMY_KILL_SWITCH to disable all systems
+    - _Bug_Condition: isBugCondition(input) where autonomousModulesExist BUT NOT autonomousModulesImported AND NOT autonomousModulesInstantiated AND NOT autonomousModulesExecuting_
+    - _Expected_Behavior: autonomousModulesImported AND autonomousModulesInstantiated AND autonomousModulesExecuting AND metricsExposed_
+    - _Preservation: HTTP routing, existing metrics, health checks, startup/shutdown unchanged_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+  - [x] 3.2 Wire AutonomyController into production-server.js
+    - Add import statement for AutonomyController at top of production-server.js
+    - Create initializeAutonomy() method in NeuralShellServer class
+    - Read feature flags from environment variables
+    - Instantiate AutonomyController with configuration
+    - Call controller.start() to begin operations
+    - Add initializeAutonomy() call in initialize() method after initializeHealthCheck()
+    - Register autonomy routes in registerRoutes(): GET /metrics/autonomy, GET /admin/autonomy, POST /admin/autonomy/toggle
+    - Add autonomyController.stop() call in shutdown() method
+    - _Bug_Condition: production-server.js does not import or instantiate autonomous modules_
+    - _Expected_Behavior: production-server.js imports AutonomyController, instantiates it, starts it, and exposes metrics endpoints_
+    - _Preservation: Existing initialization sequence, routes, and shutdown behavior unchanged_
+    - _Requirements: 2.1, 2.2, 2.4_
+
+  - [x] 3.3 Create unit tests for AutonomyController
+    - Create test/autonomy-controller.test.js
+    - Test constructor with various feature flag combinations
+    - Test module instantiation (verify correct classes created based on flags)
+    - Test start() method (verify modules begin operations)
+    - Test stop() method (verify cleanup occurs)
+    - Test getMetrics() method (verify aggregation from all modules)
+    - Test dry-run mode (verify no actions taken, only logging)
+    - Test kill switch (verify all systems disabled when AUTONOMY_KILL_SWITCH=1)
+    - _Requirements: 2.1, 2.2, 2.5_
+
+  - [x] 3.4 Create integration tests
+    - Create test/autonomy-integration.test.js
+    - Test full application startup with autonomy enabled
+    - Test autonomous response to simulated endpoint failure (self-healing)
+    - Test autonomous response to simulated high load (auto-scaling decision)
+    - Test autonomous response to simulated anomaly (detection and alert)
+    - Test metrics exposure at /metrics/autonomy (Prometheus format)
+    - Test feature flag toggling via /admin/autonomy/toggle
+    - Test graceful shutdown with autonomy enabled
+    - Test preservation: verify existing routes still work with autonomy enabled
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 3.1, 3.2, 3.3_
+
+  - [x] 3.5 Create demo script
+    - Create scripts/demo-autonomy.mjs
+    - Simulate endpoint failures and show self-healing response
+    - Simulate high load and show auto-scaling decision
+    - Simulate anomalies and show detection/alert
+    - Display clear PASS/FAIL output for each subsystem
+    - Include setup instructions and expected output
+    - _Requirements: 2.7_
+
+  - [x] 3.6 Create proof documentation
+    - Create docs/AUTONOMY-PROOF.md
+    - Document setup instructions (environment variables)
+    - Document demo commands (how to run demo script)
+    - Document expected output (PASS/FAIL messages)
+    - Document verification steps (check metrics, logs)
+    - Document troubleshooting (common issues and solutions)
+    - _Requirements: 2.7_
+
+  - [x] 3.7 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Autonomous Modules Wired and Operational
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - Verify production-server.js imports AutonomyController
+    - Verify /metrics/autonomy endpoint returns 200 with Prometheus metrics
+    - Verify simulated endpoint failures trigger self-healing responses
+    - Verify simulated high load triggers auto-scaling decisions
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+
+  - [x] 3.8 Verify preservation tests still pass
+    - **Property 2: Preservation** - Non-Autonomous Functionality Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - Verify HTTP requests to existing routes produce identical responses
+    - Verify /metrics and /metrics/prometheus produce identical output
+    - Verify /health endpoints produce identical responses
+    - Verify application startup/shutdown behavior is identical
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all tests still pass after fix (no regressions)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run all unit tests: npm test test/autonomy-controller.test.js
+  - Run all integration tests: npm test test/autonomy-integration.test.js
+  - Run bug condition exploration test: npm test test/autonomy-bug-exploration.test.js
+  - Run preservation tests: npm test test/autonomy-preservation.test.js
+  - Run demo script: node scripts/demo-autonomy.mjs
+  - Verify all autonomous subsystems show PASS
+  - Verify no regressions in existing functionality
+  - Ask user if questions arise or if any tests fail

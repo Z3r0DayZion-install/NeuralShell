@@ -1,0 +1,139 @@
+# NeuralShell Configuration
+# Version: 1.0.0
+
+version: "1.0.0"
+
+# Server Configuration
+server:
+  port: 3000
+  host: "0.0.0.0"
+  requestTimeoutMs: 5000
+  requestBodyLimitBytes: 262144
+  maxConcurrentRequests: 32
+  gracefulShutdownTimeoutMs: 30000
+  enableHttp2: false
+
+# Endpoint Configuration
+endpoints:
+  - name: "openai-o3"
+    url: "https://api.openai.com/v1/chat/completions"
+    model: "o3"
+    weight: 10
+    costPer1kInput: 0.01
+    costPer1kOutput: 0.03
+    priority: 1
+    enabled: true
+    headers:
+      Authorization: "Bearer ${OPENAI_API_KEY}"
+
+  - name: "openai-gpt5"
+    url: "https://api.openai.com/v1/chat/completions"
+    model: "gpt-5.2-turbo"
+    weight: 8
+    costPer1kInput: 0.005
+    costPer1kOutput: 0.015
+    priority: 2
+    enabled: true
+
+  - name: "ollama-local"
+    url: "http://localhost:11434/api/generate"
+    model: "llama3"
+    weight: 5
+    costPer1kInput: 0
+    costPer1kOutput: 0
+    priority: 3
+    timeoutMs: 30000
+    enabled: true
+
+# Routing Configuration
+routing:
+  strategy: "failover"  # failover | round-robin | weighted | cost-optimal | latency-optimal
+  adaptive: true
+  retryTimeoutMs: 5000
+  retryBackoffMs: 50
+  maxRetries: 1
+  failoverDelayMs: 100
+
+# Rate Limiting
+rateLimit:
+  enabled: true
+  requestsPerWindow: 120
+  windowMs: 60000
+  byApiKey: true
+  byIp: true
+  backend: "memory"  # memory | redis
+
+# Circuit Breaker
+circuitBreaker:
+  enabled: true
+  failureThreshold: 5
+  successThreshold: 2
+  timeoutMs: 30000
+  halfOpenMaxRequests: 3
+
+# Response Caching
+cache:
+  enabled: false
+  ttlSeconds: 300
+  maxSize: 1000
+  backend: "memory"
+
+# Security Settings
+security:
+  adminToken: "${ADMIN_TOKEN}"
+  promptToken: "${PROMPT_TOKEN}"
+  requireJsonContentType: false
+  strictPromptFields: false
+  enableSecurityHeaders: true
+  corsAllowedOrigins:
+    - "https://app.example.com"
+  blockedTerms:
+    - "illegal"
+    - "harmful"
+  ipAllowlist: []
+  ipDenylist: []
+
+# Logging Configuration
+logging:
+  level: "info"  # debug | info | warn | error
+  format: "json"  # json | text
+  output: "stdout"  # stdout | file
+  file: "logs/router.log"
+  maxFiles: 7
+  maxSize: "10m"
+  redactPii: true
+
+# Monitoring & Observability
+monitoring:
+  prometheusEnabled: true
+  prometheusPort: 9090
+  otlpEndpoint: ""
+  exportIntervalMs: 60000
+  tracingEnabled: false
+  sampleRate: 0.1
+
+# State Persistence
+persistence:
+  enabled: true
+  runtimeStateFile: "state/router_runtime_state.json"
+  rateLimitStateFile: "state/router_rate_limits.json"
+  idempotencyStateFile: "state/router_idempotency.json"
+  intervalMs: 5000
+
+# Request Limits
+limits:
+  maxMessagesPerRequest: 64
+  maxMessageChars: 8000
+  maxTotalMessageChars: 32000
+  maxResponseChars: 32000
+  maxConcurrentRequests: 32
+  maxQueueSize: 128
+
+# Feature Flags
+features:
+  dryRun: false
+  skipOpenaiWhenNoKey: true
+  includeFailuresOnSuccess: false
+  streaming: false
+  idempotency: true
+  adminAudit: true
