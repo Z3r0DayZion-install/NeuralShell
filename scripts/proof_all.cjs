@@ -9,6 +9,9 @@ const PROOFS_DIR = path.join(STATE_DIR, 'proofs');
 const PROOF_DIR = path.join(REPO_ROOT, 'proof');
 const RUNS_DIR = path.join(PROOF_DIR, 'runs');
 const LATEST_DIR = path.join(PROOF_DIR, 'latest');
+const PROOF_MAX_MS = Number.isFinite(Number(process.env.PROOF_MAX_MS))
+  ? Number(process.env.PROOF_MAX_MS)
+  : 8000;
 
 function ensureDir(p) {
   try {
@@ -56,11 +59,17 @@ function spawnNpm(args, extraEnv) {
 
 async function runNpm(label, npmArgs, env) {
   banner(label);
+  const startMs = Date.now();
   const child = spawnNpm(npmArgs, env);
   const code = await new Promise((resolve) => child.on('close', resolve));
+  const durationMs = Date.now() - startMs;
   if ((code ?? 1) !== 0) {
     throw new Error(`FAILED AT: ${label} (exit ${code ?? 1})`);
   }
+  if (durationMs > PROOF_MAX_MS) {
+    throw new Error(`[proof-performance] exceeded budget ${label} durationMs=${durationMs} maxMs=${PROOF_MAX_MS}`);
+  }
+  return { durationMs };
 }
 
 function listFilesRecursive(dirPath) {
@@ -241,34 +250,35 @@ async function main() {
   ensureDir(PROOFS_DIR);
 
   const startedAt = new Date().toISOString();
+  const phaseDurationsMs = {};
 
-  await runNpm('proof:spawn', ['run', 'proof:spawn'], {
+  phaseDurationsMs['proof:spawn'] = (await runNpm('proof:spawn', ['run', 'proof:spawn'], {
     PROOF_RUN_TS: runTs,
     PROOF_PHASE: 'spawn',
     PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-spawn`),
     PROOF_ORCHESTRATED: '1'
-  });
+  })).durationMs;
 
-  await runNpm('proof:runtime', ['run', 'proof:runtime'], {
+  phaseDurationsMs['proof:runtime'] = (await runNpm('proof:runtime', ['run', 'proof:runtime'], {
     PROOF_RUN_TS: runTs,
     PROOF_PHASE: 'runtime',
     PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-runtime`),
     PROOF_ORCHESTRATED: '1'
-  });
+  })).durationMs;
 
-  await runNpm('proof:tear', ['run', 'proof:tear'], {
+  phaseDurationsMs['proof:tear'] = (await runNpm('proof:tear', ['run', 'proof:tear'], {
     PROOF_RUN_TS: runTs,
     PROOF_PHASE: 'tear',
     PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-tear`),
     PROOF_ORCHESTRATED: '1'
-  });
+  })).durationMs;
 
-  await runNpm('proof:exe', ['run', 'proof:exe'], {
+  phaseDurationsMs['proof:exe'] = (await runNpm('proof:exe', ['run', 'proof:exe'], {
     PROOF_RUN_TS: runTs,
     PROOF_PHASE: 'exe',
     PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-exe`),
     PROOF_ORCHESTRATED: '1'
-  });
+  })).durationMs;
 
   const finishedAt = new Date().toISOString();
 
@@ -314,6 +324,8 @@ async function main() {
         node: process.version,
         platform: process.platform,
         cwd: process.cwd(),
+        proofMaxMs: PROOF_MAX_MS,
+        phaseDurationsMs,
         stateDirs: { spawnDir, runtimeDir, tearDir, exeDir }
       },
       null,

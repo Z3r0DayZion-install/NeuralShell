@@ -1159,16 +1159,29 @@ autonomy_modules_total 0
 
     console.log(`NeuralShell starting with ${this.config.endpoints?.length || 0} endpoints`);
 
+    let didListen = false;
     try {
       await this.app.listen({ port, host });
+      didListen = true;
     } catch (err) {
       const code = err && typeof err === 'object' ? err.code : null;
       if (code === 'EADDRINUSE') {
-        throw new Error(
-          `Port ${port} is already in use. Set PORT or server.port in config.yaml to a free port.`
-        );
+        const proofMode = process.env.NODE_ENV === 'test' || process.env.PROOF_MODE === '1';
+        if (proofMode && Number.isFinite(port) && port > 0) {
+          console.log(`[proof-port] Port collision on ${port}; retrying with ephemeral port`);
+          await this.app.listen({ port: 0, host });
+          didListen = true;
+        } else {
+          throw new Error(
+            `Port ${port} is already in use. Set PORT or server.port in config.yaml to a free port.`
+          );
+        }
+      } else {
+        throw err;
       }
-      throw err;
+    }
+    if (!didListen) {
+      throw new Error('Server failed to listen (unknown error)');
     }
     
     // Get the actual server from Fastify

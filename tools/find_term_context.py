@@ -68,18 +68,28 @@ def main() -> int:
     ctx_after = ctx_total - ctx_before
 
     hits: list[tuple[str, int]] = []
-    for p in iter_files(root):
-        t = read_text(p)
-        if not t:
-            continue
-        if not any(term in t for term in terms):
-            continue
-        rel = os.path.relpath(p, root)
-        lines = t.splitlines()
-        idx = find_first_line_index(lines, terms)
-        if idx is None:
-            continue
-        hits.append((rel, idx))
+    if os.path.isfile(root):
+        t = read_text(root) or ""
+        if any(term in t for term in terms):
+            lines = t.splitlines()
+            idx = find_first_line_index(lines, terms)
+            if idx is not None:
+                hits.append((os.path.basename(root), idx))
+        root_dir = os.path.dirname(root)
+        root = root_dir if root_dir else os.path.abspath(".")
+    else:
+        for p in iter_files(root):
+            t = read_text(p)
+            if not t:
+                continue
+            if not any(term in t for term in terms):
+                continue
+            rel = os.path.relpath(p, root)
+            lines = t.splitlines()
+            idx = find_first_line_index(lines, terms)
+            if idx is None:
+                continue
+            hits.append((rel, idx))
 
     if not hits:
         print("NO_HITS")

@@ -18,6 +18,9 @@ const PROOF_LATEST_SPAWN_DIR = path.join(PROOF_LATEST_DIR, 'spawn');
 const PROOF_MANIFEST_PATH = path.join(PROOF_LATEST_DIR, 'proof-manifest.json');
 const FORCE_METRICS_FAIL = process.env.PROOF_FORCE_METRICS_FAIL === '1';
 const ORCHESTRATED = process.env.PROOF_ORCHESTRATED === '1';
+const PROOF_MAX_MEM_MB = Number.isFinite(Number(process.env.PROOF_MAX_MEM_MB))
+  ? Number(process.env.PROOF_MAX_MEM_MB)
+  : 80;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -172,13 +175,13 @@ function parseMetricValue(text, metricName) {
   return null;
 }
 
-function writeRuntimeProofConfig({ outDir, dryRun, upstreamPort, runTag, mode }) {
+function writeRuntimeProofConfig({ outDir, dryRun, upstreamPort, runTag, mode, preferredPort }) {
   ensureDir(outDir);
   const configPath = path.join(outDir, `config-${mode}-${dryRun ? 'dry' : 'normal'}.json`);
 
   const config = {
     version: '1.0.0',
-    server: { port: 0, host: '127.0.0.1', requestTimeoutMs: 1000 },
+    server: { port: Number.isFinite(preferredPort) ? preferredPort : 0, host: '127.0.0.1', requestTimeoutMs: 1000 },
     endpoints: [
       {
         name: 'ollama-proof',
@@ -592,6 +595,40 @@ async function hitHealth({ baseUrl, count, tag }) {
   }
 }
 
+async function reserveCollisionPort() {
+  const srv = http.createServer((_req, res) => {
+    res.statusCode = 200;
+    res.setHeader('content-type', 'text/plain');
+    res.end('ok');
+  });
+  await new Promise((resolve, reject) => {
+    srv.once('error', reject);
+    srv.listen(0, '127.0.0.1', resolve);
+  });
+  const addr = srv.address();
+  const port = addr && typeof addr === 'object' ? addr.port : null;
+  if (!Number.isFinite(port) || port <= 0) {
+    try {
+      srv.close();
+    } catch {
+      // ignore
+    }
+    throw new Error('[proof-port] failed to reserve collision port');
+  }
+  return {
+    port,
+    async close() {
+      await new Promise((resolve) => {
+        try {
+          srv.close(resolve);
+        } catch {
+          resolve();
+        }
+      });
+    }
+  };
+}
+
 function purgeStateDirIfStandalone({ runTagBase }) {
   const deletedPaths = [];
   const targets = [];
@@ -625,8 +662,37 @@ function purgeStateDirIfStandalone({ runTagBase }) {
     errors.push({ path: STATE_DIR, error: String(err && err.message ? err.message : err) });
   }
 
-  // Purge any TEAR runtime dir used by shipped TEAR/EXE.
-  rmTree(tearRuntimeDir);
+  // Purge any TEAR runtime dir used by shipped TEAR/EXE, but never bypass the
+  // exclusive instance lock file if it exists (manual/forensic signal).
+  try {
+    if (fs.existsSync(tearRuntimeDir)) {
+      const entries = fs.readdirSync(tearRuntimeDir, { withFileTypes: true });
+      for (const e of entries) {
+        if (!e || !e.name) continue;
+        if (e.name === '.neuralshell.lock') continue;
+        rmTree(path.join(tearRuntimeDir, e.name));
+      }
+
+      // If empty after purge, remove the dir; otherwise allow only the lock file.
+      const remaining = fs.readdirSync(tearRuntimeDir, { withFileTypes: true }).map((e) => e.name);
+      const remainingNonLock = remaining.filter((n) => n !== '.neuralshell.lock');
+      if (remainingNonLock.length) {
+        errors.push({
+          path: tearRuntimeDir,
+          error: `remaining entries after purge: ${remainingNonLock.join(', ')}`
+        });
+      } else if (remaining.length === 0) {
+        try {
+          fs.rmdirSync(tearRuntimeDir);
+          deletedPaths.push(tearRuntimeDir);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  } catch (err) {
+    errors.push({ path: tearRuntimeDir, error: String(err && err.message ? err.message : err) });
+  }
 
   // Validate purge outcome deterministically.
   try {
@@ -641,9 +707,6 @@ function purgeStateDirIfStandalone({ runTagBase }) {
     }
   } catch (err) {
     errors.push({ path: STATE_DIR, error: String(err && err.message ? err.message : err) });
-  }
-  if (fs.existsSync(tearRuntimeDir)) {
-    errors.push({ path: tearRuntimeDir, error: 'TEAR runtime dir still exists after purge' });
   }
 
   if (errors.length) {
@@ -849,8 +912,14 @@ async function run() {
         `requestsΔ=${s.requestsDelta ?? 'n/a'}`,
         `failuresΔ=${s.failuresDelta ?? 'n/a'}`
       ];
+      if (s.portCollision && typeof s.portCollision.reservedPort === 'number') {
+        parts.push(`portCollision=${s.portCollision.reservedPort}->${s.port}`);
+      }
       if (typeof s.expectedRequestsDelta === 'number') parts.push(`expectedRequestsΔ=${s.expectedRequestsDelta}`);
       if (typeof s.expectedFailuresDelta === 'number') parts.push(`expectedFailuresΔ=${s.expectedFailuresDelta}`);
+      if (s.memory && typeof s.memory.deltaMb === 'number') {
+        parts.push(`memΔ=${Number(s.memory.deltaMb).toFixed(2)}MB(max ${PROOF_MAX_MEM_MB}MB)`);
+      }
       if (s.restartResetOk) parts.push(`restartReset=PASS req0=${s.restartRequests0} fail0=${s.restartFailures0}`);
       else parts.push('restartReset=FAIL');
       if (s.shutdownCheckOk) parts.push('shutdownCheck=PASS');
@@ -867,12 +936,14 @@ async function run() {
   const runOne = async ({ mode, dryRun, successPrompts, dryRunPrompts }) => {
     const tag = mode;
     const runTag = `${runTagBase}-${mode}`;
+    const collision = mode === 'normal' ? await reserveCollisionPort() : null;
     const { configPath, config } = writeRuntimeProofConfig({
       outDir: artifactDir,
       mode,
       dryRun,
       upstreamPort: upstream.port,
-      runTag
+      runTag,
+      preferredPort: collision ? collision.port : 0
     });
     forensics.setConfig(mode, config);
     const capture = createLogCapture({ tag, runTag, artifactDir });
@@ -884,6 +955,17 @@ async function run() {
       const listen = await waitForListening({ child, capture });
       const baseUrl = `http://127.0.0.1:${listen.port}`;
       summary[mode] = { ok: false, port: listen.port, baseUrl };
+      if (collision) {
+        try {
+          await collision.close();
+        } catch {
+          // ignore
+        }
+        if (listen.port === collision.port) {
+          throw new Error(`[proof-port] collision fallback failed (still bound to reserved port ${collision.port})`);
+        }
+        summary[mode].portCollision = { reservedPort: collision.port, actualPort: listen.port };
+      }
 
       const m1 = await getAndParseMetrics({ baseUrl, tag: `${tag}: metrics#1`, deadlineMs: 3000 });
       appendMetricsSnapshot({ artifactDir, label: `${tag} metrics#1`, text: m1.text });
@@ -939,6 +1021,7 @@ async function run() {
       const baseFailures = m2.failures;
 
       const promptPayload = { messages: [{ role: 'user', content: 'proof' }] };
+      const rssBefore = process.memoryUsage().rss;
 
       if (!dryRun) {
         for (let i = 0; i < successPrompts; i += 1) {
@@ -994,6 +1077,19 @@ async function run() {
 
       const requestsDelta = m3.requests - baseRequests;
       const failuresDelta = m3.failures - baseFailures;
+      const rssAfter = process.memoryUsage().rss;
+      const memDeltaMb = (rssAfter - rssBefore) / (1024 * 1024);
+      summary[mode].memory = {
+        rssBefore,
+        rssAfter,
+        deltaMb: Number(memDeltaMb.toFixed(3)),
+        maxMb: PROOF_MAX_MEM_MB
+      };
+      if (memDeltaMb > PROOF_MAX_MEM_MB) {
+        throw new Error(
+          `[proof-memory] exceeded delta runtime:${mode} deltaMb=${memDeltaMb.toFixed(2)} maxMb=${PROOF_MAX_MEM_MB}`
+        );
+      }
 
       let expectedRequestsDelta = null;
       let expectedFailuresDelta = null;
@@ -1083,6 +1179,11 @@ async function run() {
     } finally {
       try {
         if (child) await stopChild(child);
+      } catch {
+        // ignore
+      }
+      try {
+        if (collision) await collision.close();
       } catch {
         // ignore
       }

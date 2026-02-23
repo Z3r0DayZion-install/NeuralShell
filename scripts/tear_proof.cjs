@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const http = require('node:http');
 const path = require('node:path');
 
 const {
@@ -33,6 +34,9 @@ const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
 const MIN_UPTIME_DELTA = process.env.CI === 'true' ? 0.05 : 0.1;
 const FORCE_FAIL = process.env.PROOF_FORCE_FAIL === '1';
 const FORCE_TEAR_FAIL = process.env.PROOF_FORCE_TEAR_FAIL === '1';
+const PROOF_MAX_MEM_MB = Number.isFinite(Number(process.env.PROOF_MAX_MEM_MB))
+  ? Number(process.env.PROOF_MAX_MEM_MB)
+  : 80;
 
 const NUM_SUCCESS = 5;
 const NUM_SUCCESS_DRY = 5;
@@ -63,6 +67,68 @@ function writeMeta({ artifactDir, meta }) {
   }
 }
 
+async function reserveCollisionPort() {
+  const srv = http.createServer((_req, res) => {
+    res.statusCode = 200;
+    res.setHeader('content-type', 'text/plain');
+    res.end('ok');
+  });
+  await new Promise((resolve, reject) => {
+    srv.once('error', reject);
+    srv.listen(0, '127.0.0.1', resolve);
+  });
+  const addr = srv.address();
+  const port = addr && typeof addr === 'object' ? addr.port : null;
+  if (!Number.isFinite(port) || port <= 0) {
+    try {
+      srv.close();
+    } catch {
+      // ignore
+    }
+    throw new Error('[proof-port] failed to reserve collision port');
+  }
+  return {
+    port,
+    async close() {
+      await new Promise((resolve) => {
+        try {
+          srv.close(resolve);
+        } catch {
+          resolve();
+        }
+      });
+    }
+  };
+}
+
+function lockPathFor(runtimeDir) {
+  return path.join(runtimeDir, '.neuralshell.lock');
+}
+
+async function spawnLockedAttempt({ transcript, env, timeoutMs }) {
+  const cmd = process.platform === 'win32' ? 'node.exe' : 'node';
+  const args = [TEAR_ENTRY];
+  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
+  let out = '';
+  child.stdout.on('data', (d) => { out += d.toString('utf8'); });
+  child.stderr.on('data', (d) => { out += d.toString('utf8'); });
+  const exit = await new Promise((resolve) => {
+    const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), timeoutMs);
+    t.unref?.();
+    child.once('exit', (code, signal) => {
+      clearTimeout(t);
+      resolve({ code, signal });
+    });
+  });
+  if (exit.code === null) {
+    await stopChild({ child, timeoutMs: 1500 });
+    throw new Error('[proof-lock] hang starting locked attempt');
+  }
+  transcript.writeLine(`[tear-proof] lockedAttempt.exit=${exit.code} signal=${exit.signal || 'none'}`);
+  transcript.writeLine(`[tear-proof] lockedAttempt.output=${out.trim().slice(0, 4000)}`);
+  return { code: exit.code, out };
+}
+
 function purgeRuntimeDirs({ meta }) {
   const deleted = [];
   const errors = [];
@@ -87,8 +153,18 @@ function purgeRuntimeDirs({ meta }) {
 
   try {
     if (fs.existsSync(TEAR_RUNTIME_DIR)) {
-      fs.rmSync(TEAR_RUNTIME_DIR, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
-      deleted.push(TEAR_RUNTIME_DIR);
+      const entries = fs.readdirSync(TEAR_RUNTIME_DIR, { withFileTypes: true });
+      for (const e of entries) {
+        if (!e || !e.name) continue;
+        if (e.name === '.neuralshell.lock') continue; // do not bypass the instance lock
+        const p = path.join(TEAR_RUNTIME_DIR, e.name);
+        try {
+          fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
+          deleted.push(p);
+        } catch (err) {
+          errors.push({ path: p, error: String(err && err.message ? err.message : err) });
+        }
+      }
     }
   } catch (err) {
     errors.push({ path: TEAR_RUNTIME_DIR, error: String(err && err.message ? err.message : err) });
@@ -135,12 +211,15 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
   ensureDir(runtimeDir);
   const runtimeConfigPath = path.join(runtimeDir, 'proof-config.json');
 
+  const collision = modeName === 'normal' ? await reserveCollisionPort() : null;
+  const desiredPort = collision ? collision.port : 0;
+
   const env = {
     ...process.env,
     PROOF_MODE: '1',
     NS_DRY_RUN: dryRun ? '1' : '0',
     NS_TEAR_HOST: '127.0.0.1',
-    NS_TEAR_PORT: '0',
+    NS_TEAR_PORT: String(desiredPort),
     NS_RUNTIME_DIR: TEAR_RUNTIME_DIR,
     NS_LLM_HOST: process.env.NS_LLM_HOST || 'http://127.0.0.1:11434'
   };
@@ -155,13 +234,26 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
   transcript.writeLine(`[tear-proof] spawn: ${cmd} ${args.join(' ')}`);
   transcript.writeLine(`[tear-proof] config: ${runtimeConfigPath}`);
   transcript.writeLine(
-    `[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=0 NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`
+    `[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=${env.NS_TEAR_PORT} NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`
   );
 
   const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
   const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
 
   const listening = await waitForListening({ getLines: attached.getLines, timeoutMs: 10000 });
+  if (collision) {
+    transcript.writeLine(
+      `[tear-proof] portCollision: reservedPort=${collision.port} desiredPort=${desiredPort} actualPort=${listening.port}`
+    );
+    try {
+      await collision.close();
+    } catch {
+      // ignore
+    }
+    if (listening.port === collision.port) {
+      throw new Error(`[proof-port] collision fallback failed (still bound to reserved port ${collision.port})`);
+    }
+  }
   const baseUrl = `http://127.0.0.1:${listening.port}`;
   if (meta) {
     meta.baseUrlByMode = meta.baseUrlByMode || {};
@@ -173,6 +265,14 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
 
   transcript.writeLine(`[tear-proof] baseUrl: ${baseUrl}`);
   await waitForMetricsReady({ baseUrl, deadlineMs: 6000 });
+
+  // Dual-instance lock: while first instance is up, second must fail with INSTANCE_LOCKED.
+  if (modeName === 'normal' && !dryRun) {
+    const env2 = { ...env, NS_TEAR_PORT: '0' };
+    const second = await spawnLockedAttempt({ transcript, env: env2, timeoutMs: 5000 });
+    assert.ok((second.code ?? 1) !== 0, 'second instance must exit non-zero');
+    assert.ok(second.out.includes('INSTANCE_LOCKED'), 'second instance must print INSTANCE_LOCKED');
+  }
 
   const uptimeRaw = await assertUptimeMonotonic({ baseUrl, minDeltaSeconds: MIN_UPTIME_DELTA });
   const uptime = { u1: uptimeRaw.u1, u2: uptimeRaw.u2, uptimeDelta: uptimeRaw.delta };
@@ -190,6 +290,7 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
   const fail0 = parseMetricValue(m0.body, 'neuralshell_failures_total');
   assert.ok(req0 !== null && fail0 !== null, 'missing counters in baseline metrics');
   const c0 = { requests: req0, failures: fail0 };
+  const rssBefore = process.memoryUsage().rss;
   await runRequestBatch({ baseUrl, count: dryRun ? NUM_SUCCESS_DRY : NUM_SUCCESS });
   await forceFailure({ baseUrl });
   const m1 = await fetchMetrics({ baseUrl });
@@ -205,6 +306,11 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
   const fail1 = parseMetricValue(m1.body, 'neuralshell_failures_total');
   assert.ok(req1 !== null && fail1 !== null, 'missing counters in post metrics');
   const c1 = { requests: req1, failures: fail1 };
+  const rssAfter = process.memoryUsage().rss;
+  const memDeltaMb = (rssAfter - rssBefore) / (1024 * 1024);
+  if (memDeltaMb > PROOF_MAX_MEM_MB) {
+    throw new Error(`[proof-memory] exceeded delta tear:${modeName} deltaMb=${memDeltaMb.toFixed(2)} maxMb=${PROOF_MAX_MEM_MB}`);
+  }
 
   const expectedRequestsDelta =
     (dryRun ? NUM_SUCCESS_DRY : NUM_SUCCESS) + (FAIL_COUNTS_AS_REQUEST ? 1 : 0);
@@ -250,6 +356,7 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
     modeName,
     dryRun,
     port: listening.port,
+    portCollision: collision ? { reservedPort: collision.port, desiredPort, actualPort: listening.port } : null,
     uptime,
     counters0: c0,
     counters1: c1,
@@ -257,6 +364,7 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
     expectedFailuresDelta,
     requestsDelta,
     failuresDelta,
+    memory: { rssBefore, rssAfter, deltaMb: Number(memDeltaMb.toFixed(3)), maxMb: PROOF_MAX_MEM_MB },
     shutdownCheck: down.ok
   };
 }
@@ -429,6 +537,11 @@ async function main() {
     transcript.writeLine(`target=TEAR runtime (node) MIN_UPTIME_DELTA=${MIN_UPTIME_DELTA}`);
     transcript.writeLine(`normal.port=${normal.port} uptimeΔ=${normal.uptime.uptimeDelta.toFixed(6)} reqΔ=${normal.requestsDelta}/${normal.expectedRequestsDelta} failΔ=${normal.failuresDelta}/${normal.expectedFailuresDelta}`);
     transcript.writeLine(`dry.port=${dry.port} uptimeΔ=${dry.uptime.uptimeDelta.toFixed(6)} reqΔ=${dry.requestsDelta}/${dry.expectedRequestsDelta} failΔ=${dry.failuresDelta}/${dry.expectedFailuresDelta}`);
+    if (normal.portCollision) {
+      transcript.writeLine(
+        `portCollision.normal reserved=${normal.portCollision.reservedPort} desired=${normal.portCollision.desiredPort} actual=${normal.portCollision.actualPort}`
+      );
+    }
     transcript.writeLine(`restartReset=${restart.restartReset} baseline.requests=${restart.baseline.requests} baseline.failures=${restart.baseline.failures}`);
     transcript.writeLine(`shutdownCheck.normal=${normal.shutdownCheck} shutdownCheck.dry=${dry.shutdownCheck}`);
     transcript.writeLine('RESULT: PASS');
