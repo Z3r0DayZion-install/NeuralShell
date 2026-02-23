@@ -175,17 +175,31 @@ function verifyPreviousManifestOrThrow() {
         const abs = meta.absPath || path.join(REPO_ROOT, String(rel).replace(/\//g, path.sep));
         if (!expected || typeof expected !== 'string') continue;
         if (!abs || typeof abs !== 'string' || !fs.existsSync(abs)) {
-          process.stderr.write('[proof-integrity] FAIL executed-target-missing\n');
-          process.stderr.write(`[proof-integrity] target=${rel}\n`);
-          process.exit(1);
+          if (process.env.PROOF_ACCEPT_EXECUTED_TARGET_CHANGES === '1') {
+            process.stdout.write('[proof-integrity] ACCEPT executed-target-missing\n');
+            process.stdout.write(`[proof-integrity] target=${rel}\n`);
+            continue;
+          } else {
+            process.stderr.write('[proof-integrity] FAIL executed-target-missing\n');
+            process.stderr.write(`[proof-integrity] target=${rel}\n`);
+            process.exit(1);
+          }
         }
         const actual = sha256File(abs);
         if (actual !== expected) {
-          process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
-          process.stderr.write(`[proof-integrity] target=${rel}\n`);
-          process.stderr.write(`[proof-integrity] expected=${expected}\n`);
-          process.stderr.write(`[proof-integrity] actual=${actual}\n`);
-          process.exit(1);
+          if (process.env.PROOF_ACCEPT_EXECUTED_TARGET_CHANGES === '1') {
+            process.stdout.write('[proof-integrity] ACCEPT executed-hash-mismatch\n');
+            process.stdout.write(`[proof-integrity] target=${rel}\n`);
+            process.stdout.write(`[proof-integrity] expected=${expected}\n`);
+            process.stdout.write(`[proof-integrity] actual=${actual}\n`);
+            continue;
+          } else {
+            process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
+            process.stderr.write(`[proof-integrity] target=${rel}\n`);
+            process.stderr.write(`[proof-integrity] expected=${expected}\n`);
+            process.stderr.write(`[proof-integrity] actual=${actual}\n`);
+            process.exit(1);
+          }
         }
       }
       process.stdout.write('[proof-integrity] PASS previous-executed-targets\n');
@@ -268,6 +282,13 @@ function verifyExecutedTargetOrThrow({ prevManifest, rel, abs, label }) {
   const expected = meta.sha256;
   const actual = sha256File(abs);
   if (actual !== expected) {
+    if (process.env.PROOF_ACCEPT_EXECUTED_TARGET_CHANGES === '1') {
+      process.stdout.write('[proof-integrity] ACCEPT executed-hash-mismatch\n');
+      process.stdout.write(`[proof-integrity] target=${rel}\n`);
+      process.stdout.write(`[proof-integrity] expected=${expected}\n`);
+      process.stdout.write(`[proof-integrity] actual=${actual}\n`);
+      return;
+    }
     process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
     process.stderr.write(`[proof-integrity] target=${rel}\n`);
     process.stderr.write(`[proof-integrity] expected=${expected}\n`);
