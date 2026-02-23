@@ -63,6 +63,7 @@ temp/
 proof/runs/
 proof/latest/
 proof/ledger.jsonl
+proof/patches/
 
 # Security
 snyk_code.json

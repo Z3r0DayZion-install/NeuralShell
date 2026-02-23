@@ -38,10 +38,129 @@ const FORCE_EXE_FAIL = process.env.PROOF_FORCE_EXE_FAIL === '1';
 const PROOF_MAX_MEM_MB = Number.isFinite(Number(process.env.PROOF_MAX_MEM_MB))
   ? Number(process.env.PROOF_MAX_MEM_MB)
   : 80;
+const PROOF_SOAK_SECONDS = Number.isFinite(Number(process.env.PROOF_SOAK_SECONDS))
+  ? Number(process.env.PROOF_SOAK_SECONDS)
+  : 60;
 
 const NUM_SUCCESS = 5;
 const NUM_SUCCESS_DRY = 5;
 const FAIL_COUNTS_AS_REQUEST = true;
+
+function sampleRssMbTasklist(pid) {
+  const tasklist = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tasklist.exe');
+  if (!fs.existsSync(tasklist)) {
+    throw new Error('[proof-soak] FAIL tasklist-missing');
+  }
+  const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : tasklist;
+  const args =
+    process.platform === 'win32'
+      ? ['/d', '/s', '/c', tasklist, '/FO', 'CSV', '/NH', '/FI', `PID eq ${pid}`]
+      : ['/FO', 'CSV', '/NH', '/FI', `PID eq ${pid}`];
+  const child = spawnChild({ cmd, args, cwd: REPO_ROOT, env: process.env });
+  let out = '';
+  child.stdout.on('data', (d) => {
+    out += d.toString('utf8');
+  });
+  child.stderr.on('data', (d) => {
+    out += d.toString('utf8');
+  });
+  return new Promise((resolve, reject) => {
+    child.once('close', (code) => {
+      if ((code ?? 1) !== 0) {
+        reject(new Error(`[proof-soak] FAIL tasklist-exit=${code ?? 1}`));
+        return;
+      }
+      const line = out
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean)[0];
+      if (!line) {
+        reject(new Error('[proof-soak] FAIL tasklist-empty'));
+        return;
+      }
+      // CSV: "Image Name","PID","Session Name","Session#","Mem Usage"
+      const parts = line
+        .split('","')
+        .map((p) => p.replace(/^"/, '').replace(/"$/, '').trim());
+      const mem = parts[4] || '';
+      const kMatch = mem.replace(/,/g, '').match(/(\d+)\s*K/i);
+      if (!kMatch) {
+        reject(new Error(`[proof-soak] FAIL tasklist-parse mem=${mem}`));
+        return;
+      }
+      const kb = Number(kMatch[1]);
+      resolve(kb / 1024);
+    });
+  });
+}
+
+async function runSoak({ transcript, baseUrl, pid, seconds, intervalMs, artifactDir, modeName }) {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    throw new Error(`[proof-soak] FAIL invalid-seconds=${seconds}`);
+  }
+  if (seconds === 0) {
+    transcript.writeLine('[proof-soak] SKIP duration=0');
+    return { ok: true, skipped: true, durationSeconds: 0 };
+  }
+  const endAt = Date.now() + seconds * 1000;
+
+  const rssStartMb = await sampleRssMbTasklist(pid);
+  const mStart = await fetchMetrics({ baseUrl });
+  const reqStart = parseMetricValue(mStart.body, 'neuralshell_requests_total');
+  const failStart = parseMetricValue(mStart.body, 'neuralshell_failures_total');
+  assert.ok(reqStart !== null && failStart !== null, '[proof-soak] FAIL missing counters at start');
+
+  let lastReq = reqStart;
+  let lastFail = failStart;
+  let lastSampleAt = 0;
+  let sent = 0;
+
+  while (Date.now() < endAt) {
+    const res = await httpRequest({ url: `${baseUrl}/health`, timeoutMs: 1500 });
+    assert.equal(res.status, 200, `[proof-soak] FAIL GET /health status=${res.status}`);
+    sent += 1;
+
+    const now = Date.now();
+    if (now - lastSampleAt >= 2000) {
+      lastSampleAt = now;
+      const m = await fetchMetrics({ baseUrl });
+      const r = parseMetricValue(m.body, 'neuralshell_requests_total');
+      const f = parseMetricValue(m.body, 'neuralshell_failures_total');
+      assert.ok(r !== null && f !== null, '[proof-soak] FAIL missing counters during soak');
+      if (r < lastReq) throw new Error('[proof-soak] FAIL counter-reset requests_total');
+      if (f !== lastFail) throw new Error('[proof-soak] FAIL counter-drift failures_total');
+      lastReq = r;
+      lastFail = f;
+    }
+
+    await sleep(intervalMs);
+  }
+
+  const rssEndMb = await sampleRssMbTasklist(pid);
+  const mEnd = await fetchMetrics({ baseUrl });
+  const reqEnd = parseMetricValue(mEnd.body, 'neuralshell_requests_total');
+  const failEnd = parseMetricValue(mEnd.body, 'neuralshell_failures_total');
+  assert.ok(reqEnd !== null && failEnd !== null, '[proof-soak] FAIL missing counters at end');
+  if (reqEnd < lastReq) throw new Error('[proof-soak] FAIL counter-reset requests_total (end)');
+  if (failEnd !== lastFail) throw new Error('[proof-soak] FAIL counter-drift failures_total (end)');
+
+  const rssDeltaMb = rssEndMb - rssStartMb;
+  if (rssDeltaMb > PROOF_MAX_MEM_MB) {
+    throw new Error(
+      `[proof-soak] FAIL memory-drift deltaMb=${rssDeltaMb.toFixed(2)} maxMb=${PROOF_MAX_MEM_MB}`
+    );
+  }
+
+  transcript.writeLine(`[proof-soak] PASS duration=${seconds}s requestsStart=${reqStart} requestsEnd=${reqEnd} rssΔ=${rssDeltaMb.toFixed(2)}MB`);
+  if (artifactDir) {
+    try {
+      writeFileUtf8(path.join(artifactDir, `soak-${modeName}.json`), JSON.stringify({ seconds, intervalMs, sent, rssStartMb, rssEndMb, rssDeltaMb, reqStart, reqEnd, failStart, failEnd }, null, 2));
+    } catch {
+      // ignore
+    }
+  }
+  return { ok: true, skipped: false, durationSeconds: seconds, intervalMs, sent, rssStartMb, rssEndMb, rssDeltaMb, reqStart, reqEnd, failStart, failEnd };
+}
 
 function copyFileIfExists(srcPath, dstPath) {
   try {
@@ -360,6 +479,26 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
     expectedDelta: expectedFailuresDelta
   });
 
+  let soak = null;
+  if (modeName === 'normal' && !dryRun) {
+    soak = await runSoak({
+      transcript,
+      baseUrl,
+      pid: proc.child.pid,
+      seconds: PROOF_SOAK_SECONDS,
+      intervalMs: 500,
+      artifactDir,
+      modeName
+    });
+    if (meta) {
+      meta.soak = meta.soak || {};
+      meta.soak[modeName] = soak;
+      writeMeta({ artifactDir, meta });
+    }
+  } else if (modeName === 'dry' && dryRun && PROOF_SOAK_SECONDS !== 0) {
+    transcript.writeLine('[proof-soak] SKIP (dry-run)');
+  }
+
   await shutdown({ baseUrl });
 
   const exit = await new Promise((resolve) => {
@@ -396,6 +535,7 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
     requestsDelta,
     failuresDelta,
     memory: { rssBefore, rssAfter, deltaMb: Number(memDeltaMb.toFixed(3)), maxMb: PROOF_MAX_MEM_MB },
+    soak,
     shutdownCheck: down.ok
   };
 }
@@ -531,7 +671,9 @@ async function main() {
     config = { ...config, results: { normal, restart, dry }, ok: true };
     meta.ok = true;
     meta.durationMs = Date.now() - startMs;
-    if (meta.durationMs > 30000) throw new Error(`Timing budget exceeded: ${meta.durationMs}ms > 30000ms`);
+    const budgetMs = 30000 + Math.max(0, PROOF_SOAK_SECONDS) * 1000 + 5000;
+    meta.budgetMs = budgetMs;
+    if (meta.durationMs > budgetMs) throw new Error(`Timing budget exceeded: ${meta.durationMs}ms > ${budgetMs}ms`);
     writeFileUtf8(path.join(artifactDir, 'metadata.json'), JSON.stringify(meta, null, 2));
     writeFileUtf8(path.join(artifactDir, 'proof_config.json'), JSON.stringify(config, null, 2));
     writeFileUtf8(

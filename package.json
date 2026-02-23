@@ -24,6 +24,7 @@
     "proof:spawn": "node scripts/run_server_once.cjs",
     "proof:tear": "node scripts/tear_proof.cjs",
     "proof:exe": "node scripts/exe_proof.cjs",
+    "proof:crash": "node scripts/crash_recovery_proof.cjs",
     "proof:all": "node scripts/proof_all.cjs",
     "proof:all:chain": "npm run proof:spawn && npm run proof:runtime",
     "proof": "node proof/proof.js",

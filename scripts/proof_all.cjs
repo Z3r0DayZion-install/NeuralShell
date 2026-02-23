@@ -9,9 +9,16 @@ const PROOFS_DIR = path.join(STATE_DIR, 'proofs');
 const PROOF_DIR = path.join(REPO_ROOT, 'proof');
 const RUNS_DIR = path.join(PROOF_DIR, 'runs');
 const LATEST_DIR = path.join(PROOF_DIR, 'latest');
+const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
+const TEAR_ENTRY = path.join(DESKTOP_ROOT, 'tear-runtime.js');
+const EXE_PATH = path.join(DESKTOP_ROOT, 'dist', 'NeuralShell-TEAR-Runtime.exe');
+const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
 const PROOF_MAX_MS = Number.isFinite(Number(process.env.PROOF_MAX_MS))
   ? Number(process.env.PROOF_MAX_MS)
   : 8000;
+const PROOF_SOAK_SECONDS = Number.isFinite(Number(process.env.PROOF_SOAK_SECONDS))
+  ? Number(process.env.PROOF_SOAK_SECONDS)
+  : 60;
 
 function ensureDir(p) {
   try {
@@ -66,10 +73,25 @@ async function runNpm(label, npmArgs, env) {
   if ((code ?? 1) !== 0) {
     throw new Error(`FAILED AT: ${label} (exit ${code ?? 1})`);
   }
-  if (durationMs > PROOF_MAX_MS) {
-    throw new Error(`[proof-performance] exceeded budget ${label} durationMs=${durationMs} maxMs=${PROOF_MAX_MS}`);
+  const maxMs = getPhaseBudgetMs(label);
+  if (durationMs > maxMs) {
+    throw new Error(`[proof-performance] exceeded budget ${label} durationMs=${durationMs} maxMs=${maxMs}`);
   }
   return { durationMs };
+}
+
+function getPhaseBudgetMs(label) {
+  if (label === 'proof:exe') {
+    if (PROOF_SOAK_SECONDS > 0) {
+      // Soak is embedded in proof:exe; budget must accommodate.
+      return Math.max(PROOF_MAX_MS, PROOF_SOAK_SECONDS * 1000 + 25000);
+    }
+    return PROOF_MAX_MS;
+  }
+  if (label === 'proof:crash') {
+    return Math.max(PROOF_MAX_MS, 20000);
+  }
+  return PROOF_MAX_MS;
 }
 
 function listFilesRecursive(dirPath) {
@@ -108,11 +130,12 @@ function verifyPreviousManifestOrThrow() {
   const manifest = readJsonOrNull(manifestPath);
   if (!manifest) {
     process.stdout.write('[proof] no previous manifest\n');
-    return;
+    process.stdout.write('[proof-integrity] BASELINE no previous manifest (executed target checks start next run)\n');
+    return null;
   }
 
   // v1 manifest (runDir + relpath map)
-  if (manifest.schemaVersion === 'proof_manifest.v1') {
+  if (manifest.schemaVersion === 'proof_manifest.v1' || manifest.schemaVersion === 'proof_manifest.v2') {
     const runDir = manifest.runDir;
     if (!runDir || typeof runDir !== 'string' || !fs.existsSync(runDir)) {
       throw new Error('[proof] artifact hash mismatch detected');
@@ -138,8 +161,40 @@ function verifyPreviousManifestOrThrow() {
         process.exit(1);
       }
     }
+
+    const executedTargets =
+      manifest.executedTargets && typeof manifest.executedTargets === 'object' ? manifest.executedTargets : null;
+    if (manifest.schemaVersion === 'proof_manifest.v2') {
+      if (!executedTargets) {
+        process.stderr.write('[proof-integrity] FAIL missing executedTargets in manifest\n');
+        process.exit(1);
+      }
+      for (const [rel, meta] of Object.entries(executedTargets)) {
+        if (!meta || typeof meta !== 'object') continue;
+        const expected = meta.sha256;
+        const abs = meta.absPath || path.join(REPO_ROOT, String(rel).replace(/\//g, path.sep));
+        if (!expected || typeof expected !== 'string') continue;
+        if (!abs || typeof abs !== 'string' || !fs.existsSync(abs)) {
+          process.stderr.write('[proof-integrity] FAIL executed-target-missing\n');
+          process.stderr.write(`[proof-integrity] target=${rel}\n`);
+          process.exit(1);
+        }
+        const actual = sha256File(abs);
+        if (actual !== expected) {
+          process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
+          process.stderr.write(`[proof-integrity] target=${rel}\n`);
+          process.stderr.write(`[proof-integrity] expected=${expected}\n`);
+          process.stderr.write(`[proof-integrity] actual=${actual}\n`);
+          process.exit(1);
+        }
+      }
+      process.stdout.write('[proof-integrity] PASS previous-executed-targets\n');
+    } else {
+      process.stdout.write('[proof-integrity] BASELINE previous manifest has no executedTargets\n');
+    }
+
     process.stdout.write('[proof] manifest verification: PASS\n');
-    return;
+    return manifest;
   }
 
   // Legacy manifest (absolute paths)
@@ -164,7 +219,7 @@ function verifyPreviousManifestOrThrow() {
       }
     }
     process.stdout.write('[proof] legacy manifest verification: PASS\n');
-    return;
+    return manifest;
   }
 
   throw new Error('[proof] artifact hash mismatch detected');
@@ -174,6 +229,52 @@ function mustExist(filePath, label) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`[proof] missing required artifact: ${label || filePath}`);
   }
+}
+
+function computeExecutedTargets() {
+  const entries = [
+    { rel: 'production-server.js', abs: PROD_SERVER, label: 'production-server.js' },
+    { rel: 'NeuralShell_Desktop/tear-runtime.js', abs: TEAR_ENTRY, label: 'tear-runtime.js' },
+    { rel: 'NeuralShell_Desktop/dist/NeuralShell-TEAR-Runtime.exe', abs: EXE_PATH, label: 'NeuralShell-TEAR-Runtime.exe' }
+  ];
+  const out = {};
+  for (const e of entries) {
+    if (!fs.existsSync(e.abs)) {
+      throw new Error(`[proof-integrity] FAIL executed-target-missing target=${e.rel}`);
+    }
+    const st = fs.statSync(e.abs);
+    out[e.rel] = { sha256: sha256File(e.abs), bytes: st.size, absPath: e.abs, label: e.label };
+  }
+  return out;
+}
+
+function verifyExecutedTargetOrThrow({ prevManifest, rel, abs, label }) {
+  if (!prevManifest || prevManifest.schemaVersion !== 'proof_manifest.v2') {
+    process.stdout.write(`[proof-integrity] BASELINE target=${label || rel} (no v2 manifest to compare)\n`);
+    return;
+  }
+  const executedTargets =
+    prevManifest.executedTargets && typeof prevManifest.executedTargets === 'object' ? prevManifest.executedTargets : null;
+  if (!executedTargets) {
+    process.stderr.write('[proof-integrity] FAIL missing executedTargets in manifest\n');
+    process.exit(1);
+  }
+  const meta = executedTargets[rel];
+  if (!meta || typeof meta !== 'object' || !meta.sha256) {
+    process.stderr.write('[proof-integrity] FAIL executed-target-not-in-manifest\n');
+    process.stderr.write(`[proof-integrity] target=${rel}\n`);
+    process.exit(1);
+  }
+  const expected = meta.sha256;
+  const actual = sha256File(abs);
+  if (actual !== expected) {
+    process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
+    process.stderr.write(`[proof-integrity] target=${rel}\n`);
+    process.stderr.write(`[proof-integrity] expected=${expected}\n`);
+    process.stderr.write(`[proof-integrity] actual=${actual}\n`);
+    process.exit(1);
+  }
+  process.stdout.write(`[proof-integrity] PASS target=${label || rel}\n`);
 }
 
 function writeManifest({ runDir, runTs, startedAt, finishedAt }) {
@@ -193,7 +294,7 @@ function writeManifest({ runDir, runTs, startedAt, finishedAt }) {
   }
 
   const manifest = {
-    schemaVersion: 'proof_manifest.v1',
+    schemaVersion: 'proof_manifest.v2',
     generatedAt: new Date().toISOString(),
     node: process.version,
     platform: process.platform,
@@ -202,6 +303,7 @@ function writeManifest({ runDir, runTs, startedAt, finishedAt }) {
     runTs,
     startedAt,
     finishedAt,
+    executedTargets: computeExecutedTargets(),
     artifacts
   };
 
@@ -229,7 +331,7 @@ async function main() {
     throw new Error('[proof] forced failure');
   }
 
-  verifyPreviousManifestOrThrow();
+  const prevManifest = verifyPreviousManifestOrThrow();
 
   const runTs = process.env.PROOF_RUN_TS || safeTimestamp();
   process.env.PROOF_RUN_TS = runTs;
@@ -266,6 +368,14 @@ async function main() {
     PROOF_ORCHESTRATED: '1'
   })).durationMs;
 
+  // Executed artifact integrity (pre-spawn)
+  verifyExecutedTargetOrThrow({
+    prevManifest,
+    rel: 'NeuralShell_Desktop/tear-runtime.js',
+    abs: TEAR_ENTRY,
+    label: 'TEAR'
+  });
+
   phaseDurationsMs['proof:tear'] = (await runNpm('proof:tear', ['run', 'proof:tear'], {
     PROOF_RUN_TS: runTs,
     PROOF_PHASE: 'tear',
@@ -273,10 +383,24 @@ async function main() {
     PROOF_ORCHESTRATED: '1'
   })).durationMs;
 
+  verifyExecutedTargetOrThrow({
+    prevManifest,
+    rel: 'NeuralShell_Desktop/dist/NeuralShell-TEAR-Runtime.exe',
+    abs: EXE_PATH,
+    label: 'EXE'
+  });
+
   phaseDurationsMs['proof:exe'] = (await runNpm('proof:exe', ['run', 'proof:exe'], {
     PROOF_RUN_TS: runTs,
     PROOF_PHASE: 'exe',
     PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-exe`),
+    PROOF_ORCHESTRATED: '1'
+  })).durationMs;
+
+  phaseDurationsMs['proof:crash'] = (await runNpm('proof:crash', ['run', 'proof:crash'], {
+    PROOF_RUN_TS: runTs,
+    PROOF_PHASE: 'crash',
+    PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-crash`),
     PROOF_ORCHESTRATED: '1'
   })).durationMs;
 
@@ -287,6 +411,7 @@ async function main() {
   const runtimeDir = path.join(PROOFS_DIR, `${runTs}-runtime`);
   const tearDir = path.join(PROOFS_DIR, `${runTs}-tear`);
   const exeDir = path.join(PROOFS_DIR, `${runTs}-exe`);
+  const crashDir = path.join(PROOFS_DIR, `${runTs}-crash`);
 
   // Required core artifacts must exist.
   mustExist(path.join(spawnDir, 'server.log'), 'spawn/server.log');
@@ -297,6 +422,8 @@ async function main() {
   mustExist(path.join(runtimeDir, 'metadata.json'), 'runtime/metadata.json');
   mustExist(path.join(tearDir, 'metadata.json'), 'tear/metadata.json');
   mustExist(path.join(exeDir, 'metadata.json'), 'exe/metadata.json');
+  mustExist(path.join(crashDir, 'server.log'), 'crash/server.log');
+  mustExist(path.join(crashDir, 'metadata.json'), 'crash/metadata.json');
 
   // Gate 1: cold start must be purged (no spine exceptions).
   const runtimeMeta = readJsonOrNull(path.join(runtimeDir, 'metadata.json'));
@@ -314,6 +441,7 @@ async function main() {
   fs.cpSync(runtimeDir, path.join(runDir, 'runtime'), { recursive: true, force: true });
   fs.cpSync(tearDir, path.join(runDir, 'tear'), { recursive: true, force: true });
   fs.cpSync(exeDir, path.join(runDir, 'exe'), { recursive: true, force: true });
+  fs.cpSync(crashDir, path.join(runDir, 'crash'), { recursive: true, force: true });
   fs.writeFileSync(
     path.join(runDir, 'summary.json'),
     JSON.stringify(
@@ -325,8 +453,9 @@ async function main() {
         platform: process.platform,
         cwd: process.cwd(),
         proofMaxMs: PROOF_MAX_MS,
+        proofSoakSeconds: PROOF_SOAK_SECONDS,
         phaseDurationsMs,
-        stateDirs: { spawnDir, runtimeDir, tearDir, exeDir }
+        stateDirs: { spawnDir, runtimeDir, tearDir, exeDir, crashDir }
       },
       null,
       2
