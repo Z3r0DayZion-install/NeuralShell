@@ -16,11 +16,16 @@ export function writeJsonFile(filePath, data) {
   if (!filePath) {
     return false;
   }
+  const tempPath = `${filePath}.${Date.now()}.tmp`;
   try {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf8');
+    fs.renameSync(tempPath, filePath);
     return true;
-  } catch {
+  } catch (err) {
+    if (fs.existsSync(tempPath)) {
+      try { fs.unlinkSync(tempPath); } catch {}
+    }
     return false;
   }
 }

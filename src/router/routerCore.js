@@ -256,8 +256,12 @@ export class RouterCore extends EventEmitter {
 
       // Shadow Routing: Artificial jitter to mask system timing signatures
       if (this.options.shadowRouting?.enabled !== false) {
-        const jitter = Math.floor(Math.random() * (this.options.shadowRouting?.maxJitterMs || 150));
-        await new Promise(resolve => setTimeout(resolve, jitter));
+        const elapsed = Date.now() - startTime;
+        const remaining = (endpoint.timeoutMs || this.options.timeoutMs) - elapsed;
+        const jitter = Math.floor(Math.random() * Math.min(this.options.shadowRouting?.maxJitterMs || 150, Math.max(0, remaining - 50)));
+        if (jitter > 0) {
+          await new Promise(resolve => setTimeout(resolve, jitter));
+        }
       }
 
       const latency = Date.now() - startTime;
