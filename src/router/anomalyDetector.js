@@ -87,7 +87,10 @@ export class AnomalyDetector extends EventEmitter {
 
     // Calculate standard deviation
     const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / n;
-    const stdDev = Math.sqrt(variance);
+    
+    // SECURITY: Prevent zero-division and erratic triggers on small variance
+    // We add a tiny epsilon or enforce a floor for stdDev
+    const stdDev = Math.sqrt(Math.max(variance, 0.000001));
 
     // Calculate percentiles
     const sorted = [...values].sort((a, b) => a - b);
@@ -96,8 +99,8 @@ export class AnomalyDetector extends EventEmitter {
     const p99 = sorted[Math.floor(n * 0.99)];
 
     metric.stats = {
-      mean,
-      stdDev,
+      mean: isFinite(mean) ? mean : 0,
+      stdDev: isFinite(stdDev) ? stdDev : 0,
       min: Math.min(...values),
       max: Math.max(...values),
       p50,
