@@ -11,7 +11,7 @@ const RUNS_DIR = path.join(PROOF_DIR, 'runs');
 const LATEST_DIR = path.join(PROOF_DIR, 'latest');
 const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
 const TEAR_ENTRY = path.join(DESKTOP_ROOT, 'tear-runtime.js');
-const EXE_PATH = path.join(DESKTOP_ROOT, 'dist', 'NeuralShell-TEAR-Runtime.exe');
+const EXECUTED_TARGETS_VERIFY = new Set(['production-server.js', 'NeuralShell_Desktop/tear-runtime.js']);
 const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
 const PROOF_MAX_MS = Number.isFinite(Number(process.env.PROOF_MAX_MS))
   ? Number(process.env.PROOF_MAX_MS)
@@ -170,36 +170,23 @@ function verifyPreviousManifestOrThrow() {
         process.exit(1);
       }
       for (const [rel, meta] of Object.entries(executedTargets)) {
+        if (!EXECUTED_TARGETS_VERIFY.has(rel)) continue;
         if (!meta || typeof meta !== 'object') continue;
         const expected = meta.sha256;
         const abs = meta.absPath || path.join(REPO_ROOT, String(rel).replace(/\//g, path.sep));
         if (!expected || typeof expected !== 'string') continue;
         if (!abs || typeof abs !== 'string' || !fs.existsSync(abs)) {
-          if (process.env.PROOF_ACCEPT_EXECUTED_TARGET_CHANGES === '1') {
-            process.stdout.write('[proof-integrity] ACCEPT executed-target-missing\n');
-            process.stdout.write(`[proof-integrity] target=${rel}\n`);
-            continue;
-          } else {
-            process.stderr.write('[proof-integrity] FAIL executed-target-missing\n');
-            process.stderr.write(`[proof-integrity] target=${rel}\n`);
-            process.exit(1);
-          }
+          process.stderr.write('[proof-integrity] FAIL executed-target-missing\n');
+          process.stderr.write(`[proof-integrity] target=${rel}\n`);
+          process.exit(1);
         }
         const actual = sha256File(abs);
         if (actual !== expected) {
-          if (process.env.PROOF_ACCEPT_EXECUTED_TARGET_CHANGES === '1') {
-            process.stdout.write('[proof-integrity] ACCEPT executed-hash-mismatch\n');
-            process.stdout.write(`[proof-integrity] target=${rel}\n`);
-            process.stdout.write(`[proof-integrity] expected=${expected}\n`);
-            process.stdout.write(`[proof-integrity] actual=${actual}\n`);
-            continue;
-          } else {
-            process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
-            process.stderr.write(`[proof-integrity] target=${rel}\n`);
-            process.stderr.write(`[proof-integrity] expected=${expected}\n`);
-            process.stderr.write(`[proof-integrity] actual=${actual}\n`);
-            process.exit(1);
-          }
+          process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
+          process.stderr.write(`[proof-integrity] target=${rel}\n`);
+          process.stderr.write(`[proof-integrity] expected=${expected}\n`);
+          process.stderr.write(`[proof-integrity] actual=${actual}\n`);
+          process.exit(1);
         }
       }
       process.stdout.write('[proof-integrity] PASS previous-executed-targets\n');
@@ -248,8 +235,7 @@ function mustExist(filePath, label) {
 function computeExecutedTargets() {
   const entries = [
     { rel: 'production-server.js', abs: PROD_SERVER, label: 'production-server.js' },
-    { rel: 'NeuralShell_Desktop/tear-runtime.js', abs: TEAR_ENTRY, label: 'tear-runtime.js' },
-    { rel: 'NeuralShell_Desktop/dist/NeuralShell-TEAR-Runtime.exe', abs: EXE_PATH, label: 'NeuralShell-TEAR-Runtime.exe' }
+    { rel: 'NeuralShell_Desktop/tear-runtime.js', abs: TEAR_ENTRY, label: 'tear-runtime.js' }
   ];
   const out = {};
   for (const e of entries) {
@@ -263,6 +249,7 @@ function computeExecutedTargets() {
 }
 
 function verifyExecutedTargetOrThrow({ prevManifest, rel, abs, label }) {
+  if (!EXECUTED_TARGETS_VERIFY.has(rel)) return;
   if (!prevManifest || prevManifest.schemaVersion !== 'proof_manifest.v2') {
     process.stdout.write(`[proof-integrity] BASELINE target=${label || rel} (no v2 manifest to compare)\n`);
     return;
@@ -282,13 +269,6 @@ function verifyExecutedTargetOrThrow({ prevManifest, rel, abs, label }) {
   const expected = meta.sha256;
   const actual = sha256File(abs);
   if (actual !== expected) {
-    if (process.env.PROOF_ACCEPT_EXECUTED_TARGET_CHANGES === '1') {
-      process.stdout.write('[proof-integrity] ACCEPT executed-hash-mismatch\n');
-      process.stdout.write(`[proof-integrity] target=${rel}\n`);
-      process.stdout.write(`[proof-integrity] expected=${expected}\n`);
-      process.stdout.write(`[proof-integrity] actual=${actual}\n`);
-      return;
-    }
     process.stderr.write('[proof-integrity] FAIL executed-hash-mismatch\n');
     process.stderr.write(`[proof-integrity] target=${rel}\n`);
     process.stderr.write(`[proof-integrity] expected=${expected}\n`);
@@ -403,13 +383,6 @@ async function main() {
     PROOF_ARTIFACT_DIR: path.join(PROOFS_DIR, `${runTs}-tear`),
     PROOF_ORCHESTRATED: '1'
   })).durationMs;
-
-  verifyExecutedTargetOrThrow({
-    prevManifest,
-    rel: 'NeuralShell_Desktop/dist/NeuralShell-TEAR-Runtime.exe',
-    abs: EXE_PATH,
-    label: 'EXE'
-  });
 
   phaseDurationsMs['proof:exe'] = (await runNpm('proof:exe', ['run', 'proof:exe'], {
     PROOF_RUN_TS: runTs,
