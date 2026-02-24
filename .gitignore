@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
 NeuralShell_Desktop/node_modules/
-package-lock.json
 
 # Build outputs
 NeuralShell_Desktop/dist/
