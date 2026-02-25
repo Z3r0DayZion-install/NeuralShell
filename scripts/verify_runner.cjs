@@ -360,7 +360,7 @@ async function runPhase({ runTs, phaseLabel, phaseSlug, npmArgs }) {
 async function main() {
   ensureDir(PROOFS_DIR);
   acquireVerifyLockOrThrow();
-  const runTs = safeTimestamp();
+  const runTs = process.env.PROOF_RUN_TS || safeTimestamp();
   process.env.PROOF_RUN_TS = runTs;
   process.env.PROOF_PHASE = 'init';
 
