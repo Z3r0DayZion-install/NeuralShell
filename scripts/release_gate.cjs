@@ -8,8 +8,9 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const STATE_DIR = path.join(REPO_ROOT, 'state');
 const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
 
-function npmCmd() {
-  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
+function cmdExePath() {
+  const sysRoot = process.env.SystemRoot || 'C:\\Windows';
+  return path.join(sysRoot, 'System32', 'cmd.exe');
 }
 
 function spawnOrThrow(cmd, args, opts) {
@@ -19,12 +20,25 @@ function spawnOrThrow(cmd, args, opts) {
     encoding: 'utf8'
   });
 
+  if (r && r.error) {
+    process.stderr.write(String(r.error && r.error.message ? r.error.message : r.error) + '\n');
+  }
+
   const code = typeof r.status === 'number' ? r.status : 1;
   if (r.stdout) process.stdout.write(r.stdout);
   if (r.stderr) process.stderr.write(r.stderr);
   if (code !== 0) {
     throw new Error(`Command failed: ${cmd} ${args.join(' ')} (exit ${code})`);
   }
+}
+
+function spawnNpmOrThrow(npmArgs, opts) {
+  if (process.platform === 'win32') {
+    // Avoid spawn PATH/permission edge cases by routing via cmd.exe.
+    const cmdLine = ['npm', ...(npmArgs || [])].join(' ');
+    return spawnOrThrow(cmdExePath(), ['/d', '/s', '/c', cmdLine], opts);
+  }
+  return spawnOrThrow('npm', npmArgs || [], opts);
 }
 
 function findSigntool() {
@@ -102,17 +116,17 @@ function main() {
 
   // Security must be fail-closed for production releases.
   // NOTE: repo lint is intentionally not part of the release gate because `npm run lint` does not currently pass.
-  spawnOrThrow(npmCmd(), ['run', 'security:audit'], { cwd: REPO_ROOT, env: process.env });
-  spawnOrThrow(npmCmd(), ['run', 'ast-gate'], { cwd: REPO_ROOT, env: process.env });
+  spawnNpmOrThrow(['run', 'security:audit'], { cwd: REPO_ROOT, env: process.env });
+  spawnNpmOrThrow(['run', 'ast-gate'], { cwd: REPO_ROOT, env: process.env });
 
   // Root test gate.
-  spawnOrThrow(npmCmd(), ['test'], { cwd: REPO_ROOT, env: process.env });
+  spawnNpmOrThrow(['test'], { cwd: REPO_ROOT, env: process.env });
 
   // Full parity proof gate (also emits proof bundle).
-  spawnOrThrow(npmCmd(), ['run', 'verify:all'], { cwd: REPO_ROOT, env: process.env });
+  spawnNpmOrThrow(['run', 'verify:all'], { cwd: REPO_ROOT, env: process.env });
 
   // Desktop build gate (produces dist artifacts + checksums).
-  spawnOrThrow(npmCmd(), ['run', 'release:all'], { cwd: DESKTOP_ROOT, env: process.env });
+  spawnNpmOrThrow(['run', 'release:all'], { cwd: DESKTOP_ROOT, env: process.env });
 
   // Optional signing enforcement (CI should set NS_REQUIRE_SIGNING=1).
   const requireSigning = String(process.env.NS_REQUIRE_SIGNING || '') === '1';
