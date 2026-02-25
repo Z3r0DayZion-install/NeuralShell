@@ -18,14 +18,14 @@ set "NS_GIT_CLEAN_CHECKED=1"
 echo [release-gate] runTs=%PROOF_RUN_TS%
 
 REM Root gates (fail-closed).
-npm run security:audit || exit /b 1
-npm run ast-gate || exit /b 1
-npm test || exit /b 1
-npm run verify:all || exit /b 1
+call npm run security:audit || exit /b 1
+call npm run ast-gate || exit /b 1
+call npm test || exit /b 1
+call npm run verify:all || exit /b 1
 
 REM Desktop artifacts.
-npm ci --prefix NeuralShell_Desktop || exit /b 1
-npm --prefix NeuralShell_Desktop run release:all || exit /b 1
+call npm ci --prefix NeuralShell_Desktop || exit /b 1
+call npm --prefix NeuralShell_Desktop run release:all || exit /b 1
 
 REM Optional signing enforcement (CI should set NS_REQUIRE_SIGNING=1).
 if "%NS_REQUIRE_SIGNING%"=="1" (
@@ -60,4 +60,3 @@ if not "%GITHUB_OUTPUT%"=="" (
 
 echo [release-gate] PASS
 exit /b 0
-
