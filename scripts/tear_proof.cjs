@@ -29,6 +29,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const STATE_DIR = path.join(REPO_ROOT, 'state');
 const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
 const TEAR_ENTRY = path.join(DESKTOP_ROOT, 'tear-runtime.js');
+const TEAR_SERVER = path.join(DESKTOP_ROOT, 'src', 'runtime', 'createTearServer.js');
 const TEAR_RUNTIME_DIR = path.join(DESKTOP_ROOT, '.tear_runtime');
 const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
 const MIN_UPTIME_DELTA = process.env.CI === 'true' ? 0.05 : 0.1;
@@ -108,10 +109,13 @@ function lockPathFor(runtimeDir) {
 async function spawnLockedAttempt({ transcript, env, timeoutMs }) {
   const cmd = process.platform === 'win32' ? 'node.exe' : 'node';
   const args = [TEAR_ENTRY];
-  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
-  let out = '';
-  child.stdout.on('data', (d) => { out += d.toString('utf8'); });
-  child.stderr.on('data', (d) => { out += d.toString('utf8'); });
+  const runtimeDir = env?.NS_RUNTIME_DIR || TEAR_RUNTIME_DIR;
+  ensureDir(runtimeDir);
+  const outPath = path.join(runtimeDir, '__proof_locked_attempt_stdout.log');
+  const errPath = path.join(runtimeDir, '__proof_locked_attempt_stderr.log');
+  writeFileUtf8(outPath, '');
+  writeFileUtf8(errPath, '');
+  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env, stdoutPath: outPath, stderrPath: errPath });
   const exit = await new Promise((resolve) => {
     const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), timeoutMs);
     t.unref?.();
@@ -120,6 +124,7 @@ async function spawnLockedAttempt({ transcript, env, timeoutMs }) {
       resolve({ code, signal });
     });
   });
+  const out = `${readIfExists(outPath) || ''}\n${readIfExists(errPath) || ''}`;
   if (exit.code === null) {
     await stopChild({ child, timeoutMs: 1500 });
     throw new Error('[proof-lock] hang starting locked attempt');
@@ -137,7 +142,7 @@ function purgeRuntimeDirs({ meta }) {
     if (fs.existsSync(STATE_DIR)) {
       const entries = fs.readdirSync(STATE_DIR, { withFileTypes: true });
       for (const e of entries) {
-        if (e && e.name === 'proofs') continue;
+        if (e && (e.name === 'proofs' || e.name === 'proof_bundles')) continue;
         const p = path.join(STATE_DIR, e.name);
         try {
           fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
@@ -156,7 +161,33 @@ function purgeRuntimeDirs({ meta }) {
       const entries = fs.readdirSync(TEAR_RUNTIME_DIR, { withFileTypes: true });
       for (const e of entries) {
         if (!e || !e.name) continue;
-        if (e.name === '.neuralshell.lock') continue; // do not bypass the instance lock
+        if (e.name === '.neuralshell.lock') {
+          // Fail-closed: only remove the lock if it is provably stale (PID is not running).
+          const lockPath = path.join(TEAR_RUNTIME_DIR, e.name);
+          try {
+            const raw = fs.readFileSync(lockPath, 'utf8');
+            const parsed = JSON.parse(String(raw || ''));
+            const pid = parsed && Number(parsed.pid);
+            if (Number.isFinite(pid) && pid > 0) {
+              try {
+                process.kill(pid, 0);
+              } catch (err) {
+                const code = err && typeof err === 'object' ? err.code : null;
+                if (code === 'ESRCH') {
+                  try {
+                    fs.unlinkSync(lockPath);
+                    deleted.push(lockPath);
+                  } catch (unlinkErr) {
+                    errors.push({ path: lockPath, error: String(unlinkErr && unlinkErr.message ? unlinkErr.message : unlinkErr) });
+                  }
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
+          continue;
+        }
         const p = path.join(TEAR_RUNTIME_DIR, e.name);
         try {
           fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
@@ -237,34 +268,36 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
     `[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=${env.NS_TEAR_PORT} NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`
   );
 
-  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
+  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env, stdoutPath: stdoutLog.filePath, stderrPath: stderrLog.filePath });
   const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
 
-  const listening = await waitForListening({ getLines: attached.getLines, timeoutMs: 10000 });
-  if (collision) {
-    transcript.writeLine(
-      `[tear-proof] portCollision: reservedPort=${collision.port} desiredPort=${desiredPort} actualPort=${listening.port}`
-    );
-    try {
-      await collision.close();
-    } catch {
-      // ignore
+  let baseUrl = null;
+  try {
+    const listening = await waitForListening({ getLines: attached.getLines, timeoutMs: 10000 });
+    if (collision) {
+      transcript.writeLine(
+        `[tear-proof] portCollision: reservedPort=${collision.port} desiredPort=${desiredPort} actualPort=${listening.port}`
+      );
+      try {
+        await collision.close();
+      } catch {
+        // ignore
+      }
+      if (listening.port === collision.port) {
+        throw new Error(`[proof-port] collision fallback failed (still bound to reserved port ${collision.port})`);
+      }
     }
-    if (listening.port === collision.port) {
-      throw new Error(`[proof-port] collision fallback failed (still bound to reserved port ${collision.port})`);
+    baseUrl = `http://127.0.0.1:${listening.port}`;
+    if (meta) {
+      meta.baseUrlByMode = meta.baseUrlByMode || {};
+      meta.baseUrlByMode[modeName] = baseUrl;
+      meta.portByMode = meta.portByMode || {};
+      meta.portByMode[modeName] = listening.port;
+      writeMeta({ artifactDir, meta });
     }
-  }
-  const baseUrl = `http://127.0.0.1:${listening.port}`;
-  if (meta) {
-    meta.baseUrlByMode = meta.baseUrlByMode || {};
-    meta.baseUrlByMode[modeName] = baseUrl;
-    meta.portByMode = meta.portByMode || {};
-    meta.portByMode[modeName] = listening.port;
-    writeMeta({ artifactDir, meta });
-  }
 
-  transcript.writeLine(`[tear-proof] baseUrl: ${baseUrl}`);
-  await waitForMetricsReady({ baseUrl, deadlineMs: 6000 });
+    transcript.writeLine(`[tear-proof] baseUrl: ${baseUrl}`);
+    await waitForMetricsReady({ baseUrl, deadlineMs: 6000 });
 
   // Dual-instance lock: while first instance is up, second must fail with INSTANCE_LOCKED.
   if (modeName === 'normal' && !dryRun) {
@@ -367,6 +400,20 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
     memory: { rssBefore, rssAfter, deltaMb: Number(memDeltaMb.toFixed(3)), maxMb: PROOF_MAX_MEM_MB },
     shutdownCheck: down.ok
   };
+  } finally {
+    if (baseUrl) {
+      try {
+        await shutdown({ baseUrl });
+      } catch {
+        // ignore
+      }
+    }
+    try {
+      await stopChild({ child, timeoutMs: 1500 });
+    } catch {
+      // ignore
+    }
+  }
 }
 
 async function runRestartReset({ transcript, serverLog, stdoutLog, stderrLog, runTagBase, artifactDir, meta }) {
@@ -391,58 +438,74 @@ async function runRestartReset({ transcript, serverLog, stdoutLog, stderrLog, ru
   transcript.writeLine(`[tear-proof] config: ${runtimeConfigPath}`);
   transcript.writeLine(`[tear-proof] env: PROOF_MODE=1 NS_DRY_RUN=0 NS_TEAR_PORT=0 NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`);
 
-  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
+  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env, stdoutPath: stdoutLog.filePath, stderrPath: stderrLog.filePath });
   const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
 
-  const listening = await waitForListening({ getLines: attached.getLines, timeoutMs: 10000 });
-  const baseUrl = `http://127.0.0.1:${listening.port}`;
-  if (meta) {
-    meta.baseUrlByMode = meta.baseUrlByMode || {};
-    meta.baseUrlByMode.restart = baseUrl;
-    meta.portByMode = meta.portByMode || {};
-    meta.portByMode.restart = listening.port;
-    writeMeta({ artifactDir, meta });
-  }
+  let baseUrl = null;
+  try {
+    const listening = await waitForListening({ getLines: attached.getLines, timeoutMs: 10000 });
+    baseUrl = `http://127.0.0.1:${listening.port}`;
+    if (meta) {
+      meta.baseUrlByMode = meta.baseUrlByMode || {};
+      meta.baseUrlByMode.restart = baseUrl;
+      meta.portByMode = meta.portByMode || {};
+      meta.portByMode.restart = listening.port;
+      writeMeta({ artifactDir, meta });
+    }
 
-  transcript.writeLine(`[tear-proof] baseUrl: ${baseUrl}`);
-  await waitForMetricsReady({ baseUrl, deadlineMs: 6000 });
-  const m0 = await fetchMetrics({ baseUrl });
-  if (artifactDir) {
+    transcript.writeLine(`[tear-proof] baseUrl: ${baseUrl}`);
+    await waitForMetricsReady({ baseUrl, deadlineMs: 6000 });
+    const m0 = await fetchMetrics({ baseUrl });
+    if (artifactDir) {
+      try {
+        writeFileUtf8(path.join(artifactDir, `metrics-baseline-restart.txt`), m0.body);
+      } catch {
+        // ignore
+      }
+    }
+    const req0 = parseMetricValue(m0.body, 'neuralshell_requests_total');
+    const fail0 = parseMetricValue(m0.body, 'neuralshell_failures_total');
+    assert.equal(req0, 0, `restart baseline requests_total must be 0, got ${req0}`);
+    assert.equal(fail0, 0, `restart baseline failures_total must be 0, got ${fail0}`);
+    const c0 = { requests: req0, failures: fail0 };
+
+    await shutdown({ baseUrl });
+    const exit = await new Promise((resolve) => {
+      const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), 5000);
+      t.unref?.();
+      child.once('exit', (code, signal) => {
+        clearTimeout(t);
+        resolve({ code, signal });
+      });
+    });
+    if (exit.code === null) {
+      await stopChild({ child, timeoutMs: 1500 });
+      throw new Error(`restartReset: shutdown timed out (no exit within 5000ms)`);
+    }
+    assert.equal(exit.code, 0, `restartReset: exit code must be 0 on shutdown (signal=${exit.signal || 'none'})`);
+    await stopChild({ child, timeoutMs: 1000 });
+    await assertUnreachable({ url: `${baseUrl}/metrics`, deadlineMs: 3000 });
     try {
-      writeFileUtf8(path.join(artifactDir, `metrics-baseline-restart.txt`), m0.body);
+      fs.rmSync(runtimeDir, { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
+
+    return { restartReset: true, port: listening.port, baseline: c0 };
+  } finally {
+    if (baseUrl) {
+      try {
+        await shutdown({ baseUrl });
+      } catch {
+        // ignore
+      }
+    }
+    try {
+      await stopChild({ child, timeoutMs: 1500 });
     } catch {
       // ignore
     }
   }
-  const req0 = parseMetricValue(m0.body, 'neuralshell_requests_total');
-  const fail0 = parseMetricValue(m0.body, 'neuralshell_failures_total');
-  assert.equal(req0, 0, `restart baseline requests_total must be 0, got ${req0}`);
-  assert.equal(fail0, 0, `restart baseline failures_total must be 0, got ${fail0}`);
-  const c0 = { requests: req0, failures: fail0 };
-
-  await shutdown({ baseUrl });
-  const exit = await new Promise((resolve) => {
-    const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), 5000);
-    t.unref?.();
-    child.once('exit', (code, signal) => {
-      clearTimeout(t);
-      resolve({ code, signal });
-    });
-  });
-  if (exit.code === null) {
-    await stopChild({ child, timeoutMs: 1500 });
-    throw new Error(`restartReset: shutdown timed out (no exit within 5000ms)`);
-  }
-  assert.equal(exit.code, 0, `restartReset: exit code must be 0 on shutdown (signal=${exit.signal || 'none'})`);
-  await stopChild({ child, timeoutMs: 1000 });
-  await assertUnreachable({ url: `${baseUrl}/metrics`, deadlineMs: 3000 });
-  try {
-    fs.rmSync(runtimeDir, { recursive: true, force: true });
-  } catch {
-    // ignore
-  }
-
-  return { restartReset: true, port: listening.port, baseline: c0 };
 }
 
 async function main() {
@@ -528,7 +591,8 @@ async function main() {
       artifactDir,
       entries: [
         { label: 'production-server.js', path: PROD_SERVER },
-        { label: 'tear-runtime.js', path: TEAR_ENTRY }
+        { label: 'tear-runtime.js', path: TEAR_ENTRY },
+        { label: 'createTearServer.js', path: TEAR_SERVER }
       ]
     });
 
@@ -557,7 +621,8 @@ async function main() {
       artifactDir,
       entries: [
         { label: 'production-server.js', path: PROD_SERVER },
-        { label: 'tear-runtime.js', path: TEAR_ENTRY }
+        { label: 'tear-runtime.js', path: TEAR_ENTRY },
+        { label: 'createTearServer.js', path: TEAR_SERVER }
       ]
     });
 

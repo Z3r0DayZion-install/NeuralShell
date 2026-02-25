@@ -25,6 +25,7 @@ const {
 const REPO_ROOT = path.resolve(__dirname, '..');
 const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
 const TEAR_ENTRY = path.join(DESKTOP_ROOT, 'tear-runtime.js');
+const TEAR_SERVER = path.join(DESKTOP_ROOT, 'src', 'runtime', 'createTearServer.js');
 const TEAR_RUNTIME_DIR = path.join(DESKTOP_ROOT, '.tear_runtime');
 const LOCK_PATH = path.join(TEAR_RUNTIME_DIR, '.neuralshell.lock');
 
@@ -76,21 +77,87 @@ async function waitForLockGone({ deadlineMs }) {
   return { ok: false };
 }
 
+async function waitForExitOrPidDead({ child, pid, timeoutMs }) {
+  const deadlineAt = Date.now() + timeoutMs;
+  let last = { code: null, signal: null, reason: 'timeout' };
+
+  while (Date.now() < deadlineAt) {
+    if (child && child.exitCode !== null) return { ok: true, code: child.exitCode, signal: null, reason: 'exitCode' };
+    const alive = isPidAlive(pid);
+    if (!alive) return { ok: true, code: null, signal: null, reason: 'pid-dead' };
+    await sleep(120);
+  }
+
+  return { ok: false, ...last };
+}
+
+async function induceCrash({ transcript, child, baseUrl }) {
+  const pid = child && typeof child.pid === 'number' ? child.pid : null;
+  if (!pid) throw new Error('[proof-crash] FAIL missing child pid');
+
+  transcript.writeLine(`[proof-crash] inducing crash pid=${pid}`);
+  try {
+    await httpRequest({ url: `${baseUrl}/__proof/crash`, method: 'POST', timeoutMs: 1500 });
+    transcript.writeLine('[proof-crash] crash endpoint requested');
+  } catch (err) {
+    transcript.writeLine(`[proof-crash] crash endpoint error: ${String(err && err.message ? err.message : err)}`);
+  }
+
+  const gone = await waitForExitOrPidDead({ child, pid, timeoutMs: 10000 });
+  if (!gone.ok) {
+    throw new Error('[proof-crash] FAIL process did not exit after crash request');
+  }
+  transcript.writeLine(`[proof-crash] crashed reason=${gone.reason} exitCode=${gone.code === null ? 'null' : gone.code}`);
+}
+
 async function forceKillChild({ transcript, child }) {
   const pid = child && typeof child.pid === 'number' ? child.pid : null;
   if (!pid) throw new Error('[proof-crash] FAIL missing child pid');
 
   transcript.writeLine(`[proof-crash] killing pid=${pid}`);
+  if (child.exitCode !== null) {
+    transcript.writeLine(`[proof-crash] already-exited exitCode=${child.exitCode}`);
+    return;
+  }
+
+  const exitWait = new Promise((resolve) => {
+    let done = false;
+    const t = setTimeout(() => {
+      if (done) return;
+      done = true;
+      resolve({ code: null, signal: 'timeout' });
+    }, 8000);
+    t.unref?.();
+
+    function finish(code, signal) {
+      if (done) return;
+      done = true;
+      clearTimeout(t);
+      resolve({ code, signal });
+    }
+
+    child.once('exit', finish);
+    child.once('close', finish);
+  });
+
   if (process.platform === 'win32') {
-    const taskkill = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'taskkill.exe');
-    const killer = spawnChild({
-      cmd: taskkill,
-      args: ['/PID', String(pid), '/F'],
-      cwd: REPO_ROOT,
-      env: process.env
-    });
-    const code = await new Promise((resolve) => killer.on('close', resolve));
-    transcript.writeLine(`[proof-crash] taskkill.exit=${code ?? 1}`);
+    let killOk = false;
+    try {
+      killOk = child.kill('SIGKILL');
+    } catch (err) {
+      transcript.writeLine(`[proof-crash] child.kill(SIGKILL) error: ${String(err && err.message ? err.message : err)}`);
+    }
+    transcript.writeLine(`[proof-crash] child.kill(SIGKILL)=${killOk}`);
+
+    try {
+      process.kill(pid, 'SIGKILL');
+      transcript.writeLine('[proof-crash] process.kill(SIGKILL)=ok');
+    } catch (err) {
+      const msg = String(err && err.message ? err.message : err);
+      if (!/ESRCH/i.test(msg)) {
+        transcript.writeLine(`[proof-crash] process.kill(SIGKILL) error: ${msg}`);
+      }
+    }
   } else {
     try {
       process.kill(pid, 'SIGKILL');
@@ -99,14 +166,7 @@ async function forceKillChild({ transcript, child }) {
     }
   }
 
-  const exit = await new Promise((resolve) => {
-    const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), 8000);
-    t.unref?.();
-    child.once('exit', (code, signal) => {
-      clearTimeout(t);
-      resolve({ code, signal });
-    });
-  });
+  const exit = await exitWait;
   if (exit.code === null) {
     throw new Error('[proof-crash] FAIL process did not exit after kill');
   }
@@ -127,7 +187,7 @@ function spawnTear({ transcript, serverLog, stdoutLog, stderrLog, artifactDir, t
   };
   transcript.writeLine(`[proof-crash] spawn(${tag}): ${cmd} ${args.join(' ')}`);
   transcript.writeLine(`[proof-crash] env(${tag}): PROOF_MODE=1 NS_TEAR_PORT=0 NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`);
-  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env });
+  const child = spawnChild({ cmd, args, cwd: DESKTOP_ROOT, env, stdoutPath: stdoutLog.filePath, stderrPath: stderrLog.filePath });
   const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
   if (artifactDir) {
     try {
@@ -196,7 +256,7 @@ async function main() {
       assert.equal(res.status, 200, `[proof-crash] FAIL GET /health expected 200, got ${res.status}`);
     }
 
-    await forceKillChild({ transcript, child });
+    await induceCrash({ transcript, child, baseUrl });
 
     // Zombie checks: pid dead, port freed, lock gone.
     if (isPidAlive(child.pid)) {
@@ -262,7 +322,8 @@ async function main() {
         artifactDir,
         entries: [
           { label: 'production-server.js', path: PROD_SERVER },
-          { label: 'tear-runtime.js', path: TEAR_ENTRY }
+          { label: 'tear-runtime.js', path: TEAR_ENTRY },
+          { label: 'createTearServer.js', path: TEAR_SERVER }
         ]
       });
     } catch {
@@ -306,4 +367,3 @@ main().catch((err) => {
   process.stderr.write(err && err.stack ? err.stack + '\n' : String(err) + '\n');
   process.exit(1);
 });
-

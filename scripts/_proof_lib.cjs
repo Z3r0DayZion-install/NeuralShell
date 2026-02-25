@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
+const { TextDecoder } = require('node:util');
 
 function safeTimestamp() {
   return new Date().toISOString().replace(/[:.]/g, '-');
@@ -120,7 +121,47 @@ function createTranscript({ latestPath, stampedPath }) {
   };
 }
 
-function spawnChild({ cmd, args, cwd, env, windowsHide = true }) {
+function spawnChild({ cmd, args, cwd, env, windowsHide = true, stdoutPath = null, stderrPath = null }) {
+  if (process.platform === 'win32' && stdoutPath && stderrPath) {
+    let stdoutOffset = 0;
+    let stderrOffset = 0;
+    try {
+      stdoutOffset = fs.statSync(stdoutPath).size;
+    } catch {
+      // ignore
+    }
+    try {
+      stderrOffset = fs.statSync(stderrPath).size;
+    } catch {
+      // ignore
+    }
+
+    const outFd = fs.openSync(stdoutPath, 'a');
+    const errFd = fs.openSync(stderrPath, 'a');
+    const child = spawn(cmd, args, {
+      cwd,
+      env,
+      stdio: ['ignore', outFd, errFd],
+      shell: false,
+      windowsHide
+    });
+    child.__stdoutPath = stdoutPath;
+    child.__stderrPath = stderrPath;
+    child.__stdoutOffset = stdoutOffset;
+    child.__stderrOffset = stderrOffset;
+    try {
+      fs.closeSync(outFd);
+    } catch {
+      // ignore
+    }
+    try {
+      fs.closeSync(errFd);
+    } catch {
+      // ignore
+    }
+    return child;
+  }
+
   const child = spawn(cmd, args, {
     cwd,
     env,
@@ -136,6 +177,107 @@ function attachChildLogs({ child, tee, stdoutTee, stderrTee }) {
   function pushLine(line) {
     lines.push(line);
     if (lines.length > 8000) lines.splice(0, lines.length - 8000);
+  }
+
+  if (!child.stdout || !child.stderr) {
+    const stdoutPath = child.__stdoutPath;
+    const stderrPath = child.__stderrPath;
+    const state = {
+      stdoutPos: Number.isFinite(child.__stdoutOffset) ? child.__stdoutOffset : 0,
+      stderrPos: Number.isFinite(child.__stderrOffset) ? child.__stderrOffset : 0,
+      stdoutDec: new TextDecoder('utf-8'),
+      stderrDec: new TextDecoder('utf-8'),
+      stdoutBuf: '',
+      stderrBuf: ''
+    };
+
+    function appendText(kind, text) {
+      const bufKey = kind === 'stdout' ? 'stdoutBuf' : 'stderrBuf';
+      state[bufKey] += text;
+      let buf = state[bufKey];
+      let idx;
+      while ((idx = buf.indexOf('\n')) !== -1) {
+        const line = buf.slice(0, idx).replace(/\r$/, '');
+        if (tee) {
+          try {
+            tee.write(line + '\n');
+          } catch {
+            // ignore
+          }
+        }
+        if (line.trim()) pushLine(line);
+        buf = buf.slice(idx + 1);
+      }
+      state[bufKey] = buf;
+    }
+
+    function pump(kind, filePath) {
+      if (!filePath) return;
+
+      let st = null;
+      try {
+        st = fs.statSync(filePath);
+      } catch {
+        return;
+      }
+
+      const posKey = kind === 'stdout' ? 'stdoutPos' : 'stderrPos';
+      const decKey = kind === 'stdout' ? 'stdoutDec' : 'stderrDec';
+      const bufKey = kind === 'stdout' ? 'stdoutBuf' : 'stderrBuf';
+      const size = st && Number.isFinite(st.size) ? st.size : 0;
+      const prevPos = state[posKey] || 0;
+      if (size < prevPos) {
+        // File was truncated/rotated. Reset to keep tailing deterministic.
+        state[posKey] = 0;
+        state[bufKey] = '';
+        state[decKey] = new TextDecoder('utf-8');
+      } else if (size === prevPos) {
+        return;
+      }
+
+      let fd = null;
+      try {
+        fd = fs.openSync(filePath, 'r');
+      } catch {
+        return;
+      }
+
+      try {
+        const startPos = state[posKey] || 0;
+        let remaining = size - startPos;
+        let cursor = startPos;
+        while (remaining > 0) {
+          const chunkSize = Math.min(remaining, 64 * 1024);
+          const buf = Buffer.allocUnsafe(chunkSize);
+          let bytesRead = 0;
+          try {
+            bytesRead = fs.readSync(fd, buf, 0, chunkSize, cursor);
+          } catch {
+            break;
+          }
+          if (!bytesRead) break;
+          cursor += bytesRead;
+          remaining -= bytesRead;
+          const decoded = state[decKey].decode(buf.subarray(0, bytesRead), { stream: true });
+          if (decoded) appendText(kind, decoded);
+        }
+        state[posKey] = cursor;
+      } finally {
+        try {
+          fs.closeSync(fd);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    return {
+      getLines() {
+        pump('stdout', stdoutPath);
+        pump('stderr', stderrPath);
+        return lines.slice();
+      }
+    };
   }
 
   function onStdout(d) {

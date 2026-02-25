@@ -1,12 +1,22 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const crypto = require('node:crypto');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const STATE_DIR = path.join(REPO_ROOT, 'state');
 const PROOFS_DIR = path.join(STATE_DIR, 'proofs');
 const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
+const VERIFY_LOCK_PATH = path.join(REPO_ROOT, '.locks', 'verify_runner.lock');
+
+const PHASE_BUDGET_MS = {
+  proof_all: 150_000,
+  test_root: 60_000
+};
+
+function budgetForPhase(phaseSlug) {
+  return PHASE_BUDGET_MS[phaseSlug] ?? 30_000;
+}
 
 function ensureDir(dirPath) {
   try {
@@ -14,6 +24,84 @@ function ensureDir(dirPath) {
   } catch {
     // ignore
   }
+}
+
+function isPidAlive(pid) {
+  if (!Number.isFinite(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    const code = err && typeof err === 'object' ? err.code : null;
+    if (code === 'ESRCH') return false;
+    return true;
+  }
+}
+
+function readLockMetaOrNull(lockPath) {
+  try {
+    const raw = fs.readFileSync(lockPath, 'utf8');
+    const obj = raw && raw.trim() ? JSON.parse(raw) : null;
+    if (!obj || typeof obj !== 'object') return null;
+    return obj;
+  } catch {
+    return null;
+  }
+}
+
+function releaseVerifyLockBestEffort() {
+  try {
+    fs.unlinkSync(VERIFY_LOCK_PATH);
+  } catch {
+    // ignore
+  }
+}
+
+function acquireVerifyLockOrThrow() {
+  ensureDir(path.dirname(VERIFY_LOCK_PATH));
+
+  // Ensure we always attempt lock cleanup on normal exit paths.
+  try {
+    process.once('exit', releaseVerifyLockBestEffort);
+  } catch {
+    // ignore
+  }
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const fd = fs.openSync(VERIFY_LOCK_PATH, 'wx');
+      try {
+        const payload = {
+          pid: process.pid,
+          startedAt: new Date().toISOString(),
+          cwd: process.cwd()
+        };
+        fs.writeFileSync(fd, JSON.stringify(payload, null, 2) + '\n', 'utf8');
+      } finally {
+        try {
+          fs.closeSync(fd);
+        } catch {
+          // ignore
+        }
+      }
+      return true;
+    } catch (err) {
+      const code = err && typeof err === 'object' ? err.code : null;
+      if (code !== 'EEXIST') throw err;
+
+      const meta = readLockMetaOrNull(VERIFY_LOCK_PATH);
+      const pid = meta && Number.isFinite(Number(meta.pid)) ? Number(meta.pid) : null;
+      if (pid && !isPidAlive(pid)) {
+        releaseVerifyLockBestEffort();
+        continue;
+      }
+
+      const owner = meta && meta.pid ? String(meta.pid) : 'unknown';
+      throw new Error(`[verify-lock] FAIL verify:all already running lockPath=${VERIFY_LOCK_PATH} pid=${owner}`);
+    }
+  }
+
+  throw new Error(`[verify-lock] FAIL could not acquire lockPath=${VERIFY_LOCK_PATH}`);
 }
 
 function safeTimestamp() {
@@ -56,7 +144,30 @@ function banner(phaseLabel, phaseSlug) {
   process.stdout.write(`[artifacts] ${path.join('state', 'proofs', `${process.env.PROOF_RUN_TS}-${phaseSlug}`)}\n`);
 }
 
-function spawnNpm(args, extraEnv) {
+function forceKillTree(pid) {
+  if (!pid || !Number.isFinite(pid) || pid <= 0) return;
+  if (process.platform === 'win32') {
+    const root = process.env.SystemRoot || process.env.WINDIR || 'C:\\Windows';
+    const taskkill = path.join(root, 'System32', 'taskkill.exe');
+    try {
+      spawnSync(taskkill, ['/PID', String(pid), '/T', '/F'], {
+        stdio: 'ignore',
+        shell: false,
+        windowsHide: true
+      });
+    } catch {
+      // ignore
+    }
+    return;
+  }
+  try {
+    process.kill(pid, 'SIGKILL');
+  } catch {
+    // ignore
+  }
+}
+
+function spawnNpm(args, extraEnv, stdio) {
   const env = { ...process.env, ...(extraEnv || {}) };
   const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
   const spawnArgs =
@@ -64,7 +175,7 @@ function spawnNpm(args, extraEnv) {
   return spawn(cmd, spawnArgs, {
     cwd: REPO_ROOT,
     env,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: stdio || ['ignore', 'pipe', 'pipe'],
     shell: false,
     windowsHide: true
   });
@@ -74,10 +185,14 @@ async function runPhase({ runTs, phaseLabel, phaseSlug, npmArgs }) {
   const artifactDir = path.join(PROOFS_DIR, `${runTs}-${phaseSlug}`);
   ensureDir(artifactDir);
 
+  const budgetMs = budgetForPhase(phaseSlug);
+
   const runnerStdoutPath = path.join(artifactDir, 'runner_stdout.log');
   const runnerStderrPath = path.join(artifactDir, 'runner_stderr.log');
-  const runnerStdout = fs.createWriteStream(runnerStdoutPath, { flags: 'w' });
-  const runnerStderr = fs.createWriteStream(runnerStderrPath, { flags: 'w' });
+  writeFileUtf8(runnerStdoutPath, '');
+  writeFileUtf8(runnerStderrPath, '');
+  const runnerStdoutFd = process.platform === 'win32' ? fs.openSync(runnerStdoutPath, 'a') : null;
+  const runnerStderrFd = process.platform === 'win32' ? fs.openSync(runnerStderrPath, 'a') : null;
 
   const runnerConfigPath = path.join(artifactDir, 'runner_config.json');
   const runnerMetaPath = path.join(artifactDir, 'runner_metadata.json');
@@ -119,23 +234,67 @@ async function runPhase({ runTs, phaseLabel, phaseSlug, npmArgs }) {
     )
   );
 
-  const child = spawnNpm(npmArgs, env);
+  const childStdio =
+    process.platform === 'win32' ? ['ignore', runnerStdoutFd, runnerStderrFd] : ['ignore', 'pipe', 'pipe'];
+  const child = spawnNpm(npmArgs, env, childStdio);
 
-  child.stdout.on('data', (d) => {
-    process.stdout.write(d);
-    runnerStdout.write(d);
-  });
-  child.stderr.on('data', (d) => {
-    process.stderr.write(d);
-    runnerStderr.write(d);
-  });
+  let timedOut = false;
+  const budgetTimer = setTimeout(() => {
+    timedOut = true;
+    forceKillTree(child.pid);
+  }, budgetMs);
+  budgetTimer.unref?.();
+
+  if (process.platform !== 'win32') {
+    const runnerStdout = fs.createWriteStream(runnerStdoutPath, { flags: 'a' });
+    const runnerStderr = fs.createWriteStream(runnerStderrPath, { flags: 'a' });
+    child.stdout.on('data', (d) => {
+      process.stdout.write(d);
+      runnerStdout.write(d);
+    });
+    child.stderr.on('data', (d) => {
+      process.stderr.write(d);
+      runnerStderr.write(d);
+    });
+    child.on('close', () => {
+      runnerStdout.end();
+      runnerStderr.end();
+    });
+  }
 
   const code = await new Promise((resolve) => child.on('close', resolve));
+  try {
+    clearTimeout(budgetTimer);
+  } catch {
+    // ignore
+  }
   const finishedAt = new Date().toISOString();
   const durationMs = Date.now() - startMs;
 
-  await new Promise((resolve) => runnerStdout.end(resolve));
-  await new Promise((resolve) => runnerStderr.end(resolve));
+  if (process.platform === 'win32') {
+    try {
+      fs.closeSync(runnerStdoutFd);
+    } catch {
+      // ignore
+    }
+    try {
+      fs.closeSync(runnerStderrFd);
+    } catch {
+      // ignore
+    }
+    try {
+      const out = fs.readFileSync(runnerStdoutPath, 'utf8');
+      if (out) process.stdout.write(out);
+    } catch {
+      // ignore
+    }
+    try {
+      const err = fs.readFileSync(runnerStderrPath, 'utf8');
+      if (err) process.stderr.write(err);
+    } catch {
+      // ignore
+    }
+  }
 
   const runnerMeta = {
     phase: phaseSlug,
@@ -143,7 +302,7 @@ async function runPhase({ runTs, phaseLabel, phaseSlug, npmArgs }) {
     startedAt,
     finishedAt,
     durationMs,
-    budgetMs: 30000,
+    budgetMs,
     exitCode: code ?? 1,
     ok: (code ?? 1) === 0,
     artifactDir
@@ -181,8 +340,8 @@ async function runPhase({ runTs, phaseLabel, phaseSlug, npmArgs }) {
     // ignore
   }
 
-  if (durationMs > 30000) {
-    throw new Error(`Timing budget exceeded for ${phaseSlug}: ${durationMs}ms > 30000ms`);
+  if (timedOut || durationMs > budgetMs) {
+    throw new Error(`Timing budget exceeded for ${phaseSlug}: ${durationMs}ms > ${budgetMs}ms`);
   }
   if ((code ?? 1) !== 0) {
     throw new Error(`Phase failed: ${phaseSlug} (exit ${(code ?? 1)})`);
@@ -200,6 +359,7 @@ async function runPhase({ runTs, phaseLabel, phaseSlug, npmArgs }) {
 
 async function main() {
   ensureDir(PROOFS_DIR);
+  acquireVerifyLockOrThrow();
   const runTs = safeTimestamp();
   process.env.PROOF_RUN_TS = runTs;
   process.env.PROOF_PHASE = 'init';
@@ -233,6 +393,18 @@ async function main() {
   // Deterministic spine marker for quick CI scan.
   const spineMarker = sha256Text(`PASS:${runTs}`);
   writeFileUtf8(path.join(PROOFS_DIR, `${runTs}-spine.marker`), spineMarker + '\n');
+
+  // Produce a portable proof bundle (fail-closed if bundling fails).
+  const bundleRes = spawnSync(process.execPath, [path.join(__dirname, 'proof_bundle.cjs'), '--runTs', runTs], {
+    cwd: REPO_ROOT,
+    env: { ...process.env, PROOF_RUN_TS: runTs },
+    stdio: 'inherit',
+    shell: false,
+    windowsHide: true
+  });
+  if ((bundleRes.status ?? 1) !== 0) {
+    throw new Error(`[proof-bundle] failed (exit ${(bundleRes.status ?? 1)})`);
+  }
 }
 
 main().catch((err) => {

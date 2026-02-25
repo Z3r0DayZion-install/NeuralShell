@@ -31,6 +31,7 @@ const DESKTOP_ROOT = path.join(REPO_ROOT, 'NeuralShell_Desktop');
 const EXE_PATH = path.join(DESKTOP_ROOT, 'dist', 'NeuralShell-TEAR-Runtime.exe');
 const PROD_SERVER = path.join(REPO_ROOT, 'production-server.js');
 const TEAR_ENTRY = path.join(DESKTOP_ROOT, 'tear-runtime.js');
+const TEAR_SERVER = path.join(DESKTOP_ROOT, 'src', 'runtime', 'createTearServer.js');
 const TEAR_RUNTIME_DIR = path.join(DESKTOP_ROOT, '.tear_runtime');
 const MIN_UPTIME_DELTA = process.env.CI === 'true' ? 0.05 : 0.1;
 const FORCE_FAIL = process.env.PROOF_FORCE_FAIL === '1';
@@ -46,55 +47,44 @@ const NUM_SUCCESS = 5;
 const NUM_SUCCESS_DRY = 5;
 const FAIL_COUNTS_AS_REQUEST = true;
 
-function sampleRssMbTasklist(pid) {
-  const tasklist = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tasklist.exe');
-  if (!fs.existsSync(tasklist)) {
-    throw new Error('[proof-soak] FAIL tasklist-missing');
-  }
-  const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : tasklist;
+async function buildTearExe({ transcript, artifactDir }) {
+  const cmd = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'npm';
   const args =
     process.platform === 'win32'
-      ? ['/d', '/s', '/c', tasklist, '/FO', 'CSV', '/NH', '/FI', `PID eq ${pid}`]
-      : ['/FO', 'CSV', '/NH', '/FI', `PID eq ${pid}`];
-  const child = spawnChild({ cmd, args, cwd: REPO_ROOT, env: process.env });
-  let out = '';
-  child.stdout.on('data', (d) => {
-    out += d.toString('utf8');
+      ? ['/d', '/s', '/c', 'npm', '--prefix', DESKTOP_ROOT, 'run', 'build:tear:exe']
+      : ['--prefix', DESKTOP_ROOT, 'run', 'build:tear:exe'];
+  const stdoutPath = path.join(artifactDir, 'build_stdout.log');
+  const stderrPath = path.join(artifactDir, 'build_stderr.log');
+  writeFileUtf8(stdoutPath, '');
+  writeFileUtf8(stderrPath, '');
+
+  transcript.writeLine(`[exe-proof] build:tear:exe start: ${cmd} ${args.join(' ')}`);
+  const child = spawnChild({
+    cmd,
+    args,
+    cwd: REPO_ROOT,
+    env: process.env,
+    stdoutPath,
+    stderrPath
   });
-  child.stderr.on('data', (d) => {
-    out += d.toString('utf8');
-  });
-  return new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
+    child.once('error', reject);
     child.once('close', (code) => {
       if ((code ?? 1) !== 0) {
-        reject(new Error(`[proof-soak] FAIL tasklist-exit=${code ?? 1}`));
+        reject(new Error(`[exe-proof] build:tear:exe failed exit=${code ?? 1}`));
         return;
       }
-      const line = out
-        .split(/\r?\n/)
-        .map((s) => s.trim())
-        .filter(Boolean)[0];
-      if (!line) {
-        reject(new Error('[proof-soak] FAIL tasklist-empty'));
-        return;
-      }
-      // CSV: "Image Name","PID","Session Name","Session#","Mem Usage"
-      const parts = line
-        .split('","')
-        .map((p) => p.replace(/^"/, '').replace(/"$/, '').trim());
-      const mem = parts[4] || '';
-      const kMatch = mem.replace(/,/g, '').match(/(\d+)\s*K/i);
-      if (!kMatch) {
-        reject(new Error(`[proof-soak] FAIL tasklist-parse mem=${mem}`));
-        return;
-      }
-      const kb = Number(kMatch[1]);
-      resolve(kb / 1024);
+      resolve();
     });
   });
+
+  if (!fs.existsSync(EXE_PATH)) {
+    throw new Error(`[exe-proof] build:tear:exe ok but missing exe: ${EXE_PATH}`);
+  }
+  transcript.writeLine(`[exe-proof] build:tear:exe ok exe=${EXE_PATH}`);
 }
 
-async function runSoak({ transcript, baseUrl, pid, seconds, intervalMs, artifactDir, modeName }) {
+async function runSoak({ transcript, baseUrl, seconds, intervalMs, artifactDir, modeName }) {
   if (!Number.isFinite(seconds) || seconds < 0) {
     throw new Error(`[proof-soak] FAIL invalid-seconds=${seconds}`);
   }
@@ -104,11 +94,12 @@ async function runSoak({ transcript, baseUrl, pid, seconds, intervalMs, artifact
   }
   const endAt = Date.now() + seconds * 1000;
 
-  const rssStartMb = await sampleRssMbTasklist(pid);
   const mStart = await fetchMetrics({ baseUrl });
+  const rssStartBytes = parseMetricValue(mStart.body, 'neuralshell_rss_bytes');
   const reqStart = parseMetricValue(mStart.body, 'neuralshell_requests_total');
   const failStart = parseMetricValue(mStart.body, 'neuralshell_failures_total');
   assert.ok(reqStart !== null && failStart !== null, '[proof-soak] FAIL missing counters at start');
+  assert.ok(rssStartBytes !== null, '[proof-soak] FAIL missing rss at start (neuralshell_rss_bytes)');
 
   let lastReq = reqStart;
   let lastFail = failStart;
@@ -136,15 +127,16 @@ async function runSoak({ transcript, baseUrl, pid, seconds, intervalMs, artifact
     await sleep(intervalMs);
   }
 
-  const rssEndMb = await sampleRssMbTasklist(pid);
   const mEnd = await fetchMetrics({ baseUrl });
+  const rssEndBytes = parseMetricValue(mEnd.body, 'neuralshell_rss_bytes');
   const reqEnd = parseMetricValue(mEnd.body, 'neuralshell_requests_total');
   const failEnd = parseMetricValue(mEnd.body, 'neuralshell_failures_total');
   assert.ok(reqEnd !== null && failEnd !== null, '[proof-soak] FAIL missing counters at end');
+  assert.ok(rssEndBytes !== null, '[proof-soak] FAIL missing rss at end (neuralshell_rss_bytes)');
   if (reqEnd < lastReq) throw new Error('[proof-soak] FAIL counter-reset requests_total (end)');
   if (failEnd !== lastFail) throw new Error('[proof-soak] FAIL counter-drift failures_total (end)');
 
-  const rssDeltaMb = rssEndMb - rssStartMb;
+  const rssDeltaMb = (rssEndBytes - rssStartBytes) / (1024 * 1024);
   if (rssDeltaMb > PROOF_MAX_MEM_MB) {
     throw new Error(
       `[proof-soak] FAIL memory-drift deltaMb=${rssDeltaMb.toFixed(2)} maxMb=${PROOF_MAX_MEM_MB}`
@@ -154,12 +146,12 @@ async function runSoak({ transcript, baseUrl, pid, seconds, intervalMs, artifact
   transcript.writeLine(`[proof-soak] PASS duration=${seconds}s requestsStart=${reqStart} requestsEnd=${reqEnd} rssΔ=${rssDeltaMb.toFixed(2)}MB`);
   if (artifactDir) {
     try {
-      writeFileUtf8(path.join(artifactDir, `soak-${modeName}.json`), JSON.stringify({ seconds, intervalMs, sent, rssStartMb, rssEndMb, rssDeltaMb, reqStart, reqEnd, failStart, failEnd }, null, 2));
+      writeFileUtf8(path.join(artifactDir, `soak-${modeName}.json`), JSON.stringify({ seconds, intervalMs, sent, rssBytesStart: rssStartBytes, rssBytesEnd: rssEndBytes, rssDeltaMb, reqStart, reqEnd, failStart, failEnd }, null, 2));
     } catch {
       // ignore
     }
   }
-  return { ok: true, skipped: false, durationSeconds: seconds, intervalMs, sent, rssStartMb, rssEndMb, rssDeltaMb, reqStart, reqEnd, failStart, failEnd };
+  return { ok: true, skipped: false, durationSeconds: seconds, intervalMs, sent, rssBytesStart: rssStartBytes, rssBytesEnd: rssEndBytes, rssDeltaMb, reqStart, reqEnd, failStart, failEnd };
 }
 
 function copyFileIfExists(srcPath, dstPath) {
@@ -222,14 +214,12 @@ async function reserveCollisionPort() {
 }
 
 async function spawnLockedAttemptExe({ transcript, env, timeoutMs }) {
-  const child = spawnChild({ cmd: EXE_PATH, args: [], cwd: DESKTOP_ROOT, env });
-  let out = '';
-  child.stdout.on('data', (d) => {
-    out += d.toString('utf8');
-  });
-  child.stderr.on('data', (d) => {
-    out += d.toString('utf8');
-  });
+  ensureDir(TEAR_RUNTIME_DIR);
+  const outPath = path.join(TEAR_RUNTIME_DIR, '__proof_locked_exe_attempt_stdout.log');
+  const errPath = path.join(TEAR_RUNTIME_DIR, '__proof_locked_exe_attempt_stderr.log');
+  writeFileUtf8(outPath, '');
+  writeFileUtf8(errPath, '');
+  const child = spawnChild({ cmd: EXE_PATH, args: [], cwd: DESKTOP_ROOT, env, stdoutPath: outPath, stderrPath: errPath });
   const exit = await new Promise((resolve) => {
     const t = setTimeout(() => resolve({ code: null, signal: 'timeout' }), timeoutMs);
     t.unref?.();
@@ -238,6 +228,7 @@ async function spawnLockedAttemptExe({ transcript, env, timeoutMs }) {
       resolve({ code, signal });
     });
   });
+  const out = `${readIfExists(outPath) || ''}\n${readIfExists(errPath) || ''}`;
   if (exit.code === null) {
     await stopChild({ child, timeoutMs: 1500 });
     throw new Error('[proof-lock] hang starting locked EXE attempt');
@@ -255,7 +246,7 @@ function purgeRuntimeDirs({ meta }) {
     if (fs.existsSync(STATE_DIR)) {
       const entries = fs.readdirSync(STATE_DIR, { withFileTypes: true });
       for (const e of entries) {
-        if (e && e.name === 'proofs') continue;
+        if (e && (e.name === 'proofs' || e.name === 'proof_bundles')) continue;
         const p = path.join(STATE_DIR, e.name);
         try {
           fs.rmSync(p, { recursive: true, force: true, maxRetries: 6, retryDelay: 50 });
@@ -314,16 +305,15 @@ async function buildExeIfMissing({ transcript }) {
       ? ['/d', '/s', '/c', 'npm', '--prefix', DESKTOP_ROOT, 'run', 'build:tear:exe']
       : ['--prefix', DESKTOP_ROOT, 'run', 'build:tear:exe'];
   transcript.writeLine(`[exe-proof] EXE missing; building: ${cmd} ${args.join(' ')}`);
-  const child = spawnChild({ cmd, args, cwd: REPO_ROOT, env: process.env });
-  let out = '';
-  child.stdout.on('data', (d) => {
-    out += d.toString('utf8');
-  });
-  child.stderr.on('data', (d) => {
-    out += d.toString('utf8');
-  });
+  ensureDir(STATE_DIR);
+  const outPath = path.join(STATE_DIR, 'exe_build_stdout.log');
+  const errPath = path.join(STATE_DIR, 'exe_build_stderr.log');
+  writeFileUtf8(outPath, '');
+  writeFileUtf8(errPath, '');
+  const child = spawnChild({ cmd, args, cwd: REPO_ROOT, env: process.env, stdoutPath: outPath, stderrPath: errPath });
   const code = await new Promise((resolve) => child.on('close', resolve));
   if (code !== 0) {
+    const out = `${readIfExists(outPath) || ''}\n${readIfExists(errPath) || ''}`;
     throw new Error(`EXE build failed (exit ${code})\n${out}`);
   }
   if (!fs.existsSync(EXE_PATH)) {
@@ -376,7 +366,7 @@ function spawnExe({ runTag, dryRun, transcript, serverLog, stdoutLog, stderrLog,
     `[exe-proof] env: PROOF_MODE=1 NS_DRY_RUN=${env.NS_DRY_RUN} NS_TEAR_PORT=${env.NS_TEAR_PORT} NS_RUNTIME_DIR=${TEAR_RUNTIME_DIR}`
   );
 
-  const child = spawnChild({ cmd: EXE_PATH, args: [], cwd: DESKTOP_ROOT, env });
+  const child = spawnChild({ cmd: EXE_PATH, args: [], cwd: DESKTOP_ROOT, env, stdoutPath: stdoutLog.filePath, stderrPath: stderrLog.filePath });
   const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
 
   if (meta) writeMeta({ artifactDir, meta });
@@ -484,7 +474,6 @@ async function runMode({ modeName, dryRun, transcript, serverLog, stdoutLog, std
     soak = await runSoak({
       transcript,
       baseUrl,
-      pid: proc.child.pid,
       seconds: PROOF_SOAK_SECONDS,
       intervalMs: 500,
       artifactDir,
@@ -656,8 +645,7 @@ async function main() {
     purgeRuntimeDirs({ meta });
     writeMeta({ artifactDir, meta });
 
-    const built = await buildExeIfMissing({ transcript });
-    if (built.built) transcript.writeLine(`[exe-proof] EXE built: ${EXE_PATH}`);
+    await buildTearExe({ transcript, artifactDir });
 
     const normal = await runMode({ modeName: 'normal', dryRun: false, transcript, serverLog, stdoutLog, stderrLog, runTagBase, artifactDir, meta });
     const restart = await runRestartReset({ transcript, serverLog, stdoutLog, stderrLog, runTagBase, artifactDir, meta });
@@ -685,6 +673,7 @@ async function main() {
       entries: [
         { label: 'production-server.js', path: PROD_SERVER },
         { label: 'tear-runtime.js', path: TEAR_ENTRY },
+        { label: 'createTearServer.js', path: TEAR_SERVER },
         { label: 'NeuralShell-TEAR-Runtime.exe', path: EXE_PATH }
       ]
     });
@@ -717,6 +706,7 @@ async function main() {
       entries: [
         { label: 'production-server.js', path: PROD_SERVER },
         { label: 'tear-runtime.js', path: TEAR_ENTRY },
+        { label: 'createTearServer.js', path: TEAR_SERVER },
         { label: 'NeuralShell-TEAR-Runtime.exe', path: EXE_PATH }
       ]
     });

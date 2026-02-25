@@ -699,6 +699,21 @@ export class NeuralShellServer {
 
   async registerRoutes() {
     const proofRoutesEnabled = process.env.PROOF_MODE === '1' || process.env.NODE_ENV === 'test';
+    const proofToken = proofRoutesEnabled ? String(process.env.NS_PROOF_TOKEN || '') : '';
+
+    function assertProofAuthOrThrow(request, reply) {
+      const remote = request?.socket?.remoteAddress || request?.raw?.socket?.remoteAddress || '';
+      if (!isLoopbackAddress(remote)) {
+        reply.status(403);
+        return { ok: false, error: 'PROOF_FORBIDDEN', message: 'Proof route is localhost-only' };
+      }
+      const token = String(request?.headers?.['x-neuralshell-proof-token'] || '');
+      if (!proofToken || token !== proofToken) {
+        reply.status(403);
+        return { ok: false, error: 'PROOF_FORBIDDEN', message: 'Proof token required' };
+      }
+      return null;
+    }
     const isLoopbackAddress = (addr) => {
       const ip = String(addr || '');
       return (
@@ -776,11 +791,8 @@ export class NeuralShellServer {
     // Proof-only upstream stub (used by scripts/runtime_proof.cjs). Never enabled in production.
     if (proofRoutesEnabled) {
       this.app.post('/__proof/ollama', async (request, reply) => {
-        const remote = request?.socket?.remoteAddress || request?.raw?.socket?.remoteAddress || '';
-        if (!isLoopbackAddress(remote)) {
-          reply.status(403);
-          return { error: 'PROOF_FORBIDDEN', message: 'Proof route is localhost-only' };
-        }
+        const auth = assertProofAuthOrThrow(request, reply);
+        if (auth) return auth;
         const body = request.body || {};
         if (!body || typeof body !== 'object') {
           reply.status(400);
@@ -788,6 +800,38 @@ export class NeuralShellServer {
         }
         reply.status(200);
         return { response: 'ok' };
+      });
+
+      this.app.post('/__proof/shutdown', async (request, reply) => {
+        const auth = assertProofAuthOrThrow(request, reply);
+        if (auth) return auth;
+
+        reply.status(200);
+        reply.send({ ok: true });
+
+        const t = setTimeout(async () => {
+          const hard = setTimeout(() => process.exit(0), 2000);
+          hard.unref?.();
+          try {
+            await this.stop();
+          } catch {
+            // ignore
+          }
+          try {
+            await this.app?.close();
+          } catch {
+            // ignore
+          }
+          try {
+            clearTimeout(hard);
+          } catch {
+            // ignore
+          }
+          process.exit(0);
+        }, 10);
+        t.unref?.();
+
+        return reply;
       });
     }
 

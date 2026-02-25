@@ -35,6 +35,16 @@ function sha256File(filePath) {
   return crypto.createHash('sha256').update(buf).digest('hex');
 }
 
+function sha256Text(text) {
+  return crypto.createHash('sha256').update(String(text), 'utf8').digest('hex');
+}
+
+const PROOF_TOKEN = String(
+  process.env.NS_PROOF_TOKEN ||
+    sha256Text(`ns-proof:${process.env.PROOF_RUN_TS || safeTimestamp()}:runtime`)
+);
+process.env.NS_PROOF_TOKEN = PROOF_TOKEN;
+
 function readJsonIfExists(filePath) {
   try {
     if (!fs.existsSync(filePath)) return null;
@@ -261,7 +271,7 @@ async function startUpstreamStub() {
   };
 }
 
-function spawnProductionServer({ configPath }) {
+function spawnProductionServer({ configPath, stdoutPath, stderrPath }) {
   assert.ok(path.isAbsolute(SERVER_ENTRY), 'spawnProductionServer: SERVER_ENTRY must be absolute');
   let child;
   try {
@@ -271,6 +281,7 @@ function spawnProductionServer({ configPath }) {
         ...process.env,
         NODE_ENV: 'test',
         PROOF_MODE: '1',
+        NS_PROOF_TOKEN: PROOF_TOKEN,
         CONFIG_PATH: configPath,
         SWARM_ENABLED: '0',
         HIVE_ENABLED: '0',
@@ -282,10 +293,27 @@ function spawnProductionServer({ configPath }) {
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
       shell: false,
       windowsHide: true,
-      detached: process.platform === 'win32'
+      detached: false
     };
     if (spawnOpts.shell) throw new Error('shell spawn not allowed in production proof');
+    if (process.platform === 'win32') {
+      const outFd = fs.openSync(stdoutPath, 'a');
+      const errFd = fs.openSync(stderrPath, 'a');
+      spawnOpts.stdio = ['ignore', outFd, errFd];
+      child = spawn(process.execPath, [SERVER_ENTRY], spawnOpts);
+      try {
+        fs.closeSync(outFd);
+      } catch {
+        // ignore
+      }
+      try {
+        fs.closeSync(errFd);
+      } catch {
+        // ignore
+      }
+    } else {
     child = spawn(process.execPath, [SERVER_ENTRY], spawnOpts);
+    }
   } catch (err) {
     if (err && typeof err === 'object' && err.code === 'EPERM') {
       throw new Error('spawnProductionServer: EPERM while spawning production-server.js', { cause: err });
@@ -293,8 +321,8 @@ function spawnProductionServer({ configPath }) {
     throw err;
   }
 
-  child.stdout.setEncoding('utf8');
-  child.stderr.setEncoding('utf8');
+  if (child.stdout) child.stdout.setEncoding('utf8');
+  if (child.stderr) child.stderr.setEncoding('utf8');
   child.__spawnTarget = SERVER_ENTRY;
 
   return child;
@@ -326,17 +354,40 @@ function createLogCapture({ tag, runTag, artifactDir }) {
   const logPath = path.join(artifactDir, 'server.log');
   const stdoutPath = path.join(artifactDir, 'stdout.log');
   const stderrPath = path.join(artifactDir, 'stderr.log');
-  const stream = fs.createWriteStream(logPath, { flags: 'a' });
-  const stdoutStream = fs.createWriteStream(stdoutPath, { flags: 'a' });
-  const stderrStream = fs.createWriteStream(stderrPath, { flags: 'a' });
+  const marker = `\n=== ${tag} (${runTag}) ===\n`;
 
   try {
-    stream.write(`\n=== ${tag} (${runTag}) ===\n`);
-    stdoutStream.write(`\n=== ${tag} (${runTag}) ===\n`);
-    stderrStream.write(`\n=== ${tag} (${runTag}) ===\n`);
+    fs.appendFileSync(logPath, marker, 'utf8');
   } catch {
     // ignore
   }
+  try {
+    fs.appendFileSync(stdoutPath, marker, 'utf8');
+  } catch {
+    // ignore
+  }
+  try {
+    fs.appendFileSync(stderrPath, marker, 'utf8');
+  } catch {
+    // ignore
+  }
+
+  let stdoutOffset = 0;
+  let stderrOffset = 0;
+  try {
+    stdoutOffset = fs.statSync(stdoutPath).size;
+  } catch {
+    // ignore
+  }
+  try {
+    stderrOffset = fs.statSync(stderrPath).size;
+  } catch {
+    // ignore
+  }
+
+  const stream = fs.createWriteStream(logPath, { flags: 'a' });
+  const stdoutStream = fs.createWriteStream(stdoutPath, { flags: 'a' });
+  const stderrStream = fs.createWriteStream(stderrPath, { flags: 'a' });
 
   const maxLines = 2000;
   const ring = [];
@@ -410,7 +461,7 @@ function createLogCapture({ tag, runTag, artifactDir }) {
     }
   }
 
-  return { logPath, stdoutPath, stderrPath, feed, tail, close, portPromise, rejectPort };
+  return { logPath, stdoutPath, stderrPath, stdoutOffset, stderrOffset, feed, tail, close, portPromise, rejectPort };
 }
 
 async function waitForListening({ child, capture, timeoutMs = 15000 }) {
@@ -436,8 +487,30 @@ async function waitForListening({ child, capture, timeoutMs = 15000 }) {
 
   child.once('exit', onExit);
   child.once('error', onError);
-  child.stdout.on('data', (d) => capture.feed('stdout', d));
-  child.stderr.on('data', (d) => capture.feed('stderr', d));
+  if (child.stdout && child.stderr) {
+    child.stdout.on('data', (d) => capture.feed('stdout', d));
+    child.stderr.on('data', (d) => capture.feed('stderr', d));
+  } else {
+    const start = Date.now();
+    const tick = () => {
+      if (Date.now() - start > timeoutMs) return;
+      try {
+        const text = fs.readFileSync(capture.stdoutPath, 'utf8');
+        const sliceFrom = Number.isFinite(capture.stdoutOffset) ? capture.stdoutOffset : 0;
+        const next = sliceFrom > 0 ? text.slice(sliceFrom) : text;
+        const m = next.match(/Server listening at http:\/\/127\.0\.0\.1:(\d+)/);
+        if (m) {
+          capture.feed('stdout', `Server listening at http://127.0.0.1:${m[1]}\n`);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+      const t = setTimeout(tick, 50);
+      t.unref?.();
+    };
+    tick();
+  }
 
   try {
     const port = await capture.portPromise;
@@ -464,7 +537,7 @@ async function fetchText(url, options = {}) {
   }
 }
 
-async function stopChild(child) {
+async function stopChild(child, baseUrl) {
   if (child.exitCode !== null) return child.exitCode;
   const waitForExitCode = (ms) =>
     new Promise((resolve, reject) => {
@@ -494,6 +567,22 @@ async function stopChild(child) {
     }
   }
 
+  if (process.platform === 'win32' && typeof baseUrl === 'string' && baseUrl) {
+    try {
+      await fetchText(`${baseUrl}/__proof/shutdown`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-neuralshell-proof-token': PROOF_TOKEN },
+        body: JSON.stringify({}),
+        timeoutMs: 1500
+      });
+      const code = await waitForExitCode(15000);
+      if (code !== 0) throw new Error(`[runtime-proof] kill switch failure (exit ${code})`);
+      return code;
+    } catch {
+      // fall through to signals
+    }
+  }
+
   if (typeof child.send === 'function') {
     try {
       child.send({ type: 'shutdown' });
@@ -501,16 +590,16 @@ async function stopChild(child) {
       if (code !== 0) throw new Error(`[runtime-proof] kill switch failure (exit ${code})`);
       return code;
     } catch {
-      // fall through to SIGTERM
+      // fall through to signals
     }
   }
 
   if (process.platform === 'win32') {
     try {
-      child.kill('SIGTERM');
+      child.kill('SIGINT');
     } catch {
       try {
-        child.kill('SIGTERM');
+        child.kill('SIGINT');
       } catch {
         child.kill();
       }
@@ -654,7 +743,7 @@ function purgeStateDirIfStandalone({ runTagBase }) {
     if (fs.existsSync(STATE_DIR)) {
       const entries = fs.readdirSync(STATE_DIR, { withFileTypes: true });
       for (const e of entries) {
-        if (e && e.name === 'proofs') continue;
+        if (e && (e.name === 'proofs' || e.name === 'proof_bundles')) continue;
         rmTree(path.join(STATE_DIR, e.name));
       }
     }
@@ -700,7 +789,7 @@ function purgeStateDirIfStandalone({ runTagBase }) {
       const remaining = fs
         .readdirSync(STATE_DIR, { withFileTypes: true })
         .map((e) => e.name)
-        .filter((n) => n !== 'proofs');
+        .filter((n) => n !== 'proofs' && n !== 'proof_bundles');
       if (remaining.length) {
         errors.push({ path: STATE_DIR, error: `remaining entries after purge: ${remaining.join(', ')}` });
       }
@@ -951,7 +1040,7 @@ async function run() {
     let child;
     try {
       upstream.resetCount();
-      child = spawnProductionServer({ configPath });
+      child = spawnProductionServer({ configPath, stdoutPath: capture.stdoutPath, stderrPath: capture.stderrPath });
       const listen = await waitForListening({ child, capture });
       const baseUrl = `http://127.0.0.1:${listen.port}`;
       summary[mode] = { ok: false, port: listen.port, baseUrl };
@@ -987,9 +1076,17 @@ async function run() {
       }
 
       if (mode === 'normal') {
-        const p1 = await fetchText(`${baseUrl}/__proof/ollama`, {
+        const p0 = await fetchText(`${baseUrl}/__proof/ollama`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({}),
+          timeoutMs: 1500
+        });
+        assert.equal(p0.res.status, 403, `${tag}: proof endpoint must require token`);
+
+        const p1 = await fetchText(`${baseUrl}/__proof/ollama`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-neuralshell-proof-token': PROOF_TOKEN },
           body: JSON.stringify({}),
           timeoutMs: 1500
         });
@@ -999,7 +1096,11 @@ async function run() {
 
         const p2 = await fetchText(`${baseUrl}/__proof/ollama`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'x-forwarded-for': '8.8.8.8' },
+          headers: {
+            'content-type': 'application/json',
+            'x-neuralshell-proof-token': PROOF_TOKEN,
+            'x-forwarded-for': '8.8.8.8'
+          },
           body: JSON.stringify({}),
           timeoutMs: 1500
         });
@@ -1142,7 +1243,7 @@ async function run() {
         expectedFailuresDelta
       };
 
-      const exitCode = await stopChild(child);
+      const exitCode = await stopChild(child, baseUrl);
       assert.equal(exitCode, 0, `${tag}: server should exit 0 on shutdown`);
 
       // Shutdown down-ness check: /metrics must be unreachable after shutdown.

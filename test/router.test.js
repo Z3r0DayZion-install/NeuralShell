@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
 import { buildServer } from '../router.js';
 
 function jsonResponse(jsonBody, opts = {}) {
@@ -1737,4 +1739,48 @@ test('prometheus metrics include state and auth gauges', async () => {
   assert.match(res.body, /neuralshell_admin_token_required/);
   assert.match(res.body, /neuralshell_prompt_token_required/);
   await app.close();
+});
+
+test('proof lib file-backed logs decode UTF-8 with byte offsets', async () => {
+  const require = createRequire(import.meta.url);
+  const { attachChildLogs } = require('../scripts/_proof_lib.cjs');
+
+  fs.mkdirSync('state', { recursive: true });
+  const dir = path.join('state', 'proof_lib_utf8_test');
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+
+  const stdoutPath = path.join(dir, 'stdout.log');
+  const stderrPath = path.join(dir, 'stderr.log');
+  fs.writeFileSync(stdoutPath, '', 'utf8');
+  fs.writeFileSync(stderrPath, '', 'utf8');
+
+  const child = {
+    __stdoutPath: stdoutPath,
+    __stderrPath: stderrPath,
+    __stdoutOffset: 0,
+    __stderrOffset: 0
+  };
+
+  const teeChunks = [];
+  const tee = { write: (s) => teeChunks.push(String(s)) };
+  const attached = attachChildLogs({ child, tee });
+
+  const line = 'listening: http://127.0.0.1:1 – ✅';
+  const full = Buffer.from(line + '\n', 'utf8');
+  const needle = Buffer.from('✅', 'utf8');
+  const needleIdx = full.indexOf(needle);
+  assert.ok(needleIdx >= 0, 'expected test marker to exist in encoded buffer');
+  const splitAt = needleIdx + 1; // intentionally split inside a multibyte sequence
+
+  fs.appendFileSync(stdoutPath, full.subarray(0, splitAt));
+  assert.equal(attached.getLines().length, 0, 'incomplete UTF-8 must not produce a line');
+
+  fs.appendFileSync(stdoutPath, full.subarray(splitAt));
+  const lines = attached.getLines();
+  assert.ok(lines.some((l) => l.includes('listening: http://127.0.0.1:1')), 'expected listening line');
+  assert.ok(lines.some((l) => l.includes('✅')), 'expected UTF-8 marker to decode');
+  assert.ok(teeChunks.join('').includes('✅'), 'expected tee output to include UTF-8 marker');
+
+  fs.rmSync(dir, { recursive: true, force: true });
 });

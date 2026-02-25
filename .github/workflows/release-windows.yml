@@ -1,0 +1,66 @@
+name: Release (Windows, Deterministic)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install (root, locked)
+        run: npm ci
+
+      - name: Install (desktop, locked)
+        run: npm ci
+        working-directory: NeuralShell_Desktop
+
+      - name: Release gate (fail-closed)
+        id: gate
+        env:
+          NS_REQUIRE_SIGNING: "1"
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: npm run release:gate
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.gate.outputs.runTs }}
+          path: |
+            state/releases/${{ steps.gate.outputs.runTs }}
+            state/proof_bundles/${{ steps.gate.outputs.runTs }}
+            NeuralShell_Desktop/dist
+
+      - name: Create GitHub Release (attach artifacts)
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            state/releases/${{ steps.gate.outputs.runTs }}/release.manifest.json
+            state/releases/${{ steps.gate.outputs.runTs }}/release.manifest.json.sha256
+            state/releases/${{ steps.gate.outputs.runTs }}/release.sha256.txt
+            state/releases/${{ steps.gate.outputs.runTs }}/release.receipt.json
+            state/releases/${{ steps.gate.outputs.runTs }}/release.receipt.json.sha256
+            state/proof_bundles/${{ steps.gate.outputs.runTs }}/proof-bundle-${{ steps.gate.outputs.runTs }}.tar.gz
+            state/proof_bundles/${{ steps.gate.outputs.runTs }}/proof-bundle-${{ steps.gate.outputs.runTs }}.tar.gz.sha256
+            NeuralShell_Desktop/dist/*.exe
+            NeuralShell_Desktop/dist/*.exe.blockmap
+            NeuralShell_Desktop/dist/*.yml
+            NeuralShell_Desktop/dist/*.zip
+

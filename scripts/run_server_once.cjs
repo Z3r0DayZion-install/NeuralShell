@@ -6,9 +6,7 @@ const path = require('node:path');
 const {
   assertMetricsContract,
   assertUnreachable,
-  attachChildLogs,
   createArtifactDir,
-  createTeeFile,
   createTranscript,
   ensureDir,
   fetchMetrics,
@@ -23,6 +21,30 @@ const {
 const REPO_ROOT = path.resolve(__dirname, '..');
 const SERVER_ENTRY = path.join(REPO_ROOT, 'production-server.js');
 const FORCE_FAIL = process.env.PROOF_FORCE_FAIL === '1';
+
+function readTailLinesFromFile(filePath, maxLines) {
+  try {
+    const text = fs.readFileSync(filePath, 'utf8');
+    const lines = text.split(/\r?\n/);
+    return lines.slice(Math.max(0, lines.length - maxLines)).join('\n');
+  } catch {
+    return '';
+  }
+}
+
+function getLinesFromFiles(paths) {
+  const out = [];
+  for (const p of paths) {
+    try {
+      const text = fs.readFileSync(p, 'utf8');
+      if (!text) continue;
+      for (const line of text.split(/\r?\n/)) out.push(line);
+    } catch {
+      // ignore
+    }
+  }
+  return out;
+}
 
 function printSpawnBlocked(tag, err) {
   console.error(`[${tag}] SPAWN_BLOCKED`);
@@ -81,7 +103,7 @@ function writeSpawnProofConfig({ configPath }) {
   return config;
 }
 
-function spawnProductionServer({ configPath }) {
+function spawnProductionServer({ configPath, stdoutPath, stderrPath }) {
   assert.ok(path.isAbsolute(SERVER_ENTRY), 'spawnProductionServer: SERVER_ENTRY must be absolute');
   let child;
   try {
@@ -101,10 +123,30 @@ function spawnProductionServer({ configPath }) {
       },
       shell: false,
       windowsHide: true,
-      detached: process.platform === 'win32',
-      stdio: ['ignore', 'pipe', 'pipe', 'ipc']
+      detached: false,
+      stdio: ['ignore', 'pipe', 'pipe']
     };
     if (spawnOpts.shell) throw new Error('shell spawn not allowed in production proof');
+
+    if (process.platform === 'win32') {
+      const outFd = fs.openSync(stdoutPath, 'a');
+      const errFd = fs.openSync(stderrPath, 'a');
+      spawnOpts.stdio = ['ignore', outFd, errFd];
+      child = spawn(process.execPath, [SERVER_ENTRY], spawnOpts);
+      child.__spawnTarget = SERVER_ENTRY;
+      try {
+        fs.closeSync(outFd);
+      } catch {
+        // ignore
+      }
+      try {
+        fs.closeSync(errFd);
+      } catch {
+        // ignore
+      }
+      return child;
+    }
+
     child = spawn(process.execPath, [SERVER_ENTRY], spawnOpts);
   } catch (err) {
     if (err && typeof err === 'object' && err.code === 'EPERM') {
@@ -113,8 +155,8 @@ function spawnProductionServer({ configPath }) {
     throw err;
   }
   child.__spawnTarget = SERVER_ENTRY;
-  child.stdout.setEncoding('utf8');
-  child.stderr.setEncoding('utf8');
+  if (child.stdout) child.stdout.setEncoding('utf8');
+  if (child.stderr) child.stderr.setEncoding('utf8');
   return child;
 }
 
@@ -170,17 +212,19 @@ async function main() {
   process.env.PROOF_ARTIFACT_DIR = artifactDir;
 
   // Required artifact contract files (pre-created by verify_runner, but keep standalone-safe).
-  writeFileUtf8(path.join(artifactDir, 'stdout.log'), '');
-  writeFileUtf8(path.join(artifactDir, 'stderr.log'), '');
+  const stdoutPath = path.join(artifactDir, 'stdout.log');
+  const stderrPath = path.join(artifactDir, 'stderr.log');
+  const serverLogPath = path.join(artifactDir, 'server.log');
+
+  writeFileUtf8(stdoutPath, '');
+  writeFileUtf8(stderrPath, '');
   writeFileUtf8(path.join(artifactDir, 'config.json'), '');
   writeFileUtf8(path.join(artifactDir, 'metrics.txt'), '');
   writeFileUtf8(path.join(artifactDir, 'metadata.json'), '');
   writeFileUtf8(path.join(artifactDir, 'sha256.txt'), '');
+  writeFileUtf8(serverLogPath, '');
 
   const transcript = createTranscript({ stampedPath: path.join(artifactDir, 'transcript.log') });
-  const serverLog = createTeeFile({ filePath: path.join(artifactDir, 'server.log') });
-  const stdoutLog = createTeeFile({ filePath: path.join(artifactDir, 'stdout.log') });
-  const stderrLog = createTeeFile({ filePath: path.join(artifactDir, 'stderr.log') });
 
   const configPath = path.join(artifactDir, 'config.json');
   const config = writeSpawnProofConfig({ configPath });
@@ -192,9 +236,11 @@ async function main() {
   let success = false;
 
   try {
-    child = spawnProductionServer({ configPath });
-    const attached = attachChildLogs({ child, tee: serverLog, stdoutTee: stdoutLog, stderrTee: stderrLog });
-    const listening = await waitForListening({ getLines: attached.getLines, timeoutMs: 20000 });
+    child = spawnProductionServer({ configPath, stdoutPath, stderrPath });
+    const listening = await waitForListening({
+      getLines: () => getLinesFromFiles([stdoutPath, stderrPath]),
+      timeoutMs: 20000
+    });
 
     port = listening.port;
     assert.ok(Number.isFinite(port) && port > 0, `invalid listen port: ${port}`);
@@ -231,7 +277,8 @@ async function main() {
 
     dumpConfig('spawn-proof', configPath);
     console.error('[spawn-proof] SERVER_OUTPUT_TAIL (last 120 lines)');
-    console.error(serverLog.lastLines(120));
+    console.error(readTailLinesFromFile(stdoutPath, 120));
+    console.error(readTailLinesFromFile(stderrPath, 120));
     console.error(`[spawn-proof] ARTIFACT_DIR: ${artifactDir}`);
     throw err;
   } finally {
@@ -246,9 +293,11 @@ async function main() {
       // ignore
     }
     try {
-      serverLog.close();
-      stdoutLog.close();
-      stderrLog.close();
+      const combined =
+        readTailLinesFromFile(stdoutPath, Number.POSITIVE_INFINITY) +
+        '\n' +
+        readTailLinesFromFile(stderrPath, Number.POSITIVE_INFINITY);
+      writeFileUtf8(serverLogPath, combined);
     } catch {
       // ignore
     }
