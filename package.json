@@ -8,7 +8,7 @@
     "postinstall": "node scripts/verify-installation.js",
     "start": "node production-server.js",
     "dev": "node production-server.js --dev",
-    "release:gate": "call scripts\\git_clean_check.cmd && set NS_GIT_CLEAN_CHECKED=1&& node scripts/release_gate.cjs",
+    "release:gate": "call scripts\\release_gate.cmd",
     "release:manifest": "node scripts/release_manifest.cjs",
     "test": "npm run proof:all && npm run test:root",
     "test:root": "node test/router.test.js",
