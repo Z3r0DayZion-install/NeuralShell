@@ -1,10 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import Docker from 'dockerode';
 
 import { AdaptiveSandbox } from '../src/sandbox/adaptiveSandbox.js';
 import { HardenedSandbox } from '../src/sandbox/hardenedSandbox.js';
 
-const dockerOk = await new HardenedSandbox().isAvailable(1000);
+async function dockerImageExists(image) {
+  const docker = new Docker();
+  return await new Promise((resolve) => {
+    docker.getImage(image).inspect((err) => resolve(!err));
+  });
+}
+
+const image = process.env.NS_SANDBOX_IMAGE || 'node:20-alpine';
+const dockerReachable = await new HardenedSandbox().isAvailable(1000);
+const dockerRunnable = dockerReachable ? await dockerImageExists(image) : false;
 
 test('sandbox: vm backend executes code', async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'vm', vmTimeoutMs: 2000 });
@@ -13,14 +23,14 @@ test('sandbox: vm backend executes code', async () => {
   assert.match(res.output, /VM_OK/);
 });
 
-test('sandbox: docker backend executes code', { skip: !dockerOk }, async () => {
+test('sandbox: docker backend executes code', { skip: !dockerRunnable }, async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'docker', dockerTimeoutMs: 4000 });
   const res = await sandbox.execute('console.log("DOCKER_OK");');
   assert.equal(res.success, true);
   assert.match(res.output, /DOCKER_OK/);
 });
 
-test('sandbox: docker blocks network egress', { skip: !dockerOk }, async () => {
+test('sandbox: docker blocks network egress', { skip: !dockerRunnable }, async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'docker', dockerTimeoutMs: 4000 });
   const code = `
     const net = require('node:net');
@@ -38,7 +48,7 @@ test('sandbox: docker blocks network egress', { skip: !dockerOk }, async () => {
   );
 });
 
-test('sandbox: docker uses read-only rootfs', { skip: !dockerOk }, async () => {
+test('sandbox: docker uses read-only rootfs', { skip: !dockerRunnable }, async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'docker', dockerTimeoutMs: 4000 });
   const code = `
     const fs = require('node:fs');

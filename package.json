@@ -5,7 +5,7 @@
   "main": "production-server.js",
   "type": "module",
   "scripts": {
-    "test": "npm run proof:all && npm run test:root",
+    "test": "npm run proof:all && npm run test:root && npm run test:sandbox",
     "rust:release": "node scripts/run-cargo.mjs run -p neuralshell-release -- bundle",
     "clean": "rm -rf node_modules package-lock.json && npm install",
     "proof:spawn": "node scripts/run_server_once.cjs",
