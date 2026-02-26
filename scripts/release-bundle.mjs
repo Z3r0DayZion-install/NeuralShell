@@ -87,6 +87,12 @@ async function waitForHealth({ port, attempts, delayMs }) {
   throw new Error(`health check failed: ${url}`);
 }
 
+
+function isPortBindInUseError(stderrOrMessage) {
+  const s = String(stderrOrMessage || '');
+  return s.includes('address already in use') || s.includes('failed to bind host port') || s.includes('EADDRINUSE');
+}
+
 function parseArgs(argv) {
   const out = { requireClean: false, port: null };
   for (let i = 2; i < argv.length; i += 1) {
@@ -167,15 +173,40 @@ async function main() {
 
   const name = `neuralshell-smoke-${crypto.randomBytes(4).toString('hex')}`;
   const smokePromptToken = crypto.randomBytes(24).toString('hex');
-  run('docker', ['rm', '-f', name], { cwd: root, allowFail: true });
+  const portWasProvided = Number.isFinite(args.port) && args.port > 0;
+  let smokePort = args.port;
+  let started = false;
+  let lastErr = null;
 
-  run('docker', ['run', '-d', '-p', `127.0.0.1:${args.port}:3000`, '-e', `PROMPT_TOKEN=${smokePromptToken}`, '--name', name, tag], { cwd: root });
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    if (!Number.isFinite(smokePort) || smokePort <= 0) {
+      smokePort = await getFreePort();
+    }
+
+    try {
+      run('docker', ['rm', '-f', name], { cwd: root, allowFail: true });
+      run('docker', ['run', '-d', '-p', '127.0.0.1:' + smokePort + ':3000', '-e', 'PROMPT_TOKEN=' + smokePromptToken, '--name', name, tag], { cwd: root });
+      started = true;
+      break;
+    } catch (err) {
+      const msg = String(err?.stack || err);
+      lastErr = err;
+      if (portWasProvided || !isPortBindInUseError(msg)) {
+        throw err;
+      }
+      smokePort = 0; // force re-pick
+    }
+  }
+
+  if (!started) {
+    throw lastErr || new Error('failed to start smoke container');
+  }
 
   let healthBody = '';
   let logs = '';
   let healthErr = null;
   try {
-    healthBody = await waitForHealth({ port: args.port, attempts: 80, delayMs: 500 });
+    healthBody = await waitForHealth({ port: smokePort, attempts: 80, delayMs: 500 });
   } catch (err) {
     healthErr = err;
   } finally {
@@ -207,7 +238,7 @@ async function main() {
     'NeuralShell Release Bundle',
     `Git: ${sha} (${dirty ? 'dirty' : 'clean'})`,
     `Docker tag: ${tag}`,
-    `Smoke port: ${args.port}`,
+    `Smoke port: ${smokePort}`,
     `Desktop dist: ${dist}`,
     '',
     'Notes:',
