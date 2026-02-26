@@ -257,6 +257,7 @@ fn pick_smoke_port(preferred: u16) -> Result<u16> {
 fn docker_smoke(tag: &str, port: u16) -> Result<(String, String)> {
   docker_ensure_running()?;
   let name = format!("neuralshell-smoke-{}", pseudo_id());
+  let prompt_token = format!("smoke-{}", pseudo_id());
 
   let _ = Command::new("docker").args(["rm", "-f", &name]).output();
 
@@ -266,6 +267,8 @@ fn docker_smoke(tag: &str, port: u16) -> Result<(String, String)> {
       "-d",
       "-p",
       &format!("127.0.0.1:{port}:3000"),
+      "-e",
+      &format!("PROMPT_TOKEN={}", prompt_token),
       "--name",
       &name,
       tag,

@@ -1,84 +1,142 @@
 import Docker from 'dockerode';
-import { Writable } from 'stream';
 
-/**
- * Hardened Sandbox
- *
- * Executes code inside a transient, isolated Docker container.
- * This provides industry-standard security boundaries compared to 'vm'.
- */
+function withTimeout(promise, timeoutMs, errorMessage) {
+  if (!timeoutMs || timeoutMs <= 0) return promise;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(errorMessage || 'Timed out')), timeoutMs);
+    })
+  ]);
+}
+
 export class HardenedSandbox {
-  constructor(timeoutMs = 15000) {
-    this.docker = new Docker(); // Connects to local socket
-    this.image = 'node:20-alpine';
+  constructor(timeoutMs = 15000, dockerOptions) {
+    this.docker = new Docker(dockerOptions);
+    this.image = process.env.NS_SANDBOX_IMAGE || 'node:20-alpine';
     this.defaultTimeout = timeoutMs;
+
+    this._availability = { ok: null, ts: 0 };
   }
 
-  async execute(code, customTimeout) {
+  async isAvailable(timeoutMs = 1000) {
+    const now = Date.now();
+    if (this._availability.ok !== null && now - this._availability.ts < 5000) {
+      return this._availability.ok;
+    }
+
+    const ping = new Promise((resolve, reject) => {
+      this.docker.ping((err, data) => (err ? reject(err) : resolve(data)));
+    });
+
+    const ok = await withTimeout(ping, timeoutMs, 'docker ping timed out').then(
+      () => true,
+      () => false
+    );
+
+    this._availability = { ok, ts: now };
+    return ok;
+  }
+
+  async execute(code, customTimeoutMs) {
     const outputBuffer = [];
-    const timeoutMs = customTimeout || this.defaultTimeout;
+    const timeoutMs = customTimeoutMs || this.defaultTimeout;
 
-    console.log(`[Sandbox] Spinning up transient container (Timeout: ${timeoutMs}ms)...`);
+    const reachable = await this.isAvailable(1000);
+    if (!reachable) {
+      throw new Error('docker engine is not reachable (docker ping failed)');
+    }
 
+    // Encode code to base64 to avoid shell escaping issues and pass via ENV
+    const encodedCode = Buffer.from(code, 'utf8').toString('base64');
+
+    const cmd = [
+      'node',
+      '-e',
+      [
+        'try {',
+        '  const src = Buffer.from(process.env.CODE || "", "base64").toString("utf8");',
+        '  eval(src);',
+        '} catch (e) {',
+        '  console.error(e && e.stack ? e.stack : String(e));',
+        '  process.exitCode = 1;',
+        '}'
+      ].join('')
+    ];
+
+    let container;
     try {
-      // Encode code to base64 to avoid shell escaping issues and pass via ENV
-      const encodedCode = Buffer.from(code).toString('base64');
-
-      const container = await this.docker.createContainer({
+      container = await this.docker.createContainer({
         Image: this.image,
-        // safe execution wrapper
-        Cmd: ['node', '-e', 'try { eval(Buffer.from(process.env.CODE, "base64").toString("utf8")) } catch(e) { console.error(e) }'],
+        Cmd: cmd,
         Env: [`CODE=${encodedCode}`],
+        WorkingDir: '/tmp',
+        User: 'node',
         HostConfig: {
-          Memory: 128 * 1024 * 1024, // 128MB limit
-          CpuQuota: 50000, // 50% of 1 CPU
-          NetworkMode: 'none', // Isolated
-          AutoRemove: true
+          AutoRemove: true,
+
+          // Resource limits
+          Memory: 128 * 1024 * 1024,
+          MemorySwap: 128 * 1024 * 1024,
+          CpuQuota: 50000,
+          PidsLimit: 128,
+
+          // Isolation
+          NetworkMode: 'none',
+          ReadonlyRootfs: true,
+          CapDrop: ['ALL'],
+          SecurityOpt: ['no-new-privileges:true'],
+
+          // Writable scratch
+          Tmpfs: {
+            '/tmp': 'rw,noexec,nosuid,size=16m'
+          }
         }
       });
+    } catch (err) {
+      const msg = String(err && err.message ? err.message : err);
+      if (msg.includes('npipe') || msg.toLowerCase().includes('connect')) {
+        throw new Error(`docker engine is not reachable (${msg})`);
+      }
+      return { success: false, error: `Sandbox Failure: ${msg}` };
+    }
 
-      await container.start();
+    await container.start();
 
-      const logs = await container.logs({
-        follow: true,
-        stdout: true,
-        stderr: true
-      });
+    const logs = await container.logs({
+      follow: true,
+      stdout: true,
+      stderr: true
+    });
 
-      return new Promise((resolve) => {
-        const killTimer = setTimeout(async () => {
-          console.warn('[Sandbox] Execution timed out. Terminating container.');
-          try {
-            await container.stop({ t: 0 }).catch(() => {}); // Try to stop gracefully first
-            await container.remove({ force: true }).catch(() => {});
-          } catch (err) {
-            // Container might already be gone due to AutoRemove
-          }
-          resolve({
-            success: false,
-            error: 'Execution Timed Out'
-          });
-        }, timeoutMs);
+    return new Promise((resolve) => {
+      const killTimer = setTimeout(async () => {
+        try {
+          await container.stop({ t: 0 }).catch(() => {});
+          await container.remove({ force: true }).catch(() => {});
+        } catch {
+          // ignore
+        }
+        resolve({
+          success: false,
+          error: 'Execution Timed Out',
+          output: outputBuffer.join('')
+        });
+      }, timeoutMs);
 
-        logs.on('data', (chunk) => outputBuffer.push(chunk.toString()));
-        logs.on('end', () => {
-          clearTimeout(killTimer);
-          // Strip non-printable characters but keep newlines
-          const rawOutput = outputBuffer.join('');
-          const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+      logs.on('data', (chunk) => outputBuffer.push(chunk.toString()));
+      logs.on('end', () => {
+        clearTimeout(killTimer);
 
-          resolve({
-            success: true,
-            output: cleanOutput
-          });
+        const rawOutput = outputBuffer.join('');
+        const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+
+        resolve({
+          success: true,
+          output: cleanOutput,
+          result: null
         });
       });
-
-    } catch (err) {
-      return {
-        success: false,
-        error: `Sandbox Failure: ${err.message}`
-      };
-    }
+    });
   }
 }

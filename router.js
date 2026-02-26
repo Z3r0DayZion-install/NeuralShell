@@ -15,6 +15,7 @@ import {
 import { orderEndpointsAdaptive } from './src/router/selector.js';
 import { containsBlockedTerm, parseBlockedTerms, parseCsvSet, validateBootConfig } from './src/router/policy.js';
 import { AutonomyController } from './src/router/autonomyController.js';
+import { buildRequest as buildAdapterRequest, parseResponse as parseAdapterResponse, detectProvider } from './src/router/adapters.js';
 import { calculateQualityScore } from './qualityScoring.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -224,34 +225,44 @@ async function callEndpoint(ep, payload, fetchImpl = fetch, options = {}) {
     const content = String(data.response);
     return { content: content.slice(0, responseMaxChars), truncated: content.length > responseMaxChars };
   } else {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not set');
-    }
-    const res = await fetchWithTimeout(fetchImpl, ep.url, {
+    const provider = ep.provider || detectProvider(ep);
+    const requestPayload = {
+      model: ep.model,
+      messages,
+      temperature: payload?.temperature,
+      max_tokens: payload?.max_tokens,
+      stream: false
+    };
+
+    const { url, headers, body } = buildAdapterRequest({ ...ep, provider }, requestPayload);
+
+    const bodyText = typeof body === 'string' ? body : JSON.stringify(body);
+
+    const res = await fetchWithTimeout(fetchImpl, url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: ep.model,
-        messages
-      })
+      headers,
+      body: bodyText
     }, timeoutMs);
     if (!res.ok) {
-      const body = await readErrorBody(res);
-      throw new Error(`OpenAI request failed (${res.status})${body ? `: ${body}` : ''}`);
+      const errBody = await readErrorBody(res);
+      throw new Error('LLM request failed (' + res.status + ')' + (errBody ? ': ' + errBody : ''));
     }
     const data = await res.json();
-    if (!data?.choices?.[0]?.message) {
-      throw new Error('Invalid OpenAI response');
+    const parsed = parseAdapterResponse(provider, data);
+    const rawContent = parsed && typeof parsed === 'object' && 'content' in parsed ? parsed.content : '';
+    const content = typeof rawContent === 'string' ? rawContent : String(rawContent ?? '');
+    if (!content) {
+      throw new Error('Invalid LLM response');
     }
-    const msg = data.choices[0].message;
-    const content = typeof msg.content === 'string' ? msg.content : String(msg.content ?? '');
+
+    const sliced = content.slice(0, responseMaxChars);
     return {
-      ...msg,
-      content: content.slice(0, responseMaxChars),
-      truncated: content.length > responseMaxChars
+      role: 'assistant',
+      content: sliced,
+      truncated: content.length > responseMaxChars,
+      provider,
+      model: parsed?.model,
+      usage: parsed?.usage
     };
   }
 }
@@ -263,6 +274,10 @@ function normalizeEndpoint(ep, index) {
   const name = typeof ep.name === 'string' ? ep.name.trim() : '';
   const url = typeof ep.url === 'string' ? ep.url.trim() : '';
   const model = typeof ep.model === 'string' ? ep.model.trim() : '';
+  const apiKey = typeof ep.apiKey === 'string' ? ep.apiKey.trim() : '';
+  const provider = typeof ep.provider === 'string' ? ep.provider.trim() : '';
+  const deployment = typeof ep.deployment === 'string' ? ep.deployment.trim() : '';
+  const region = typeof ep.region === 'string' ? ep.region.trim() : '';
   if (!name || !url || !model) {
     throw new Error(`Endpoint ${index} requires non-empty name, url, and model`);
   }
@@ -278,7 +293,15 @@ function normalizeEndpoint(ep, index) {
   if (!['http:', 'https:'].includes(parsed.protocol)) {
     throw new Error(`Endpoint ${index} uses unsupported protocol`);
   }
-  return { name, url, model };
+  return {
+    name,
+    url,
+    model,
+    ...(apiKey ? { apiKey } : {}),
+    ...(provider ? { provider } : {}),
+    ...(deployment ? { deployment } : {}),
+    ...(region ? { region } : {})
+  };
 }
 
 function assertUniqueEndpointNames(endpoints) {

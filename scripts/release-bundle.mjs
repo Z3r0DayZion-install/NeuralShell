@@ -71,7 +71,7 @@ async function getFreePort() {
 }
 
 async function waitForHealth({ port, attempts, delayMs }) {
-  const url = `http://localhost:${port}/health`;
+  const url = `http://127.0.0.1:${port}/health`;
   for (let i = 0; i < attempts; i += 1) {
     try {
       const ctrl = new AbortController();
@@ -166,19 +166,30 @@ async function main() {
   run('docker', ['build', '-t', tag, '-f', 'Dockerfile', '.'], { cwd: root });
 
   const name = `neuralshell-smoke-${crypto.randomBytes(4).toString('hex')}`;
-  run('docker', ['run', '-d', '--rm', '-p', `${args.port}:3000`, '--name', name, tag], { cwd: root });
+  const smokePromptToken = crypto.randomBytes(24).toString('hex');
+  run('docker', ['rm', '-f', name], { cwd: root, allowFail: true });
 
-  let healthBody = null;
+  run('docker', ['run', '-d', '-p', `127.0.0.1:${args.port}:3000`, '-e', `PROMPT_TOKEN=${smokePromptToken}`, '--name', name, tag], { cwd: root });
+
+  let healthBody = '';
   let logs = '';
+  let healthErr = null;
   try {
     healthBody = await waitForHealth({ port: args.port, attempts: 80, delayMs: 500 });
-    logs = run('docker', ['logs', '--tail', '200', name], { cwd: root, allowFail: true }).stdout;
+  } catch (err) {
+    healthErr = err;
   } finally {
-    run('docker', ['stop', name], { cwd: root, allowFail: true });
+    const logOut = run('docker', ['logs', '--tail', '200', name], { cwd: root, allowFail: true });
+    logs = (logOut.stdout || '') + (logOut.stderr || '');
+    run('docker', ['rm', '-f', name], { cwd: root, allowFail: true });
   }
 
   writeText(path.join(outDocker, 'health.json'), healthBody || '');
   writeText(path.join(outDocker, 'container_logs.txt'), logs);
+  if (healthErr) {
+    writeText(path.join(outDocker, 'health_error.txt'), String(healthErr && healthErr.stack ? healthErr.stack : healthErr) + '\n');
+    throw healthErr;
+  }
   writeText(path.join(outDocker, 'image_inspect.json'), run('docker', ['image', 'inspect', tag], { cwd: root }).stdout);
 
   // Optional SBOM (if plugin works)

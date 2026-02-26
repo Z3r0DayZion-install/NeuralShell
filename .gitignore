@@ -86,3 +86,7 @@ evidence/
 # Rust
 target/
 out/
+
+# Local machine scan artifacts
+docs/KICKA_SCAN_*.md
+scripts/import-kicka-backups.ps1

@@ -43,7 +43,12 @@
     "test:all": "npm run test:contract && npm run test:chaos && npm run test:root",
     "test:integration": "node test/router.integration.test.js",
     "lint": "eslint production-server.js scripts/verify-autonomy-wiring.js src/swarm/messageBus.js src/swarm/federationNode.js --ext .js --max-warnings 0",
-    "proof:reset": "node scripts/proof-reset.mjs"
+    "proof:reset": "node scripts/proof-reset.mjs",
+    "llm:preflight": "node scripts/llm-connection-test.mjs --dry-run",
+    "llm:test": "node scripts/llm-connection-test.mjs --live",
+    "test:sandbox": "node test/sandbox.test.js",
+    "sandbox:smoke": "npm run test:sandbox",
+    "sandbox:prepare": "node scripts/sandbox-prepare.mjs"
   },
   "keywords": [],
   "author": "",

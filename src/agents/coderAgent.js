@@ -1,5 +1,5 @@
 import { BaseAgent } from './baseAgent.js';
-import { HardenedSandbox } from '../sandbox/hardenedSandbox.js';
+import { AdaptiveSandbox } from '../sandbox/adaptiveSandbox.js';
 import { GlobalToolForge } from '../forge/toolForge.js';
 
 export class CoderAgent extends BaseAgent {
@@ -9,7 +9,7 @@ export class CoderAgent extends BaseAgent {
       role: 'coder',
       capabilities: ['generate_code', 'review_code', 'debug', 'execute_code', 'forge_tools']
     });
-    this.sandbox = new HardenedSandbox();
+    this.sandbox = new AdaptiveSandbox();
   }
 
   async executeTask(task) {
@@ -50,7 +50,8 @@ export class CoderAgent extends BaseAgent {
       code = `console.log("Execution spec: ${spec}")`;
     }
 
-    console.log('[Coder] Launching Hardened Sandbox...');
+    const backend = this.sandbox && this.sandbox.backend ? this.sandbox.backend : 'custom';
+    console.log(`[Coder] Launching sandbox (${backend})...`);
     const execution = await this.sandbox.execute(code);
 
     return {

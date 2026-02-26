@@ -58,7 +58,18 @@ Access the Dashboard at: **`http://localhost:3000/admin-dashboard.html`**
 - [Status Report](PROJECT_STATUS.md)
 
 ---
-*"The best way to predict the future is to invent it."*
-\n\n## Shipping\n\n- Build a local release bundle (desktop EXEs + docker image + smoke test):\n  - 
-pm run ship:bundle\n- Create a redacted support bundle for debugging:\n  - 
-pm run support:bundle\n\nBundles are written under out/.\n
+"The best way to predict the future is to invent it."
+
+## Shipping
+- Build a local release bundle (desktop EXEs + docker image + smoke test):
+  - `npm run ship:bundle`
+- Create a redacted support bundle for debugging:
+  - `npm run support:bundle`
+
+Bundles are written under `out/`.
+
+## Sandbox
+- Ensure the sandbox image is available:
+  - `npm run sandbox:prepare`
+- Run sandbox smoke tests:
+  - `npm run test:sandbox`

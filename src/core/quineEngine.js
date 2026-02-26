@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { HardenedSandbox } from '../sandbox/hardenedSandbox.js';
+import { AdaptiveSandbox } from '../sandbox/adaptiveSandbox.js';
 
 /**
  * Quine Engine (Self-Rewriting Core)
@@ -15,7 +15,7 @@ import { HardenedSandbox } from '../sandbox/hardenedSandbox.js';
  */
 export class QuineEngine {
   constructor(routerCore) {
-    this.runtime = new HardenedSandbox();
+    this.runtime = new AdaptiveSandbox();
     this.router = routerCore;
     this.backupDir = './state/backups';
     this.shadowDir = './state/shadow'; // Shadow branch for safe mutation
@@ -56,7 +56,7 @@ export class QuineEngine {
     }
 
     // 4. Verify Syntax (Hardened Sandbox)
-    console.log('[Quine] Verifying syntax via Hardened Sandbox...');
+    console.log('[Quine] Verifying syntax via sandbox...');
     const verification = await this.runtime.execute(optimizedCode + '\nconsole.log("Syntax Check Pass");');
 
     if (!verification.success || verification.error) {
@@ -154,3 +154,5 @@ Return ONLY the improved JavaScript code. Do not include explanations or markdow
     return header + code;
   }
 }
+
+

@@ -227,47 +227,80 @@ function acquireRuntimeLockOrThrow(runtimeDir) {
     // ignore
   }
 
-  let fd = null;
-  try {
-    fd = fs.openSync(lockPath, "wx");
-    const payload = JSON.stringify(
-      { pid: process.pid, startedAt: new Date().toISOString(), runtimeDir },
-      null,
-      2
-    );
+  function isPidAlive(pid) {
+    const n = Number(pid);
+    if (!Number.isFinite(n) || n <= 0) return false;
     try {
-      fs.writeFileSync(fd, payload, "utf8");
-    } catch {
-      // ignore
+      process.kill(n, 0);
+      return true;
+    } catch (e) {
+      const code = e && typeof e === "object" ? e.code : null;
+      if (code === "ESRCH") return false;
+      return true; // EPERM or unknown => assume alive
     }
-    startProofLockJanitor({ runtimeDir, lockPath, ownerPid: process.pid });
-    return {
-      lockPath,
-      close() {
-        try {
-          if (fd !== null) fs.closeSync(fd);
-        } catch {
-          // ignore
-        }
-        try {
-          fs.unlinkSync(lockPath);
-        } catch {
-          // ignore
-        }
-      }
-    };
-  } catch (err) {
-    const code = err && typeof err === "object" ? err.code : null;
-    if (code === "EEXIST") {
+  }
+
+  let fd = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      fd = fs.openSync(lockPath, "wx");
+      const payload = JSON.stringify(
+        { pid: process.pid, startedAt: new Date().toISOString(), runtimeDir },
+        null,
+        2
+      );
       try {
-        process.stderr.write("INSTANCE_LOCKED\n");
+        fs.writeFileSync(fd, payload, "utf8");
       } catch {
         // ignore
       }
-      throw new Error("INSTANCE_LOCKED");
+      startProofLockJanitor({ runtimeDir, lockPath, ownerPid: process.pid });
+      return {
+        lockPath,
+        close() {
+          try {
+            if (fd !== null) fs.closeSync(fd);
+          } catch {
+            // ignore
+          }
+          try {
+            fs.unlinkSync(lockPath);
+          } catch {
+            // ignore
+          }
+        }
+      };
+    } catch (err) {
+      const code = err && typeof err === "object" ? err.code : null;
+      if (code === "EEXIST") {
+        if (attempt === 0) {
+          try {
+            const raw = fs.readFileSync(lockPath, "utf8");
+            const meta = raw && raw.trim() ? JSON.parse(raw) : null;
+            const ownerPid = meta && typeof meta === "object" ? meta.pid : null;
+            if (!isPidAlive(ownerPid)) {
+              try {
+                fs.unlinkSync(lockPath);
+                continue;
+              } catch {
+                // ignore
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+        try {
+          process.stderr.write("INSTANCE_LOCKED\n");
+        } catch {
+          // ignore
+        }
+        throw new Error("INSTANCE_LOCKED");
+      }
+      throw err;
     }
-    throw err;
   }
+  throw new Error("INSTANCE_LOCKED");
 }
 
 function isLoopbackAddress(ip) {
@@ -484,11 +517,22 @@ async function createTearServer(options = {}) {
 
   server.get("/metrics", async (req, reply) => {
     const uptimeSeconds = Number(process.hrtime.bigint() - startedAtNs) / 1e9;
+    let rssBytes = 0;
+    try {
+      const mu = typeof process.memoryUsage === "function" ? process.memoryUsage() : null;
+      const v = mu && typeof mu === "object" ? Number(mu.rss) : NaN;
+      rssBytes = Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+    } catch {
+      rssBytes = 0;
+    }
     const body =
       [
         "# HELP neuralshell_uptime_seconds Process uptime in seconds",
         "# TYPE neuralshell_uptime_seconds gauge",
         `neuralshell_uptime_seconds ${uptimeSeconds.toFixed(6)}`,
+        "# HELP neuralshell_rss_bytes Resident set size (RSS) in bytes",
+        "# TYPE neuralshell_rss_bytes gauge",
+        `neuralshell_rss_bytes ${rssBytes}`,
         "# HELP neuralshell_requests_total Total HTTP requests handled (excluding /metrics)",
         "# TYPE neuralshell_requests_total counter",
         `neuralshell_requests_total ${requestsTotal}`,
@@ -585,6 +629,20 @@ async function createTearServer(options = {}) {
           } finally {
             process.exit(0);
           }
+        }, 25);
+        return;
+      })()
+    );
+
+    server.post("/__proof/crash", async (req, reply) =>
+      wrap("__proof/crash", async () => {
+        assertLocal(req);
+        reply.code(200);
+        reply.type("application/json");
+        reply.send({ ok: true, crash: true });
+        setTimeout(() => {
+          // Exit non-zero to simulate a crash (lock cleanup is handled by proofLockJanitor in node proof mode).
+          process.exit(17);
         }, 25);
         return;
       })()

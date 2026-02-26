@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 const LLM_ADAPTERS = {
   openai: {
     name: 'OpenAI',
@@ -108,7 +109,7 @@ const LLM_ADAPTERS = {
     name: 'Azure OpenAI',
     chatEndpoint: '/openai/deployments/{deployment}/chat/completions?api-version=2024-02-01',
     auth: 'Bearer',
-    extraHeaders: (config) => ({ 'api-key': config.apiKey }),
+    authHeader: 'api-key',
     transformRequest: (payload) => ({
       model: payload.model,
       messages: payload.messages,
@@ -299,29 +300,177 @@ function getAdapter(endpoint) {
 }
 
 function buildRequest(endpoint, payload, adapter = null) {
-  const a = adapter || getAdapter(endpoint);
+  const provider = endpoint.provider || detectProvider(endpoint);
+  const a = adapter || getAdapter({ ...endpoint, provider });
 
-  const url = endpoint.url.includes(a.chatEndpoint)
-    ? endpoint.url
-    : endpoint.url.replace(/\/$/, '') + a.chatEndpoint;
+  const templateVars = {
+    model: payload?.model || endpoint.model || '',
+    deployment: payload?.deployment || endpoint.deployment || '',
+    region: payload?.region || endpoint.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || ''
+  };
+
+  function applyTemplate(input) {
+    return String(input).replace(/\{(\w+)\}/g, (_m, key) => {
+      const val = templateVars[key];
+      return val == null ? '' : String(val);
+    });
+  }
+
+  const chatEndpoint = a.chatEndpoint || '';
+  let url;
+  if (/^https?:\/\//i.test(chatEndpoint)) {
+    url = chatEndpoint;
+  } else if (endpoint.url.includes(chatEndpoint)) {
+    url = endpoint.url;
+  } else {
+    url = endpoint.url.replace(/\/$/, '') + chatEndpoint;
+  }
+  url = applyTemplate(url);
+
+  // AWS SigV4 (Bedrock)
+  if (a.auth === 'AWS4') {
+    const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID || '';
+    const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || '';
+    const awsSessionToken = process.env.AWS_SESSION_TOKEN || '';
+    const region = templateVars.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || '';
+    if (!region) {
+      throw new Error('AWS_REGION is not set');
+    }
+    if (!awsAccessKeyId) {
+      throw new Error('AWS_ACCESS_KEY_ID is not set');
+    }
+    if (!awsSecretAccessKey) {
+      throw new Error('AWS_SECRET_ACCESS_KEY is not set');
+    }
+
+    const bodyObj = a.transformRequest({
+      ...payload,
+      model: payload?.model || endpoint.model
+    });
+    const bodyText = JSON.stringify(bodyObj);
+
+    const urlObj = new URL(url);
+    const method = 'POST';
+    const service = 'bedrock';
+    const amzDate = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const dateStamp = amzDate.slice(0, 8);
+    const sha256Hex = (data) => crypto.createHash('sha256').update(data, 'utf8').digest('hex');
+    const hmac = (key, data) => crypto.createHmac('sha256', key).update(data, 'utf8').digest();
+    const hmacHex = (key, data) => crypto.createHmac('sha256', key).update(data, 'utf8').digest('hex');
+    const encodeRfc3986 = (str) => encodeURIComponent(str).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+
+    const canonicalQuery = (() => {
+      const pairs = [];
+      for (const [k, v] of urlObj.searchParams) {
+        pairs.push([encodeRfc3986(k), encodeRfc3986(v)]);
+      }
+      pairs.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0)));
+      return pairs.map(([k, v]) => `${k}=${v}`).join('&');
+    })();
+
+    const payloadHash = sha256Hex(bodyText);
+    const headersToSign = {
+      'content-type': 'application/json',
+      host: urlObj.host,
+      'x-amz-content-sha256': payloadHash,
+      'x-amz-date': amzDate
+    };
+    if (awsSessionToken) {
+      headersToSign['x-amz-security-token'] = awsSessionToken;
+    }
+
+    const signedHeaderNames = Object.keys(headersToSign).sort();
+    const canonicalHeaders = signedHeaderNames.map((k) => `${k}:${String(headersToSign[k]).trim()}\n`).join('');
+    const signedHeaders = signedHeaderNames.join(';');
+
+    const canonicalRequest = [
+      method,
+      urlObj.pathname,
+      canonicalQuery,
+      canonicalHeaders,
+      signedHeaders,
+      payloadHash
+    ].join('\n');
+
+    const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+    const stringToSign = [
+      'AWS4-HMAC-SHA256',
+      amzDate,
+      credentialScope,
+      sha256Hex(canonicalRequest)
+    ].join('\n');
+
+    const kDate = hmac('AWS4' + awsSecretAccessKey, dateStamp);
+    const kRegion = hmac(kDate, region);
+    const kService = hmac(kRegion, service);
+    const kSigning = hmac(kService, 'aws4_request');
+    const signature = hmacHex(kSigning, stringToSign);
+
+    const authorization = `AWS4-HMAC-SHA256 Credential=${awsAccessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-amz-date': amzDate,
+      'x-amz-content-sha256': payloadHash,
+      ...(awsSessionToken ? { 'x-amz-security-token': awsSessionToken } : {}),
+      Authorization: authorization
+    };
+
+    return { url, headers, body: bodyText };
+  }
+
+  url = applyTemplate(url);
 
   const headers = {
     'Content-Type': 'application/json'
   };
 
-  if (a.auth === 'Bearer') {
-    headers['Authorization'] = `Bearer ${endpoint.apiKey || process.env.OPENAI_API_KEY}`;
+  const envVarForProvider = {
+    openai: 'OPENAI_API_KEY',
+    anthropic: 'ANTHROPIC_API_KEY',
+    google: 'GOOGLE_API_KEY',
+    cohere: 'COHERE_API_KEY',
+    mistral: 'MISTRAL_API_KEY',
+    azure: 'AZURE_OPENAI_API_KEY',
+    bedrock: 'AWS_ACCESS_KEY_ID',
+    togetherai: 'TOGETHER_API_KEY',
+    groq: 'GROQ_API_KEY',
+    perplexity: 'PERPLEXITY_API_KEY',
+    localai: 'LOCALAI_API_KEY',
+    ollama: ''
+  };
+
+  const envVar = envVarForProvider[provider] || '';
+  const resolvedApiKey = endpoint.apiKey || (envVar ? process.env[envVar] : '') || '';
+
+  const requiresKey = provider !== 'ollama' && a.auth !== 'None';
+  if (requiresKey && !resolvedApiKey) {
+    if (envVar) {
+      throw new Error(`${envVar} is not set`);
+    }
+    throw new Error('API key is not set');
   }
 
-  if (a.authHeader && endpoint.apiKey) {
-    headers[a.authHeader] = endpoint.apiKey;
+  const endpointWithKey = resolvedApiKey
+    ? { ...endpoint, apiKey: resolvedApiKey, provider }
+    : { ...endpoint, provider };
+
+  if (a.auth === 'Bearer' && !a.authHeader) {
+    headers['Authorization'] = `Bearer ${resolvedApiKey}`;
+  }
+
+  if (a.authHeader) {
+    headers[a.authHeader] = resolvedApiKey;
   }
 
   if (a.extraHeaders) {
-    Object.assign(headers, a.extraHeaders(endpoint));
+    Object.assign(headers, a.extraHeaders(endpointWithKey));
   }
 
-  const body = a.transformRequest(payload);
+  const body = a.transformRequest({
+    ...payload,
+    model: payload?.model || endpoint.model
+  });
 
   return { url, headers, body };
 }

@@ -595,7 +595,12 @@ function generateOpenAPISpec(options = {}) {
                       properties: {
                         name: { type: 'string' },
                         url: { type: 'string' },
-                        model: { type: 'string' }
+                        model: { type: 'string' },
+                        provider: { type: 'string' },
+                        apiKey: { type: 'string' },
+                        deployment: { type: 'string' },
+                        region: { type: 'string' },
+                        headers: { type: 'object' }
                       }
                     }
                   }

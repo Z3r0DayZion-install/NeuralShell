@@ -2504,7 +2504,7 @@ Doctrine:
       });
     }
 
-    ui.muteToggle.addEventListener("change", () => {
+    ui.muteToggle.addEventListener("change", saveSettings);
     ui.sessionSearchInput.addEventListener("input", renderSessions);
     ui.llmInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey) {

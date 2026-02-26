@@ -10,6 +10,12 @@ cd /d "%~dp0.."
 
 call scripts\git_clean_check.cmd || exit /b 1
 
+REM If user explicitly allows dirty builds, reset proof baseline so executed-target hash mismatches
+REM don't block local iteration.
+if "%NS_ALLOW_DIRTY%"=="1" (
+  call npm run proof:reset || exit /b 1
+)
+
 for /f "usebackq delims=" %%T in (`node scripts\print_run_ts.cjs`) do set "PROOF_RUN_TS=%%T"
 if "%PROOF_RUN_TS%"=="" (
   echo [release-gate] FAIL missing PROOF_RUN_TS

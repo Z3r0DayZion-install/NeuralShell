@@ -19,12 +19,20 @@ REDIS_PASSWORD=<strong-redis-password>
 #### Optional (based on features)
 ```bash
 OPENAI_API_KEY=<your-openai-key>
+MISTRAL_API_KEY=<your-mistral-key>
 ANTHROPIC_API_KEY=<your-anthropic-key>
 COHERE_API_KEY=<your-cohere-key>
+GOOGLE_API_KEY=<your-google-key>
+GROQ_API_KEY=<your-groq-key>
+TOGETHER_API_KEY=<your-together-key>
+PERPLEXITY_API_KEY=<your-perplexity-key>
+AZURE_OPENAI_API_KEY=<your-azure-openai-key>
+AWS_REGION=<your-aws-region>
+AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
+AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+AWS_SESSION_TOKEN=<optional-aws-session-token>
 DATABASE_URL=<database-connection-string>
-```
-
-### Generating Strong Secrets
+```### Generating Strong Secrets
 
 #### Using OpenSSL
 ```bash

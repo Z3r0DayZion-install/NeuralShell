@@ -101,11 +101,282 @@ test('POST /prompt returns 502 with endpoint failures', async () => {
   assert.equal(typeof data.requestId, 'string');
   assert.equal(data.failures.length, 2);
   const failureErrors = data.failures.map((f) => f.error).join('\n');
-  assert.match(failureErrors, /OpenAI request failed/i);
+  assert.match(failureErrors, /LLM request failed/i);
   assert.match(failureErrors, /Ollama request failed/i);
   await app.close();
 });
 
+
+test('provider auth: mistral uses MISTRAL_API_KEY (not OPENAI_API_KEY)', async () => {
+  process.env.OPENAI_API_KEY = 'openai-key';
+  process.env.MISTRAL_API_KEY = 'mistral-key';
+
+  const app = buildServer({
+    endpoints: [{ name: 'mistral', url: 'https://api.mistral.ai/v1/chat/completions', model: 'mistral-small-latest' }],
+    fetchImpl: async (_url, opts) => {
+      assert.equal(opts.headers.Authorization, 'Bearer mistral-key');
+      return jsonResponse({ choices: [{ message: { role: 'assistant', content: 'ok' } }] });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  await app.close();
+});
+
+test('provider auth: groq uses GROQ_API_KEY (not OPENAI_API_KEY)', async () => {
+  process.env.OPENAI_API_KEY = 'openai-key';
+  process.env.GROQ_API_KEY = 'groq-key';
+
+  const app = buildServer({
+    endpoints: [{ name: 'groq', url: 'https://api.groq.com/openai/v1/chat/completions', model: 'mixtral-8x7b-32768' }],
+    fetchImpl: async (_url, opts) => {
+      assert.equal(opts.headers.Authorization, 'Bearer groq-key');
+      return jsonResponse({ choices: [{ message: { role: 'assistant', content: 'ok' } }] });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  await app.close();
+});
+
+test('provider auth: togetherai uses TOGETHER_API_KEY (not OPENAI_API_KEY)', async () => {
+  process.env.OPENAI_API_KEY = 'openai-key';
+  process.env.TOGETHER_API_KEY = 'together-key';
+
+  const app = buildServer({
+    endpoints: [{ name: 'together', url: 'https://api.together.ai/v1/chat/completions', model: 'meta-llama/Llama-3-8b-chat-hf' }],
+    fetchImpl: async (_url, opts) => {
+      assert.equal(opts.headers.Authorization, 'Bearer together-key');
+      return jsonResponse({ choices: [{ message: { role: 'assistant', content: 'ok' } }] });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  await app.close();
+});
+
+test('provider auth: perplexity uses PERPLEXITY_API_KEY (not OPENAI_API_KEY)', async () => {
+  process.env.OPENAI_API_KEY = 'openai-key';
+  process.env.PERPLEXITY_API_KEY = 'perp-key';
+
+  const app = buildServer({
+    endpoints: [{ name: 'perplexity', url: 'https://api.perplexity.ai/chat/completions', model: 'llama-3-sonar-large-32k-online' }],
+    fetchImpl: async (_url, opts) => {
+      assert.equal(opts.headers.Authorization, 'Bearer perp-key');
+      return jsonResponse({ choices: [{ message: { role: 'assistant', content: 'ok' } }] });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  await app.close();
+});
+
+test('provider auth: missing MISTRAL_API_KEY returns 502 with env hint', async () => {
+  delete process.env.MISTRAL_API_KEY;
+  process.env.OPENAI_API_KEY = 'openai-key';
+
+  const app = buildServer({
+    endpoints: [{ name: 'mistral', url: 'https://api.mistral.ai/v1/chat/completions', model: 'mistral-small-latest' }],
+    fetchImpl: async () => jsonResponse({}),
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+
+  assert.equal(res.statusCode, 502);
+  const body = res.json();
+  assert.equal(body.error, 'All endpoints failed');
+  assert.match(body.failures?.[0]?.error || '', /MISTRAL_API_KEY is not set/i);
+  await app.close();
+});
+
+test('provider contract: anthropic request shape + response parsing', async () => {
+  process.env.ANTHROPIC_API_KEY = 'anthropic-key';
+  const app = buildServer({
+    endpoints: [{ name: 'anthropic', url: 'https://api.anthropic.com/v1/messages', model: 'claude-3-opus-20240229' }],
+    fetchImpl: async (url, opts) => {
+      assert.equal(url, 'https://api.anthropic.com/v1/messages');
+      assert.equal(opts.headers['x-api-key'], 'anthropic-key');
+      assert.equal(opts.headers.Authorization, undefined);
+      const body = JSON.parse(opts.body);
+      assert.equal(body.model, 'claude-3-opus-20240229');
+      assert.equal(body.max_tokens, 1024);
+      assert.equal(body.messages[0].content, 'hello');
+      return jsonResponse({
+        content: [{ text: 'ok' }],
+        model: 'claude-3-opus-20240229',
+        usage: { input_tokens: 1, output_tokens: 1 }
+      });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json().message.content, 'ok');
+  await app.close();
+});
+
+test('provider contract: cohere request shape + response parsing', async () => {
+  process.env.COHERE_API_KEY = 'cohere-key';
+  const app = buildServer({
+    endpoints: [{ name: 'cohere', url: 'https://api.cohere.ai', model: 'command-r' }],
+    fetchImpl: async (url, opts) => {
+      assert.equal(url, 'https://api.cohere.ai/v1/chat');
+      assert.equal(opts.headers.Authorization, 'Bearer cohere-key');
+      const body = JSON.parse(opts.body);
+      assert.equal(body.model, 'command-r');
+      assert.equal(body.messages[0].content, 'hello');
+      return jsonResponse({ text: 'ok', model: 'command-r', usage: { tokens: 2 } });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json().message.content, 'ok');
+  await app.close();
+});
+
+test('provider contract: google request shape + response parsing', async () => {
+  process.env.GOOGLE_API_KEY = 'google-key';
+  const app = buildServer({
+    endpoints: [{ name: 'google', url: 'https://generativelanguage.googleapis.com', model: 'gemini-pro' }],
+    fetchImpl: async (url, opts) => {
+      assert.equal(url, 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent');
+      assert.equal(opts.headers.Authorization, 'Bearer google-key');
+      const body = JSON.parse(opts.body);
+      assert.equal(body.contents[0].parts[0].text, 'hello');
+      return jsonResponse({
+        candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+        modelVersion: 'gemini-pro',
+        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 }
+      });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json().message.content, 'ok');
+  await app.close();
+});
+
+test('provider contract: azure request templating + api-key header', async () => {
+  process.env.AZURE_OPENAI_API_KEY = 'azure-key';
+  process.env.OPENAI_API_KEY = 'openai-key';
+
+  const app = buildServer({
+    endpoints: [{
+      name: 'azure',
+      url: 'https://my-resource.openai.azure.com',
+      deployment: 'dep123',
+      model: 'gpt-4o-mini'
+    }],
+    fetchImpl: async (url, opts) => {
+      assert.equal(
+        url,
+        'https://my-resource.openai.azure.com/openai/deployments/dep123/chat/completions?api-version=2024-02-01'
+      );
+      assert.equal(opts.headers['api-key'], 'azure-key');
+      assert.equal(opts.headers.Authorization, undefined);
+      const body = JSON.parse(opts.body);
+      assert.equal(body.messages[0].content, 'hello');
+      return jsonResponse({ choices: [{ message: { role: 'assistant', content: 'ok' } }] });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json().message.content, 'ok');
+  await app.close();
+});
+
+test('provider contract: bedrock signs request with AWS4', async () => {
+  process.env.AWS_REGION = 'us-east-1';
+  process.env.AWS_ACCESS_KEY_ID = 'AKIDEXAMPLE';
+  process.env.AWS_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY';
+  delete process.env.AWS_SESSION_TOKEN;
+
+  const app = buildServer({
+    endpoints: [{
+      name: 'bedrock',
+      url: 'https://bedrock-runtime.us-east-1.amazonaws.com',
+      region: 'us-east-1',
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0'
+    }],
+    fetchImpl: async (url, opts) => {
+      assert.equal(
+        url,
+        'https://bedrock-runtime.us-east-1.amazonaws.com/model/anthropic.claude-3-sonnet-20240229-v1:0/converse'
+      );
+      assert.match(String(opts.headers.Authorization || ''), /^AWS4-HMAC-SHA256\s/);
+      assert.match(String(opts.headers['x-amz-date'] || ''), /^\d{8}T\d{6}Z$/);
+      assert.match(String(opts.headers['x-amz-content-sha256'] || ''), /^[a-f0-9]{64}$/);
+      const body = JSON.parse(opts.body);
+      assert.equal(body.messages[0].content[0].text, 'hello');
+      return jsonResponse({
+        output: { message: { content: [{ text: 'ok' }] } },
+        usage: { inputTokens: 1, outputTokens: 1 }
+      });
+    },
+    timeoutMs: 100
+  });
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/prompt',
+    payload: { messages: [{ role: 'user', content: 'hello' }] }
+  });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.json().message.content, 'ok');
+  await app.close();
+});
 test('POST /prompt rejects empty message content', async () => {
   const app = buildServer({ endpoints: [] });
   const res = await app.inject({
