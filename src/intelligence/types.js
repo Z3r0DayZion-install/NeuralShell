@@ -1,16 +1,16 @@
 /**
  * TypeScript Interfaces and Types for Decision Intelligence Engine
- * 
+ *
  * Defines the core data structures for autonomous decision events,
  * including DecisionEvent interface, decision types, outcome statuses,
  * and validation functions.
- * 
+ *
  * Requirements: 1.2, 1.4
  */
 
 /**
  * Validates a DecisionEvent structure
- * 
+ *
  * @param event - The decision event to validate
  * @returns Validation result with any errors found
  */
@@ -230,7 +230,7 @@ export function validateDecisionEvent(event) {
 
 /**
  * Validates a partial decision event (before IDs are assigned)
- * 
+ *
  * @param event - The partial decision event to validate
  * @returns Validation result with any errors found
  */
@@ -266,7 +266,7 @@ export function validatePartialDecisionEvent(event) {
   });
 
   // Filter out errors for fields that are optional in partial events
-  const relevantErrors = fullValidation.errors.filter(error => 
+  const relevantErrors = fullValidation.errors.filter(error =>
     !['event_id', 'timestamp', 'trace_id', 'span_id'].includes(error.field)
   );
 
@@ -280,7 +280,7 @@ export function validatePartialDecisionEvent(event) {
 
 /**
  * Creates a formatted error message from validation errors
- * 
+ *
  * @param errors - Array of validation errors
  * @returns Formatted error message
  */

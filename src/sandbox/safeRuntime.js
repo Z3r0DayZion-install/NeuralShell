@@ -4,10 +4,10 @@ import { Writable } from 'stream';
 
 /**
  * SafeRuntime
- * 
+ *
  * A sandboxed execution environment for the CoderAgent.
  * Allows the AI to run generated JavaScript code and capture the output.
- * 
+ *
  * SECURITY WARNING: 'vm' is not perfectly secure against malicious actors.
  * In a real production env, use 'isolated-vm' or Docker containers.
  */
@@ -18,7 +18,7 @@ export class SafeRuntime {
 
   async execute(code) {
     const outputBuffer = [];
-    
+
     // Custom stream to capture stdout/stderr
     const captureStream = new Writable({
       write(chunk, encoding, callback) {
@@ -44,7 +44,7 @@ export class SafeRuntime {
 
     try {
       const script = new vm.Script(code);
-      
+
       const result = script.runInContext(context, {
         timeout: this.timeout,
         displayErrors: true

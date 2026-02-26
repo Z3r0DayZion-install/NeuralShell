@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 /**
  * DatabaseMemory System (pgvector)
- * 
+ *
  * Replaces the JSON VectorMemory with a production-grade PostgreSQL backend.
  * Enables persistence, scalability, and sub-millisecond semantic search.
  */
@@ -20,7 +20,7 @@ export class DatabaseMemory {
     try {
       // 1. Enable pgvector
       await client.query('CREATE EXTENSION IF NOT EXISTS vector');
-      
+
       // 2. Create Memories table
       await client.query(`
         CREATE TABLE IF NOT EXISTS memories (
@@ -31,10 +31,10 @@ export class DatabaseMemory {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         )
       `);
-      
+
       // 3. Create Index for fast search
       await client.query('CREATE INDEX IF NOT EXISTS mem_search_idx ON memories USING hnsw (embedding vector_cosine_ops)');
-      
+
       console.log('[DatabaseMemory] Schema ready.');
     } finally {
       client.release();

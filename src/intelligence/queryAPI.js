@@ -1,9 +1,9 @@
 /**
  * Query API for Decision Events
- * 
+ *
  * Provides efficient querying of indexed decision events with filtering,
  * pagination, and sub-500ms response times using PostgreSQL indexes.
- * 
+ *
  * Requirements: 2.1, 2.3, 2.4
  */
 
@@ -21,23 +21,23 @@ export class DecisionQuery {
     // Time range filters
     this.startTime = options.startTime; // Date or timestamp
     this.endTime = options.endTime; // Date or timestamp
-    
+
     // Type filters
     this.decisionTypes = options.decisionTypes; // Array of decision types
     this.systemComponents = options.systemComponents; // Array of components
     this.outcomeStatuses = options.outcomeStatuses; // Array of outcome statuses
-    
+
     // Quality score filter
     this.minQualityScore = options.minQualityScore; // Minimum quality score
     this.maxQualityScore = options.maxQualityScore; // Maximum quality score
-    
+
     // Trace filter
     this.traceId = options.traceId; // Specific trace ID
-    
+
     // Pagination
     this.limit = options.limit || 100; // Max 1000 per requirements
     this.cursor = options.cursor; // Cursor for pagination (timestamp:event_id)
-    
+
     // Sorting
     this.sortOrder = options.sortOrder || 'desc'; // 'asc' or 'desc'
   }
@@ -62,7 +62,7 @@ export class DecisionQuery {
     if (this.startTime && this.endTime) {
       const start = new Date(this.startTime);
       const end = new Date(this.endTime);
-      
+
       if (start > end) {
         errors.push('startTime must be before endTime');
       }
@@ -104,7 +104,7 @@ export class QueryResult {
 
 /**
  * Query API for Decision Events
- * 
+ *
  * Provides efficient querying with filtering and cursor-based pagination.
  */
 export class DecisionQueryAPI {
@@ -183,10 +183,10 @@ export class DecisionQueryAPI {
 
   /**
    * Query decision events with filtering and pagination
-   * 
+   *
    * @param {DecisionQuery} query - Query parameters
    * @returns {Promise<QueryResult>} Query results with pagination
-   * 
+   *
    * Requirements: 2.1, 2.2, 2.3, 2.4
    */
   async queryDecisions(query) {
@@ -199,8 +199,8 @@ export class DecisionQueryAPI {
     const span = tracer.startSpan('queryAPI.queryDecisions', {
       attributes: {
         'query.limit': query.limit,
-        'query.has_cursor': !!query.cursor,
-        'query.has_time_range': !!(query.startTime || query.endTime)
+        'query.has_cursor': Boolean(query.cursor),
+        'query.has_time_range': Boolean(query.startTime || query.endTime)
       }
     });
 
@@ -217,7 +217,7 @@ export class DecisionQueryAPI {
       // Execute query
       const client = await this.pgPool.connect();
       let result;
-      
+
       try {
         result = await client.query(sql, params);
       } finally {
@@ -278,7 +278,7 @@ export class DecisionQueryAPI {
 
   /**
    * Build SQL query from DecisionQuery parameters
-   * 
+   *
    * @private
    */
   buildQuery(query) {
@@ -302,7 +302,7 @@ export class DecisionQueryAPI {
     // Cursor-based pagination
     if (query.cursor) {
       const { timestamp, eventId } = this.decodeCursor(query.cursor);
-      
+
       if (query.sortOrder === 'desc') {
         // For descending order: timestamp < cursor_timestamp OR (timestamp = cursor_timestamp AND event_id < cursor_event_id)
         conditions.push(`(timestamp < $${paramIndex} OR (timestamp = $${paramIndex} AND event_id < $${paramIndex + 1}))`);
@@ -310,7 +310,7 @@ export class DecisionQueryAPI {
         // For ascending order: timestamp > cursor_timestamp OR (timestamp = cursor_timestamp AND event_id > cursor_event_id)
         conditions.push(`(timestamp > $${paramIndex} OR (timestamp = $${paramIndex} AND event_id > $${paramIndex + 1}))`);
       }
-      
+
       params.push(new Date(timestamp));
       params.push(eventId);
       paramIndex += 2;
@@ -382,7 +382,7 @@ export class DecisionQueryAPI {
 
   /**
    * Encode cursor for pagination
-   * 
+   *
    * @private
    */
   encodeCursor(timestamp, eventId) {
@@ -393,14 +393,14 @@ export class DecisionQueryAPI {
 
   /**
    * Decode cursor for pagination
-   * 
+   *
    * @private
    */
   decodeCursor(cursor) {
     try {
       const cursorString = Buffer.from(cursor, 'base64').toString('utf-8');
       const [timestamp, eventId] = cursorString.split(':');
-      
+
       if (!timestamp || !eventId) {
         throw new Error('Invalid cursor format');
       }

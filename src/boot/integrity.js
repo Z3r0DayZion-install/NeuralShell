@@ -2,7 +2,7 @@
  * Boot Integrity Verifier
  * Validates RSA-4096 PSS signatures and file hashes before app init.
  */
-"use strict";
+'use strict';
 
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -27,7 +27,7 @@ function verifyBootIntegrity() {
 
   // 7.1 Signature Verification (RSA-4096 PSS)
   const isSignatureValid = crypto.verify(
-    "sha256",
+    'sha256',
     manifestData,
     {
       key: PUBLIC_KEY,
@@ -49,7 +49,7 @@ function verifyBootIntegrity() {
     try {
       const content = fs.readFileSync(relPath);
       const actualHash = crypto.createHash('sha256').update(content).digest('hex');
-      
+
       if (actualHash !== expectedHash) {
         violations.push(relPath);
       }

@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 /**
  * Project Manager
- * 
+ *
  * Manages the file systems for AI-generated applications.
  * Acts as the "Disk Drive" for the Genesis Engine.
  */
@@ -20,9 +20,9 @@ export class ProjectManager {
     const id = crypto.randomUUID().slice(0, 8);
     const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
     const projectDir = path.join(this.baseDir, `${safeName}-${id}`);
-    
+
     fs.mkdirSync(projectDir, { recursive: true });
-    
+
     return {
       id,
       name: safeName,
@@ -43,7 +43,9 @@ export class ProjectManager {
     }
 
     const dir = path.dirname(fullPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(fullPath, content, 'utf8');
   }
 

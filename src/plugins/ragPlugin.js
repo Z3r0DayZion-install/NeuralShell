@@ -10,7 +10,7 @@ export class RagPlugin extends Plugin {
       description: 'Industrial-grade RAG with local embeddings and pgvector',
       priority: 80
     });
-    
+
     this.enabled = false;
     this.memory = new DatabaseMemory();
     this.engine = new EmbeddingEngine();
@@ -42,8 +42,10 @@ export class RagPlugin extends Plugin {
 
     router.app.post('/api/knowledge', async (req, reply) => {
       const { text, metadata } = req.body;
-      if (!text) return reply.code(400).send({ error: 'text required' });
-      
+      if (!text) {
+        return reply.code(400).send({ error: 'text required' });
+      }
+
       const embedding = await this.engine.generate(text);
       const id = await this.memory.add(text, embedding, { source: 'api', ...metadata });
       return { success: true, id };
@@ -51,8 +53,10 @@ export class RagPlugin extends Plugin {
 
     router.app.get('/api/knowledge/search', async (req, reply) => {
       const { q } = req.query;
-      if (!q) return reply.code(400).send({ error: 'q required' });
-      
+      if (!q) {
+        return reply.code(400).send({ error: 'q required' });
+      }
+
       const embedding = await this.engine.generate(q);
       const results = await this.memory.search(embedding);
       return { results };
@@ -64,8 +68,10 @@ export class RagPlugin extends Plugin {
   async injectContext(context) {
     const messages = context.body.messages;
     const lastUserMessage = messages.slice().reverse().find(m => m.role === 'user');
-    
-    if (!lastUserMessage) return;
+
+    if (!lastUserMessage) {
+      return;
+    }
 
     const query = lastUserMessage.content;
     const embedding = await this.engine.generate(query);
@@ -77,15 +83,17 @@ export class RagPlugin extends Plugin {
         .join('\n');
 
       const systemInjection = `\n\n[SOVEREIGN CONTEXT]\n${contextBlock}\n[END CONTEXT]\n`;
-      
+
       const systemMessage = messages.find(m => m.role === 'system');
       if (systemMessage) {
         systemMessage.content += systemInjection;
       } else {
         messages.unshift({ role: 'system', content: `You are a helpful AI.${systemInjection}` });
       }
-      
-      if (!context.headers) context.headers = {};
+
+      if (!context.headers) {
+        context.headers = {};
+      }
       context.headers['x-rag-hits'] = String(relevantMemories.length);
     }
   }

@@ -1,0 +1,1 @@
+// Purged legacy file - moved to zero-dependency markdown in helpers.js

@@ -11,6 +11,7 @@
     bash convert_data.sh
     ```
 2.  This creates `my_digital_clone_data.jsonl` in your NeuralShell folder.
+    - This file contains sensitive personal data. Keep it local (it is ignored by git) and do not upload/share it unless you intend to.
 
 ## Step 2: Fine-Tuning with Unsloth (Recommended)
 Unsloth is the fastest way to fine-tune Llama 3 locally or on Colab.

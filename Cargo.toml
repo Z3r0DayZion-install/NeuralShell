@@ -1,0 +1,8 @@
+[workspace]
+resolver = "2"
+
+members = [
+  "crates/neuralshell-core",
+  "tools/rust/neuralshell-core-cli",
+  "tools/rust/neuralshell-release",
+]

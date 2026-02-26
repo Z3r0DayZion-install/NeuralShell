@@ -29,7 +29,7 @@ export class GenesisAgent extends BaseAgent {
     // 0. Economic Check
     const complexity = prompt.length;
     const price = Math.max(10, Math.floor(complexity / 2)); // Base 10 NC + complexity tax
-    
+
     try {
       GlobalLedger.transfer(requesterId, this.name, price, `Genesis Fee: ${prompt.substring(0, 20)}...`);
     } catch (err) {
@@ -46,7 +46,7 @@ export class GenesisAgent extends BaseAgent {
     // 2. Generate Code (HTML)
     const htmlTask = `Create a single-file HTML/JS/CSS application for: ${prompt}. Return ONLY the code.`;
     const htmlResult = await this.coder.generateAndRun(htmlTask); // We use generateAndRun just to get the code string logic
-    
+
     // Hardcoded robust template for demo reliability if Coder returns snippets
     const finalHtml = `
 <!DOCTYPE html>
@@ -85,7 +85,7 @@ COPY index.html /usr/share/nginx/html/index.html
 
     // 4. Deploy
     const deployment = await this.containerManager.deploy(project);
-    
+
     return {
       status: 'deployed',
       cost: price,

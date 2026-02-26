@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuralShell Desktop</title>
+  <link rel="icon" type="image/svg+xml" href="assets/app.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="dark">
+  <!-- BOOT LOADER OVERLAY -->
+  <div id="bootLoader" class="palette-overlay" style="padding-top: 0; align-items: center; justify-content: center;">
+    <div class="palette-box" style="text-align: center; border-width: 2px;">
+      <h1 class="glitch" data-text="NEURAL OS">NEURAL OS</h1>
+      <div id="bootReels" class="row" style="justify-content: center; gap: 20px; margin: 30px 0; font-size: 3rem;">
+        <div class="reel">💎</div>
+        <div class="reel">💎</div>
+        <div class="reel">💎</div>
+      </div>
+      <div id="bootStatus" style="font-size: 10px; color: var(--accent); text-transform: uppercase;">Aligning Empire...</div>
+    </div>
+  </div>
+
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+  <header class="topbar ritual-border">
+    <div class="brand">
+      <h1 class="glitch" data-text="NeuralShell">NeuralShell</h1>
+      <div class="valuation-container">
+        <span class="metric-label">EST. IP VALUATION:</span>
+        <span id="ipTicker" class="ticker-val">$5,700,000.00</span>
+      </div>
+    </div>
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="chat-view">Chat</button>
+      <button class="tab-btn" data-tab="dashboard-view">Dashboard</button>
+      <button class="tab-btn" data-tab="brain-view">Brain</button>
+      <button class="tab-btn" data-tab="apps-view">Apps</button>
+    </nav>
+    <div class="signal-hud">
+      <div class="signal-label">SIGNAL</div>
+      <div class="signal-bar-container"><div id="signalBar" class="signal-bar" style="width: 95%;"></div></div>
+      <span id="signalVal">95%</span>
+    </div>
+    <div class="hardware-telemetry">
+      <div class="h-item">CPU: <span id="cpuUsage">--%</span></div>
+      <div class="h-item">GPU: <span id="gpuUsage">--%</span></div>
+      <div class="h-item">MEM: <span id="ramUsage">--GB</span></div>
+      <div class="h-item link-box">LINK: <span id="localLink">192.168.1.X:3000</span></div>
+    </div>
+    <div class="status-group">
+      <span id="llmStatus" class="status status-offline">Disconnected</span>
+      <button id="connectBtn">Link</button>
+    </div>
+  </header>
+
+  <div id="ntContainer"></div>
+  <div id="ntDashboard"></div>
+
+  <main class="layout">
+    <!-- CHAT VIEW -->
+    <section id="chat-view" class="tab-content active">
+      <div class="view-grid">
+        <aside class="panel">
+          <h2>Sessions</h2>
+          <div class="row">
+            <input id="sessionSearchInput" type="text" placeholder="Search sessions">
+            <button id="newSessionBtn">New</button>
+          </div>
+          <ul id="sessionList" class="list"></ul>
+
+          <h2 style="margin-top: 20px;">System Tree</h2>
+          <ul id="systemTree" class="list" style="font-size: 11px; opacity: 0.8;"></ul>
+        </aside>
+
+        <section class="panel chat-panel">
+          <div class="row chat-toolbar">
+            <select id="modelSelect"></select>
+            <select id="modeSelect"></select>
+            <label><input id="webAccessToggle" type="checkbox"> Web</label>
+            <label><input id="memoryToggle" type="checkbox" checked> Recall</label>
+          </div>
+          <div id="chatWindow" class="chat-window"></div>
+          
+          <!-- COGNITIVE CONSOLE -->
+          <div class="cognitive-console">
+            <div class="console-header">Cognitive Stream</div>
+            <div id="cognitiveStream" class="console-body"></div>
+          </div>
+
+          <textarea id="llmInput" rows="3" placeholder="Message..."></textarea>
+          <div class="row chat-actions">
+            <button id="sendBtn">Send</button>
+            <button id="micBtn">Voice</button>
+            <button id="camBtn">Vision</button>
+            <button id="clearChatBtn">Clear</button>
+          </div>
+        </section>
+
+        <aside class="panel">
+          <h2>Settings</h2>
+          <div class="row">
+            <select id="themeSelect">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+            <label><input id="muteToggle" type="checkbox"> Mute</label>
+            <label><input id="quineLockToggle" type="checkbox" checked> Quine Lock</label>
+          </div>
+          
+          <div class="row" style="margin-top: 10px;">
+            <label>Persona:</label>
+            <select id="personaSelect">
+              <option value="default">Default</option>
+              <option value="reezler">The Reezler (Clone)</option>
+            </select>
+          </div>
+
+          <button id="saveSettingsBtn" style="width: 100%">Save Configuration</button>
+          
+          <h2 style="margin-top: 20px;">Autonomy Status</h2>
+          <pre id="autonomyOutput" class="output" style="font-size: 10px;"></pre>
+          <button id="refreshAutonomyBtn" style="width: 100%">Refresh Status</button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- DASHBOARD VIEW -->
+    <section id="dashboard-view" class="tab-content">
+      <div class="panel war-room-panel">
+        <canvas id="matrixCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.15; z-index: 0;"></canvas>
+        <div class="war-header" style="position: relative; z-index: 1;">
+          <h2 class="glitch" data-text="WAR ROOM">WAR ROOM // TACTICAL</h2>
+          <div class="war-status">DEFCON 4</div>
+        </div>
+        
+        <div class="metric-grid">
+          <div class="metric-card"><div class="metric-label">Active Operations</div><div class="metric-val" style="color: var(--danger)">3</div></div>
+          <div class="metric-card"><div class="metric-label">Leverage Assets</div><div class="metric-val" style="color: var(--ritual-gold)">12</div></div>
+          <div class="metric-card"><div class="metric-label">Swarm Uptime</div><div class="metric-val">99.9%</div></div>
+          <div class="metric-card"><div class="metric-label">NeuralCredits</div><div id="ncVal" class="metric-val">∞</div></div>
+        </div>
+
+        <div class="row">
+          <div class="col-half">
+            <h3>⚔️ Active Disputes</h3>
+            <ul class="list legacy-list">
+              <li>🔴 PayPal vs. Digital River ($450) - <small>Drafting...</small></li>
+              <li>🟡 Amazon Return #992 ($120) - <small>Pending</small></li>
+            </ul>
+          </div>
+          <div class="col-half">
+            <h3>🛡️ Sovereign Assets</h3>
+            <ul class="list legacy-list">
+              <li>💎 HyperSnatch Source Code</li>
+              <li>💎 Mind Unset Manuscript</li>
+              <li>💎 NeuralOS Kernel</li>
+            </ul>
+            
+            <h3 style="margin-top: 20px;">🔁 The Reezler's Riff</h3>
+            <ul id="optimizationQueue" class="list legacy-list" style="border-color: var(--accent);">
+              <li style="color: var(--muted); font-size: 10px;">The Reezler is riffing...</li>
+            </ul>
+            <div class="row" style="margin-top: 5px; gap: 5px;">
+              <button class="tab-btn" style="flex: 1; font-size: 8px;">RUN ONCE</button>
+              <button class="tab-btn" style="flex: 1; font-size: 8px;">RUN TWICE</button>
+              <button class="tab-btn" style="flex: 1; font-size: 8px; color: var(--accent);">RUN 3X (DEEP)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 20px;">
+          <button id="stressTestBtn" class="tab-btn" style="background: var(--danger); color: white; border: none;">☢️ TRIGGER CHAOS TEST</button>
+          <button id="purgeSystemBtn" class="tab-btn" style="background: var(--blood-red); color: white; border: none; margin-left: 10px;">💣 NUCLEAR PURGE</button>
+          <p id="stressStatus" style="font-size: 12px; color: var(--muted); margin-left: 10px;">System hardened.</p>
+        </div>
+
+        <div style="height: 300px; margin-top: 20px; background: #000; border-radius: 8px; padding: 20px;">
+          <canvas id="systemChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- BRAIN VIEW -->
+    <section id="brain-view" class="tab-content">
+      <div class="view-grid-apps">
+        <div class="panel" style="height: 100%;">
+          <h2>Neural Knowledge Graph</h2>
+          <div id="brain-graph" style="flex: 1; background: #000; border-radius: 8px;"></div>
+        </div>
+        <aside class="panel ritual-panel">
+          <h2>Knowledge Drop</h2>
+          <div id="knowledgeDropZone" class="drop-zone">
+            <i class="fas fa-brain" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <p>DRAG FILES HERE</p>
+            <small>PDF, TXT, JS, JSON</small>
+          </div>
+          <div id="indexingStatus" class="output" style="margin-top: 10px; font-size: 10px; min-height: 100px;">
+            Ready for injection...
+          </div>
+
+          <h2 style="margin-top: 20px;">🧪 Word Fracturer</h2>
+          <div class="row">
+            <input id="fractureInput" type="text" placeholder="Word to fracture...">
+            <button id="fractureBtn" class="tab-btn">ALCHEMY</button>
+          </div>
+          <div id="fractureOutput" class="output" style="margin-top: 10px; font-size: 11px; min-height: 120px; color: var(--accent);">
+            Awaiting word seed...
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- APPS VIEW (PHOENIX COMMAND CENTER) -->
+    <section id="apps-view" class="tab-content">
+      <div class="phoenix-command-grid">
+        <!-- XXXplorer Sidebar -->
+        <aside class="panel xxxplorer-panel">
+          <div class="row" style="justify-content: space-between;">
+            <h3>XXXPLORER</h3>
+            <button id="refreshFsBtn" class="tab-btn" style="min-height: unset; padding: 2px 6px;">↻</button>
+          </div>
+          <div id="fsTree" class="fs-tree list">
+            <!-- Populated via systemTree -->
+          </div>
+          <div class="vault-status-bar">
+            <small>VAULT: <span id="vaultStatus">LOCKED</span></small>
+          </div>
+        </aside>
+
+        <!-- Phoenix Editor -->
+        <main class="panel phoenix-editor-panel">
+          <div class="editor-toolbar">
+            <span id="editingFileName">no_file_selected.js</span>
+            <div class="row" style="gap: 10px;">
+              <button id="editorObliterateBtn" class="tab-btn" style="background: var(--danger); color: white;">OBLITERATE</button>
+              <button id="editorSaveBtn" class="tab-btn" style="background: var(--ritual-gold); color: #000; font-weight: bold;">SAVE</button>
+              <button id="editorMutateBtn" class="tab-btn">MUTATE</button>
+            </div>
+          </div>
+          <textarea id="phoenixCodeArea" class="phoenix-textarea" spellcheck="false" placeholder="// Select a file from XXXplorer to begin..."></textarea>
+          <div class="editor-footer">
+            <div class="row" style="gap: 15px; font-size: 9px;">
+              <span>LN: <span id="lineCol">1:1</span></span>
+              <span>DNA: <span id="editorDna">--</span></span>
+              <span>INTEGRITY: 100%</span>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+  </main>
+
+  <footer class="sovereign-footer">
+    <div id="empireSeal" class="dna-lock" style="cursor: pointer; opacity: 0.3;">🔱</div>
+    <div class="dna-lock">VaultGenome™: <span id="vaultGenome">GENERATING...</span></div>
+    <div class="timestamp">NeuralStamp™: <span id="appClock">--:--:--</span></div>
+  </footer>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <!-- COMMAND PALETTE -->
+  <div id="commandPalette" class="palette-overlay" style="display: none;">
+    <div class="palette-box">
+      <input id="paletteInput" type="text" placeholder="Run Command (e.g. /ritual, /vault, /purge)...">
+      <ul id="paletteResults" class="list"></ul>
+      <div class="palette-footer">ESC to close | ENTER to run</div>
+    </div>
+  </div>
+
+  <!-- DIFF VIEWER -->
+  <div id="diffViewer" class="palette-overlay" style="display: none;">
+    <div class="palette-box diff-box">
+      <div class="row" style="justify-content: space-between;">
+        <h3>PATCH REVIEW</h3>
+        <button id="closeDiffBtn" class="tab-btn" style="min-height: unset; padding: 4px 8px;">×</button>
+      </div>
+      <div class="diff-content">
+        <div id="diffOld" class="diff-pane"></div>
+        <textarea id="diffNew" class="diff-pane" style="width: 100%; height: 100%; border: 1px solid var(--accent); color: #3ecf8e; outline: none;"></textarea>
+      </div>
+      <button id="confirmPatchBtn" class="execute-btn">COMMIT CHANGES TO DISK</button>
+    </div>
+  </div>
+
+  <script src="../../public/lib/chart.min.js"></script>
+  <script src="../../public/lib/3d-force-graph.min.js"></script>
+  <script src="stateSchema.js"></script>
+  <script src="scripts/helpers.js"></script>
+  <script src="scripts/tear.js"></script>
+  <script src="scripts/memoryEngine.js"></script>
+  <script src="scripts/panels.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+node_modules/
+
+# Build outputs
+dist/
+win-unpacked/
+build/
+release/
+*.exe
+
+# Runtime state (generated)
+.tear_runtime/
+
+# Secrets / keys (never commit)
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+seal.private.key

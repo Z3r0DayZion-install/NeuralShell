@@ -3,7 +3,7 @@ import { Writable } from 'stream';
 
 /**
  * Hardened Sandbox
- * 
+ *
  * Executes code inside a transient, isolated Docker container.
  * This provides industry-standard security boundaries compared to 'vm'.
  */
@@ -17,13 +17,13 @@ export class HardenedSandbox {
   async execute(code, customTimeout) {
     const outputBuffer = [];
     const timeoutMs = customTimeout || this.defaultTimeout;
-    
+
     console.log(`[Sandbox] Spinning up transient container (Timeout: ${timeoutMs}ms)...`);
-    
+
     try {
       // Encode code to base64 to avoid shell escaping issues and pass via ENV
       const encodedCode = Buffer.from(code).toString('base64');
-      
+
       const container = await this.docker.createContainer({
         Image: this.image,
         // safe execution wrapper
@@ -38,7 +38,7 @@ export class HardenedSandbox {
       });
 
       await container.start();
-      
+
       const logs = await container.logs({
         follow: true,
         stdout: true,
@@ -65,8 +65,8 @@ export class HardenedSandbox {
           clearTimeout(killTimer);
           // Strip non-printable characters but keep newlines
           const rawOutput = outputBuffer.join('');
-          const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, "").trim();
-          
+          const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+
           resolve({
             success: true,
             output: cleanOutput

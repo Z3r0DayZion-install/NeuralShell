@@ -11,11 +11,11 @@ export class AutoOptimizer extends EventEmitter {
     this.enabled = options.enabled !== false;
     this.optimizationInterval = options.optimizationInterval || 300000; // 5 minutes
     this.learningRate = options.learningRate || 0.1;
-    
+
     this.optimizations = new Map();
     this.performanceHistory = [];
     this.maxHistorySize = options.maxHistorySize || 1000;
-    
+
     this.metrics = {
       totalOptimizations: 0,
       successfulOptimizations: 0,
@@ -162,14 +162,14 @@ export class AutoOptimizer extends EventEmitter {
    */
   async runOptimization(name, optimization, metrics) {
     const currentValue = metrics[optimization.metric];
-    
+
     if (currentValue === undefined) {
       return null;
     }
 
     // Check if adjustment is needed
     const adjustment = optimization.adjust(currentValue, optimization.target);
-    
+
     if (!adjustment) {
       return null;
     }
@@ -228,7 +228,7 @@ export class AutoOptimizer extends EventEmitter {
     if (this.performanceHistory.length >= 2) {
       const current = this.performanceHistory[this.performanceHistory.length - 1];
       const previous = this.performanceHistory[this.performanceHistory.length - 2];
-      
+
       const gain = this.calculatePerformanceGain(previous.metrics, current.metrics);
       this.metrics.performanceGain += gain;
     }
@@ -281,7 +281,7 @@ export class AutoOptimizer extends EventEmitter {
   optimizeTimeout(avgLatency, p95Latency, currentTimeout) {
     // Set timeout to p95 + buffer
     const optimalTimeout = p95Latency * 1.5;
-    
+
     // Gradually adjust
     const adjustment = (optimalTimeout - currentTimeout) * this.learningRate;
     return Math.max(1000, Math.min(currentTimeout + adjustment, 30000));
@@ -439,8 +439,12 @@ export class AutoOptimizer extends EventEmitter {
 
     const change = (secondAvg - firstAvg) / firstAvg;
 
-    if (change > 0.1) return 'increasing';
-    if (change < -0.1) return 'decreasing';
+    if (change > 0.1) {
+      return 'increasing';
+    }
+    if (change < -0.1) {
+      return 'decreasing';
+    }
     return 'stable';
   }
 

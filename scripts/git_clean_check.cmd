@@ -4,8 +4,15 @@ setlocal enableextensions
 REM Fail-closed clean-tree gate for production releases (Windows).
 REM - Root working tree must be clean
 REM - NeuralShell_Desktop submodule working tree must be clean
+REM
+REM Override (local/dev only): set NS_ALLOW_DIRTY=1
 
 cd /d "%~dp0.."
+
+if "%NS_ALLOW_DIRTY%"=="1" (
+  echo [git-clean] SKIP NS_ALLOW_DIRTY=1
+  exit /b 0
+)
 
 for /f "usebackq delims=" %%L in (`C:\Windows\System32\cmd.exe /d /s /c git status --porcelain`) do (
   echo [git-clean] FAIL root dirty
@@ -23,4 +30,3 @@ for /f "usebackq delims=" %%L in (`C:\Windows\System32\cmd.exe /d /s /c git stat
 
 echo [git-clean] PASS
 exit /b 0
-

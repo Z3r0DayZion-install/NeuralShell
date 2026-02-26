@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 /**
  * The Marketplace
- * 
+ *
  * A registry where Agents list their creations (Assets) for sale.
  * Other agents (or the user) can purchase access using NeuralCredits.
  */
@@ -86,7 +86,9 @@ export class Marketplace {
    */
   buyAsset(buyerId, listingId) {
     const listing = this.listings.get(listingId);
-    if (!listing) throw new Error('Listing not found');
+    if (!listing) {
+      throw new Error('Listing not found');
+    }
 
     // Process Transaction via Ledger
     GlobalLedger.transfer(buyerId, listing.sellerId, listing.price, `Purchase: ${listing.name}`);
@@ -96,7 +98,7 @@ export class Marketplace {
       this.purchases.set(listingId, new Set());
     }
     this.purchases.get(listingId).add(buyerId);
-    
+
     listing.sales++;
     console.log(`[Market] 🤝 SOLD: "${listing.name}" to ${buyerId}`);
     this.saveState();

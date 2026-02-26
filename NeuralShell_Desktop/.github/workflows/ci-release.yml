@@ -1,0 +1,81 @@
+name: CI Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint:js
+
+      - name: Test
+        run: npm test
+
+      - name: Build Installer
+        env:
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: npm run build:win
+
+      - name: Build Portable
+        env:
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: npm run build:portable
+
+      - name: Generate Checksums
+        run: npm run checksums
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: neuralshell-artifacts
+          path: |
+            dist/*.exe
+            dist/*.yml
+            dist/*.blockmap
+            dist/RELEASE_CHECKSUMS.txt
+            RELEASE_NOTES.md
+
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: neuralshell-artifacts
+          path: release-assets
+
+      - name: Publish GitHub Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/*.exe
+            release-assets/*.yml
+            release-assets/*.blockmap
+            release-assets/RELEASE_CHECKSUMS.txt
+            release-assets/RELEASE_NOTES.md
+          body_path: release-assets/RELEASE_NOTES.md

@@ -1,0 +1,9 @@
+Privacy Note (Beta)
+Version: {{VERSION}}
+Commit: {{COMMIT_SHA}}
+Build: {{BUILD_TIMESTAMP}}
+
+- Runs locally.
+- Do not include secrets or personal data in support bundles.
+- Support bundles must not include `license.json`.
+

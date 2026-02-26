@@ -10,7 +10,7 @@ import { safeFetch } from './network.js';
 import * as crypto from './crypto.js';
 import * as intentParser from './intentParser.js';
 
-const Broker = (function() {
+const Broker = (function () {
   const interfaceMap = new Map([
     [CAP_EXEC, execution.executeTask],
     [CAP_FS, filesystem.atomicRead],
@@ -26,17 +26,19 @@ const Broker = (function() {
 
   return Object.freeze({
     request: async (token, action, ...args) => {
-      if (!interfaceMap.has(token)) throw new Error("ERR_INVALID_CAPABILITY_TOKEN");
+      if (!interfaceMap.has(token)) {
+        throw new Error('ERR_INVALID_CAPABILITY_TOKEN');
+      }
       const target = interfaceMap.get(token);
-      
+
       if (typeof target === 'function') {
         return await target(action, ...args);
       }
-      
+
       if (target[action]) {
         return await target[action](...args);
       }
-      
+
       throw new Error(`ERR_INVALID_ACTION: ${String(action)}`);
     }
   });

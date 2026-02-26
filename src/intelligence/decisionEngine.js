@@ -1,10 +1,10 @@
 /**
  * Decision Intelligence Engine
- * 
+ *
  * Core engine for recording, querying, and analyzing autonomous decisions.
  * Uses event sourcing with Kafka for immutable decision history and
  * integrates with OpenTelemetry for distributed tracing.
- * 
+ *
  * Requirements: 1.1, 1.2, 15.2
  */
 
@@ -15,7 +15,7 @@ const tracer = trace.getTracer('neuralshell-decision-engine');
 
 /**
  * Decision Intelligence Engine
- * 
+ *
  * Provides the core functionality for recording autonomous decisions
  * as immutable events with full tracing context.
  */
@@ -48,18 +48,18 @@ export class DecisionIntelligenceEngine {
     }
 
     const span = tracer.startSpan('decisionEngine.connect');
-    
+
     try {
       await this.eventStore.connect();
       this.connected = true;
-      
+
       span.setStatus({ code: SpanStatusCode.OK });
       span.end();
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.end();
       throw error;
@@ -96,7 +96,7 @@ export class DecisionIntelligenceEngine {
     }
 
     const startTime = process.hrtime.bigint();
-    
+
     // Start a span for the decision recording
     const span = tracer.startSpan('decisionEngine.recordDecision', {
       attributes: {
@@ -146,12 +146,12 @@ export class DecisionIntelligenceEngine {
       span.end();
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.end();
-      
+
       throw new Error(`Failed to record decision: ${error.message}`);
     }
   }
@@ -194,12 +194,12 @@ export class DecisionIntelligenceEngine {
       span.end();
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.end();
-      
+
       throw new Error(`Failed to record decision batch: ${error.message}`);
     }
   }

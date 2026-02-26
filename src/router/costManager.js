@@ -14,13 +14,13 @@ export class CostManager extends EventEmitter {
     this.warningThreshold = options.warningThreshold || 0.8;
     this.criticalThreshold = options.criticalThreshold || 0.95;
     this.costAwareRouting = options.costAwareRouting !== false;
-    
+
     this.costs = new Map(); // endpoint -> cost data
     this.dailyCosts = [];
     this.monthlyCosts = [];
     this.currentDay = this.getDay();
     this.currentMonth = this.getMonth();
-    
+
     this.metrics = {
       totalCost: 0,
       totalRequests: 0,
@@ -118,7 +118,7 @@ export class CostManager extends EventEmitter {
         cost: this.getDailyCost()
       });
       this.currentDay = day;
-      
+
       // Keep last 90 days
       if (this.dailyCosts.length > 90) {
         this.dailyCosts.shift();
@@ -132,7 +132,7 @@ export class CostManager extends EventEmitter {
         cost: this.getMonthlyCost()
       });
       this.currentMonth = month;
-      
+
       // Keep last 12 months
       if (this.monthlyCosts.length > 12) {
         this.monthlyCosts.shift();
@@ -150,7 +150,7 @@ export class CostManager extends EventEmitter {
     // Check daily budget
     if (this.dailyBudget) {
       const dailyPercent = dailyCost / this.dailyBudget;
-      
+
       if (dailyPercent >= this.criticalThreshold) {
         this.handleBudgetAlert('daily', 'critical', dailyCost, this.dailyBudget);
       } else if (dailyPercent >= this.warningThreshold) {
@@ -170,7 +170,7 @@ export class CostManager extends EventEmitter {
     // Check monthly budget
     if (this.monthlyBudget) {
       const monthlyPercent = monthlyCost / this.monthlyBudget;
-      
+
       if (monthlyPercent >= this.criticalThreshold) {
         this.handleBudgetAlert('monthly', 'critical', monthlyCost, this.monthlyBudget);
       } else if (monthlyPercent >= this.warningThreshold) {
@@ -193,7 +193,7 @@ export class CostManager extends EventEmitter {
    */
   handleBudgetAlert(period, severity, current, budget) {
     const alertKey = `${period}_${severity}`;
-    
+
     // Avoid duplicate alerts
     if (this.budgetAlerts.has(alertKey)) {
       return;
@@ -326,8 +326,8 @@ export class CostManager extends EventEmitter {
         remaining: Math.max(0, this.dailyBudget - dailyCost),
         percent: ((dailyCost / this.dailyBudget) * 100).toFixed(2) + '%',
         status: dailyCost >= this.dailyBudget ? 'exceeded' :
-                dailyCost >= this.dailyBudget * this.criticalThreshold ? 'critical' :
-                dailyCost >= this.dailyBudget * this.warningThreshold ? 'warning' : 'ok'
+          dailyCost >= this.dailyBudget * this.criticalThreshold ? 'critical' :
+            dailyCost >= this.dailyBudget * this.warningThreshold ? 'warning' : 'ok'
       } : null,
       monthly: this.monthlyBudget ? {
         budget: this.monthlyBudget,
@@ -335,8 +335,8 @@ export class CostManager extends EventEmitter {
         remaining: Math.max(0, this.monthlyBudget - monthlyCost),
         percent: ((monthlyCost / this.monthlyBudget) * 100).toFixed(2) + '%',
         status: monthlyCost >= this.monthlyBudget ? 'exceeded' :
-                monthlyCost >= this.monthlyBudget * this.criticalThreshold ? 'critical' :
-                monthlyCost >= this.monthlyBudget * this.warningThreshold ? 'warning' : 'ok'
+          monthlyCost >= this.monthlyBudget * this.criticalThreshold ? 'critical' :
+            monthlyCost >= this.monthlyBudget * this.warningThreshold ? 'warning' : 'ok'
       } : null
     };
   }

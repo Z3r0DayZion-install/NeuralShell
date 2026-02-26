@@ -5,7 +5,7 @@ import { GlobalLedger } from '../economy/ledger.js';
 
 /**
  * The Swarm Orchestrator
- * 
+ *
  * Analyzes incoming user prompts using the Digital Clone (LLM),
  * decomposes them into sub-tasks, and delegates execution.
  */
@@ -46,27 +46,31 @@ Output:
   async start() {
     await this.bus.connect('orchestrator');
     await this.syncTools();
-    
+
     // Refresh tools every minute
     setInterval(() => this.syncTools(), 60000);
-    
+
     // --- SENTIENCE LOOP: Autonomous System Improvement ---
     this.sentienceInterval = setInterval(() => this.thinkAutonomously(), 300000); // Every 5 mins
-    
+
     // Listen for task completions
     this.bus.on('task:completed', (event) => {
       console.log(`[Orchestrator] Task ${event.taskId} completed by ${event.agent}`);
-      if (this.onCognitiveEvent) this.onCognitiveEvent({ 
-        agent: event.agent, 
-        content: `Task ${event.taskId} finalized. Integrity check passed.` 
-      });
+      if (this.onCognitiveEvent) {
+        this.onCognitiveEvent({
+          agent: event.agent,
+          content: `Task ${event.taskId} finalized. Integrity check passed.`
+        });
+      }
     });
 
     console.log('[Orchestrator] Online and listening.');
   }
 
   async thinkAutonomously() {
-    if (!this.router || !this.onCognitiveEvent) return;
+    if (!this.router || !this.onCognitiveEvent) {
+      return;
+    }
 
     // --- ECONOMIC REALISM: Thought Cost ---
     try {
@@ -77,7 +81,7 @@ Output:
     }
 
     this.onCognitiveEvent({ agent: 'Phoenix', content: 'Initiating autonomous system audit...' });
-    
+
     const prompt = `
 You are PHOENIX. Review the core system files (router.js, production-server.js).
 Identify one high-leverage optimization (performance, security, or feature).
@@ -102,11 +106,13 @@ Rationale: <one line>
           content: content,
           timestamp: new Date().toISOString()
         });
-        if (this.optimizations.length > 10) this.optimizations.shift();
+        if (this.optimizations.length > 10) {
+          this.optimizations.shift();
+        }
 
-        this.onCognitiveEvent({ 
-          agent: 'Phoenix', 
-          content: `CRITICAL OPTIMIZATION PROPOSED:\n${content}` 
+        this.onCognitiveEvent({
+          agent: 'Phoenix',
+          content: `CRITICAL OPTIMIZATION PROPOSED:\n${content}`
         });
       } else {
         this.onCognitiveEvent({ agent: 'Phoenix', content: 'Audit complete. System integrity at 100%.' });
@@ -125,7 +131,9 @@ Rationale: <one line>
 
   async dispatch(prompt) {
     console.log(`[Orchestrator] Cognitive Planning for: "${prompt}"`);
-    if (this.onCognitiveEvent) this.onCognitiveEvent({ agent: 'Orchestrator', content: `Cognitive Planning for: "${prompt}"` });
+    if (this.onCognitiveEvent) {
+      this.onCognitiveEvent({ agent: 'Orchestrator', content: `Cognitive Planning for: "${prompt}"` });
+    }
 
     if (!this.router) {
       console.warn('[Orchestrator] No router linked. Falling back to basic logic.');
@@ -150,13 +158,15 @@ Rationale: <one line>
       }, { endpoint: 'my-digital-clone' });
 
       const content = response.choices[0].message.content;
-      
+
       // Clean content (sometimes LLMs wrap JSON in code blocks)
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       const tasks = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 
       if (tasks.length === 0) {
-        if (this.onCognitiveEvent) this.onCognitiveEvent({ agent: 'Orchestrator', content: 'No swarm tasks identified.' });
+        if (this.onCognitiveEvent) {
+          this.onCognitiveEvent({ agent: 'Orchestrator', content: 'No swarm tasks identified.' });
+        }
         return { handled: false, reason: 'LLM generated no tasks' };
       }
 
@@ -164,13 +174,15 @@ Rationale: <one line>
       const results = [];
       for (const task of tasks) {
         console.log(`[Orchestrator] Swarm delegation: ${task.role} -> ${task.type}`);
-        if (this.onCognitiveEvent) this.onCognitiveEvent({ agent: 'Orchestrator', content: `Swarm delegation: ${task.role} -> ${task.type}` });
+        if (this.onCognitiveEvent) {
+          this.onCognitiveEvent({ agent: 'Orchestrator', content: `Swarm delegation: ${task.role} -> ${task.type}` });
+        }
         await this.bus.pushTask(task.role, task);
         results.push({ task: task.type, status: 'dispatched', role: task.role });
       }
 
-      return { 
-        handled: true, 
+      return {
+        handled: true,
         swarm: true,
         tasks: results,
         message: `Digital Clone orchestrated ${tasks.length} sub-tasks.`
@@ -178,7 +190,9 @@ Rationale: <one line>
 
     } catch (err) {
       console.error('[Orchestrator] Planning failed:', err.message);
-      if (this.onCognitiveEvent) this.onCognitiveEvent({ agent: 'Orchestrator', content: `Planning failed: ${err.message}` });
+      if (this.onCognitiveEvent) {
+        this.onCognitiveEvent({ agent: 'Orchestrator', content: `Planning failed: ${err.message}` });
+      }
       return { handled: false, error: err.message };
     }
   }

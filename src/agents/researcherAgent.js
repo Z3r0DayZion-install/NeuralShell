@@ -18,19 +18,19 @@ export class ResearcherAgent extends BaseAgent {
 
   async performSearch(query) {
     console.log(`[Researcher] Searching for: "${query}"...`);
-    
+
     // Check for Real API Key (Optional)
     if (process.env.GOOGLE_API_KEY) {
-        // Real implementation would go here
-        // const res = await fetch(`https://customsearch.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&q=${query}`);
-        // ...
+      // Real implementation would go here
+      // const res = await fetch(`https://customsearch.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_API_KEY}&q=${query}`);
+      // ...
     }
 
     // High-Fidelity Simulation
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const results = [
-      { 
+      {
         title: `Comprehensive Guide to ${query}`,
         url: `https://example.com/guide/${query.replace(/\s+/g, '-')}`,
         snippet: `In 2026, ${query} has evolved significantly. Key advancements include...`

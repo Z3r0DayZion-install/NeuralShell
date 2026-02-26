@@ -2,7 +2,7 @@
  * Recovery Mode Orchestrator (Refactored: Self-Healing)
  * Handles offline repair from trusted snapshots and evidence export.
  */
-"use strict";
+'use strict';
 
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
@@ -13,12 +13,12 @@ const crypto = require('node:crypto');
 const SNAPSHOT_ROOT = path.join(process.resourcesPath, 'snapshot');
 
 async function launchRecoveryMode(result) {
-  console.error("BOOT_INTEGRITY_FAILURE: Entering Recovery Mode");
+  console.error('BOOT_INTEGRITY_FAILURE: Entering Recovery Mode');
 
   const recoveryWin = new BrowserWindow({
     width: 800,
     height: 600,
-    title: "NeuralShell Recovery Mode (OFFLINE)",
+    title: 'NeuralShell Recovery Mode (OFFLINE)',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -32,7 +32,7 @@ async function launchRecoveryMode(result) {
     // Schema validation: no input parameters required (schema: empty)
     const validate = () => true; // No-op validation for parameterless handler
     validate();
-    
+
     const bundle = {
       ts: Date.now(),
       violations: result.violations,
@@ -40,12 +40,12 @@ async function launchRecoveryMode(result) {
       platform: process.platform,
       arch: process.arch
     };
-    
+
     const bundleData = JSON.stringify(bundle, null, 2);
     // Use device-root HMAC for signature
     const sig = crypto.createHmac('sha256', process.env.DEVICE_ROOT || 'HARDWARE_BOUND_SALT')
       .update(bundleData).digest('hex');
-    
+
     const reportPath = path.join(app.getPath('desktop'), `NEURALSHELL_TAMPER_REPORT_${Date.now()}.json`);
     fs.writeFileSync(reportPath, `${sig}\n${bundleData}`);
     return reportPath;
@@ -56,7 +56,7 @@ async function launchRecoveryMode(result) {
     // Schema validation: no input parameters required (schema: empty)
     const validate = () => true; // No-op validation for parameterless handler
     validate();
-    
+
     try {
       for (const relPath of result.violations) {
         const source = path.join(SNAPSHOT_ROOT, relPath);
@@ -77,7 +77,7 @@ async function launchRecoveryMode(result) {
     validate();
     return result;
   });
-  
+
   ipcMain.handle('recovery:exit', (event, data) => {
     // Schema validation: no input parameters required (schema: empty)
     const validate = () => true; // No-op validation for parameterless handler

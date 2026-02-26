@@ -1,9 +1,9 @@
 /**
  * OpenTelemetry Tracing Integration
- * 
+ *
  * Provides distributed tracing with OpenTelemetry SDK, trace context propagation,
  * and adaptive sampling (100% errors, 10% success).
- * 
+ *
  * Requirements: 15.1, 15.2, 15.4, 15.5
  */
 
@@ -11,15 +11,15 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { 
-  trace, 
-  context, 
-  propagation, 
+import {
+  trace,
+  context,
+  propagation,
   SpanStatusCode,
-  SpanKind 
+  SpanKind
 } from '@opentelemetry/api';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
-import { 
+import {
   BatchSpanProcessor,
   ParentBasedSampler,
   TraceIdRatioBasedSampler,
@@ -38,7 +38,7 @@ class AdaptiveSampler {
 
   shouldSample(context, traceId, spanName, spanKind, attributes, links) {
     // Check if this is an error span
-    const isError = attributes['error'] === true || 
+    const isError = attributes['error'] === true ||
                     attributes['http.status_code'] >= 400 ||
                     spanName.toLowerCase().includes('error') ||
                     spanName.toLowerCase().includes('failure');
@@ -163,7 +163,7 @@ export class TracingManager {
 
   /**
    * Start a new span
-   * 
+   *
    * @param {string} name - Span name
    * @param {Object} options - Span options
    * @param {Object} options.attributes - Span attributes
@@ -190,9 +190,9 @@ export class TracingManager {
       return result;
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.setAttribute('error', true);
       throw error;
@@ -203,13 +203,13 @@ export class TracingManager {
 
   /**
    * Extract trace context from headers (W3C Trace Context format)
-   * 
+   *
    * @param {Object} headers - HTTP headers
    * @returns {Object} Trace context
    */
   extractTraceContext(headers) {
     const carrier = {};
-    
+
     // Convert headers to carrier format
     Object.keys(headers).forEach(key => {
       carrier[key.toLowerCase()] = headers[key];
@@ -233,7 +233,7 @@ export class TracingManager {
 
   /**
    * Inject trace context into headers (W3C Trace Context format)
-   * 
+   *
    * @param {Object} headers - HTTP headers object to inject into
    * @returns {Object} Headers with trace context
    */
@@ -269,7 +269,7 @@ export class TracingManager {
 
   /**
    * Add event to current span
-   * 
+   *
    * @param {string} name - Event name
    * @param {Object} attributes - Event attributes
    */
@@ -282,7 +282,7 @@ export class TracingManager {
 
   /**
    * Set attribute on current span
-   * 
+   *
    * @param {string} key - Attribute key
    * @param {any} value - Attribute value
    */
@@ -295,7 +295,7 @@ export class TracingManager {
 
   /**
    * Record exception on current span
-   * 
+   *
    * @param {Error} error - Exception to record
    */
   recordException(error) {
@@ -352,12 +352,12 @@ export class TracingManager {
       // Add response hook to end span
       reply.addHook('onSend', async (request, reply, payload) => {
         span.setAttribute('http.status_code', reply.statusCode);
-        
+
         if (reply.statusCode >= 400) {
           span.setAttribute('error', true);
-          span.setStatus({ 
-            code: SpanStatusCode.ERROR, 
-            message: `HTTP ${reply.statusCode}` 
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: `HTTP ${reply.statusCode}`
           });
         } else {
           span.setStatus({ code: SpanStatusCode.OK });

@@ -304,7 +304,7 @@ curl http://localhost:3000/metrics/json | jq
 curl http://localhost:3000/metrics/prometheus | head -20
 
 # Check audit logs
-curl -H "x-admin-token: admin" \
+curl -H "x-admin-token: $ADMIN_TOKEN" \
   http://localhost:3000/admin/audit/recent?limit=10 | jq
 ```
 
@@ -329,11 +329,11 @@ curl -H "x-admin-token: admin" \
 **Diagnosis:**
 ```bash
 # Check which endpoint is slow
-curl -H "x-admin-token: admin" \
+curl -H "x-admin-token: $ADMIN_TOKEN" \
   http://localhost:3000/endpoints | jq '.endpointState[] | {name, lastLatencyMs}'
 
 # Check connection pool stats
-curl -H "x-admin-token: admin" \
+curl -H "x-admin-token: $ADMIN_TOKEN" \
   http://localhost:3000/admin/runtime/snapshot | jq '.connectionPool'
 
 # Check memory pressure
@@ -342,7 +342,7 @@ curl http://localhost:3000/health?details=1 | jq '.checks.memory'
 
 **Solutions:**
 - Increase connection pool size: `getAgent(url).maxSockets = 200`
-- Check endpoint health: `curl -H "x-admin-token: admin" http://localhost:3000/endpoints`
+- Check endpoint health: `curl -H "x-admin-token: $ADMIN_TOKEN" http://localhost:3000/endpoints`
 - Verify no memory pressure: `curl http://localhost:3000/health?details=1`
 
 ---
@@ -355,7 +355,7 @@ curl http://localhost:3000/health?details=1 | jq '.checks.memory'
 docker stats neuralshell
 
 # Check cache sizes
-curl -H "x-admin-token: admin" \
+curl -H "x-admin-token: $ADMIN_TOKEN" \
   http://localhost:3000/admin/idempotency/stats | jq '.currentSize'
 
 # Check memory pressure state
@@ -377,7 +377,7 @@ curl http://localhost:3000/health?details=1 | jq '.checks.memory'
 curl http://localhost:3000/metrics/json | jq '.failedRequests'
 
 # Check dead letter queue
-curl -H "x-admin-token: admin" \
+curl -H "x-admin-token: $ADMIN_TOKEN" \
   http://localhost:3000/admin/dlq/stats | jq
 
 # Check logs

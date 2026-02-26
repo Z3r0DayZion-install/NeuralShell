@@ -1,9 +1,9 @@
 /**
  * Event Indexer - Kafka Consumer for Decision Event Indexing
- * 
+ *
  * Consumes Decision_Events from Kafka and builds secondary indexes in PostgreSQL
  * for efficient querying by decision_type, component, and outcome.
- * 
+ *
  * Requirements: 2.1
  */
 
@@ -46,13 +46,13 @@ export class EventIndexerConfig {
 
 /**
  * Event Indexer
- * 
+ *
  * Consumes events from Kafka and indexes them in PostgreSQL for efficient querying.
  */
 export class EventIndexer {
   constructor(config = {}) {
     this.config = new EventIndexerConfig(config);
-    
+
     // Initialize Kafka consumer
     this.kafka = new Kafka({
       clientId: this.config.kafka.clientId,
@@ -64,16 +64,16 @@ export class EventIndexer {
     });
 
     this.consumer = null;
-    
+
     // Initialize PostgreSQL connection pool
     this.pgPool = new Pool(this.config.postgres);
-    
+
     // State
     this.running = false;
     this.connected = false;
     this.eventBatch = [];
     this.batchTimer = null;
-    
+
     // Metrics
     this.metrics = {
       eventsConsumed: 0,
@@ -114,7 +114,7 @@ export class EventIndexer {
       });
 
       await this.consumer.connect();
-      
+
       // Subscribe to decision events topic
       await this.consumer.subscribe({
         topic: this.config.kafka.topic,
@@ -122,16 +122,16 @@ export class EventIndexer {
       });
 
       this.connected = true;
-      
+
       span.setStatus({ code: SpanStatusCode.OK });
       span.end();
-      
+
       console.log('Event Indexer connected successfully');
     } catch (error) {
       span.recordException(error);
       span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
       span.end();
-      
+
       throw new Error(`Failed to connect Event Indexer: ${error.message}`);
     }
   }
@@ -147,28 +147,28 @@ export class EventIndexer {
     try {
       // Stop consuming
       this.running = false;
-      
+
       // Clear batch timer
       if (this.batchTimer) {
         clearTimeout(this.batchTimer);
         this.batchTimer = null;
       }
-      
+
       // Process remaining events in batch
       if (this.eventBatch.length > 0) {
         await this.processBatch();
       }
-      
+
       // Disconnect consumer
       if (this.consumer) {
         await this.consumer.disconnect();
       }
-      
+
       // Close PostgreSQL pool
       await this.pgPool.end();
-      
+
       this.connected = false;
-      
+
       console.log('Event Indexer disconnected');
     } catch (error) {
       console.error('Error disconnecting Event Indexer:', error);
@@ -189,7 +189,7 @@ export class EventIndexer {
     }
 
     this.running = true;
-    
+
     console.log('Event Indexer started');
 
     // Start consuming messages
@@ -207,12 +207,12 @@ export class EventIndexer {
    */
   async stop() {
     this.running = false;
-    
+
     // Process remaining batch
     if (this.eventBatch.length > 0) {
       await this.processBatch();
     }
-    
+
     console.log('Event Indexer stopped');
   }
 
@@ -231,9 +231,9 @@ export class EventIndexer {
     try {
       // Parse event
       const eventData = JSON.parse(message.value.toString());
-      
+
       this.metrics.eventsConsumed++;
-      
+
       // Add to batch
       this.eventBatch.push({
         event: eventData,
@@ -258,11 +258,11 @@ export class EventIndexer {
       span.end();
     } catch (error) {
       this.metrics.indexErrors++;
-      
+
       span.recordException(error);
       span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
       span.end();
-      
+
       console.error('Error handling message:', error);
     }
   }
@@ -301,15 +301,15 @@ export class EventIndexer {
       // Prepare batch insert
       const values = [];
       const placeholders = [];
-      
+
       for (let i = 0; i < batch.length; i++) {
         const { event } = batch[i];
         const offset = i * 9;
-        
+
         placeholders.push(
           `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9})`
         );
-        
+
         values.push(
           event.event_id,
           new Date(event.timestamp / 1000), // Convert microseconds to milliseconds
@@ -346,7 +346,7 @@ export class EventIndexer {
 
       const endTime = process.hrtime.bigint();
       const latencyMs = Number(endTime - startTime) / 1_000_000;
-      
+
       this.metrics.totalLatency += latencyMs;
       this.metrics.maxLatency = Math.max(this.metrics.maxLatency, latencyMs);
 
@@ -358,15 +358,15 @@ export class EventIndexer {
     } catch (error) {
       // Rollback on error
       await client.query('ROLLBACK');
-      
+
       this.metrics.indexErrors += batchSize;
-      
+
       span.recordException(error);
       span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
       span.end();
-      
+
       console.error('Error processing batch:', error);
-      
+
       // Re-add events to batch for retry
       this.eventBatch.unshift(...batch);
     } finally {

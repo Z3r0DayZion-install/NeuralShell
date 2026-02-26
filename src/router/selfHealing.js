@@ -23,7 +23,7 @@ export class SelfHealingOrchestrator extends EventEmitter {
     this.maxHistorySize = options.maxHistorySize || 1000;
     this.cooldownMs = options.cooldownMs || 5000;
     this.lastHealingAttempts = new Map();
-    
+
     this.metrics = {
       totalHealingAttempts: 0,
       successfulHeals: 0,
@@ -64,7 +64,7 @@ export class SelfHealingOrchestrator extends EventEmitter {
     const lastAttempt = this.lastHealingAttempts.get(issue.type);
     if (lastAttempt && Date.now() - lastAttempt < this.cooldownMs) {
       this.metrics.preventedHeals++;
-      
+
       // Record decision event for prevented healing
       await this.recordDecisionEvent({
         decision_type: 'healing',
@@ -122,7 +122,7 @@ export class SelfHealingOrchestrator extends EventEmitter {
     for (const strategy of strategies) {
       try {
         const result = await this.executeStrategy(strategy, issue);
-        
+
         if (result.success) {
           this.metrics.successfulHeals++;
           this.recordHealing(issue, strategy, result);
@@ -133,19 +133,19 @@ export class SelfHealingOrchestrator extends EventEmitter {
             decision_type: 'healing',
             context: {
               trigger: 'issue_detected',
-              metrics: { 
+              metrics: {
                 attempt_number: result.attempt,
-                strategies_available: strategies.length 
+                strategies_available: strategies.length
               },
-              state: { 
-                issue_type: issue.type, 
+              state: {
+                issue_type: issue.type,
                 issue_details: issue,
                 strategy_priority: strategy.priority
               }
             },
             action_taken: {
               type: strategy.name,
-              parameters: { 
+              parameters: {
                 max_retries: strategy.maxRetries,
                 actual_attempts: result.attempt
               }
@@ -153,7 +153,7 @@ export class SelfHealingOrchestrator extends EventEmitter {
             outcome: {
               status: 'success',
               duration_ms: Date.now() - decisionStartTime,
-              impact: { 
+              impact: {
                 healed: 1,
                 strategy_used: strategy.name
               }
@@ -179,7 +179,7 @@ export class SelfHealingOrchestrator extends EventEmitter {
       },
       action_taken: {
         type: 'multiple_strategies_attempted',
-        parameters: { 
+        parameters: {
           strategies: strategies.map(s => s.name)
         }
       },
@@ -198,7 +198,7 @@ export class SelfHealingOrchestrator extends EventEmitter {
    */
   async executeStrategy(strategy, issue) {
     let lastError;
-    
+
     for (let attempt = 1; attempt <= strategy.maxRetries; attempt++) {
       try {
         const result = await strategy.handler(issue, attempt);

@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 /**
  * Vector Memory System
- * 
+ *
  * Provides semantic storage and retrieval for the Router's Long-Term Memory.
  * Uses a simplified TF-IDF + Cosine Similarity approach for portability,
  * eliminating the need for external vector DBs or heavy Python dependencies.
@@ -15,7 +15,7 @@ export class VectorMemory {
     this.dimension = options.dimension || 384; // Simulated dimension
     this.documents = [];
     this.isDirty = false;
-    
+
     // Auto-save interval
     setInterval(() => this.save(), 5000);
   }
@@ -42,7 +42,7 @@ export class VectorMemory {
     // Real implementation would use: await openai.embeddings.create({ input: text })
     const words = text.toLowerCase().match(/\b\w+\b/g) || [];
     const uniqueWords = new Set(words);
-    return Array.from(uniqueWords); 
+    return Array.from(uniqueWords);
   }
 
   calculateSimilarity(queryTags, docTags) {
@@ -55,7 +55,7 @@ export class VectorMemory {
   async add(text, metadata = {}) {
     const id = crypto.randomUUID();
     const tags = this.simulateEmbedding(text);
-    
+
     const doc = {
       id,
       text,
@@ -73,7 +73,7 @@ export class VectorMemory {
 
   async search(query, limit = 3, threshold = 0.1) {
     const queryTags = this.simulateEmbedding(query);
-    
+
     const results = this.documents.map(doc => {
       const score = this.calculateSimilarity(queryTags, doc.tags);
       return { ...doc, score };
@@ -86,11 +86,15 @@ export class VectorMemory {
   }
 
   async save() {
-    if (!this.isDirty) return;
+    if (!this.isDirty) {
+      return;
+    }
     try {
       const dir = path.dirname(this.storagePath);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
       fs.writeFileSync(this.storagePath, JSON.stringify(this.documents, null, 2));
       this.isDirty = false;
       // console.log('[VectorMemory] Saved state.');
@@ -98,7 +102,7 @@ export class VectorMemory {
       console.error('[VectorMemory] Save failed:', err.message);
     }
   }
-  
+
   getStats() {
     return {
       documents: this.documents.length,

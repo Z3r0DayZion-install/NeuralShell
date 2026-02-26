@@ -2,7 +2,7 @@
  * Static Intent Registry
  * Immutable map of intents to deterministic kernel actions.
  */
-"use strict";
+'use strict';
 
 const Broker = require('./index');
 const { CAP_EXEC, CAP_FS, CAP_NET } = require('./tokens');

@@ -24,7 +24,9 @@ export function writeJsonFile(filePath, data) {
     return true;
   } catch (err) {
     if (fs.existsSync(tempPath)) {
-      try { fs.unlinkSync(tempPath); } catch {}
+      try {
+        fs.unlinkSync(tempPath);
+      } catch {}
     }
     return false;
   }

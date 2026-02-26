@@ -59,3 +59,6 @@ Access the Dashboard at: **`http://localhost:3000/admin-dashboard.html`**
 
 ---
 *"The best way to predict the future is to invent it."*
+\n\n## Shipping\n\n- Build a local release bundle (desktop EXEs + docker image + smoke test):\n  - 
+pm run ship:bundle\n- Create a redacted support bundle for debugging:\n  - 
+pm run support:bundle\n\nBundles are written under out/.\n

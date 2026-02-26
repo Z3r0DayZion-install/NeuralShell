@@ -2,7 +2,7 @@
  * Capability Tokens for NeuralShell Kernel
  * Unique Symbol-based tokens required to access restricted broker actions.
  */
-"use strict";
+'use strict';
 
 module.exports = Object.freeze({
   CAP_EXEC: Symbol('NEURALSHELL_CAP_EXEC'),

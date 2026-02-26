@@ -22,13 +22,19 @@ export class CostAwareRouter {
   }
 
   selectCheapestEndpoint(availableEndpoints, qualityMetrics) {
-    if (availableEndpoints.length === 0) return null;
-    if (availableEndpoints.length === 1) return availableEndpoints[0];
+    if (availableEndpoints.length === 0) {
+      return null;
+    }
+    if (availableEndpoints.length === 1) {
+      return availableEndpoints[0];
+    }
 
     // Filter endpoints by quality first
     const qualifyingEndpoints = availableEndpoints.filter((ep) => {
       const metrics = qualityMetrics.get(ep.name);
-      if (!metrics) return true;
+      if (!metrics) {
+        return true;
+      }
 
       const successRate = metrics.successRate || 1;
       const latency = metrics.lastLatencyMs || 0;
@@ -54,7 +60,9 @@ export class CostAwareRouter {
   }
 
   selectBestValueEndpoint(availableEndpoints, qualityMetrics) {
-    if (availableEndpoints.length === 0) return null;
+    if (availableEndpoints.length === 0) {
+      return null;
+    }
 
     const valueScores = availableEndpoints.map((ep) => {
       const cost = this.getEstimatedCost(ep.name);

@@ -18,7 +18,7 @@ export async function bootstrapSwarm(routerCore) {
   try {
     // Start agents with Supervisor
     const agents = [researcher, coder, architect, dreamer];
-    
+
     agents.forEach(agent => {
       const startAgent = async () => {
         try {
@@ -28,7 +28,7 @@ export async function bootstrapSwarm(routerCore) {
           setTimeout(startAgent, 5000);
         }
       };
-      
+
       // Monitor loop check
       setInterval(() => {
         if (!agent.isRunning) {
@@ -39,7 +39,7 @@ export async function bootstrapSwarm(routerCore) {
 
       startAgent();
     });
-    
+
     console.log('[Swarm] Agents launched (Supervisor Active).');
     return { researcher, coder, architect, dreamer };
   } catch (err) {

@@ -19,8 +19,10 @@ export class GenesisPlugin extends Plugin {
     // Genesis API
     router.app.post('/api/genesis/spawn', async (req, reply) => {
       const { prompt } = req.body;
-      if (!prompt) return reply.code(400).send({ error: 'prompt required' });
-      
+      if (!prompt) {
+        return reply.code(400).send({ error: 'prompt required' });
+      }
+
       try {
         const result = await this.agent.spawnApp(prompt);
         return { success: true, deployment: result };

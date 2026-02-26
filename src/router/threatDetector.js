@@ -14,12 +14,12 @@ export class ThreatDetector extends EventEmitter {
     this.blockDurationMs = options.blockDurationMs || 3600000; // 1 hour
     this.rateLimitThreshold = options.rateLimitThreshold || 100;
     this.suspiciousPatterns = options.suspiciousPatterns || [];
-    
+
     this.blockedIPs = new Map();
     this.suspiciousActivity = new Map();
     this.threatHistory = [];
     this.maxHistorySize = options.maxHistorySize || 1000;
-    
+
     this.metrics = {
       totalThreats: 0,
       blockedIPs: 0,
@@ -88,7 +88,7 @@ export class ThreatDetector extends EventEmitter {
 
     if (threats.length > 0) {
       this.handleThreat(ip, threats, request);
-      
+
       return {
         threat: true,
         types: threats.map(t => t.type),
@@ -105,7 +105,7 @@ export class ThreatDetector extends EventEmitter {
    */
   checkRateAbuse(ip) {
     const activity = this.suspiciousActivity.get(ip);
-    
+
     if (!activity) {
       return null;
     }
@@ -154,7 +154,7 @@ export class ThreatDetector extends EventEmitter {
    */
   checkBehavior(ip, request) {
     let activity = this.suspiciousActivity.get(ip);
-    
+
     if (!activity) {
       activity = {
         requests: [],
@@ -286,7 +286,7 @@ export class ThreatDetector extends EventEmitter {
    */
   isBlocked(ip) {
     const block = this.blockedIPs.get(ip);
-    
+
     if (!block) {
       return false;
     }
@@ -305,7 +305,7 @@ export class ThreatDetector extends EventEmitter {
    */
   calculateSeverity(threats) {
     const severities = threats.map(t => t.severity);
-    
+
     if (severities.includes('critical')) {
       return 'critical';
     }
@@ -323,16 +323,16 @@ export class ThreatDetector extends EventEmitter {
    */
   determineAction(threats) {
     const severity = this.calculateSeverity(threats);
-    
+
     switch (severity) {
-      case 'critical':
-        return 'block';
-      case 'high':
-        return 'challenge';
-      case 'medium':
-        return 'log';
-      default:
-        return 'monitor';
+    case 'critical':
+      return 'block';
+    case 'high':
+      return 'challenge';
+    case 'medium':
+      return 'log';
+    default:
+      return 'monitor';
     }
   }
 
@@ -342,7 +342,7 @@ export class ThreatDetector extends EventEmitter {
   getPatternSeverity(patternName) {
     const criticalPatterns = ['sqlInjection', 'commandInjection'];
     const highPatterns = ['xss', 'pathTraversal'];
-    
+
     if (criticalPatterns.includes(patternName)) {
       return 'critical';
     }
@@ -390,7 +390,7 @@ export class ThreatDetector extends EventEmitter {
    */
   getBlockedIPs() {
     const blocked = [];
-    
+
     for (const [ip, block] of this.blockedIPs) {
       blocked.push({
         ip,
@@ -424,7 +424,7 @@ export class ThreatDetector extends EventEmitter {
   markFalsePositive(ip) {
     this.metrics.falsePositives++;
     this.unblockIP(ip);
-    
+
     // Remove from suspicious activity
     this.suspiciousActivity.delete(ip);
   }
@@ -442,7 +442,7 @@ export class ThreatDetector extends EventEmitter {
   whitelist(ip) {
     this.unblockIP(ip);
     this.suspiciousActivity.delete(ip);
-    
+
     // Add to whitelist (implement as needed)
     this.emit('ip_whitelisted', { ip, timestamp: Date.now() });
   }

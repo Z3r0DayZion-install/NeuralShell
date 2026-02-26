@@ -3,7 +3,7 @@ import path from 'path';
 
 /**
  * Tool Forge
- * 
+ *
  * Allows Agents to dynamically create new capabilities.
  * Tools are saved as JS modules with accompanying metadata.
  */
@@ -35,22 +35,24 @@ export class ToolForge {
 
     fs.writeFileSync(filePath, JSON.stringify(toolData, null, 2), 'utf8');
     console.log(`[Forge] 🔨 Tool Invented: ${name}`);
-    
+
     return { name, path: filePath, schema };
   }
 
   async listTools() {
-    if (!fs.existsSync(this.toolsDir)) return [];
-    
+    if (!fs.existsSync(this.toolsDir)) {
+      return [];
+    }
+
     const files = fs.readdirSync(this.toolsDir).filter(f => f.endsWith('.json'));
     const tools = [];
-    
+
     for (const file of files) {
       try {
         const fullPath = path.join(this.toolsDir, file);
         const content = fs.readFileSync(fullPath, 'utf8');
         const toolData = JSON.parse(content);
-        
+
         tools.push({
           fileName: file,
           name: toolData.name || file.replace('.json', ''),

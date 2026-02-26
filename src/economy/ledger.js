@@ -3,7 +3,7 @@ import path from 'path';
 
 /**
  * The Ledger (Economic Engine)
- * 
+ *
  * Tracks "NeuralCredits" (NC) transactions between agents.
  * Agents must "pay" to use resources (CPU, Storage, Network).
  * Agents "earn" by completing tasks.
@@ -84,13 +84,12 @@ export class Ledger {
       reason,
       timestamp: new Date().toISOString()
     };
-    
+
     this.transactions.push(tx);
     console.log(`[Economy] 💸 ${from} paid ${to} ${amount} NC for "${reason}"`);
     this.saveState();
     return tx;
   }
-
 
   getHistory() {
     return this.transactions;

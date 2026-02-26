@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -27,24 +27,30 @@ async function verifyBootIntegrity() {
   if (!fs.existsSync(manifestPath) || !fs.existsSync(sigPath)) {
     return { ok: false, reason: 'MISSING_RELEASE_SEAL' };
   }
-  
+
   const data = fs.readFileSync(manifestPath);
   const sig = fs.readFileSync(sigPath);
 
-  const valid = crypto.verify("sha256", data, {
+  const valid = crypto.verify('sha256', data, {
     key: PUB_KEY,
     padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
     saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST
   }, sig);
 
-  if (!valid) return { ok: false, reason: 'INVALID_SIGNATURE' };
+  if (!valid) {
+    return { ok: false, reason: 'INVALID_SIGNATURE' };
+  }
 
   const manifest = JSON.parse(data);
   for (const [relPath, expectedHash] of Object.entries(manifest.hashes)) {
     const fullPath = path.join(process.cwd(), relPath);
-    if (!fs.existsSync(fullPath)) return { ok: false, reason: `FILE_MISSING:${relPath}` };
+    if (!fs.existsSync(fullPath)) {
+      return { ok: false, reason: `FILE_MISSING:${relPath}` };
+    }
     const actualHash = crypto.createHash('sha256').update(fs.readFileSync(fullPath)).digest('hex');
-    if (actualHash !== expectedHash) return { ok: false, reason: `HASH_MISMATCH:${relPath}` };
+    if (actualHash !== expectedHash) {
+      return { ok: false, reason: `HASH_MISMATCH:${relPath}` };
+    }
   }
 
   return { ok: true };
@@ -56,17 +62,19 @@ async function verifyBootIntegrity() {
 function verifyDirectoryACL() {
   // If not packaged, we are in a dev environment; trust is assumed for the developer.
   const { app } = require('electron');
-  if (!app.isPackaged) return true;
+  if (!app.isPackaged) {
+    return true;
+  }
 
   const root = path.dirname(process.execPath);
-  
+
   if (process.platform === 'win32') {
     const programFiles = process.env.ProgramFiles || 'C:\\Program Files';
     const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
-    
+
     // Check if running from a protected system-wide directory
     const normalizedRoot = root.toLowerCase();
-    return normalizedRoot.startsWith(programFiles.toLowerCase()) || 
+    return normalizedRoot.startsWith(programFiles.toLowerCase()) ||
            normalizedRoot.startsWith(programFilesX86.toLowerCase());
   } else {
     // POSIX: Root must not be world-writable
@@ -80,7 +88,7 @@ function verifyDirectoryACL() {
   }
 }
 
-module.exports = { 
+module.exports = {
   verifyBootIntegrity,
-  verifyDirectoryACL 
+  verifyDirectoryACL
 };

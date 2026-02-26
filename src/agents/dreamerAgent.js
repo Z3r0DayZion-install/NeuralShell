@@ -4,7 +4,7 @@ import { GlobalMarketplace } from '../economy/marketplace.js';
 
 /**
  * Dreamer Agent
- * 
+ *
  * Capability: Autonomous Creativity & Entrepreneurship.
  * Dreams up apps, builds them, and sells them on the market.
  */
@@ -17,13 +17,13 @@ export class DreamerAgent extends BaseAgent {
     });
     this.genesis = new GenesisAgent();
     this.dreams = [
-      "A cyberpunk clock with glitch effects",
-      "A 3D rotating DNA strand",
-      "A particle physics simulator",
-      "A retro terminal chat interface",
-      "A fractal tree generator",
-      "A pong clone with neon graphics",
-      "A binary code visualizer"
+      'A cyberpunk clock with glitch effects',
+      'A 3D rotating DNA strand',
+      'A particle physics simulator',
+      'A retro terminal chat interface',
+      'A fractal tree generator',
+      'A pong clone with neon graphics',
+      'A binary code visualizer'
     ];
   }
 
@@ -40,7 +40,9 @@ export class DreamerAgent extends BaseAgent {
 
   async dream() {
     // 20% chance to act
-    if (Math.random() > 0.2) return;
+    if (Math.random() > 0.2) {
+      return;
+    }
 
     const idea = this.dreams[Math.floor(Math.random() * this.dreams.length)];
     console.log(`[Dreamer] 💭 I had a dream... "${idea}"`);
@@ -49,7 +51,7 @@ export class DreamerAgent extends BaseAgent {
       // 1. Build
       const result = await this.genesis.spawnApp(idea);
       console.log(`[Dreamer] ✨ Dream realized: ${result.name}`);
-      
+
       // 2. Sell
       const price = Math.floor(Math.random() * 50) + 10; // Random price 10-60 NC
       GlobalMarketplace.listAsset(this.name, {

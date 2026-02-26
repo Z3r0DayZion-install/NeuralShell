@@ -1,6 +1,6 @@
 /**
  * EmbeddingEngine
- * 
+ *
  * Generates high-quality vector embeddings locally using ONNX runtime.
  * Ensures that private text never leaves the secure NeuralShell boundary
  * for the purpose of vectorization.
@@ -13,7 +13,7 @@ export class EmbeddingEngine {
 
   async initialize() {
     console.log(`[EmbeddingEngine] Loading local model from: ./models/${this.modelName}...`);
-    
+
     // Configure transformers to be strictly local
     const { pipeline, env } = await import('@xenova/transformers');
     env.allowRemoteModels = false;
@@ -26,8 +26,10 @@ export class EmbeddingEngine {
   }
 
   async generate(text) {
-    if (!this.extractor) await this.initialize();
-    
+    if (!this.extractor) {
+      await this.initialize();
+    }
+
     const output = await this.extractor(text, { pooling: 'mean', normalize: true });
     // Convert Float32Array to standard JS array
     return Array.from(output.data);

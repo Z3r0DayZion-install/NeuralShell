@@ -1,6 +1,6 @@
 /**
  * Database Graph Mapper
- * 
+ *
  * Generates graph data for 3D visualization by querying pgvector.
  * Automatically identifies clusters based on semantic similarity.
  */
@@ -29,17 +29,17 @@ export class GraphMapper {
     }));
 
     const links = [];
-    
+
     // 2. Compute similarity for visualization
     // We parse the embedding text back to arrays for comparison
     const parseVector = (v) => JSON.parse(v);
-    
+
     for (let i = 0; i < docs.length; i++) {
       const v1 = parseVector(docs[i].embedding);
       for (let j = i + 1; j < docs.length; j++) {
         const v2 = parseVector(docs[j].embedding);
         const score = this.cosineSimilarity(v1, v2);
-        
+
         if (score > 0.75) { // Strict threshold for high-fidelity graph
           links.push({
             source: docs[i].id,

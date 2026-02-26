@@ -1,0 +1,10 @@
+[package]
+name = "neuralshell-core-cli"
+version = "0.1.0"
+edition = "2021"
+license = "ISC"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+neuralshell-core = { path = "../../../crates/neuralshell-core" }

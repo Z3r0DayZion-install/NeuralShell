@@ -5,7 +5,7 @@ import tar from 'tar-fs';
 
 /**
  * Container Manager (The Deployer)
- * 
+ *
  * dynamically builds and runs Docker containers for generated projects.
  * It's a mini-Heroku running inside your router.
  */
@@ -17,7 +17,7 @@ export class ContainerManager {
 
   async deploy(project) {
     console.log(`[Forge] Deploying ${project.name}...`);
-    
+
     // 1. Find free port
     const port = await getPort({ port: getPort.makeRange(8000, 9000) });
     const imageName = `neuralshell-app-${project.name}:${project.id}`;
@@ -48,7 +48,7 @@ export class ContainerManager {
       });
 
       await container.start();
-      
+
       const appInfo = {
         id: project.id,
         name: project.name,

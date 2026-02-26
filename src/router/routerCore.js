@@ -87,12 +87,14 @@ export class RouterCore extends EventEmitter {
   }
 
   quarantineEndpoint(name, anomaly) {
-    if (this.quarantinedEndpoints.has(name)) return;
-    
+    if (this.quarantinedEndpoints.has(name)) {
+      return;
+    }
+
     this.quarantinedEndpoints.add(name);
     this.metrics.quarantined++;
     this.prometheus.incCounter('endpoint_quarantined_total', { endpoint: name });
-    
+
     logger.warn('ENDPOINT_QUARANTINED', sanitizeForLogging({
       endpoint: name,
       reason: 'statistical_anomaly',
@@ -649,7 +651,6 @@ export class RouterCore extends EventEmitter {
     await this.connectionPool.closeAll();
     this.responseCache.destroy();
   }
-
 
 }
 

@@ -1,9 +1,9 @@
 /**
  * THE NEURAL STANDARD
- * 
+ *
  * These abstract base classes define the immutable contract for all
  * future extensions of the NeuralShell platform.
- * 
+ *
  * Adhering to these contracts ensures forward compatibility.
  */
 
@@ -27,18 +27,24 @@ export class IAgent {
   /**
    * Main execution loop. Must handle heartbeat and task polling.
    */
-  async start() { throw new Error('Not Implemented'); }
+  async start() {
+    throw new Error('Not Implemented');
+  }
 
   /**
    * Graceful shutdown.
    */
-  async stop() { throw new Error('Not Implemented'); }
+  async stop() {
+    throw new Error('Not Implemented');
+  }
 
   /**
    * Execute a specific unit of work.
-   * @param {object} task 
+   * @param {object} task
    */
-  async executeTask(task) { throw new Error('Not Implemented'); }
+  async executeTask(task) {
+    throw new Error('Not Implemented');
+  }
 }
 
 /**
@@ -54,9 +60,11 @@ export class IPlugin {
 
   /**
    * Initialize the plugin with the Router context.
-   * @param {object} router 
+   * @param {object} router
    */
-  async initialize(router) { throw new Error('Not Implemented'); }
+  async initialize(router) {
+    throw new Error('Not Implemented');
+  }
 }
 
 /**
@@ -64,6 +72,10 @@ export class IPlugin {
  * @interface
  */
 export class IMemoryStore {
-  async add(text, embedding, metadata) { throw new Error('Not Implemented'); }
-  async search(embedding, limit) { throw new Error('Not Implemented'); }
+  async add(text, embedding, metadata) {
+    throw new Error('Not Implemented');
+  }
+  async search(embedding, limit) {
+    throw new Error('Not Implemented');
+  }
 }

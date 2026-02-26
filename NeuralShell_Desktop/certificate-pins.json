@@ -1,0 +1,41 @@
+{
+  "pins": {
+    "api.openai.com": "sha256/PLACEHOLDER_PIN_FOR_OPENAI_REPLACE_WITH_ACTUAL_SPKI_HASH"
+  },
+  "enforcement": {
+    "enabled": false,
+    "allowUnpinnedInDevelopment": true,
+    "logRejections": true
+  },
+  "_documentation": {
+    "description": "SPKI Certificate Pinning Configuration",
+    "purpose": "Prevents man-in-the-middle attacks by validating HTTPS certificates against known SPKI hashes",
+    "howToObtainPins": [
+      "1. Use OpenSSL to get the certificate:",
+      "   openssl s_client -connect api.openai.com:443 -servername api.openai.com < /dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64",
+      "2. Or use Node.js to extract SPKI from a live connection:",
+      "   const https = require('https'); const crypto = require('crypto');",
+      "   https.get('https://api.openai.com', (res) => {",
+      "     const cert = res.socket.getPeerCertificate();",
+      "     const spki = cert.pubkey;",
+      "     const hash = crypto.createHash('sha256').update(spki).digest('base64');",
+      "     console.log('sha256/' + hash);",
+      "   });",
+      "3. Add the pin to the 'pins' object with hostname as key",
+      "4. Set enforcement.enabled to true to activate pinning"
+    ],
+    "securityNotes": [
+      "- Pins must be updated when certificates are rotated",
+      "- Consider pinning multiple certificates (current + backup)",
+      "- Test thoroughly before enabling in production",
+      "- Set enforcement.enabled to false during development",
+      "- Use allowUnpinnedInDevelopment for local testing"
+    ],
+    "format": {
+      "pins": "Object mapping hostname to 'sha256/BASE64_HASH' format",
+      "enforcement.enabled": "Boolean - set to true to enforce pinning",
+      "enforcement.allowUnpinnedInDevelopment": "Boolean - allow unpinned hosts when NODE_ENV=development",
+      "enforcement.logRejections": "Boolean - log certificate validation events"
+    }
+  }
+}

@@ -18,7 +18,7 @@ import { CanaryDeployment } from './canaryDeployment.js';
 export class AutonomyController extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     // Feature flags
     this.featureFlags = {
       AUTO_HEALING: this.parseFlag(options.AUTO_HEALING),
@@ -35,7 +35,7 @@ export class AutonomyController extends EventEmitter {
     // Global controls
     this.dryRun = this.parseFlag(options.DRY_RUN);
     this.killSwitch = this.parseFlag(options.AUTONOMY_KILL_SWITCH);
-    
+
     // Bounded defenses - safety limits
     this.safetyLimits = {
       MAX_RESTARTS_PER_WINDOW: options.MAX_RESTARTS_PER_WINDOW || 3,
@@ -45,15 +45,15 @@ export class AutonomyController extends EventEmitter {
       MAX_BACKOFF_MS: options.MAX_BACKOFF_MS || 60000, // 1 minute ceiling
       MAX_DECISIONS_PER_MINUTE: options.MAX_DECISIONS_PER_MINUTE || 100
     };
-    
+
     // Module instances
     this.modules = {};
-    
+
     // State
     this.isStarted = false;
     this.started = false; // Alias for compatibility
     this.startTime = null;
-    
+
     // Metrics
     this.metrics = {
       totalDecisions: 0,
@@ -412,7 +412,7 @@ export class AutonomyController extends EventEmitter {
    */
   async getSystemMetrics() {
     const memUsage = process.memoryUsage();
-    
+
     return {
       cpu: this.getCPUUsage(),
       memory: (memUsage.heapUsed / memUsage.heapTotal) * 100,

@@ -54,8 +54,12 @@ export class ThreatIntel {
   isThreat(type, identity) {
     if (type === 'ip') {
       const block = this.memory.blockedIPs[identity];
-      if (block && block.expires > Date.now()) return true;
-      if (block) delete this.memory.blockedIPs[identity]; // Prune expired
+      if (block && block.expires > Date.now()) {
+        return true;
+      }
+      if (block) {
+        delete this.memory.blockedIPs[identity];
+      } // Prune expired
     } else if (type === 'pattern') {
       return this.memory.maliciousPatterns.some(p => new RegExp(p, 'i').test(identity));
     } else if (type === 'url') {

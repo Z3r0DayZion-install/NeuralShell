@@ -14,13 +14,13 @@ export class ProcessManager extends EventEmitter {
     this.backoffMultiplier = options.backoffMultiplier || 2;
     this.maxBackoffMs = options.maxBackoffMs || 30000;
     this.minBackoffMs = options.minBackoffMs || 1000;
-    
+
     this.restarts = [];
     this.currentBackoff = this.minBackoffMs;
     this.isShuttingDown = false;
     this.healthCheckInterval = null;
     this.memoryCheckInterval = null;
-    
+
     this.metrics = {
       totalRestarts: 0,
       crashRestarts: 0,
@@ -68,7 +68,7 @@ export class ProcessManager extends EventEmitter {
    */
   shouldRestart() {
     const now = Date.now();
-    
+
     // Remove old restart records
     this.restarts = this.restarts.filter(
       time => now - time < this.restartWindowMs
@@ -120,12 +120,12 @@ export class ProcessManager extends EventEmitter {
   async gracefulRestart(reason = 'manual') {
     console.log(`[ProcessManager] Graceful restart: ${reason}`);
     this.metrics.gracefulRestarts++;
-    
+
     this.emit('before_graceful_restart', { reason, timestamp: Date.now() });
-    
+
     // Allow time for cleanup
     await this.sleep(1000);
-    
+
     return this.restart(reason);
   }
 
@@ -182,11 +182,11 @@ export class ProcessManager extends EventEmitter {
     this.healthCheckInterval = setInterval(async () => {
       try {
         const isHealthy = await healthCheck();
-        
+
         if (!isHealthy) {
           console.warn('[ProcessManager] Health check failed');
           this.emit('unhealthy', { timestamp: Date.now() });
-          
+
           // Auto-restart if unhealthy for too long
           await this.gracefulRestart('health_check_failed');
         }
@@ -210,7 +210,7 @@ export class ProcessManager extends EventEmitter {
 
       if (heapUsedMB > thresholdMB) {
         console.warn(`[ProcessManager] Memory threshold exceeded: ${heapUsedMB.toFixed(2)}MB`);
-        this.emit('memory_threshold_exceeded', { 
+        this.emit('memory_threshold_exceeded', {
           heapUsedMB: heapUsedMB.toFixed(2),
           threshold: thresholdMB,
           timestamp: Date.now()
@@ -284,9 +284,15 @@ export class ProcessManager extends EventEmitter {
     const secs = Math.floor(seconds % 60);
 
     const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
+    if (days > 0) {
+      parts.push(`${days}d`);
+    }
+    if (hours > 0) {
+      parts.push(`${hours}h`);
+    }
+    if (minutes > 0) {
+      parts.push(`${minutes}m`);
+    }
     parts.push(`${secs}s`);
 
     return parts.join(' ');

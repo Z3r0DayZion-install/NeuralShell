@@ -1,9 +1,9 @@
 /**
  * Replay Engine for Decision Intelligence
- * 
+ *
  * Provides time-travel debugging capabilities by replaying historical decisions
  * in a sandbox environment. Supports replay speed control from 1x to 100x real-time.
- * 
+ *
  * Requirements: 3.1, 3.3, 3.5
  */
 
@@ -14,7 +14,7 @@ const tracer = trace.getTracer('neuralshell-replay-engine');
 
 /**
  * Replay Engine
- * 
+ *
  * Replays historical decisions in chronological order with configurable speed
  * and sandbox isolation. Supports state reconstruction for time-travel debugging.
  */
@@ -178,9 +178,9 @@ export class ReplayEngine {
       };
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.end();
 
@@ -254,7 +254,7 @@ export class ReplayEngine {
 
       for (const [eventId, originalEvent] of originalMap) {
         const replayedEvent = replayedMap.get(eventId);
-        
+
         const comparison = this.compareEvent(
           originalEvent,
           replayedEvent,
@@ -298,9 +298,9 @@ export class ReplayEngine {
       return report;
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.end();
 
@@ -460,12 +460,20 @@ export class ReplayEngine {
   }
 
   valuesMatch(value1, value2, tolerance) {
-    if (value1 === value2) return true;
-    if (value1 == null || value2 == null) return value1 === value2;
+    if (value1 === value2) {
+      return true;
+    }
+    if (value1 == null || value2 == null) {
+      return value1 === value2;
+    }
 
     if (typeof value1 === 'number' && typeof value2 === 'number') {
-      if (tolerance === 0) return value1 === value2;
-      if (value1 === 0) return value2 === 0;
+      if (tolerance === 0) {
+        return value1 === value2;
+      }
+      if (value1 === 0) {
+        return value2 === 0;
+      }
       const percentDiff = Math.abs((value2 - value1) / value1) * 100;
       return percentDiff <= tolerance;
     }
@@ -531,14 +539,14 @@ export class ReplayEngine {
         config
       );
 
-      let currentState = this.cloneState(startState);
+      const currentState = this.cloneState(startState);
       let lastSnapshotTimestamp = startTimestamp;
 
       for (const event of events) {
         this.applyEventToState(currentState, event);
         eventsProcessed++;
 
-        if (enableCaching && 
+        if (enableCaching &&
             event.timestamp - lastSnapshotTimestamp >= snapshotInterval * 1000) {
           this.cacheStateSnapshot(event.timestamp, currentState, eventsProcessed);
           lastSnapshotTimestamp = event.timestamp;
@@ -554,9 +562,9 @@ export class ReplayEngine {
       return currentState;
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.end();
 
@@ -720,9 +728,9 @@ export class ReplayEngine {
       span.end();
     } catch (error) {
       span.recordException(error);
-      span.setStatus({ 
-        code: SpanStatusCode.ERROR, 
-        message: error.message 
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
       });
       span.end();
       throw error;

@@ -13,11 +13,11 @@ export class SecretRotationManager extends EventEmitter {
     this.rotationIntervalDays = options.rotationIntervalDays || 90;
     this.warningDays = options.warningDays || 7;
     this.gracePeriodDays = options.gracePeriodDays || 1;
-    
+
     this.secrets = new Map();
     this.rotationSchedule = [];
     this.checkInterval = null;
-    
+
     this.metrics = {
       totalRotations: 0,
       successfulRotations: 0,
@@ -61,7 +61,7 @@ export class SecretRotationManager extends EventEmitter {
    */
   scheduleRotation(secret) {
     const warningTime = secret.expiresAt - (this.warningDays * 24 * 60 * 60 * 1000);
-    
+
     this.rotationSchedule.push({
       secretName: secret.name,
       warningTime,
@@ -133,7 +133,7 @@ export class SecretRotationManager extends EventEmitter {
    */
   async rotateSecret(name, newValue = null) {
     const secret = this.secrets.get(name);
-    
+
     if (!secret) {
       return { success: false, error: 'Secret not found' };
     }
@@ -224,7 +224,7 @@ export class SecretRotationManager extends EventEmitter {
    */
   getSecret(name, allowPrevious = true) {
     const secret = this.secrets.get(name);
-    
+
     if (!secret) {
       return null;
     }
@@ -242,7 +242,7 @@ export class SecretRotationManager extends EventEmitter {
    */
   validateSecret(name, value) {
     const secret = this.secrets.get(name);
-    
+
     if (!secret) {
       return false;
     }
@@ -277,7 +277,7 @@ export class SecretRotationManager extends EventEmitter {
       statuses.push({
         name,
         status: daysUntilExpiry <= 0 ? 'expired' :
-                daysUntilExpiry <= this.warningDays ? 'warning' : 'ok',
+          daysUntilExpiry <= this.warningDays ? 'warning' : 'ok',
         daysUntilExpiry: Math.ceil(daysUntilExpiry),
         daysSinceRotation: daysSinceRotation ? Math.floor(daysSinceRotation) : null,
         expiresAt: new Date(secret.expiresAt).toISOString(),

@@ -4,10 +4,10 @@ import { calculateQualityScore } from '../../qualityScoring.js';
 
 /**
  * Evolution Engine
- * 
+ *
  * Monitors system performance (Quality Scores) and iteratively evolves
  * the configuration (mutates parameters) to maximize global objective functions.
- * 
+ *
  * "Survival of the fittest configuration."
  */
 export class EvolutionEngine {
@@ -31,16 +31,18 @@ export class EvolutionEngine {
   }
 
   async evolve() {
-    if (this.isOptimizing) return;
+    if (this.isOptimizing) {
+      return;
+    }
     this.isOptimizing = true;
     this.generation++;
 
     try {
       console.log(`[EvolutionEngine] Generation ${this.generation}: Analyzing fitness...`);
-      
+
       // 1. Measure current performance (mocked fetch from metrics)
       const currentScore = this.measureFitness();
-      
+
       if (this.baselineScore === 0) {
         this.baselineScore = currentScore;
         console.log(`[EvolutionEngine] Baseline established: ${this.baselineScore}`);
@@ -66,7 +68,7 @@ export class EvolutionEngine {
   measureFitness() {
     // In reality, query Prometheus or local metrics state
     // Here we simulate a fluctuating score
-    return 70 + Math.random() * 30; 
+    return 70 + Math.random() * 30;
   }
 
   async mutate() {
@@ -83,40 +85,40 @@ export class EvolutionEngine {
 
     const gene = genes[Math.floor(Math.random() * genes.length)];
     const parts = gene.path.split('.');
-    
+
     // Navigate to property
     let target = config;
     for (let i = 0; i < parts.length - 1; i++) {
       target = target[parts[i]];
     }
     const prop = parts[parts.length - 1];
-    
+
     // Mutate
     const oldValue = target[prop];
     const direction = Math.random() > 0.5 ? 1 : -1;
     let newValue = oldValue + (gene.step * direction);
-    
+
     // Clamp
     newValue = Math.max(gene.min, Math.min(gene.max, newValue));
 
     if (newValue !== oldValue) {
       target[prop] = newValue;
-      
+
       // Save atomically
       const newYaml = yaml.stringify(config);
       const tempPath = `${this.configPath}.tmp`;
       fs.writeFileSync(tempPath, newYaml, 'utf8');
       fs.renameSync(tempPath, this.configPath);
-      
+
       console.log(`[EvolutionEngine] MUTATION APPLIED: ${gene.path} ${oldValue} -> ${newValue}`);
-      this.history.push({ 
-        gen: this.generation, 
+      this.history.push({
+        gen: this.generation,
         change: `${gene.path}: ${oldValue}->${newValue}`,
         timestamp: new Date()
       });
     }
   }
-  
+
   getHistory() {
     return this.history;
   }

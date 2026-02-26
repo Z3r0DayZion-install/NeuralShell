@@ -2,7 +2,7 @@
  * Plugin Manager (Refactored: Secure UtilityProcess Sandbox)
  * Runs plugins in isolated processes with ZERO Node APIs.
  */
-"use strict";
+'use strict';
 
 const { utilityProcess } = require('electron');
 const path = require('node:path');
@@ -17,21 +17,29 @@ const PLUGIN_POLICY = Object.freeze({
 
 async function loadPlugin(pluginPath) {
   const manifestPath = path.join(pluginPath, 'manifest.json');
-  if (!fs.existsSync(manifestPath)) throw new Error("ERR_PLUGIN_MANIFEST_MISSING");
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error('ERR_PLUGIN_MANIFEST_MISSING');
+  }
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  
+
   // 11.2 Verify Plugin Signature
   const sigValid = verifySignature(manifest, path.join(pluginPath, 'signature.sig'));
-  if (!sigValid) throw new Error("ERR_PLUGIN_SIGNATURE_INVALID");
+  if (!sigValid) {
+    throw new Error('ERR_PLUGIN_SIGNATURE_INVALID');
+  }
 
   // 11.3 Capability Negotiation
   for (const cap of manifest.declaredCapabilities) {
     const policy = PLUGIN_POLICY[cap];
-    if (!policy) throw new Error(`ERR_UNSUPPORTED_CAPABILITY: ${cap}`);
+    if (!policy) {
+      throw new Error(`ERR_UNSUPPORTED_CAPABILITY: ${cap}`);
+    }
     if (policy.approvalRequired) {
       const approved = await requestUserApproval(manifest.name, cap);
-      if (!approved) throw new Error("ERR_USER_DENIED_CAPABILITY");
+      if (!approved) {
+        throw new Error('ERR_USER_DENIED_CAPABILITY');
+      }
     }
   }
 

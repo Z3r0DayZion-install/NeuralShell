@@ -1,9 +1,9 @@
 /**
  * Metrics Store Client
- * 
+ *
  * Provides a client for ingesting and querying time-series metrics from TimescaleDB.
  * Supports 1-second granularity, batch ingestion, and automatic downsampling.
- * 
+ *
  * Requirements: 50.1, 50.2, 50.3, 50.4, 50.5
  */
 
@@ -99,7 +99,7 @@ export class MetricsStoreClient {
 
   /**
    * Ingest a single metric point
-   * 
+   *
    * @param {MetricPoint} point - Metric data point
    * @returns {Promise<void>}
    */
@@ -144,7 +144,7 @@ export class MetricsStoreClient {
 
   /**
    * Ingest multiple metric points in a batch
-   * 
+   *
    * @param {Array<MetricPoint>} points - Array of metric data points
    * @returns {Promise<void>}
    */
@@ -198,7 +198,7 @@ export class MetricsStoreClient {
 
   /**
    * Query metrics with time range and filters
-   * 
+   *
    * @param {Object} query - Query parameters
    * @param {string} query.metric_name - Metric name
    * @param {Date} query.start_time - Start time
@@ -226,7 +226,7 @@ export class MetricsStoreClient {
       let paramIndex = 4;
 
       let sql = '';
-      
+
       if (query.aggregation && query.interval) {
         // Aggregated query with time bucketing
         const aggFunc = this.getAggregationFunction(query.aggregation);
@@ -302,7 +302,7 @@ export class MetricsStoreClient {
 
   /**
    * Calculate percentiles for a metric
-   * 
+   *
    * @param {Object} query - Query parameters
    * @param {string} query.metric_name - Metric name
    * @param {Date} query.start_time - Start time
@@ -320,7 +320,7 @@ export class MetricsStoreClient {
 
     try {
       const percentiles = query.percentiles || [50, 95, 99];
-      const percentileSelects = percentiles.map(p => 
+      const percentileSelects = percentiles.map(p =>
         `percentile_cont(${p / 100}) WITHIN GROUP (ORDER BY value) AS p${p}`
       ).join(', ');
 

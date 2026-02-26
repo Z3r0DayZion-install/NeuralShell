@@ -7,8 +7,10 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
+COPY package-lock.json ./
+COPY scripts/verify-installation.js ./scripts/verify-installation.js
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --only=production && \
+    NEURALSHELL_CONTAINER=1 npm ci --omit=dev && \
     npm cache clean --force
 
 # Copy source code
@@ -35,10 +37,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/router.js ./
 COPY --from=builder --chown=nodejs:nodejs /app/production-server.js ./
 COPY --from=builder --chown=nodejs:nodejs /app/replayEngine.js ./
 COPY --from=builder --chown=nodejs:nodejs /app/qualityScoring.js ./
-COPY --from=builder --chown=nodejs:nodejs /app/queryAPI.js ./
 COPY --from=builder --chown=nodejs:nodejs /app/config.yaml.example ./config.yaml
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/src ./src
+COPY --from=builder --chown=nodejs:nodejs /app/public ./public
 
 # Switch to non-root user
 USER nodejs

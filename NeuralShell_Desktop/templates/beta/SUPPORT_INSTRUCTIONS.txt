@@ -1,0 +1,18 @@
+Support Bundle Export
+Version: {{VERSION}}
+Commit: {{COMMIT_SHA}}
+Build: {{BUILD_TIMESTAMP}}
+
+Command (from repo root):
+  npm --prefix NeuralShell_Desktop run support:bundle
+
+Then verify integrity:
+  npm --prefix NeuralShell_Desktop run support:verify
+
+Output folder:
+  NeuralShell_Desktop\release\support\support_bundle_<timestamp>.zip
+
+Rules
+- Do NOT include `license.json` in support bundles.
+- Do NOT include secrets in support bundles.
+

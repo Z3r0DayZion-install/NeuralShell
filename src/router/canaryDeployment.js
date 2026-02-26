@@ -15,16 +15,16 @@ export class CanaryDeployment extends EventEmitter {
     this.latencyThreshold = options.latencyThreshold || 2000;
     this.minRequests = options.minRequests || 100;
     this.evaluationPeriodMs = options.evaluationPeriodMs || 300000; // 5 minutes
-    
+
     this.canaryVersion = null;
     this.stableVersion = null;
     this.canaryMetrics = this.createMetrics();
     this.stableMetrics = this.createMetrics();
     this.evaluationTimer = null;
-    
+
     this.deploymentHistory = [];
     this.maxHistorySize = options.maxHistorySize || 100;
-    
+
     this.metrics = {
       totalDeployments: 0,
       successfulDeployments: 0,
@@ -96,7 +96,7 @@ export class CanaryDeployment extends EventEmitter {
 
     // Route based on canary percentage
     const isCanary = Math.random() * 100 < this.canaryPercent;
-    
+
     return {
       version: isCanary ? this.canaryVersion : this.stableVersion,
       isCanary
@@ -167,12 +167,12 @@ export class CanaryDeployment extends EventEmitter {
     // Check if we have enough data
     if (this.canaryMetrics.requests < this.minRequests) {
       console.log(`[Canary] Insufficient requests (${this.canaryMetrics.requests}/${this.minRequests}), extending evaluation`);
-      
+
       // Extend evaluation period
       this.evaluationTimer = setTimeout(() => {
         this.evaluateCanary();
       }, this.evaluationPeriodMs);
-      
+
       return;
     }
 
@@ -200,7 +200,7 @@ export class CanaryDeployment extends EventEmitter {
     const successRate = metrics.requests > 0
       ? metrics.successes / metrics.requests
       : 0;
-    
+
     const errorRate = metrics.requests > 0
       ? metrics.errors / metrics.requests
       : 0;
@@ -244,12 +244,12 @@ export class CanaryDeployment extends EventEmitter {
     if (stableStats.requests > 0) {
       // Error rate comparison
       if (canaryStats.errorRate > stableStats.errorRate * 1.5) {
-        reasons.push(`Error rate 50% higher than stable`);
+        reasons.push('Error rate 50% higher than stable');
       }
 
       // Latency comparison
       if (canaryStats.p95Latency > stableStats.p95Latency * 1.3) {
-        reasons.push(`P95 latency 30% higher than stable`);
+        reasons.push('P95 latency 30% higher than stable');
       }
     }
 

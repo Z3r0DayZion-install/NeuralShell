@@ -1,0 +1,8 @@
+
+[
+    { "id": "v1", "title": "The Global Economic Collapse is Here", "description": "Shocking leaks from the central bank reveal a terrifying plan.", "views": 1200000, "likes": 45000, "channel": "TruthSeeker", "platform": "YouTube" },
+    { "id": "v2", "title": "New Official Policy on Digital Assets", "description": "The government has released a federal policy update on certification.", "views": 50000, "likes": 1200, "channel": "GovMonitor", "platform": "YouTube" },
+    { "id": "v3", "title": "WAR: The Final Battle for the City", "description": "A massive attack is underway. Hostile forces have crossed the line.", "views": 850000, "likes": 32000, "channel": "ConflictZone", "platform": "Rumble" },
+    { "id": "v4", "title": "Unbelievable Betrayal Revealed by Insider", "description": "An urgent message about the conspiracy that will change everything.", "views": 300000, "likes": 15000, "channel": "ShadowOps", "platform": "Rumble" },
+    { "id": "v5", "title": "Standard Daily Market Update", "description": "Normal market fluctuations observed in today's trading session.", "views": 10000, "likes": 200, "channel": "EcoNews", "platform": "YouTube" }
+]

@@ -1,0 +1,98 @@
+{
+  "name": "neuralshell-desktop",
+  "version": "0.2.0",
+  "description": "NeuralShell Desktop - hardened local-first AI shell UI",
+  "author": "NeuralEmpire",
+  "license": "MIT",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "postinstall": "node scripts/verify-installation.js",
+    "icons:generate": "node bin/generate-icons.js",
+    "checksums": "node bin/generate-checksums.js",
+    "dev": "electron .",
+    "dev:headless": "set NS_HEADLESS=1&& electron .",
+    "start": "electron .",
+    "start:headless": "set NS_HEADLESS=1&& electron .",
+    "start:tear": "node tear-runtime.js",
+    "test": "npm run ast-gate && node tests/run-all.js",
+    "test:serial": "npm run ast-gate && node tests/run-all.js",
+    "lint:js": "npm run ast-gate && node --check main.js && node --check preload.js && node --check src/renderer.js",
+    "lint:tear": "npm run ast-gate && node --check tear-runtime.js && node --check src/core/tearCodec.js && node --check src/core/secretVaultFs.js && node --check src/runtime/createTearServer.js",
+    "ast-gate": "node ../tools/security/ast_gate.js",
+    "license:generate": "node scripts/generate_license.cjs",
+    "license:issue-batch": "node scripts/license_issue_batch.cjs",
+    "license:smoke:full": "node scripts/license_smoke.cjs full",
+    "license:smoke:missing": "node scripts/license_smoke.cjs missing",
+    "license:smoke:expired": "node scripts/license_smoke.cjs expired",
+    "license:smoke:tampered": "node scripts/license_smoke.cjs tampered",
+    "release:all": "npm run ast-gate && npm run lint:js && npm test && npm run build:win && npm run build:portable && npm run checksums",
+    "release:rc": "node scripts/release_rc.cjs",
+    "verify:release": "node scripts/verify_release.cjs",
+    "support:bundle": "node scripts/export_support_bundle.cjs",
+    "support:verify": "node scripts/support_verify.cjs",
+    "beta:preflight": "node scripts/beta_preflight.cjs",
+    "beta:pack": "node scripts/beta_pack.cjs",
+    "ship:beta": "node scripts/ship_beta.cjs",
+    "ship:checklist": "node scripts/ship_checklist.cjs",
+    "ship:public": "node scripts/ship_public.cjs",
+    "build:win": "npm run ast-gate && set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win nsis",
+    "build:portable": "npm run ast-gate && set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win portable",
+    "dist:tear": "npm run ast-gate && set \"npm_config_loglevel=silent\" && set \"npm_config_fund=false\" && set \"npm_config_audit=false\" && electron-builder --win nsis --publish never",
+    "build:tear:exe": "pkg tear-runtime.js --targets node18-win-x64 --public --no-bytecode --output dist/NeuralShell-TEAR-Runtime.exe"
+  },
+  "dependencies": {
+    "fastify": "^5.7.4",
+    "node-fetch": "^2.6.11"
+  },
+  "devDependencies": {
+    "electron": "^40.4.1",
+    "electron-builder": "24.13.3",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "scripts": [
+      "tear-runtime.js",
+      "src/**/*.js"
+    ],
+    "assets": [
+      "src/assets/*"
+    ]
+  },
+  "build": {
+    "appId": "com.neuralshell.desktop",
+    "productName": "NeuralShell TEAR",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "src/assets/app.ico",
+      "signingHashAlgorithms": [
+        "sha256"
+      ],
+      "timeStampServer": "http://timestamp.digicert.com",
+      "rfc3161TimeStampServer": "http://timestamp.digicert.com",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "NeuralShell-TEAR-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "NeuralShell-TEAR-Portable-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "src/assets/app.ico",
+      "uninstallerIcon": "src/assets/app.ico",
+      "artifactName": "NeuralShell-TEAR-Setup-${version}.${ext}"
+    }
+  }
+}

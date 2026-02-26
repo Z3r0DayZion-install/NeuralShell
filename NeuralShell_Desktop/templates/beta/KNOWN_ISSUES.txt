@@ -1,0 +1,8 @@
+Known Issues (Beta)
+Version: {{VERSION}}
+Commit: {{COMMIT_SHA}}
+Build: {{BUILD_TIMESTAMP}}
+
+- Offline-only (localhost).
+- If startup fails, export a support bundle and attach it to the ticket.
+

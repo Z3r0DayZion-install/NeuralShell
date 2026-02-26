@@ -1,0 +1,1 @@
+// Purged legacy file - moved to helpers.js and renderer.js architecture

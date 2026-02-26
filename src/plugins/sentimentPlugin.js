@@ -8,7 +8,7 @@ export class SentimentPlugin extends Plugin {
       description: 'Analyzes prompt sentiment and injects metadata',
       priority: 90
     });
-    
+
     // Simple word lists for demonstration
     this.negativeWords = new Set(['bad', 'angry', 'terrible', 'fail', 'hate', 'stupid', 'broken', 'slow']);
     this.positiveWords = new Set(['good', 'great', 'excellent', 'love', 'fast', 'amazing', 'thanks']);
@@ -16,7 +16,7 @@ export class SentimentPlugin extends Plugin {
 
   async initialize(router) {
     console.log('[SentimentPlugin] Initialized');
-    
+
     // Register middleware to intercept requests
     router.pluginManager.addMiddleware({
       name: 'sentiment-analysis',
@@ -35,21 +35,31 @@ export class SentimentPlugin extends Plugin {
   analyzeSentiment(context) {
     const messages = context.body.messages;
     const lastMessage = messages[messages.length - 1].content.toLowerCase();
-    
+
     let score = 0;
     const words = lastMessage.split(/\s+/);
-    
+
     for (const word of words) {
-      if (this.negativeWords.has(word)) score--;
-      if (this.positiveWords.has(word)) score++;
+      if (this.negativeWords.has(word)) {
+        score--;
+      }
+      if (this.positiveWords.has(word)) {
+        score++;
+      }
     }
 
     let sentiment = 'neutral';
-    if (score > 0) sentiment = 'positive';
-    if (score < 0) sentiment = 'negative';
+    if (score > 0) {
+      sentiment = 'positive';
+    }
+    if (score < 0) {
+      sentiment = 'negative';
+    }
 
     // Inject into headers for downstream processing/logging
-    if (!context.headers) context.headers = {};
+    if (!context.headers) {
+      context.headers = {};
+    }
     context.headers['x-sentiment'] = sentiment;
     context.headers['x-sentiment-score'] = String(score);
 

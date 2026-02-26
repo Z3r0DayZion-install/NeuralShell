@@ -26,12 +26,12 @@ export class AutoScaler extends EventEmitter {
     this.scaleDownThreshold = options.scaleDownThreshold || 30;
     this.cooldownMs = options.cooldownMs || 300000; // 5 minutes
     this.checkIntervalMs = options.checkIntervalMs || 30000; // 30 seconds
-    
+
     this.currentInstances = this.minInstances;
     this.lastScaleTime = 0;
     this.metricsHistory = [];
     this.maxHistorySize = 100;
-    
+
     this.metrics = {
       totalScaleUps: 0,
       totalScaleDowns: 0,
@@ -167,7 +167,7 @@ export class AutoScaler extends EventEmitter {
     // Simple linear regression on request rate
     const recent = this.metricsHistory.slice(-10);
     const requestRates = recent.map(m => m.requestRate || 0);
-    
+
     // Calculate trend
     const avgRate = requestRates.reduce((sum, r) => sum + r, 0) / requestRates.length;
     const lastRate = requestRates[requestRates.length - 1];
@@ -266,7 +266,7 @@ export class AutoScaler extends EventEmitter {
     } catch (error) {
       this.metrics.failedScales++;
       console.error('[AutoScaler] Scaling failed:', error);
-      
+
       this.emit('scale_error', {
         ...decision,
         error: error.message
@@ -410,7 +410,7 @@ export class AutoScaler extends EventEmitter {
     }
 
     const action = targetInstances > this.currentInstances ? 'scale_up' : 'scale_down';
-    
+
     return this.executeScaling({
       action,
       reason,

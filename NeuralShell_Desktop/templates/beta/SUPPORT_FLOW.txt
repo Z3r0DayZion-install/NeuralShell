@@ -1,0 +1,17 @@
+Support Flow (Offline)
+Version: {{VERSION}}
+Commit: {{COMMIT_SHA}}
+Build: {{BUILD_TIMESTAMP}}
+
+1) Export a support bundle:
+   npm --prefix NeuralShell_Desktop run support:bundle
+
+2) Verify support bundle integrity:
+   npm --prefix NeuralShell_Desktop run support:verify
+
+3) Attach the support bundle zip to the support ticket.
+
+Rules
+- Do NOT include `license.json` in support bundles.
+- Do NOT include secrets in support bundles.
+

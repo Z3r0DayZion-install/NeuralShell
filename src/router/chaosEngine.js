@@ -78,7 +78,7 @@ class ChaosEngine {
     // Support direct type injection for API
     let experiment;
     let experimentId;
-    
+
     if (typeof experimentIdOrType === 'string' && !this.experiments.has(experimentIdOrType)) {
       // It's a type (e.g. 'latency'), find or create a temp experiment
       const type = experimentIdOrType;

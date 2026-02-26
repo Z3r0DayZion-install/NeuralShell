@@ -1,9 +1,9 @@
 /**
  * Event Store Client Library
- * 
+ *
  * Provides a client for writing Decision_Events to Kafka with durability guarantees.
  * Uses UUID v7 for time-ordered event IDs and ensures sub-10ms persistence latency.
- * 
+ *
  * Requirements: 1.1, 1.2, 1.4, 49.2
  */
 
@@ -79,7 +79,7 @@ export class EventStoreClient {
     }
 
     const span = tracer.startSpan('eventStore.connect');
-    
+
     try {
       this.producer = this.kafka.producer({
         allowAutoTopicCreation: false,
@@ -95,7 +95,7 @@ export class EventStoreClient {
 
       await this.producer.connect();
       this.connected = true;
-      
+
       span.setStatus({ code: SpanStatusCode.OK });
       span.end();
     } catch (error) {
@@ -140,7 +140,7 @@ export class EventStoreClient {
 
   /**
    * Write a decision event to the Event Store
-   * 
+   *
    * @param {Object} event - Decision event data
    * @param {string} event.decision_type - Type of decision
    * @param {string} event.system_component - Component making the decision
@@ -233,18 +233,18 @@ export class EventStoreClient {
       return eventId;
     } catch (error) {
       this.metrics.writeErrors++;
-      
+
       span.recordException(error);
       span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
       span.end();
-      
+
       throw new Error(`Failed to write event: ${error.message}`);
     }
   }
 
   /**
    * Write multiple events in a batch
-   * 
+   *
    * @param {Array<Object>} events - Array of decision events
    * @returns {Promise<Array<string>>} Array of event IDs
    */
@@ -263,7 +263,7 @@ export class EventStoreClient {
       const messages = events.map(event => {
         const eventId = this.generateEventId();
         const timestamp = this.getCurrentTimestamp();
-        
+
         const activeSpan = trace.getSpan(context.active());
         const traceId = activeSpan?.spanContext().traceId || '00000000000000000000000000000000';
         const spanId = activeSpan?.spanContext().spanId || '0000000000000000';
@@ -302,20 +302,20 @@ export class EventStoreClient {
       });
 
       const eventIds = messages.map(m => m.headers.event_id);
-      
+
       this.metrics.eventsWritten += events.length;
-      
+
       span.setStatus({ code: SpanStatusCode.OK });
       span.end();
 
       return eventIds;
     } catch (error) {
       this.metrics.writeErrors += events.length;
-      
+
       span.recordException(error);
       span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
       span.end();
-      
+
       throw new Error(`Failed to write batch: ${error.message}`);
     }
   }
@@ -327,7 +327,7 @@ export class EventStoreClient {
    */
   validateEvent(event) {
     const required = ['event_id', 'timestamp', 'decision_type', 'system_component', 'context', 'action_taken', 'outcome'];
-    
+
     for (const field of required) {
       if (!event[field]) {
         throw new Error(`Missing required field: ${field}`);
@@ -356,8 +356,8 @@ export class EventStoreClient {
   getMetrics() {
     return {
       ...this.metrics,
-      avgLatency: this.metrics.eventsWritten > 0 
-        ? this.metrics.totalLatency / this.metrics.eventsWritten 
+      avgLatency: this.metrics.eventsWritten > 0
+        ? this.metrics.totalLatency / this.metrics.eventsWritten
         : 0,
       connected: this.connected
     };
@@ -378,7 +378,7 @@ export class EventStoreClient {
       await admin.connect();
       await admin.listTopics();
       await admin.disconnect();
-      
+
       return true;
     } catch (error) {
       console.error('Event Store health check failed:', error);

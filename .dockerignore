@@ -2,7 +2,6 @@
 node_modules/
 npm-debug.log
 yarn-error.log
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -107,3 +106,15 @@ quickstart.sh
 *CERTIFICATE*.md
 *INDEX*.md
 *CHECKLIST*.md
+
+# Local data (exclude from image context)
+my_digital_clone_data.jsonl
+*.jsonl
+evidence/
+proof/
+out/
+deployments/
+.locks/
+
+# Rust
+target/

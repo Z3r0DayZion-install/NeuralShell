@@ -21,11 +21,11 @@ export class AnomalyDetector extends EventEmitter {
     this.windowSize = options.windowSize || 100;
     this.stdDevThreshold = options.stdDevThreshold || 3;
     this.minSamples = options.minSamples || 30;
-    
+
     this.metrics = new Map();
     this.anomalies = [];
     this.maxAnomalyHistory = options.maxAnomalyHistory || 1000;
-    
+
     this.detectionStats = {
       totalChecks: 0,
       anomaliesDetected: 0,
@@ -87,7 +87,7 @@ export class AnomalyDetector extends EventEmitter {
 
     // Calculate standard deviation
     const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / n;
-    
+
     // SECURITY: Prevent zero-division and erratic triggers on small variance
     // We add a tiny epsilon or enforce a floor for stdDev
     const stdDev = Math.sqrt(Math.max(variance, 0.000001));
@@ -126,14 +126,14 @@ export class AnomalyDetector extends EventEmitter {
     }
 
     const { mean, stdDev } = metric.stats;
-    
+
     // Z-score method
     const zScore = stdDev > 0 ? Math.abs((value - mean) / stdDev) : 0;
     const isAnomaly = zScore > this.stdDevThreshold;
 
     if (isAnomaly) {
       this.detectionStats.anomaliesDetected++;
-      
+
       const anomaly = {
         metric: metricName,
         value,
@@ -248,7 +248,7 @@ export class AnomalyDetector extends EventEmitter {
    */
   getAllMetrics() {
     const result = {};
-    
+
     for (const [name, metric] of this.metrics) {
       result[name] = {
         stats: metric.stats,
@@ -380,7 +380,7 @@ export class EMAnomalyDetector extends AnomalyDetector {
 
   checkAnomaly(metricName, value, metadata) {
     const ema = this.emaValues.get(metricName);
-    
+
     if (ema === undefined) {
       return false;
     }
@@ -391,7 +391,7 @@ export class EMAnomalyDetector extends AnomalyDetector {
 
     if (deviation > threshold) {
       this.detectionStats.anomaliesDetected++;
-      
+
       const anomaly = {
         metric: metricName,
         value,

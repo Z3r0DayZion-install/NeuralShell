@@ -2,7 +2,7 @@
  * Secure Update Service
  * Handles signed update verification and atomic filesystem swaps.
  */
-"use strict";
+'use strict';
 
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -20,22 +20,26 @@ async function verifyAndPrepareUpdate(updateDir, metadata) {
   // 12.1 Signature Verification
   const data = JSON.stringify(metadata.payload);
   const sig = Buffer.from(metadata.signature, 'hex');
-  
+
   const isValid = crypto.verify(
-    "sha256",
+    'sha256',
     Buffer.from(data),
     { key: UPDATE_PUB_KEY, padding: crypto.constants.RSA_PKCS1_PSS_PADDING },
     sig
   );
 
-  if (!isValid) throw new Error("ERR_UPDATE_SIGNATURE_INVALID");
+  if (!isValid) {
+    throw new Error('ERR_UPDATE_SIGNATURE_INVALID');
+  }
 
   // Verify file hashes
   for (const file of metadata.payload.files) {
     const filePath = path.join(updateDir, file.path);
     const content = fs.readFileSync(filePath);
     const hash = crypto.createHash('sha256').update(content).digest('hex');
-    if (hash !== file.hash) throw new Error(`ERR_UPDATE_HASH_MISMATCH: ${file.path}`);
+    if (hash !== file.hash) {
+      throw new Error(`ERR_UPDATE_HASH_MISMATCH: ${file.path}`);
+    }
   }
 
   return true;
@@ -47,16 +51,18 @@ function applyUpdateAtomic() {
 
   try {
     // 12.2 Staged Apply + Atomic Swap
-    if (fs.existsSync(ROLLBACK_DIR)) fs.rmSync(ROLLBACK_DIR, { recursive: true });
+    if (fs.existsSync(ROLLBACK_DIR)) {
+      fs.rmSync(ROLLBACK_DIR, { recursive: true });
+    }
     fs.mkdirSync(ROLLBACK_DIR);
 
     // Move current to rollback
     fs.renameSync(currentAsar, path.join(ROLLBACK_DIR, 'app.asar'));
-    
+
     // Move staged to active
     fs.renameSync(stagedAsar, currentAsar);
-    
-    console.log("[Updater] Update applied successfully. Restart required.");
+
+    console.log('[Updater] Update applied successfully. Restart required.');
     return true;
   } catch (e) {
     // Attempt rollback

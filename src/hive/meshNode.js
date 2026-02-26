@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 
 /**
  * MeshNode (The P2P Cortex)
- * 
+ *
  * Enables decentralized communication between NeuralShell instances.
  * Features:
  * - Peer Discovery (via Seed Nodes or manual peering)
@@ -24,7 +24,7 @@ export class MeshNode extends EventEmitter {
   async start() {
     // 1. Start Server
     this.wss = new WebSocketServer({ port: this.port });
-    
+
     this.wss.on('connection', (ws) => {
       this.handleConnection(ws);
     });
@@ -52,7 +52,9 @@ export class MeshNode extends EventEmitter {
       try {
         const msg = JSON.parse(data);
         this.handleMessage(ws, msg);
-      } catch (e) { console.error('[Hive] Parse error', e); }
+      } catch (e) {
+        console.error('[Hive] Parse error', e);
+      }
     });
 
     ws.on('close', () => {
@@ -73,9 +75,11 @@ export class MeshNode extends EventEmitter {
       console.log(`[Hive] Peered with ${msg.id.slice(0,8)}`);
       this.emit('peer:connected', msg.id);
     } else if (msg.type === 'gossip') {
-      if (this.seenMessages.has(msg.mid)) return; // Ignore dupes
+      if (this.seenMessages.has(msg.mid)) {
+        return;
+      } // Ignore dupes
       this.seenMessages.add(msg.mid);
-      
+
       this.emit('gossip', msg.payload);
       this.broadcast(msg.payload, msg.mid); // Re-broadcast (Gossip)
     }
@@ -84,7 +88,7 @@ export class MeshNode extends EventEmitter {
   broadcast(payload, mid = null) {
     const messageId = mid || crypto.randomUUID();
     this.seenMessages.add(messageId);
-    
+
     const packet = JSON.stringify({
       type: 'gossip',
       mid: messageId,

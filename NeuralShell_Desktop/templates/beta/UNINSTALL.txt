@@ -1,0 +1,9 @@
+Uninstall (Windows)
+Version: {{VERSION}}
+Commit: {{COMMIT_SHA}}
+Build: {{BUILD_TIMESTAMP}}
+
+1) Close NeuralShell-TEAR-Runtime.exe.
+2) Delete this beta pack folder.
+3) Optional: delete runtime state directory if you created one (NS_RUNTIME_DIR).
+

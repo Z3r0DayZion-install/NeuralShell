@@ -1,12 +1,12 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
+import crypto from 'node:crypto';
 import Fastify from 'fastify';
 import fastifyWebsocket from '@fastify/websocket';
-import helmet from 'helmet';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import fastifyStatic from '@fastify/static';
-import { loadConfig, getConfigSchema } from './src/router/config.js';
+import { loadConfig } from './src/router/config.js';
 import { RouterCore } from './src/router/routerCore.js';
 import { RedisBackend, RedisRateLimiter, RedisCache } from './src/router/redis.js';
 import { PrometheusExporter } from './src/router/prometheus.js';
@@ -37,6 +37,28 @@ import { MeshNode } from './src/hive/meshNode.js';
 import { GlobalLedger } from './src/economy/ledger.js';
 import { GlobalMarketplace } from './src/economy/marketplace.js';
 import { GlobalToolForge } from './src/forge/toolForge.js';
+
+function isLoopbackAddress(addr) {
+  const ip = String(addr || '');
+  return ip === '127.0.0.1' || ip === '::1' || ip.startsWith('127.') || ip.startsWith('::ffff:127.');
+}
+
+function constantTimeEqual(a, b) {
+  const aBuf = Buffer.from(String(a));
+  const bBuf = Buffer.from(String(b));
+  if (aBuf.length !== bBuf.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
+function normalizeRemoteAddress(addr) {
+  const ip = String(addr || '').trim().toLowerCase();
+  if (ip.startsWith('::ffff:')) {
+    return ip.slice('::ffff:'.length);
+  }
+  return ip;
+}
 
 export class NeuralShellServer {
   constructor(options = {}) {
@@ -69,6 +91,9 @@ export class NeuralShellServer {
     this.securityLogger = null;
     this.autonomyController = null;
     this.replayEngine = null;
+    this._security = null;
+    this._warnedOpenAdmin = false;
+    this._warnedOpenPrompt = false;
   }
 
   async initialize(configPath = null) {
@@ -99,10 +124,95 @@ export class NeuralShellServer {
       console.warn('Configuration warnings:', validation.warnings);
     }
 
+    const configuredAdminToken =
+      String(this.config.security?.adminToken || '').trim() || String(process.env.ADMIN_TOKEN || '').trim();
+    const configuredPromptToken =
+      String(this.config.security?.promptToken || '').trim() || String(process.env.PROMPT_TOKEN || '').trim();
+    const bindHost = String(this.config.server?.host || '0.0.0.0');
+    const bindsToPublic = !isLoopbackAddress(bindHost) && bindHost !== 'localhost';
+
+    if (bindsToPublic && !configuredPromptToken) {
+      throw new Error(
+        `Refusing to start: server.host=${bindHost} is not loopback but security.promptToken is empty. Set PROMPT_TOKEN/ security.promptToken.`
+      );
+    }
+
+    const adminToken = configuredAdminToken || crypto.randomBytes(24).toString('hex');
+    if (!configuredAdminToken) {
+      console.warn(`[Security] security.adminToken is empty; generated ephemeral ADMIN token for this session: ${adminToken}`);
+    }
+
+    this._security = {
+      adminToken,
+      promptToken: configuredPromptToken,
+      bindsToPublic,
+      ipAllowlist: Array.isArray(this.config.security?.ipAllowlist) ? this.config.security.ipAllowlist : [],
+      ipDenylist: Array.isArray(this.config.security?.ipDenylist) ? this.config.security.ipDenylist : []
+    };
+
     this.app = Fastify({
       logger: this.config.logging?.level !== 'error',
-      trustProxy: true,
+      trustProxy: this.config.server?.trustProxy === true || process.env.TRUST_PROXY === '1',
       bodyLimit: this.config.server?.requestBodyLimitBytes || 262144
+    });
+
+    this.app.addHook('onRequest', async (request, reply) => {
+      const remote = normalizeRemoteAddress(
+        request?.ip || request?.socket?.remoteAddress || request?.raw?.socket?.remoteAddress || ''
+      );
+
+      const deny = (reason) => {
+        reply.status(403);
+        reply.send({ error: 'FORBIDDEN', message: reason });
+        return reply;
+      };
+
+      if (this._security.ipDenylist.includes(remote)) {
+        return deny('IP denied');
+      }
+      if (this._security.ipAllowlist.length > 0 && !this._security.ipAllowlist.includes(remote)) {
+        return deny('IP not allowlisted');
+      }
+
+      return null;
+    });
+
+    this.app.addHook('preHandler', async (request, reply) => {
+      const authMode = request?.routeOptions?.config?.auth || request?.context?.config?.auth;
+      if (!authMode) {
+        return null;
+      }
+
+      const deny = (code, error, message) => {
+        reply.status(code);
+        reply.send({ error, message });
+        return reply;
+      };
+
+      if (authMode === 'admin') {
+        const token = String(request.headers['x-admin-token'] || '').trim();
+        if (!token || !constantTimeEqual(token, this._security.adminToken)) {
+          return deny(401, 'ADMIN_AUTH_FAILED', 'Unauthorized');
+        }
+        return null;
+      }
+
+      if (authMode === 'prompt') {
+        if (!this._security.promptToken) {
+          if (!this._warnedOpenPrompt) {
+            this._warnedOpenPrompt = true;
+            console.warn('[Security] security.promptToken is empty; /prompt is running unauthenticated (loopback-only recommended).');
+          }
+          return null;
+        }
+        const token = String(request.headers['x-prompt-token'] || '').trim();
+        if (!token || !constantTimeEqual(token, this._security.promptToken)) {
+          return deny(401, 'PROMPT_AUTH_FAILED', 'Unauthorized');
+        }
+        return null;
+      }
+
+      return deny(500, 'AUTH_MISCONFIG', `Unknown auth mode: ${String(authMode)}`);
     });
 
     this.app.addHook('onResponse', async (_request, reply) => {
@@ -114,8 +224,10 @@ export class NeuralShellServer {
 
     this.app.register(fastifyStatic, {
       root: path.join(process.cwd(), 'public'),
-      prefix: '/public/',
+      prefix: '/public/'
     });
+
+    await this.app.register(fastifyWebsocket);
 
     // Initialize security logger
     this.securityLogger = new SecurityLogger({
@@ -133,7 +245,7 @@ export class NeuralShellServer {
         reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
         reply.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-        
+
         // Remove server header
         reply.removeHeader('X-Powered-By');
         reply.removeHeader('Server');
@@ -175,10 +287,10 @@ export class NeuralShellServer {
         console.warn('[Server] Hive init failed:', err.message);
       }
     }
-    
+
     // Economy API
     this.app.get('/api/economy/ledger', async () => {
-      return { 
+      return {
         balances: Object.fromEntries(GlobalLedger.balances),
         history: GlobalLedger.getHistory().slice(-50)
       };
@@ -193,8 +305,10 @@ export class NeuralShellServer {
       try {
         // For demo, if buyerId is missing, we treat it as 'admin-user' with infinite money
         const buyer = buyerId || 'admin-user';
-        if (!GlobalLedger.balances.has(buyer)) GlobalLedger.createWallet(buyer, 99999);
-        
+        if (!GlobalLedger.balances.has(buyer)) {
+          GlobalLedger.createWallet(buyer, 99999);
+        }
+
         const asset = GlobalMarketplace.buyAsset(buyer, listingId);
         return { success: true, asset };
       } catch (err) {
@@ -254,7 +368,7 @@ export class NeuralShellServer {
       return { success: true, locked: process.env.QUINE_CODE_LOCK === '1' };
     });
 
-    this.app.post('/admin/security/lockdown', { config: { auth: 'admin' } }, async (req) => {
+    this.app.post('/admin/security/lockdown', { config: { auth: 'admin' } }, async (_req) => {
       this.isHoneyPot = true;
       console.error('[Iron Sentry] 🛡️ GLOBAL LOCKDOWN ACTIVATED. ENTERING HONEY POT MODE.');
       return { success: true, mode: 'HONEY_POT' };
@@ -267,32 +381,40 @@ export class NeuralShellServer {
 
     this.app.post('/api/swarm/tools/invent', async (req, reply) => {
       const { name, spec } = req.body;
-      if (!this.orchestrator) return reply.code(503).send({ error: 'Orchestrator offline' });
-      
+      if (!this.orchestrator) {
+        return reply.code(503).send({ error: 'Orchestrator offline' });
+      }
+
       // Send task to coder
       await this.orchestrator.bus.pushTask('coder', {
         type: 'invent_tool',
         data: { name, spec }
       });
-      
+
       this.broadcast('cognitive:event', { agent: 'Orchestrator', content: `Forging new tool: ${name}` });
       return { success: true, message: `Tool invention task for "${name}" sent to Swarm.` };
     });
 
-    // Genesis Apps API
-    this.app.get('/api/genesis/apps', async () => {
-      if (this.orchestrator && this.orchestrator.genesis) {
-        return { apps: this.orchestrator.genesis.containerManager.listActive() };
-      }
-      return { apps: [] };
-    });
+    // Genesis Apps API (provided by GenesisPlugin when plugins are enabled)
+    if (!this.genesisPlugin) {
+      this.app.get('/api/genesis/apps', async () => {
+        if (this.orchestrator && this.orchestrator.genesis) {
+          return { apps: this.orchestrator.genesis.containerManager.listActive() };
+        }
+        return { apps: [] };
+      });
+    }
   }
 
   broadcast(type, payload) {
-    if (!this.app.websocketServer) return;
+    if (!this.app.websocketServer) {
+      return;
+    }
     const msg = JSON.stringify({ type, payload });
     for (const client of this.app.websocketServer.clients) {
-      if (client.readyState === 1) client.send(msg);
+      if (client.readyState === 1) {
+        client.send(msg);
+      }
     }
   }
 
@@ -323,7 +445,7 @@ export class NeuralShellServer {
           this.broadcast('cognitive:event', event);
         });
         await this.orchestrator.start();
-        
+
         // Launch local agents (for single-container deployment)
         await bootstrapSwarm(this.router);
         console.log('[Server] Swarm Intelligence active');
@@ -337,7 +459,7 @@ export class NeuralShellServer {
     // Only initialize if configured or needed
     if (this.config.features?.replay !== false) {
       try {
-        const queryAPI = new DecisionQueryAPI(); 
+        const queryAPI = new DecisionQueryAPI();
         this.replayEngine = new ReplayEngine(queryAPI);
         console.log('[Server] ReplayEngine initialized');
       } catch (err) {
@@ -428,7 +550,9 @@ export class NeuralShellServer {
         return;
       } catch (err) {
         console.warn(`[Bootloader] ${name} failed (Attempt ${i + 1}/${retries}): ${err.message}`);
-        if (i === retries - 1) throw err;
+        if (i === retries - 1) {
+          throw err;
+        }
         await new Promise(r => setTimeout(r, delay));
       }
     }
@@ -440,7 +564,7 @@ export class NeuralShellServer {
         url: this.config.redis.url || process.env.REDIS_URL,
         prefix: this.config.redis.prefix || 'neuralshell:'
       });
-      
+
       await this.retryOperation(() => this.redis.connect(), 'Redis Backend');
 
       this.rateLimiter = new RedisRateLimiter(this.redis, {
@@ -500,18 +624,9 @@ export class NeuralShellServer {
         const proofEnabled = process.env.PROOF_MODE === '1' || process.env.NODE_ENV === 'test';
         if (proofEnabled) {
           const remote = request?.socket?.remoteAddress || request?.raw?.socket?.remoteAddress || '';
-          const isLoopbackAddress = (addr) => {
-            const ip = String(addr || '');
-            return (
-              ip === '127.0.0.1' ||
-              ip === '::1' ||
-              ip.startsWith('127.') ||
-              ip.startsWith('::ffff:127.')
-            );
-          };
           if (isLoopbackAddress(remote)) {
             // Intentionally invalid/insufficient metrics payload.
-            return `# PROOF_FORCE_METRICS_FAIL=1\n# metrics intentionally corrupted\ninvalid_metric_payload 1\n`;
+            return '# PROOF_FORCE_METRICS_FAIL=1\n# metrics intentionally corrupted\ninvalid_metric_payload 1\n';
           }
         }
       }
@@ -582,7 +697,7 @@ export class NeuralShellServer {
       console.log('[Server] Plugins disabled');
       return;
     }
-    
+
     // Register built-in plugins
     const initPlugin = async (PluginClass, label) => {
       try {
@@ -599,7 +714,7 @@ export class NeuralShellServer {
 
     await initPlugin(SentimentPlugin, 'SentimentPlugin');
     const ragPlugin = await initPlugin(RagPlugin, 'RagPlugin');
-    await initPlugin(GenesisPlugin, 'GenesisPlugin');
+    this.genesisPlugin = await initPlugin(GenesisPlugin, 'GenesisPlugin');
 
     if (ragPlugin && ragPlugin.enabled) {
       this.graphMapper = new GraphMapper(ragPlugin.memory);
@@ -618,7 +733,7 @@ export class NeuralShellServer {
     if (this.config.endpoints) {
       for (const [modeName, modeConfig] of Object.entries(this.config.modes || {})) {
         if (modeConfig.endpoints) {
-          const modeEndpoints = this.config.endpoints.filter(ep => 
+          const modeEndpoints = this.config.endpoints.filter(ep =>
             modeConfig.endpoints.includes(ep.name)
           );
           this.modeRouter.setEndpointsForMode(modeName, modeEndpoints);
@@ -696,7 +811,6 @@ export class NeuralShellServer {
     }
   }
 
-
   async registerRoutes() {
     const proofRoutesEnabled = process.env.PROOF_MODE === '1' || process.env.NODE_ENV === 'test';
     const proofToken = proofRoutesEnabled ? String(process.env.NS_PROOF_TOKEN || '') : '';
@@ -714,16 +828,6 @@ export class NeuralShellServer {
       }
       return null;
     }
-    const isLoopbackAddress = (addr) => {
-      const ip = String(addr || '');
-      return (
-        ip === '127.0.0.1' ||
-        ip === '::1' ||
-        ip.startsWith('127.') ||
-        ip.startsWith('::ffff:127.')
-      );
-    };
-
     // 1. Register Swagger
     await this.app.register(fastifySwagger, {
       openapi: {
@@ -792,7 +896,9 @@ export class NeuralShellServer {
     if (proofRoutesEnabled) {
       this.app.post('/__proof/ollama', async (request, reply) => {
         const auth = assertProofAuthOrThrow(request, reply);
-        if (auth) return auth;
+        if (auth) {
+          return auth;
+        }
         const body = request.body || {};
         if (!body || typeof body !== 'object') {
           reply.status(400);
@@ -804,7 +910,9 @@ export class NeuralShellServer {
 
       this.app.post('/__proof/shutdown', async (request, reply) => {
         const auth = assertProofAuthOrThrow(request, reply);
-        if (auth) return auth;
+        if (auth) {
+          return auth;
+        }
 
         reply.status(200);
         reply.send({ ok: true });
@@ -835,9 +943,24 @@ export class NeuralShellServer {
       });
     }
 
-    this.app.get('/endpoints', async () => ({
-      endpoints: this.router?.endpoints ? Array.from(this.router.endpoints.values()) : []
-    }));
+    this.app.get('/endpoints', { config: { auth: 'admin' } }, async () => {
+      const exposeUrls =
+        process.env.EXPOSE_ENDPOINT_URLS === '1' || this.config.security?.exposeEndpointUrls === true;
+      const endpoints = this.router?.endpoints
+        ? Array.from(this.router.endpoints.values()).map((ep) => ({
+          name: ep.name,
+          url: exposeUrls ? ep.url : undefined,
+          model: ep.model,
+          enabled: ep.enabled,
+          weight: ep.weight,
+          timeoutMs: ep.timeoutMs,
+          costPer1kInput: ep.costPer1kInput,
+          costPer1kOutput: ep.costPer1kOutput
+        }))
+        : [];
+
+      return { endpoints };
+    });
 
     this.app.post('/endpoints/reset', { config: { auth: 'admin' } }, async () => {
       this.router?.resetEndpoints();
@@ -852,12 +975,12 @@ export class NeuralShellServer {
     this.app.post('/prompt', { config: { auth: 'prompt' } }, async (request, reply) => {
       if (this.isHoneyPot) {
         return {
-          choices: [{ message: { role: 'assistant', content: "System stalled. Frequency pollution detected. Signal Law enforcement active." } }],
+          choices: [{ message: { role: 'assistant', content: 'System stalled. Frequency pollution detected. Signal Law enforcement active.' } }],
           _meta: { status: 'DECOY' }
         };
       }
       const clientKey = request.headers['x-prompt-token'] || request.ip;
-      
+
       if (this.config.rateLimit?.enabled && this.rateLimiter) {
         const allowed = await this.rateLimiter.isAllowed(`prompt:${clientKey}`);
         if (!allowed.allowed) {
@@ -914,7 +1037,7 @@ export class NeuralShellServer {
             type: 'web_search',
             data: { query: lastUserMessage }
           });
-          // For now, we continue to normal prompt after tasking researcher, 
+          // For now, we continue to normal prompt after tasking researcher,
           // or we could block and wait. For speed, we just signal the researcher.
         }
       }
@@ -930,7 +1053,7 @@ export class NeuralShellServer {
       }
 
       const activeMode = mode || this.modeRouter?.defaultMode || 'balanced';
-      
+
       // Intercept Swarm Mode
       if (activeMode === 'swarm' && this.orchestrator) {
         const prompt = messages.map(m => m.content).join('\n');
@@ -984,7 +1107,7 @@ export class NeuralShellServer {
       }))
     }));
 
-    this.app.post('/graphql', async (req, reply) => {
+    this.app.post('/graphql', { config: { auth: 'admin' } }, async (req, reply) => {
       const graphql = createGraphQLRouter({
         health: () => ({ ok: true }),
         metrics: () => this.router?.getMetrics() || {},
@@ -994,7 +1117,7 @@ export class NeuralShellServer {
       return graphql.handle(req, reply);
     });
 
-    this.app.get('/graphql/schema', async () => ({
+    this.app.get('/graphql/schema', { config: { auth: 'admin' } }, async () => ({
       schema: createGraphQLRouter({}).getSchemaSDL()
     }));
 
@@ -1002,7 +1125,7 @@ export class NeuralShellServer {
       tenants: this.tenantManager?.listTenants() || []
     }));
 
-    this.app.get('/admin/costs', { config: { auth: 'admin' } }, async () => 
+    this.app.get('/admin/costs', { config: { auth: 'admin' } }, async () =>
       this.costTracker?.getAllTenantsSummary() || []
     );
 
@@ -1031,7 +1154,7 @@ export class NeuralShellServer {
     // Autonomy endpoints
     this.app.get('/metrics/autonomy', async (request, reply) => {
       reply.type('text/plain');
-      
+
       if (!this.autonomyController) {
         // Return empty Prometheus metrics when autonomy is disabled
         return `# HELP autonomy_enabled Whether autonomous systems are enabled
@@ -1048,7 +1171,7 @@ autonomy_modules_total 0
       return prometheusMetrics;
     });
 
-    this.app.get('/admin/autonomy', async (request, reply) => {
+    this.app.get('/admin/autonomy', { config: { auth: 'admin' } }, async (request, reply) => {
       if (!this.autonomyController) {
         reply.status(503);
         return { error: 'AUTONOMY_NOT_ENABLED', message: 'Autonomous systems not enabled' };
@@ -1056,17 +1179,12 @@ autonomy_modules_total 0
 
       const status = this.autonomyController.getStatus();
       const metrics = this.autonomyController.getMetrics();
-      
+
       return {
         ...status,
         metrics,
         uptime: process.uptime()
       };
-    });
-
-    this.app.post('/admin/autonomy/toggle', { config: { auth: 'admin' } }, async (request, reply) => {
-      // ... existing code ...
-      // (This replacement target is tricky, let me target the end of registerRoutes instead)
     });
 
     // Replay Engine Endpoints
@@ -1075,19 +1193,19 @@ autonomy_modules_total 0
         reply.status(503);
         return { error: 'REPLAY_NOT_AVAILABLE', message: 'Replay Engine not initialized' };
       }
-      
+
       const config = request.body || {};
       if (!config.timeRange) {
         reply.status(400);
         return { error: 'INVALID_CONFIG', message: 'timeRange is required' };
       }
-      
+
       try {
         // Start replay asynchronously
         this.replayEngine.replayDecisions(config).catch(err => {
           console.error('Replay failed:', err);
         });
-        
+
         return { success: true, message: 'Replay started', config };
       } catch (err) {
         reply.status(500);
@@ -1100,7 +1218,7 @@ autonomy_modules_total 0
         reply.status(503);
         return { error: 'REPLAY_NOT_AVAILABLE', message: 'Replay Engine not initialized' };
       }
-      
+
       try {
         this.replayEngine.stopReplay();
         return { success: true, message: 'Replay stop requested' };
@@ -1111,7 +1229,7 @@ autonomy_modules_total 0
     });
 
     this.app.get('/admin/replay/status', { config: { auth: 'admin' } }, async (request, reply) => {
-       if (!this.replayEngine) {
+      if (!this.replayEngine) {
         reply.status(503);
         return { error: 'REPLAY_NOT_AVAILABLE', message: 'Replay Engine not initialized' };
       }
@@ -1129,7 +1247,7 @@ autonomy_modules_total 0
         reply.status(400);
         return { error: 'INVALID_REQUEST', message: 'Type is required' };
       }
-      
+
       try {
         const result = await this.chaosEngine.inject(type);
         return { success: true, injection: result };
@@ -1141,7 +1259,7 @@ autonomy_modules_total 0
 
     this.app.register(async (ws) => {
       this.app.websocketServer = ws.websocketServer;
-      ws.get('/ws', { websocket: true }, (connection, req) => {
+      ws.get('/ws', { websocket: true }, (connection, _req) => {
         connection.socket.on('message', async (data) => {
           try {
             const msg = JSON.parse(data.toString());
@@ -1176,7 +1294,7 @@ autonomy_modules_total 0
         return reply;
       }
 
-      const result = await this.router.callEndpoint(endpoint, payload, {
+      await this.router.callEndpoint(endpoint, payload, {
         stream: true,
         onChunk: (chunk) => {
           const data = JSON.stringify({ choices: [{ delta: { content: chunk } }] });
@@ -1194,7 +1312,7 @@ autonomy_modules_total 0
   }
 
   async start() {
-    const configuredPort = this.config.server?.port ?? process.env.PORT ?? 3000;
+    const configuredPort = process.env.PORT ?? this.config.server?.port ?? 3000;
     const port = Number(configuredPort);
     if (!Number.isFinite(port) || port < 0 || port > 65535) {
       throw new Error(`Invalid port: ${configuredPort}`);
@@ -1227,57 +1345,69 @@ autonomy_modules_total 0
     if (!didListen) {
       throw new Error('Server failed to listen (unknown error)');
     }
-    
+
     // Get the actual server from Fastify
     this.server = this.app.server;
-    
+
     const addr = this.server && typeof this.server.address === 'function' ? this.server.address() : null;
     const actualPort = addr && typeof addr === 'object' && typeof addr.port === 'number' ? addr.port : port;
     console.log(`Server listening at http://127.0.0.1:${actualPort}`);
-    
+
     // Start autonomous systems AFTER server is listening
     if (this.autonomyController) {
       console.log('[Server] Starting AutonomyController...');
       await this.autonomyController.start();
       console.log('[Server] AutonomyController started');
     }
-    
+
     return this;
   }
 
   async stop() {
     console.log('[Server] Stopping server...');
-    
+
     // Stop autonomous systems first
     if (this.autonomyController) {
       console.log('[Server] Stopping AutonomyController...');
       await this.autonomyController.stop();
       console.log('[Server] AutonomyController stopped');
     }
-    
+
     // Close HTTP server
     if (this.server) {
       await new Promise((resolve, reject) => {
         this.server.close((err) => {
-          if (err && err.code === 'ERR_SERVER_NOT_RUNNING') resolve();
-          else if (err) reject(err);
-          else resolve();
+          if (err && err.code === 'ERR_SERVER_NOT_RUNNING') {
+            resolve();
+          } else if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
         });
       });
       this.server = null;
       console.log('[Server] HTTP server closed');
     }
-    
+
     // Cleanup other resources
-    if (this.redis) await this.redis.disconnect();
-    if (this.router) this.router.shutdown();
-    if (this.streamManager) this.streamManager.destroy();
-    
+    if (this.redis) {
+      await this.redis.disconnect();
+    }
+    if (this.router) {
+      this.router.shutdown();
+    }
+    if (this.streamManager) {
+      this.streamManager.destroy();
+    }
+
     console.log('[Server] Server stopped');
   }
 
   async shutdown() {
-    if (this._shutdownInProgress) return;
+    if (this._shutdownInProgress) {
+      return;
+    }
     this._shutdownInProgress = true;
     try {
       await this.stop();
@@ -1306,20 +1436,20 @@ const currentFilePath = fileURLToPath(import.meta.url);
 const executionFilePath = process.argv[1];
 
 // Normalize paths for cross-platform comparison (handle Windows backslashes and casing)
-const isMainModule = currentFilePath && executionFilePath && 
+const isMainModule = currentFilePath && executionFilePath &&
   path.resolve(currentFilePath).toLowerCase() === path.resolve(executionFilePath).toLowerCase();
 
 if (isMainModule || (process.env.v8_debug_id && !process.env.JEST_WORKER_ID)) { // Also allow if debugging
 
   let server = null;
-  
-  async function startServer() {
+
+  const startServer = async () => {
     console.log('Starting NeuralShell server...');
     try {
       server = await createServer({
         configPath: process.env.CONFIG_PATH || './config.yaml'
       });
-      
+
       console.log('Server created, starting...');
       await server.start();
       console.log('Server started!');
@@ -1328,19 +1458,19 @@ if (isMainModule || (process.env.v8_debug_id && !process.env.JEST_WORKER_ID)) { 
       console.error(`Failed to start NeuralShell server: ${msg}`);
       process.exit(1);
     }
-  }
-  
-  async function stopServer() {
+  };
+
+  const stopServer = async () => {
     if (server) {
       console.log('Shutting down gracefully...');
       await server.stop();
       server = null;
     }
-  }
-  
+  };
+
   // Start the server
   await startServer();
-  
+
   // Graceful shutdown handlers
   if (typeof process.send === 'function') {
     process.on('message', async (msg) => {
@@ -1362,19 +1492,19 @@ if (isMainModule || (process.env.v8_debug_id && !process.env.JEST_WORKER_ID)) { 
     await stopServer();
     process.exit(0);
   });
-  
+
   process.on('SIGINT', async () => {
     console.log('SIGINT received');
     await stopServer();
     process.exit(0);
   });
-  
+
   process.on('uncaughtException', async (error) => {
     console.error('Uncaught exception:', error);
     await stopServer();
     process.exit(1);
   });
-  
+
   process.on('unhandledRejection', async (reason, promise) => {
     console.error('Unhandled rejection at:', promise, 'reason:', reason);
     await stopServer();
