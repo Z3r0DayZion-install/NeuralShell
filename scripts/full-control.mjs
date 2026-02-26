@@ -22,9 +22,10 @@ async function main() {
     NS_SANDBOX_BACKEND: 'docker',
     NS_SANDBOX_ALLOW_VM_FALLBACK: '0',
     NS_REQUIRE_DOCKER_SANDBOX: '1',
-    NS_SANDBOX_PREPARE_PULL: process.env.NS_SANDBOX_PREPARE_PULL || '1'
-  };
+    NS_SANDBOX_PREPARE_PULL: process.env.NS_SANDBOX_PREPARE_PULL || '1',
+    NS_SANDBOX_IMAGE: process.env.NS_SANDBOX_IMAGE || 'node:20-alpine',
 
+  };
   console.log('[full-control] docker info');
   run('docker', ['info'], { env });
 
@@ -56,3 +57,4 @@ main().catch((err) => {
   console.error(err?.stack || String(err));
   process.exit(1);
 });
+

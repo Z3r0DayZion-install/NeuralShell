@@ -73,3 +73,10 @@ test('sandbox: docker uses read-only rootfs', { skip: skipDocker }, async () => 
   assert.ok(!res.output.includes('WRITEOK'), `unexpected WRITEOK output: ${res.output}`);
   assert.match(res.output, /WRITEFAIL:(EACCES|EROFS|EPERM|ERR)/);
 });
+
+test('sandbox: docker reports non-zero exit code on errors', { skip: skipDocker }, async () => {
+  const sandbox = new AdaptiveSandbox({ backend: 'docker', dockerTimeoutMs: 4000 });
+  const res = await sandbox.execute('throw new Error("BOOM")', 2500);
+  assert.equal(res.success, false);
+  assert.notEqual(res.exitCode, 0);
+});

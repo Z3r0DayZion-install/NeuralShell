@@ -10,6 +10,15 @@ function withTimeout(promise, timeoutMs, errorMessage) {
   ]);
 }
 
+function waitForContainer(container) {
+  return new Promise((resolve, reject) => {
+    container.wait((err, data) => {
+      if (err) return reject(err);
+      resolve(data);
+    });
+  });
+}
+
 export class HardenedSandbox {
   constructor(timeoutMs = 15000, dockerOptions) {
     this.docker = new Docker(dockerOptions);
@@ -98,45 +107,81 @@ export class HardenedSandbox {
       if (msg.includes('npipe') || msg.toLowerCase().includes('connect')) {
         throw new Error(`docker engine is not reachable (${msg})`);
       }
-      return { success: false, error: `Sandbox Failure: ${msg}` };
+      return { success: false, error: `Sandbox Failure: ${msg}`, output: '' };
     }
 
     await container.start();
 
-    const logs = await container.logs({
+    const logsStream = await container.logs({
       follow: true,
       stdout: true,
       stderr: true
     });
 
-    return new Promise((resolve) => {
-      const killTimer = setTimeout(async () => {
-        try {
-          await container.stop({ t: 0 }).catch(() => {});
-          await container.remove({ force: true }).catch(() => {});
-        } catch {
-          // ignore
-        }
-        resolve({
-          success: false,
-          error: 'Execution Timed Out',
-          output: outputBuffer.join('')
-        });
-      }, timeoutMs);
-
-      logs.on('data', (chunk) => outputBuffer.push(chunk.toString()));
-      logs.on('end', () => {
-        clearTimeout(killTimer);
-
-        const rawOutput = outputBuffer.join('');
-        const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
-
-        resolve({
-          success: true,
-          output: cleanOutput,
-          result: null
-        });
-      });
+    const logsDone = new Promise((resolve) => {
+      logsStream.on('data', (chunk) => outputBuffer.push(chunk.toString()));
+      logsStream.on('end', () => resolve());
+      logsStream.on('error', () => resolve());
     });
+
+    let timeoutHit = false;
+    const timeoutPromise = new Promise((resolve) => {
+      setTimeout(() => {
+        timeoutHit = true;
+        resolve(null);
+      }, timeoutMs);
+    });
+
+    let waitResult;
+    try {
+      waitResult = await Promise.race([
+        Promise.all([logsDone, waitForContainer(container)]).then(([, r]) => r),
+        timeoutPromise
+      ]);
+    } catch (err) {
+      const rawOutput = outputBuffer.join('');
+      const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+      return { success: false, error: `Sandbox Failure: ${String(err && err.message ? err.message : err)}`, output: cleanOutput };
+    }
+
+    if (timeoutHit || !waitResult) {
+      try {
+        await container.stop({ t: 0 }).catch(() => {});
+        await container.remove({ force: true }).catch(() => {});
+      } catch {
+        // ignore
+      }
+
+      const rawOutput = outputBuffer.join('');
+      const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+      return {
+        success: false,
+        error: 'Execution Timed Out',
+        output: cleanOutput,
+        exitCode: null
+      };
+    }
+
+    const statusCode =
+      waitResult && typeof waitResult.StatusCode === 'number' ? waitResult.StatusCode : null;
+
+    const rawOutput = outputBuffer.join('');
+    const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+
+    if (statusCode === 0) {
+      return {
+        success: true,
+        output: cleanOutput,
+        result: null,
+        exitCode: 0
+      };
+    }
+
+    return {
+      success: false,
+      output: cleanOutput,
+      error: 'Non-zero exit code',
+      exitCode: statusCode
+    };
   }
 }
