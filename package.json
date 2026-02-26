@@ -48,7 +48,8 @@
     "llm:test": "node scripts/llm-connection-test.mjs --live",
     "test:sandbox": "node test/sandbox.test.js",
     "sandbox:smoke": "npm run test:sandbox",
-    "sandbox:prepare": "node scripts/sandbox-prepare.mjs"
+    "sandbox:prepare": "node scripts/sandbox-prepare.mjs",
+    "full:control": "node scripts/full-control.mjs"
   },
   "keywords": [],
   "author": "",
