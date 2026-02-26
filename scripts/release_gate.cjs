@@ -119,8 +119,7 @@ function main() {
   spawnNpmOrThrow(['run', 'security:audit'], { cwd: REPO_ROOT, env: process.env });
   spawnNpmOrThrow(['run', 'ast-gate'], { cwd: REPO_ROOT, env: process.env });
 
-  // Root test gate.
-  spawnNpmOrThrow(['test'], { cwd: REPO_ROOT, env: process.env });
+  // Root test gate (must include docker sandbox checks).\n  process.env.NS_REQUIRE_DOCKER_SANDBOX = '1';\n  process.env.NS_SANDBOX_BACKEND = process.env.NS_SANDBOX_BACKEND || 'docker';\n  spawnNpmOrThrow(['test'], { cwd: REPO_ROOT, env: process.env });
 
   // Full parity proof gate (also emits proof bundle).
   spawnNpmOrThrow(['run', 'verify:all'], { cwd: REPO_ROOT, env: process.env });
@@ -188,3 +187,4 @@ if (require.main === module) {
     process.exit(1);
   }
 }
+

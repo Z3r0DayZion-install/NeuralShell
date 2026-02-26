@@ -12,9 +12,13 @@ async function dockerImageExists(image) {
   });
 }
 
+const requireDocker =
+  process.env.NS_REQUIRE_DOCKER_SANDBOX === '1' || process.env.NS_REQUIRE_DOCKER_SANDBOX === 'true';
+
 const image = process.env.NS_SANDBOX_IMAGE || 'node:20-alpine';
 const dockerReachable = await new HardenedSandbox().isAvailable(1000);
 const dockerRunnable = dockerReachable ? await dockerImageExists(image) : false;
+const skipDocker = !dockerRunnable && !requireDocker;
 
 test('sandbox: vm backend executes code', async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'vm', vmTimeoutMs: 2000 });
@@ -23,14 +27,19 @@ test('sandbox: vm backend executes code', async () => {
   assert.match(res.output, /VM_OK/);
 });
 
-test('sandbox: docker backend executes code', { skip: !dockerRunnable }, async () => {
+test('sandbox: docker availability (required for release gate)', { skip: !requireDocker }, async () => {
+  assert.equal(dockerReachable, true, 'Docker daemon not reachable');
+  assert.equal(dockerRunnable, true, `Docker image missing: ${image} (run: npm run sandbox:prepare)`);
+});
+
+test('sandbox: docker backend executes code', { skip: skipDocker }, async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'docker', dockerTimeoutMs: 4000 });
   const res = await sandbox.execute('console.log("DOCKER_OK");');
   assert.equal(res.success, true);
   assert.match(res.output, /DOCKER_OK/);
 });
 
-test('sandbox: docker blocks network egress', { skip: !dockerRunnable }, async () => {
+test('sandbox: docker blocks network egress', { skip: skipDocker }, async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'docker', dockerTimeoutMs: 4000 });
   const code = `
     const net = require('node:net');
@@ -48,7 +57,7 @@ test('sandbox: docker blocks network egress', { skip: !dockerRunnable }, async (
   );
 });
 
-test('sandbox: docker uses read-only rootfs', { skip: !dockerRunnable }, async () => {
+test('sandbox: docker uses read-only rootfs', { skip: skipDocker }, async () => {
   const sandbox = new AdaptiveSandbox({ backend: 'docker', dockerTimeoutMs: 4000 });
   const code = `
     const fs = require('node:fs');
