@@ -120,8 +120,8 @@ export class DecisionQueryAPI {
       connectionTimeoutMillis: config.connectionTimeout || 10000
     };
 
-    // Initialize PostgreSQL connection pool
-    this.pgPool = new Pool(this.config);
+    // Initialize PostgreSQL connection pool lazily (avoid keeping the event loop alive when replay is unused)
+    this.pgPool = null;
     this.connected = false;
 
     // Metrics
@@ -144,6 +144,9 @@ export class DecisionQueryAPI {
     const span = tracer.startSpan('queryAPI.connect');
 
     try {
+      if (!this.pgPool) {
+        this.pgPool = new Pool(this.config);
+      }
       // Test connection
       const client = await this.pgPool.connect();
       await client.query('SELECT 1');
@@ -168,13 +171,12 @@ export class DecisionQueryAPI {
    * Disconnect from PostgreSQL
    */
   async disconnect() {
-    if (!this.connected) {
-      return;
-    }
-
     try {
-      await this.pgPool.end();
+      if (this.pgPool) {
+        await this.pgPool.end();
+      }
       this.connected = false;
+      this.pgPool = null;
       console.log('Query API disconnected');
     } catch (error) {
       console.error('Error disconnecting Query API:', error);

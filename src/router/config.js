@@ -12,8 +12,10 @@ const schema = {
     server: {
       type: 'object',
       properties: {
+        profile: { type: 'string', enum: ['local', 'lan', 'public'] },
         port: { type: 'number', minimum: 0, maximum: 65535 },
         host: { type: 'string' },
+        trustProxy: { type: 'boolean' },
         requestTimeoutMs: { type: 'number', minimum: 0 },
         requestBodyLimitBytes: { type: 'number', minimum: 0 },
         maxConcurrentRequests: { type: 'number', minimum: 1 },
@@ -93,6 +95,7 @@ const schema = {
       properties: {
         adminToken: { type: 'string' },
         promptToken: { type: 'string' },
+        adminIpAllowlist: { type: 'array', items: { type: 'string' } },
         requireJsonContentType: { type: 'boolean' },
         strictPromptFields: { type: 'boolean' },
         enableSecurityHeaders: { type: 'boolean' },
@@ -262,8 +265,10 @@ function mergeWithDefaults(config) {
   return {
     version: CONFIG_SCHEMA_VERSION,
     server: {
+      profile: 'local',
       port: 3000,
-      host: '0.0.0.0',
+      host: '127.0.0.1',
+      trustProxy: false,
       requestTimeoutMs: 5000,
       requestBodyLimitBytes: 262144,
       maxConcurrentRequests: 32,
@@ -308,6 +313,7 @@ function mergeWithDefaults(config) {
     security: {
       adminToken: '',
       promptToken: '',
+      adminIpAllowlist: [],
       requireJsonContentType: false,
       strictPromptFields: false,
       enableSecurityHeaders: true,

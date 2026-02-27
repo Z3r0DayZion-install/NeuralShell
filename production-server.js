@@ -60,6 +60,109 @@ function normalizeRemoteAddress(addr) {
   return ip;
 }
 
+function isWeakToken(value) {
+  const token = String(value || '').trim();
+  if (!token) {
+    return true;
+  }
+  const normalized = token.toLowerCase();
+  if (token.length < 16) {
+    return true;
+  }
+  const placeholders = new Set([
+    'changeme',
+    'change-me',
+    'change_me',
+    'password',
+    'admin',
+    'token',
+    'prompt',
+    'secret',
+    'test',
+    'default',
+    '1234',
+    '12345',
+    '123456',
+    'qwerty'
+  ]);
+  if (placeholders.has(normalized)) {
+    return true;
+  }
+  if (normalized.includes('change-me') || normalized.includes('changeme')) {
+    return true;
+  }
+  return false;
+}
+
+function parseIpv4ToInt(ip) {
+  const parts = String(ip).split('.');
+  if (parts.length !== 4) {
+    return null;
+  }
+  const nums = parts.map((p) => Number(p));
+  if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) {
+    return null;
+  }
+  return ((nums[0] << 24) | (nums[1] << 16) | (nums[2] << 8) | nums[3]) >>> 0;
+}
+
+function ipv4InCidr(ip, cidr) {
+  const s = String(cidr || '').trim();
+  const idx = s.indexOf('/');
+  if (idx === -1) {
+    return false;
+  }
+  const base = s.slice(0, idx).trim();
+  const prefixRaw = s.slice(idx + 1).trim();
+  const prefixLen = Number(prefixRaw);
+  if (!Number.isInteger(prefixLen) || prefixLen < 0 || prefixLen > 32) {
+    return false;
+  }
+  const ipInt = parseIpv4ToInt(ip);
+  const baseInt = parseIpv4ToInt(base);
+  if (ipInt === null || baseInt === null) {
+    return false;
+  }
+  const mask = prefixLen === 0 ? 0 : (0xffffffff << (32 - prefixLen)) >>> 0;
+  return (ipInt & mask) === (baseInt & mask);
+}
+
+function ipMatchesRule(ip, rule) {
+  const remote = normalizeRemoteAddress(ip);
+  const raw = String(rule || '').trim().toLowerCase();
+  if (!raw) {
+    return false;
+  }
+
+  if (raw === 'localhost' || raw === 'loopback') {
+    return isLoopbackAddress(remote);
+  }
+
+  if (raw.includes('/')) {
+    if (ipv4InCidr(remote, raw)) {
+      return true;
+    }
+    // IPv6 CIDR is not currently supported; allow exact IPv6 matches only.
+    return false;
+  }
+
+  if (raw === remote) {
+    return true;
+  }
+
+  return false;
+}
+
+function ipMatchesAny(ip, rules) {
+  const list = Array.isArray(rules) ? rules : [];
+  for (const rule of list) {
+    if (ipMatchesRule(ip, rule)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export class NeuralShellServer {
   constructor(options = {}) {
     this.options = options;
@@ -91,6 +194,11 @@ export class NeuralShellServer {
     this.securityLogger = null;
     this.autonomyController = null;
     this.replayEngine = null;
+    this.orchestrator = null;
+    this.swarmBootstrap = null;
+    this.federationNode = null;
+    this.evolutionEngine = null;
+    this.meshNode = null;
     this._security = null;
     this._warnedOpenAdmin = false;
     this._warnedOpenPrompt = false;
@@ -124,6 +232,19 @@ export class NeuralShellServer {
       console.warn('Configuration warnings:', validation.warnings);
     }
 
+    const envHost = String(process.env.HOST || '').trim();
+    if (envHost) {
+      this.config.server = { ...(this.config.server || {}), host: envHost };
+    }
+
+    const profileRaw = String(process.env.NS_PROFILE || this.config.server?.profile || 'local')
+      .trim()
+      .toLowerCase();
+    const profile = profileRaw || 'local';
+    if (!['local', 'lan', 'public'].includes(profile)) {
+      throw new Error(`Invalid NS_PROFILE/server.profile: '${profileRaw}'. Use: local | lan | public.`);
+    }
+
     const configuredAdminToken =
       String(this.config.security?.adminToken || '').trim() || String(process.env.ADMIN_TOKEN || '').trim();
     const configuredPromptToken =
@@ -131,27 +252,70 @@ export class NeuralShellServer {
     const bindHost = String(this.config.server?.host || '0.0.0.0');
     const bindsToPublic = !isLoopbackAddress(bindHost) && bindHost !== 'localhost';
 
+    const corsAllowedOrigins = Array.isArray(this.config.security?.corsAllowedOrigins)
+      ? this.config.security.corsAllowedOrigins
+      : [];
+    if ((profile === 'lan' || profile === 'public') && corsAllowedOrigins.includes('*')) {
+      throw new Error('Refusing to start: CORS wildcard (*) is not allowed in NS_PROFILE=lan/public.');
+    }
+
+    const adminIpAllowlist = Array.isArray(this.config.security?.adminIpAllowlist)
+      ? this.config.security.adminIpAllowlist
+      : [];
+    if (bindsToPublic && (profile === 'lan' || profile === 'public') && adminIpAllowlist.length === 0) {
+      throw new Error(
+        `Refusing to start: NS_PROFILE=${profile} with server.host=${bindHost} requires security.adminIpAllowlist (CIDR or IPs).`
+      );
+    }
+
+    if ((profile === 'lan' || profile === 'public') && !configuredAdminToken) {
+      throw new Error(`Refusing to start: NS_PROFILE=${profile} requires ADMIN_TOKEN/security.adminToken.`);
+    }
+    if ((profile === 'lan' || profile === 'public') && !configuredPromptToken) {
+      throw new Error(`Refusing to start: NS_PROFILE=${profile} requires PROMPT_TOKEN/security.promptToken.`);
+    }
+    if ((profile === 'lan' || profile === 'public') && isWeakToken(configuredAdminToken)) {
+      throw new Error(
+        `Refusing to start: NS_PROFILE=${profile} requires a strong ADMIN_TOKEN/security.adminToken (>=16 chars; not a placeholder).`
+      );
+    }
+    if ((profile === 'lan' || profile === 'public') && isWeakToken(configuredPromptToken)) {
+      throw new Error(
+        `Refusing to start: NS_PROFILE=${profile} requires a strong PROMPT_TOKEN/security.promptToken (>=16 chars; not a placeholder).`
+      );
+    }
+
     if (bindsToPublic && !configuredPromptToken) {
       throw new Error(
         `Refusing to start: server.host=${bindHost} is not loopback but security.promptToken is empty. Set PROMPT_TOKEN/ security.promptToken.`
       );
     }
 
-    const adminToken = configuredAdminToken || crypto.randomBytes(24).toString('hex');
-    if (!configuredAdminToken) {
-      console.warn(`[Security] security.adminToken is empty; generated ephemeral ADMIN token for this session: ${adminToken}`);
+    const adminToken =
+      configuredAdminToken || (profile === 'local' ? crypto.randomBytes(24).toString('hex') : '');
+    if (!configuredAdminToken && profile === 'local') {
+      console.warn(
+        `[Security] security.adminToken is empty; generated ephemeral ADMIN token for this session: ${adminToken}`
+      );
     }
 
     this._security = {
+      profile,
       adminToken,
       promptToken: configuredPromptToken,
       bindsToPublic,
       ipAllowlist: Array.isArray(this.config.security?.ipAllowlist) ? this.config.security.ipAllowlist : [],
       ipDenylist: Array.isArray(this.config.security?.ipDenylist) ? this.config.security.ipDenylist : []
     };
+    this._security.adminIpAllowlist = adminIpAllowlist;
+
+    const fastifyLoggerEnabled =
+      (this.config.logging?.level || 'info') !== 'error' &&
+      process.env.NODE_ENV !== 'test' &&
+      process.env.PROOF_MODE !== '1';
 
     this.app = Fastify({
-      logger: this.config.logging?.level !== 'error',
+      logger: fastifyLoggerEnabled,
       trustProxy: this.config.server?.trustProxy === true || process.env.TRUST_PROXY === '1',
       bodyLimit: this.config.server?.requestBodyLimitBytes || 262144
     });
@@ -167,10 +331,10 @@ export class NeuralShellServer {
         return reply;
       };
 
-      if (this._security.ipDenylist.includes(remote)) {
+      if (ipMatchesAny(remote, this._security.ipDenylist)) {
         return deny('IP denied');
       }
-      if (this._security.ipAllowlist.length > 0 && !this._security.ipAllowlist.includes(remote)) {
+      if (this._security.ipAllowlist.length > 0 && !ipMatchesAny(remote, this._security.ipAllowlist)) {
         return deny('IP not allowlisted');
       }
 
@@ -190,6 +354,12 @@ export class NeuralShellServer {
       };
 
       if (authMode === 'admin') {
+        const remote = normalizeRemoteAddress(
+          request?.ip || request?.socket?.remoteAddress || request?.raw?.socket?.remoteAddress || ''
+        );
+        if (this._security.adminIpAllowlist?.length > 0 && !ipMatchesAny(remote, this._security.adminIpAllowlist)) {
+          return deny(403, 'ADMIN_IP_FORBIDDEN', 'Forbidden');
+        }
         const token = String(request.headers['x-admin-token'] || '').trim();
         if (!token || !constantTimeEqual(token, this._security.adminToken)) {
           return deny(401, 'ADMIN_AUTH_FAILED', 'Unauthorized');
@@ -266,7 +436,6 @@ export class NeuralShellServer {
     this.initializeHealthCheck();
     this.initializeAutonomy();
     this.initializeReplayEngine();
-    this.initializeSwarm();
     this.initializeEvolution();
     this.initializeFederation();
     this.initializeHive();
@@ -276,31 +445,30 @@ export class NeuralShellServer {
   }
 
   async initializeHive() {
-    if (process.env.HIVE_ENABLED !== '0') {
+    if (process.env.HIVE_ENABLED === '1') {
       try {
         const port = parseInt(process.env.HIVE_PORT || '4000');
         const peers = process.env.HIVE_PEERS ? process.env.HIVE_PEERS.split(',') : [];
         this.meshNode = new MeshNode(port, peers);
-        await this.meshNode.start();
-        console.log('[Server] Hive Mesh active');
+        console.log('[Server] Hive Mesh configured (will start after server listen)');
       } catch (err) {
         console.warn('[Server] Hive init failed:', err.message);
       }
     }
 
     // Economy API
-    this.app.get('/api/economy/ledger', async () => {
+    this.app.get('/api/economy/ledger', { config: { auth: 'admin' } }, async () => {
       return {
         balances: Object.fromEntries(GlobalLedger.balances),
         history: GlobalLedger.getHistory().slice(-50)
       };
     });
 
-    this.app.get('/api/economy/market', async () => {
+    this.app.get('/api/economy/market', { config: { auth: 'admin' } }, async () => {
       return { listings: GlobalMarketplace.getListings() };
     });
 
-    this.app.post('/api/economy/buy', async (req, reply) => {
+    this.app.post('/api/economy/buy', { config: { auth: 'admin' } }, async (req, reply) => {
       const { buyerId, listingId } = req.body;
       try {
         // For demo, if buyerId is missing, we treat it as 'admin-user' with infinite money
@@ -317,7 +485,7 @@ export class NeuralShellServer {
     });
 
     // Swarm API
-    this.app.get('/api/swarm/status', async () => {
+    this.app.get('/api/swarm/status', { config: { auth: 'admin' } }, async () => {
       return {
         orchestrator: this.orchestrator ? 'ONLINE' : 'OFFLINE',
         agents: [
@@ -330,11 +498,11 @@ export class NeuralShellServer {
       };
     });
 
-    this.app.get('/api/swarm/optimizations', async () => {
+    this.app.get('/api/swarm/optimizations', { config: { auth: 'admin' } }, async () => {
       return { optimizations: this.orchestrator?.optimizations || [] };
     });
 
-    this.app.get('/mobile', async (request, reply) => {
+    this.app.get('/mobile', { config: { auth: 'admin' } }, async (request, reply) => {
       reply.type('text/html').send(`
 <!DOCTYPE html>
 <html>
@@ -375,11 +543,11 @@ export class NeuralShellServer {
     });
 
     // Tools API
-    this.app.get('/api/swarm/tools', async () => {
+    this.app.get('/api/swarm/tools', { config: { auth: 'admin' } }, async () => {
       return { tools: await GlobalToolForge.listTools() };
     });
 
-    this.app.post('/api/swarm/tools/invent', async (req, reply) => {
+    this.app.post('/api/swarm/tools/invent', { config: { auth: 'admin' } }, async (req, reply) => {
       const { name, spec } = req.body;
       if (!this.orchestrator) {
         return reply.code(503).send({ error: 'Orchestrator offline' });
@@ -397,7 +565,7 @@ export class NeuralShellServer {
 
     // Genesis Apps API (provided by GenesisPlugin when plugins are enabled)
     if (!this.genesisPlugin) {
-      this.app.get('/api/genesis/apps', async () => {
+      this.app.get('/api/genesis/apps', { config: { auth: 'admin' } }, async () => {
         if (this.orchestrator && this.orchestrator.genesis) {
           return { apps: this.orchestrator.genesis.containerManager.listActive() };
         }
@@ -418,14 +586,13 @@ export class NeuralShellServer {
     }
   }
 
-  async initializeFederation() {
+  initializeFederation() {
     if (process.env.FEDERATION_ENABLED === '1') {
       try {
         this.federationNode = new FederationNode();
-        await this.federationNode.start();
-        console.log('[Server] Federation Node active');
+        console.log('[Server] Federation Node configured (will start after server listen)');
       } catch (err) {
-        console.warn('[Server] Federation failed:', err.message);
+        console.warn('[Server] Federation init failed:', err.message);
       }
     }
   }
@@ -433,13 +600,12 @@ export class NeuralShellServer {
   initializeEvolution() {
     if (process.env.EVOLUTION_ENABLED === '1') {
       this.evolutionEngine = new EvolutionEngine(this.options.configPath || './config.yaml');
-      this.evolutionEngine.start();
-      console.log('[Server] Evolution Engine active');
+      console.log('[Server] Evolution Engine configured (will start after server listen)');
     }
   }
 
   async initializeSwarm() {
-    if (process.env.SWARM_ENABLED !== '0') {
+    if (process.env.SWARM_ENABLED === '1') {
       try {
         this.orchestrator = new Orchestrator(this.router, (event) => {
           this.broadcast('cognitive:event', event);
@@ -447,7 +613,7 @@ export class NeuralShellServer {
         await this.orchestrator.start();
 
         // Launch local agents (for single-container deployment)
-        await bootstrapSwarm(this.router);
+        this.swarmBootstrap = await bootstrapSwarm(this.router);
         console.log('[Server] Swarm Intelligence active');
       } catch (err) {
         console.warn('[Server] Swarm initialization failed:', err.message);
@@ -473,7 +639,9 @@ export class NeuralShellServer {
       version: '1.0.0',
       server: {
         port: 3000,
-        host: '0.0.0.0',
+        host: '127.0.0.1',
+        profile: 'local',
+        trustProxy: false,
         requestTimeoutMs: 5000,
         maxConcurrentRequests: 100,
         gracefulShutdownTimeoutMs: 30000
@@ -926,11 +1094,6 @@ export class NeuralShellServer {
             // ignore
           }
           try {
-            await this.app?.close();
-          } catch {
-            // ignore
-          }
-          try {
             clearTimeout(hard);
           } catch {
             // ignore
@@ -1274,9 +1437,6 @@ autonomy_modules_total 0
       });
     });
 
-    this.app.addHook('onClose', async () => {
-      await this.shutdown();
-    });
   }
 
   async handleStreaming(request, reply, payload) {
@@ -1360,11 +1520,48 @@ autonomy_modules_total 0
       console.log('[Server] AutonomyController started');
     }
 
+    if (this.meshNode) {
+      try {
+        await this.meshNode.start();
+        console.log('[Server] Hive Mesh active');
+      } catch (err) {
+        console.warn('[Server] Hive start failed:', err?.message || String(err));
+      }
+    }
+
+    if (this.federationNode) {
+      try {
+        await this.federationNode.start();
+        console.log('[Server] Federation Node active');
+      } catch (err) {
+        console.warn('[Server] Federation start failed:', err?.message || String(err));
+      }
+    }
+
+    if (this.evolutionEngine) {
+      try {
+        await this.evolutionEngine.start();
+        console.log('[Server] Evolution Engine active');
+      } catch (err) {
+        console.warn('[Server] Evolution start failed:', err?.message || String(err));
+      }
+    }
+
+    await this.initializeSwarm();
+
     return this;
   }
 
   async stop() {
     console.log('[Server] Stopping server...');
+
+    if (this.app) {
+      try {
+        await this.app.close();
+      } catch (err) {
+        console.warn('[Server] Fastify close failed:', err?.message || String(err));
+      }
+    }
 
     // Stop autonomous systems first
     if (this.autonomyController) {
@@ -1373,21 +1570,49 @@ autonomy_modules_total 0
       console.log('[Server] AutonomyController stopped');
     }
 
-    // Close HTTP server
-    if (this.server) {
-      await new Promise((resolve, reject) => {
-        this.server.close((err) => {
-          if (err && err.code === 'ERR_SERVER_NOT_RUNNING') {
-            resolve();
-          } else if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      });
-      this.server = null;
-      console.log('[Server] HTTP server closed');
+    if (this.swarmBootstrap?.stop) {
+      try {
+        await this.swarmBootstrap.stop();
+      } catch (err) {
+        console.warn('[Server] Swarm agents stop failed:', err?.message || String(err));
+      }
+      this.swarmBootstrap = null;
+    }
+
+    if (this.orchestrator?.stop) {
+      try {
+        await this.orchestrator.stop();
+      } catch (err) {
+        console.warn('[Server] Orchestrator stop failed:', err?.message || String(err));
+      }
+      this.orchestrator = null;
+    }
+
+    if (this.federationNode?.stop) {
+      try {
+        await this.federationNode.stop();
+      } catch (err) {
+        console.warn('[Server] Federation stop failed:', err?.message || String(err));
+      }
+      this.federationNode = null;
+    }
+
+    if (this.evolutionEngine?.stop) {
+      try {
+        await this.evolutionEngine.stop();
+      } catch (err) {
+        console.warn('[Server] Evolution stop failed:', err?.message || String(err));
+      }
+      this.evolutionEngine = null;
+    }
+
+    if (this.meshNode?.stop) {
+      try {
+        await this.meshNode.stop();
+      } catch (err) {
+        console.warn('[Server] Hive stop failed:', err?.message || String(err));
+      }
+      this.meshNode = null;
     }
 
     // Cleanup other resources
@@ -1395,7 +1620,15 @@ autonomy_modules_total 0
       await this.redis.disconnect();
     }
     if (this.router) {
-      this.router.shutdown();
+      await this.router.shutdown();
+      this.router = null;
+    }
+    if (this.loadBalancer?.shutdown) {
+      try {
+        this.loadBalancer.shutdown();
+      } catch (err) {
+        console.warn('[Server] LoadBalancer shutdown failed:', err?.message || String(err));
+      }
     }
     if (this.streamManager) {
       this.streamManager.destroy();
@@ -1411,7 +1644,6 @@ autonomy_modules_total 0
     this._shutdownInProgress = true;
     try {
       await this.stop();
-      await this.app?.close();
     } finally {
       // keep _shutdownInProgress true to prevent re-entry
     }
@@ -1439,7 +1671,7 @@ const executionFilePath = process.argv[1];
 const isMainModule = currentFilePath && executionFilePath &&
   path.resolve(currentFilePath).toLowerCase() === path.resolve(executionFilePath).toLowerCase();
 
-if (isMainModule || (process.env.v8_debug_id && !process.env.JEST_WORKER_ID)) { // Also allow if debugging
+if (isMainModule) {
 
   let server = null;
 

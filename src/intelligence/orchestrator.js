@@ -19,6 +19,7 @@ export class Orchestrator {
     this.knownTools = [];
     this.optimizations = []; // --- BRIDGE: Actionable Patch Queue ---
     this.sentienceInterval = null;
+    this.syncToolsInterval = null;
     this.systemPrompt = `
 You are the Swarm Orchestrator for NeuralShell. 
 Your goal is to decompose user prompts into a sequence of tasks for specialized agents.
@@ -48,7 +49,7 @@ Output:
     await this.syncTools();
 
     // Refresh tools every minute
-    setInterval(() => this.syncTools(), 60000);
+    this.syncToolsInterval = setInterval(() => this.syncTools(), 60000);
 
     // --- SENTIENCE LOOP: Autonomous System Improvement ---
     this.sentienceInterval = setInterval(() => this.thinkAutonomously(), 300000); // Every 5 mins
@@ -65,6 +66,19 @@ Output:
     });
 
     console.log('[Orchestrator] Online and listening.');
+  }
+
+  async stop() {
+    if (this.syncToolsInterval) {
+      clearInterval(this.syncToolsInterval);
+      this.syncToolsInterval = null;
+    }
+    if (this.sentienceInterval) {
+      clearInterval(this.sentienceInterval);
+      this.sentienceInterval = null;
+    }
+    await this.bus.disconnect();
+    console.log('[Orchestrator] Offline.');
   }
 
   async thinkAutonomously() {

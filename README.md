@@ -44,6 +44,13 @@ docker-compose up
 docker-compose up
 ```
 
+## LAN Mode (Hybrid)
+Run on your LAN with fail-closed defaults:
+- Set `NS_PROFILE=lan`
+- Bind a non-loopback host (e.g. `HOST=0.0.0.0`)
+- Set `ADMIN_TOKEN` and `PROMPT_TOKEN`
+- Set `security.adminIpAllowlist` in `config.yaml` to your LAN CIDR(s)
+
 ## 🧠 Mission Control
 Access the Dashboard at: **`http://localhost:3000/admin-dashboard.html`**
 

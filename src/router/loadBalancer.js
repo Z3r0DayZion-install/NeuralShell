@@ -30,6 +30,13 @@ class LoadBalancer {
     }, INTERVALS.AFFINITY_CLEANUP_MS);
   }
 
+  shutdown() {
+    if (this.affinityCleanupInterval) {
+      clearInterval(this.affinityCleanupInterval);
+      this.affinityCleanupInterval = null;
+    }
+  }
+
   addEndpoint(name, url, weight = 1, metadata = {}) {
     const endpoint = {
       name,

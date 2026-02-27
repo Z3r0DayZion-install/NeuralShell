@@ -19,6 +19,7 @@ export class MeshNode extends EventEmitter {
     this.peers = new Map(); // id -> ws
     this.seedPeers = peers;
     this.seenMessages = new Set(); // Dedup for gossip
+    this.wss = null;
   }
 
   async start() {
@@ -34,6 +35,21 @@ export class MeshNode extends EventEmitter {
     // 2. Connect to Seeds
     for (const peerUrl of this.seedPeers) {
       this.connectTo(peerUrl);
+    }
+  }
+
+  async stop() {
+    for (const ws of this.peers.values()) {
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+    }
+    this.peers.clear();
+    if (this.wss) {
+      await new Promise((resolve) => this.wss.close(() => resolve()));
+      this.wss = null;
     }
   }
 

@@ -5,8 +5,15 @@ version: "1.0.0"
 
 # Server Configuration
 server:
+  # Profile controls fail-closed security defaults in production-server.js
+  # local | lan | public
+  profile: "local"
   port: 3000
-  host: "0.0.0.0"
+  # local: bind to loopback only (recommended default)
+  # lan/public: set to "0.0.0.0" or a specific LAN/public interface IP
+  host: "127.0.0.1"
+  # Only enable when running behind a trusted reverse proxy that sets X-Forwarded-For
+  trustProxy: false
   requestTimeoutMs: 5000
   requestBodyLimitBytes: 262144
   maxConcurrentRequests: 32
@@ -82,6 +89,11 @@ cache:
 security:
   adminToken: "${ADMIN_TOKEN}"
   promptToken: "${PROMPT_TOKEN}"
+  # For NS_PROFILE=lan/public and server.host not loopback, restrict admin routes by IP/CIDR.
+  # Supports exact IPs (e.g. "192.168.1.10") and IPv4 CIDR (e.g. "192.168.1.0/24").
+  adminIpAllowlist:
+    - "127.0.0.1"
+    - "192.168.0.0/16"
   requireJsonContentType: false
   strictPromptFields: false
   enableSecurityHeaders: true
