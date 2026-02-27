@@ -22,6 +22,9 @@ server:
   # TLS (recommended for lan/public). For mTLS, set requireClientCert=true and provide caPath.
   tls:
     enabled: false
+    # Option A (recommended on Windows): use a PFX that bundles cert + private key
+    # pfxPath: "./certs/server/neuralshell.pfx"
+    # Option B: use PEM cert + key
     certPath: "./certs/neuralshell.crt"
     keyPath: "./certs/neuralshell.key"
     # CA bundle used to validate client certificates when requireClientCert=true

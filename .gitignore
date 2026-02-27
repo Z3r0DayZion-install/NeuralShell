@@ -90,3 +90,6 @@ out/
 # Local machine scan artifacts
 docs/KICKA_SCAN_*.md
 scripts/import-kicka-backups.ps1
+
+# Local TLS/mTLS cert material (never commit)
+certs/

@@ -314,19 +314,27 @@ export class NeuralShellServer {
 
     let tlsMeta = { enabled: false };
     if (tlsEnabled) {
+      const pfxPath = resolveMaybeRelativePath(tlsConfig.pfxPath || process.env.NS_TLS_PFX);
+      const pfxPassphraseEnv = String(tlsConfig.pfxPassphraseEnv || '').trim();
+      const pfxPassphrase =
+        (pfxPassphraseEnv && process.env[pfxPassphraseEnv]) || String(process.env.NS_TLS_PFX_PASSPHRASE || '');
+
       const certPath = resolveMaybeRelativePath(tlsConfig.certPath || process.env.NS_TLS_CERT);
       const keyPath = resolveMaybeRelativePath(tlsConfig.keyPath || process.env.NS_TLS_KEY);
       const caPath = resolveMaybeRelativePath(tlsConfig.caPath || process.env.NS_TLS_CA);
       const requireClientCert =
         tlsConfig.requireClientCert === true || String(process.env.NS_TLS_REQUIRE_CLIENT_CERT || '').trim() === '1';
 
-      if (!certPath || !keyPath) {
-        throw new Error('TLS is enabled but server.tls.certPath and server.tls.keyPath are required.');
+      if (!pfxPath && (!certPath || !keyPath)) {
+        throw new Error('TLS is enabled but either server.tls.pfxPath or (server.tls.certPath + server.tls.keyPath) is required.');
       }
-      if (!fs.existsSync(certPath)) {
+      if (pfxPath && !fs.existsSync(pfxPath)) {
+        throw new Error(`TLS is enabled but pfxPath does not exist: ${pfxPath}`);
+      }
+      if (!pfxPath && !fs.existsSync(certPath)) {
         throw new Error(`TLS is enabled but certPath does not exist: ${certPath}`);
       }
-      if (!fs.existsSync(keyPath)) {
+      if (!pfxPath && !fs.existsSync(keyPath)) {
         throw new Error(`TLS is enabled but keyPath does not exist: ${keyPath}`);
       }
       if (requireClientCert && !caPath) {
@@ -336,10 +344,16 @@ export class NeuralShellServer {
         throw new Error(`TLS mTLS is enabled but caPath does not exist: ${caPath}`);
       }
 
-      const httpsOptions = {
-        cert: fs.readFileSync(certPath),
-        key: fs.readFileSync(keyPath)
-      };
+      const httpsOptions = {};
+      if (pfxPath) {
+        httpsOptions.pfx = fs.readFileSync(pfxPath);
+        if (pfxPassphrase) {
+          httpsOptions.passphrase = pfxPassphrase;
+        }
+      } else {
+        httpsOptions.cert = fs.readFileSync(certPath);
+        httpsOptions.key = fs.readFileSync(keyPath);
+      }
       if (caPath && fs.existsSync(caPath)) {
         httpsOptions.ca = fs.readFileSync(caPath);
       }
@@ -349,7 +363,7 @@ export class NeuralShellServer {
       }
 
       this._httpsOptions = httpsOptions;
-      tlsMeta = { enabled: true, requireClientCert, certPath, keyPath, caPath };
+      tlsMeta = { enabled: true, requireClientCert, pfxPath, pfxPassphraseEnv, certPath, keyPath, caPath };
     } else {
       this._httpsOptions = null;
       tlsMeta = { enabled: false };
@@ -486,7 +500,14 @@ export class NeuralShellServer {
         reply.header('X-Content-Type-Options', 'nosniff');
         reply.header('X-Frame-Options', 'DENY');
         reply.header('X-XSS-Protection', '1; mode=block');
-        reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        const forwardedProto = String(request.headers['x-forwarded-proto'] || '')
+          .split(',')[0]
+          .trim()
+          .toLowerCase();
+        const isTls = Boolean(request?.raw?.socket?.encrypted) || forwardedProto === 'https';
+        if (isTls) {
+          reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
         reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
         reply.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 

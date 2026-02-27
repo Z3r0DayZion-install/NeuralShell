@@ -23,6 +23,22 @@ $env:PROMPT_TOKEN='use-a-strong-random-token-32+chars'
 ```
 Then set `security.adminIpAllowlist` and `server.tls` in `config.yaml` (IPv4 CIDR supported for allowlists).
 
+## TLS/mTLS (Hybrid LAN)
+
+For a secure hybrid LAN setup, run NeuralShell on one always-on LAN host as the Router, and connect clients over HTTPS.
+
+**Windows dev cert generator (no OpenSSL required):**
+
+```powershell
+pwsh -File .\scripts\generate-dev-certs.ps1 -ServerDns "localhost","neuralshell.lan" -ServerIp "127.0.0.1","192.168.1.10" -ClientNames "laptop","desktop"
+```
+
+- Server PFX is written to `certs/server/neuralshell.pfx`
+- CA PEM is written to `certs/ca/ca.crt`
+- Client certs (for mTLS) are written under `certs/clients/`
+
+To require mTLS, set `server.tls.requireClientCert: true` and keep `server.tls.caPath` pointing at the CA PEM.
+
 ## Pre-Deployment Verification (30 minutes)
 
 ### 1. Verify All Tests Pass

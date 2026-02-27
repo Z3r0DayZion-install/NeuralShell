@@ -20,6 +20,8 @@ const schema = {
           type: 'object',
           properties: {
             enabled: { type: 'boolean' },
+            pfxPath: { type: 'string' },
+            pfxPassphraseEnv: { type: 'string' },
             certPath: { type: 'string' },
             keyPath: { type: 'string' },
             caPath: { type: 'string' },
@@ -289,6 +291,8 @@ function mergeWithDefaults(config) {
       ...serverInput,
       tls: {
         enabled: false,
+        pfxPath: '',
+        pfxPassphraseEnv: '',
         certPath: '',
         keyPath: '',
         caPath: '',

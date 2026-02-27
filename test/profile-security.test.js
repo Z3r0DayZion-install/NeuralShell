@@ -271,6 +271,45 @@ security:
   await fs.rm(dir, { recursive: true, force: true });
 });
 
+test('profile: lan refuses public bind without TLS by default', async () => {
+  const { dir, filePath } = await writeTempConfigYaml(`
+version: "1.0.0"
+server:
+  profile: "lan"
+  host: "0.0.0.0"
+  port: 0
+endpoints:
+  - name: "ollama-local"
+    url: "http://localhost:11434/api/chat"
+    model: "llama3"
+security:
+  adminIpAllowlist: ["127.0.0.1", "192.168.0.0/16"]
+  corsAllowedOrigins: []
+`);
+
+  await withEnv(
+    {
+      NODE_ENV: 'test',
+      PROOF_MODE: '1',
+      NS_PROFILE: 'lan',
+      HOST: '0.0.0.0',
+      NS_ALLOW_INSECURE_HTTP: undefined,
+      ADMIN_TOKEN: 'this-is-a-strong-admin-token',
+      PROMPT_TOKEN: 'this-is-a-strong-prompt-token',
+      PLUGINS_ENABLED: '0',
+      SWARM_ENABLED: '0',
+      HIVE_ENABLED: '0',
+      FEDERATION_ENABLED: '0',
+      EVOLUTION_ENABLED: '0'
+    },
+    async () => {
+      await assert.rejects(() => createServer({ configPath: filePath }), /requires TLS|NS_ALLOW_INSECURE_HTTP/i);
+    }
+  );
+
+  await fs.rm(dir, { recursive: true, force: true });
+});
+
 test('profile: lan initializes with tokens + allowlist on public bind', async () => {
   const { dir, filePath } = await writeTempConfigYaml(`
 version: "1.0.0"
