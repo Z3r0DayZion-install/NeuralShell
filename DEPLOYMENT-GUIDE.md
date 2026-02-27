@@ -66,6 +66,20 @@ Runs: docker container check, firewall rule check, localhost + LAN mTLS smoke te
 pwsh -File .\scripts\lan-status.ps1
 ```
 
+### Start/stop the LAN router (Docker)
+
+Start (hardened; includes restart policy). Add `-Build` to rebuild the image first and `-ReadOnly` to enforce a read-only container with tmpfs for state/logs:
+
+```powershell
+pwsh -File .\scripts\docker-lan-up.ps1 -Build -ReadOnly
+```
+
+Stop:
+
+```powershell
+pwsh -File .\scripts\docker-lan-down.ps1
+```
+
 ### Client onboarding (Windows)
 
 On each client machine, copy:
