@@ -39,6 +39,17 @@ pwsh -File .\scripts\generate-dev-certs.ps1 -ServerDns "localhost","neuralshell.
 
 To require mTLS, set `server.tls.requireClientCert: true` and keep `server.tls.caPath` pointing at the CA PEM.
 
+### Open Windows Firewall (Router host)
+
+On the router host (the machine running NeuralShell), allow inbound access to the HTTPS port on your LAN:
+
+```powershell
+# Run in an elevated PowerShell (Admin)
+pwsh -File .\scripts\open-lan-firewall.ps1 -Port 4443
+```
+
+This creates a Windows Firewall inbound allow rule for RFC1918 networks on `Private`/`Domain` profiles.
+
 ### Client onboarding (Windows)
 
 On each client machine, copy:
