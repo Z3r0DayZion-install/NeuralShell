@@ -115,6 +115,13 @@ pwsh -File .\scripts\export-client-kits-to-usb.ps1
 # or: pwsh -File .\scripts\export-client-kits-to-usb.ps1 -DriveLetter E
 ```
 
+Temporary LAN share (recommended instead of USB): create a locked-down SMB share to grab zips from other machines (requires Admin PowerShell):
+
+```powershell
+pwsh -File .\scripts\share-client-kits.ps1 -EncryptData
+pwsh -File .\scripts\unshare-client-kits.ps1
+```
+
 ## Pre-Deployment Verification (30 minutes)
 
 ### 1. Verify All Tests Pass
