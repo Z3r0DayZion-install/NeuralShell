@@ -39,6 +39,19 @@ pwsh -File .\scripts\generate-dev-certs.ps1 -ServerDns "localhost","neuralshell.
 
 To require mTLS, set `server.tls.requireClientCert: true` and keep `server.tls.caPath` pointing at the CA PEM.
 
+### Client onboarding (Windows)
+
+On each client machine, copy:
+
+- `certs/ca/ca.cer`
+- that client’s `certs/clients/<device>.pfx`
+
+Then run:
+
+```powershell
+pwsh -File .\scripts\client-setup.ps1 -ClientPfxPath .\certs\clients\<device>.pfx -CaCerPath .\certs\ca\ca.cer -TestBaseUrl https://<router-ip>:4443
+```
+
 ## Pre-Deployment Verification (30 minutes)
 
 ### 1. Verify All Tests Pass
