@@ -108,6 +108,13 @@ Package the newest kit for each client as a zip (plus SHA256 manifest):
 pwsh -File .\scripts\package-client-kits.ps1 -LatestOnly
 ```
 
+Export the zips to a USB drive (auto-detects removable drives, or pass `-DriveLetter`):
+
+```powershell
+pwsh -File .\scripts\export-client-kits-to-usb.ps1
+# or: pwsh -File .\scripts\export-client-kits-to-usb.ps1 -DriveLetter E
+```
+
 ## Pre-Deployment Verification (30 minutes)
 
 ### 1. Verify All Tests Pass
