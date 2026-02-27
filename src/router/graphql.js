@@ -1,9 +1,3 @@
-const GraphQL = {
-  parse(str) {
-    return str;
-  }
-};
-
 class GraphQLSchema {
   constructor() {
     this.types = new Map();
@@ -284,7 +278,6 @@ function createGraphQLRouter(routerContext) {
   async function executeQuery(query, variables = {}, context = {}) {
     const fullContext = { ...routerContext, ...context };
 
-    const operationName = query.operationName;
     const operationType = query.definitions?.[0]?.operation || 'query';
     const selections = query.definitions?.[0]?.selectionSet?.selections || [];
 
@@ -353,7 +346,7 @@ function createGraphQLRouter(routerContext) {
         body = req.body;
       }
 
-      const { query, variables, operationName } = body;
+      const { query, variables } = body;
 
       if (!query) {
         return res.status(400).json({

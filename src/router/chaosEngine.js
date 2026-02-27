@@ -6,6 +6,7 @@ class ChaosEngine {
     this.experiments = new Map();
     this.activeInjections = new Map();
     this.listeners = new Set();
+    this._memoryLeaks = [];
   }
 
   createExperiment(config) {
@@ -167,12 +168,11 @@ class ChaosEngine {
   }
 
   async injectFailure(params) {
-    throw {
-      failed: true,
-      statusCode: params.statusCode || 503,
-      message: params.message || 'Service temporarily unavailable (chaos)',
-      chaos: true
-    };
+    const err = new Error(params.message || 'Service temporarily unavailable (chaos)');
+    err.failed = true;
+    err.statusCode = params.statusCode || 503;
+    err.chaos = true;
+    throw err;
   }
 
   async injectBlackhole(target) {
@@ -184,7 +184,6 @@ class ChaosEngine {
   }
 
   async injectCpuPressure(params) {
-    const load = params.load || 80;
     const duration = params.duration || 5000;
     const end = Date.now() + duration;
 
@@ -198,15 +197,18 @@ class ChaosEngine {
   async injectMemoryPressure(params) {
     const size = params.size || 100 * 1024 * 1024;
     const leak = Buffer.alloc(size);
+    this._memoryLeaks.push(leak);
+    if (this._memoryLeaks.length > 8) {
+      this._memoryLeaks.shift();
+    }
     console.log(`[CHAOS] Memory pressure: allocated ${size} bytes`);
   }
 
   async injectDnsFailure(params) {
-    throw {
-      code: 'ENOTFOUND',
-      chaos: true,
-      message: params.message || 'DNS lookup failed (chaos)'
-    };
+    const err = new Error(params.message || 'DNS lookup failed (chaos)');
+    err.code = 'ENOTFOUND';
+    err.chaos = true;
+    throw err;
   }
 
   resolve(injectionId) {

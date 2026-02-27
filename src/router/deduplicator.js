@@ -5,10 +5,10 @@ export class InFlightDeduplicator {
   }
 
   registerRequest(fingerprint, promise) {
-    if (this.inFlightRequests.has(fingerprint)) {
-      const record = this.inFlightRequests.get(fingerprint);
-      record.refCount += 1;
-      return record.promise;
+    const existing = this.inFlightRequests.get(fingerprint);
+    if (existing) {
+      existing.refCount += 1;
+      return existing.promise;
     }
 
     const record = {

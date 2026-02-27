@@ -131,7 +131,6 @@ class LoadBalancer {
   }
 
   roundRobin(endpoints) {
-    const key = `rr_${this.stats.requests}`;
     return endpoints[this.stats.requests % endpoints.length];
   }
 
@@ -266,7 +265,7 @@ class LoadBalancer {
     this.updateWeightMultiplier(endpoint);
   }
 
-  recordFailure(endpointName, error = null) {
+  recordFailure(endpointName, _error = null) {
     const endpoint = this.endpoints.get(endpointName);
     if (!endpoint) {
       return;
@@ -288,11 +287,11 @@ class LoadBalancer {
     this.updateWeightMultiplier(endpoint);
   }
 
-  updateWeightMultiplier(endpoint) {
-    if (endpoint.failures === 0) {
-      endpoint.weightMultiplier = Math.min(2, endpoint.weightMultiplier * 1.1);
+  updateWeightMultiplier(ep) {
+    if (ep.failures === 0) {
+      ep.weightMultiplier = Math.min(2, ep.weightMultiplier * 1.1);
     } else {
-      endpoint.weightMultiplier = Math.max(0.1, endpoint.weightMultiplier * 0.8);
+      ep.weightMultiplier = Math.max(0.1, ep.weightMultiplier * 0.8);
     }
   }
 

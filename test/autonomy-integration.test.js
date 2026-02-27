@@ -1,6 +1,6 @@
 /**
  * Integration Tests for Autonomous Systems Wiring
- * 
+ *
  * Tests full application startup with autonomy enabled and verifies:
  * - Autonomous response to simulated endpoint failures (self-healing)
  * - Autonomous response to simulated high load (auto-scaling)
@@ -9,7 +9,7 @@
  * - Feature flag toggling via /admin/autonomy/toggle
  * - Graceful shutdown with autonomy enabled
  * - Preservation: existing routes still work with autonomy enabled
- * 
+ *
  * Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 3.1, 3.2, 3.3
  */
 
@@ -59,7 +59,7 @@ describe('Autonomous Systems Integration Tests', () => {
 
     it('should have all 9 autonomous modules instantiated', () => {
       const status = server.autonomyController.getStatus();
-      
+
       expect(status.enabled).toBe(true);
       expect(status.moduleCount).toBe(9);
       expect(status.modules).toContain('selfHealing');
@@ -87,12 +87,12 @@ describe('Autonomous Systems Integration Tests', () => {
 
     it('should respond to endpoint failure with healing attempt', async () => {
       const selfHealing = server.autonomyController.getModule('selfHealing');
-      
+
       // Register a test healing strategy
       selfHealing.registerStrategy('integration_test_strategy', {
         handler: async (issue) => {
-          return { 
-            action: 'test_heal', 
+          return {
+            action: 'test_heal',
             endpoint: issue.endpoint,
             timestamp: Date.now()
           };
@@ -110,7 +110,7 @@ describe('Autonomous Systems Integration Tests', () => {
 
       expect(result.healed).toBe(true);
       expect(result.strategy).toBe('integration_test_strategy');
-      
+
       // Verify metrics were updated
       const metrics = server.autonomyController.getMetrics();
       expect(metrics.self_healing_total_attempts).toBeGreaterThan(0);
@@ -119,7 +119,7 @@ describe('Autonomous Systems Integration Tests', () => {
 
     it('should track healing attempts in metrics', async () => {
       const metrics = server.autonomyController.getMetrics();
-      
+
       expect(metrics).toHaveProperty('self_healing_total_attempts');
       expect(metrics).toHaveProperty('self_healing_successful');
       expect(metrics).toHaveProperty('self_healing_failed');
@@ -136,7 +136,7 @@ describe('Autonomous Systems Integration Tests', () => {
 
     it('should make scaling decision based on high CPU', async () => {
       const autoScaler = server.autonomyController.getModule('autoScaler');
-      
+
       // Simulate high CPU load (above 80% threshold)
       const decision = autoScaler.makeDecision({
         cpuLoad: 85,
@@ -151,10 +151,10 @@ describe('Autonomous Systems Integration Tests', () => {
 
     it('should make scaling decision based on low CPU', async () => {
       const autoScaler = server.autonomyController.getModule('autoScaler');
-      
+
       // Set current instances higher first
       autoScaler.currentInstances = 5;
-      
+
       // Simulate low CPU load (below 30% threshold)
       const decision = autoScaler.makeDecision({
         cpuLoad: 20,
@@ -169,7 +169,7 @@ describe('Autonomous Systems Integration Tests', () => {
 
     it('should track scaling decisions in metrics', () => {
       const metrics = server.autonomyController.getMetrics();
-      
+
       expect(metrics).toHaveProperty('scaler_total_scale_ups');
       expect(metrics).toHaveProperty('scaler_total_scale_downs');
       expect(metrics).toHaveProperty('scaler_current_instances');
@@ -185,12 +185,12 @@ describe('Autonomous Systems Integration Tests', () => {
 
     it('should detect traffic anomaly when requests spike', () => {
       const anomalyDetector = server.autonomyController.getModule('anomalyDetector');
-      
+
       // Feed normal traffic data
       for (let i = 0; i < 50; i++) {
         anomalyDetector.detectTrafficAnomaly(100); // 100 requests/min baseline
       }
-      
+
       // Track anomaly events
       let anomalyDetected = false;
       anomalyDetector.once('anomaly', (anomaly) => {
@@ -198,22 +198,22 @@ describe('Autonomous Systems Integration Tests', () => {
         expect(anomaly.metric).toBe('requests_per_minute');
         expect(anomaly.value).toBe(500);
       });
-      
+
       // Simulate traffic spike (anomaly)
       anomalyDetector.detectTrafficAnomaly(500); // 5x normal traffic
-      
+
       // Verify anomaly was detected
       expect(anomalyDetected).toBe(true);
     });
 
     it('should detect latency anomaly when response time spikes', () => {
       const anomalyDetector = server.autonomyController.getModule('anomalyDetector');
-      
+
       // Feed normal latency data
       for (let i = 0; i < 50; i++) {
         anomalyDetector.detectLatencyAnomaly('/test-endpoint', 50); // 50ms baseline
       }
-      
+
       // Track anomaly events
       let anomalyDetected = false;
       anomalyDetector.once('anomaly', (anomaly) => {
@@ -221,17 +221,17 @@ describe('Autonomous Systems Integration Tests', () => {
         expect(anomaly.metric).toBe('latency_/test-endpoint');
         expect(anomaly.value).toBe(500);
       });
-      
+
       // Simulate latency spike (anomaly)
       anomalyDetector.detectLatencyAnomaly('/test-endpoint', 500); // 10x normal latency
-      
+
       // Verify anomaly was detected
       expect(anomalyDetected).toBe(true);
     });
 
     it('should track anomaly detections in metrics', () => {
       const metrics = server.autonomyController.getMetrics();
-      
+
       expect(metrics).toHaveProperty('anomaly_total_checks');
       expect(metrics).toHaveProperty('anomaly_detected');
       expect(metrics.anomaly_total_checks).toBeGreaterThan(0);
@@ -257,7 +257,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       const body = response.body;
-      
+
       // Verify Prometheus format (metric_name value)
       expect(body).toMatch(/self_healing_total_attempts \d+/);
       expect(body).toMatch(/self_healing_successful \d+/);
@@ -278,7 +278,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       const body = response.body;
-      
+
       // Verify each module's metrics are present
       expect(body).toContain('self_healing_');
       expect(body).toContain('process_');
@@ -300,7 +300,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      
+
       const data = JSON.parse(response.body);
       expect(data.enabled).toBe(true);
       expect(data.modules).toBeDefined();
@@ -315,7 +315,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       const data = JSON.parse(response.body);
-      
+
       expect(data.modules).toContain('selfHealing');
       expect(data.modules).toContain('processManager');
       expect(data.modules).toContain('anomalyDetector');
@@ -334,7 +334,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       const data = JSON.parse(response.body);
-      
+
       expect(data.metrics).toHaveProperty('self_healing_total_attempts');
       expect(data.metrics).toHaveProperty('anomaly_total_checks');
       expect(data.metrics).toHaveProperty('scaler_total_scale_ups');
@@ -356,14 +356,14 @@ describe('Autonomous Systems Integration Tests', () => {
       // Verify the controller has a stop method and can be stopped
       // We test this by checking the controller's state directly
       // rather than creating a new server (which would conflict with the main test server)
-      
+
       const controller = server.autonomyController;
       expect(controller.started).toBe(true);
-      
+
       // Manually stop the controller to test the stop functionality
       await controller.stop();
       expect(controller.started).toBe(false);
-      
+
       // Restart it for other tests
       await controller.start();
       expect(controller.started).toBe(true);
@@ -378,7 +378,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      
+
       const data = JSON.parse(response.body);
       expect(data).toHaveProperty('status');
       expect(data).toHaveProperty('timestamp');
@@ -391,7 +391,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      
+
       const data = JSON.parse(response.body);
       expect(data.alive).toBe(true);
     });
@@ -403,7 +403,7 @@ describe('Autonomous Systems Integration Tests', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      
+
       const data = JSON.parse(response.body);
       expect(data).toHaveProperty('ready');
     });
@@ -416,7 +416,7 @@ describe('Autonomous Systems Integration Tests', () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toContain('application/json');
-      
+
       const data = JSON.parse(response.body);
       expect(data).toBeDefined();
     });
@@ -433,7 +433,7 @@ describe('Autonomous Systems Integration Tests', () => {
     });
 
     it('should handle multiple concurrent requests without interference', async () => {
-      const requests = Array.from({ length: 20 }, () => 
+      const requests = Array.from({ length: 20 }, () =>
         app.inject({
           method: 'GET',
           url: '/health'
@@ -441,7 +441,7 @@ describe('Autonomous Systems Integration Tests', () => {
       );
 
       const responses = await Promise.all(requests);
-      
+
       // All should succeed
       for (const response of responses) {
         expect(response.statusCode).toBe(200);
@@ -464,7 +464,7 @@ describe('Autonomous Systems Integration Tests', () => {
     it('should have process manager tracking uptime', () => {
       const processManager = server.autonomyController.getModule('processManager');
       expect(processManager).toBeDefined();
-      
+
       const stats = processManager.getStats();
       expect(stats.uptime).toBeGreaterThan(0);
       expect(stats.metrics.totalRestarts).toBeGreaterThanOrEqual(0);
@@ -473,7 +473,7 @@ describe('Autonomous Systems Integration Tests', () => {
     it('should have secret rotation manager initialized', () => {
       const secretRotation = server.autonomyController.getModule('secretRotation');
       expect(secretRotation).toBeDefined();
-      
+
       const stats = secretRotation.getStats();
       expect(stats.metrics.totalRotations).toBeGreaterThanOrEqual(0);
     });
@@ -481,7 +481,7 @@ describe('Autonomous Systems Integration Tests', () => {
     it('should have cost manager tracking requests', () => {
       const costManager = server.autonomyController.getModule('costManager');
       expect(costManager).toBeDefined();
-      
+
       const stats = costManager.getStats();
       expect(stats.metrics.totalRequests).toBeGreaterThanOrEqual(0);
       expect(stats.metrics.totalCost).toBeDefined();
@@ -490,7 +490,7 @@ describe('Autonomous Systems Integration Tests', () => {
     it('should have threat detector ready to analyze requests', () => {
       const threatDetector = server.autonomyController.getModule('threatDetector');
       expect(threatDetector).toBeDefined();
-      
+
       // Test threat analysis
       const result = threatDetector.analyzeRequest({
         ip: '192.168.1.1',
@@ -498,7 +498,7 @@ describe('Autonomous Systems Integration Tests', () => {
         path: '/health',
         headers: { 'user-agent': 'test-client' }
       });
-      
+
       expect(result).toBeDefined();
       expect(result.threat).toBe(false); // Normal request should not be a threat
     });
@@ -506,7 +506,7 @@ describe('Autonomous Systems Integration Tests', () => {
     it('should have auto-optimizer initialized', () => {
       const autoOptimizer = server.autonomyController.getModule('autoOptimizer');
       expect(autoOptimizer).toBeDefined();
-      
+
       const stats = autoOptimizer.getStats();
       expect(stats.metrics.totalOptimizations).toBeGreaterThanOrEqual(0);
     });
@@ -514,7 +514,7 @@ describe('Autonomous Systems Integration Tests', () => {
     it('should have canary deployment manager initialized', () => {
       const canaryDeployment = server.autonomyController.getModule('canaryDeployment');
       expect(canaryDeployment).toBeDefined();
-      
+
       const stats = canaryDeployment.getStats();
       expect(stats.metrics.totalDeployments).toBeGreaterThanOrEqual(0);
     });

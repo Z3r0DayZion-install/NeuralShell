@@ -38,7 +38,7 @@ export class ThreatDetector extends EventEmitter {
     this.patterns = {
       sqlInjection: /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\s+(FROM|INTO|WHERE|TABLE)\b)/i,
       xss: /<script[^>]*>.*?<\/script>|javascript:|onerror=|onload=/i,
-      pathTraversal: /(?:\.\.[\/\\])/,
+      pathTraversal: /(?:\.\.[/\\])/,
       // More specific command injection: looks for separators followed by dangerous binaries or direct execution
       commandInjection: /(?:;|\||&|`|\$)\s*(?:bash|sh|nc|netcat|curl|wget|python|perl|ruby|gcc|make|docker|kubectl)/i,
       suspiciousUserAgent: /bot|crawler|spider|scraper|curl|wget/i,
@@ -432,7 +432,7 @@ export class ThreatDetector extends EventEmitter {
   /**
    * Add custom pattern
    */
-  addPattern(name, pattern, severity = 'medium') {
+  addPattern(name, pattern, _severity = 'medium') {
     this.patterns[name] = pattern;
   }
 

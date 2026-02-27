@@ -44,7 +44,7 @@ describe('SecurityLogger', () => {
   describe('Log Entry Creation', () => {
     it('should create structured log entry', () => {
       const entry = logger.createLogEntry('info', 'test_event', { key: 'value' }, 'corr-123');
-      
+
       expect(entry.timestamp).toBeDefined();
       expect(entry.level).toBe('info');
       expect(entry.namespace).toBe('test');
@@ -67,7 +67,7 @@ describe('SecurityLogger', () => {
   describe('Security Event Logging', () => {
     it('should log security event', () => {
       const entry = logger.logSecurityEvent('test_event', { detail: 'test' }, 'corr-123');
-      
+
       expect(entry.level).toBe('security');
       expect(entry.event).toBe('test_event');
       expect(entry.detail).toBe('test');
@@ -76,7 +76,7 @@ describe('SecurityLogger', () => {
 
     it('should log as JSON', () => {
       logger.logSecurityEvent('test_event', { detail: 'test' });
-      
+
       const loggedData = consoleLogSpy.mock.calls[0][0];
       expect(() => JSON.parse(loggedData)).not.toThrow();
     });
@@ -253,9 +253,9 @@ describe('SecurityLogger', () => {
 
     it('should add correlation ID to request', async () => {
       const middleware = logger.createRequestLogger();
-      const request = { 
-        headers: {}, 
-        method: 'GET', 
+      const request = {
+        headers: {},
+        method: 'GET',
         url: '/test',
         ip: '127.0.0.1'
       };
@@ -272,9 +272,9 @@ describe('SecurityLogger', () => {
 
     it('should log request received', async () => {
       const middleware = logger.createRequestLogger();
-      const request = { 
-        headers: { 'user-agent': 'test' }, 
-        method: 'POST', 
+      const request = {
+        headers: { 'user-agent': 'test' },
+        method: 'POST',
         url: '/api/test',
         ip: '192.168.1.1'
       };
@@ -294,9 +294,9 @@ describe('SecurityLogger', () => {
 
     it('should register onSend hook for response logging', async () => {
       const middleware = logger.createRequestLogger();
-      const request = { 
-        headers: {}, 
-        method: 'GET', 
+      const request = {
+        headers: {},
+        method: 'GET',
         url: '/test',
         ip: '127.0.0.1'
       };
@@ -315,22 +315,22 @@ describe('SecurityLogger', () => {
     it('should use custom namespace', () => {
       const customLogger = new SecurityLogger({ namespace: 'custom-app' });
       const entry = customLogger.createLogEntry('info', 'test');
-      
+
       expect(entry.namespace).toBe('custom-app');
     });
 
     it('should default to neuralshell namespace', () => {
       const defaultLogger = new SecurityLogger();
       const entry = defaultLogger.createLogEntry('info', 'test');
-      
+
       expect(entry.namespace).toBe('neuralshell');
     });
   });
 
   describe('Custom Correlation ID Header', () => {
     it('should use custom correlation ID header', () => {
-      const customLogger = new SecurityLogger({ 
-        correlationIdHeader: 'x-request-id' 
+      const customLogger = new SecurityLogger({
+        correlationIdHeader: 'x-request-id'
       });
       const request = {
         headers: { 'x-request-id': 'custom-123' }

@@ -42,7 +42,7 @@ export class IAgent {
    * Execute a specific unit of work.
    * @param {object} task
    */
-  async executeTask(task) {
+  async executeTask(_task) {
     throw new Error('Not Implemented');
   }
 }
@@ -62,7 +62,7 @@ export class IPlugin {
    * Initialize the plugin with the Router context.
    * @param {object} router
    */
-  async initialize(router) {
+  async initialize(_router) {
     throw new Error('Not Implemented');
   }
 }
@@ -72,10 +72,10 @@ export class IPlugin {
  * @interface
  */
 export class IMemoryStore {
-  async add(text, embedding, metadata) {
+  async add(_text, _embedding, _metadata) {
     throw new Error('Not Implemented');
   }
-  async search(embedding, limit) {
+  async search(_embedding, _limit) {
     throw new Error('Not Implemented');
   }
 }

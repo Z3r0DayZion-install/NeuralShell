@@ -9,8 +9,11 @@ import crypto from 'crypto';
  */
 export class DatabaseMemory {
   constructor(options = {}) {
+    const connectionString = options.connectionString
+      || process.env.DATABASE_URL
+      || 'postgres://neuralshell:CHANGE_ME_NOW@localhost:5432/neuralshell_events';
     this.pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL || 'postgres://neuralshell:CHANGE_ME_NOW@localhost:5432/neuralshell_events'
+      connectionString
     });
   }
 

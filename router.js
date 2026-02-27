@@ -869,7 +869,7 @@ export function buildServer(options = {}) {
       }
     });
   }
-  
+
   // Initialize Autonomy Controller
   const autonomyController = new AutonomyController({
     AUTO_HEALING: process.env.AUTO_HEALING,
@@ -884,7 +884,7 @@ export function buildServer(options = {}) {
     DRY_RUN: process.env.DRY_RUN,
     AUTONOMY_KILL_SWITCH: process.env.AUTONOMY_KILL_SWITCH
   });
-  
+
   // Start autonomy controller if any features enabled
   const anyFeatureEnabled = Object.values(autonomyController.featureFlags).some(flag => flag);
   if (anyFeatureEnabled && !autonomyController.killSwitch) {
@@ -892,10 +892,10 @@ export function buildServer(options = {}) {
       logger.error('Failed to start autonomy controller', { error: err.message });
     });
   }
-  
+
   // Decorate fastify with autonomy controller
   fastify.decorate('autonomyController', autonomyController);
-  
+
   const initialEndpoints = (options.endpoints || loadEndpointsFromEnv() || DEFAULT_ENDPOINTS)
     .map(normalizeEndpoint)
     .filter((ep) => !disabledEndpoints.has(ep.name));
@@ -1400,42 +1400,42 @@ export function buildServer(options = {}) {
     bumpRoute('/metrics/autonomy');
     reply.header('cache-control', 'no-store');
     reply.type('text/plain; version=0.0.4');
-    
+
     if (!fastify.autonomyController) {
       return '# Autonomy controller not initialized\n';
     }
-    
+
     const autonomyMetrics = fastify.autonomyController.getMetrics();
     let output = '';
-    
+
     // Format as Prometheus text - mapping from flat metrics in AutonomyController
     output += '# TYPE decisions_total counter\n';
     output += `decisions_total{system="selfHealing",action="heal",outcome="success"} ${autonomyMetrics.self_healing_successful || 0}\n`;
-    
+
     output += '# TYPE healing_attempts_total counter\n';
     output += `healing_attempts_total{strategy="endpoint_restart",outcome="success"} ${autonomyMetrics.self_healing_total_attempts || 0}\n`;
-    
+
     output += '# TYPE threats_detected_total counter\n';
     output += `threats_detected_total{type="any",outcome="logged"} ${autonomyMetrics.threat_total_threats || 0}\n`;
-    
+
     output += '# TYPE cost_total gauge\n';
     output += `cost_total ${autonomyMetrics.cost_total || 0}\n`;
-    
+
     output += '# TYPE optimizations_applied_total counter\n';
     output += `optimizations_applied_total{name="generic"} ${autonomyMetrics.optimizer_total_optimizations || 0}\n`;
-    
+
     output += '# TYPE canary_deployments_total counter\n';
     output += `canary_deployments_total{outcome="success"} ${autonomyMetrics.canary_total_deployments || 0}\n`;
-    
+
     output += '# TYPE process_restarts_total counter\n';
     output += `process_restarts_total{reason="any"} ${autonomyMetrics.process_total_restarts || 0}\n`;
-    
+
     output += '# TYPE anomalies_detected_total counter\n';
     output += `anomalies_detected_total ${autonomyMetrics.anomaly_detected || 0}\n`;
-    
+
     output += '# TYPE scaling_decisions_total counter\n';
     output += `scaling_decisions_total ${autonomyMetrics.scaler_total_scale_ups + autonomyMetrics.scaler_total_scale_downs || 0}\n`;
-    
+
     return output;
   });
   fastify.get('/endpoints', async (request, reply) => {
@@ -2024,7 +2024,7 @@ export function buildServer(options = {}) {
         metrics.idempotencyHits += 1;
         metrics.successRequests += 1;
         metrics.status2xx += 1;
-        
+
         // Quality Scoring for Idempotency Hit
         const durationMs = Date.now() - startedAt;
         const qualityScore = calculateQualityScore({
@@ -2032,7 +2032,7 @@ export function buildServer(options = {}) {
           context: { metrics: { cost: 0 } }
         });
         reply.header('x-quality-score', String(qualityScore));
-        
+
         reply.header('x-idempotency-hit', '1');
         appendLatencySample(metrics, durationMs);
         return {
@@ -2147,10 +2147,10 @@ export function buildServer(options = {}) {
               message: response
             };
             if (includeFailuresOnSuccess && failures.length > 0) {
-              const capped = capFailures(failures, maxFailuresReported);
-              successPayload.priorFailures = capped.failures;
-              successPayload.priorFailureCount = capped.failureCount;
-              successPayload.priorFailuresTruncated = capped.failuresTruncated;
+              const priorCapped = capFailures(failures, maxFailuresReported);
+              successPayload.priorFailures = priorCapped.failures;
+              successPayload.priorFailureCount = priorCapped.failureCount;
+              successPayload.priorFailuresTruncated = priorCapped.failuresTruncated;
             }
             if (idempotencyKey) {
               if (!idempotencyStore.has(idempotencyKey) && idempotencyStore.size >= maxIdempotencyKeys) {
@@ -2163,7 +2163,8 @@ export function buildServer(options = {}) {
                   }
                 }
               }
-              const { requestId: _ignored, ...cachePayload } = successPayload;
+              const cachePayload = { ...successPayload };
+              delete cachePayload.requestId;
               idempotencyStore.set(idempotencyKey, {
                 payload: cachePayload,
                 fingerprint: payloadFingerprint,
@@ -2206,12 +2207,12 @@ export function buildServer(options = {}) {
       metrics.failedRequests += 1;
       metrics.status5xx += 1;
       appendLatencySample(metrics, Date.now() - startedAt);
-      const capped = capFailures(failures, maxFailuresReported);
+      const cappedFailures = capFailures(failures, maxFailuresReported);
       return reply.code(502).send(errorPayload('ALL_ENDPOINTS_FAILED', 'All endpoints failed', requestId, {
         totalLatencyMs: Date.now() - startedAt,
-        failures: capped.failures,
-        failureCount: capped.failureCount,
-        failuresTruncated: capped.failuresTruncated
+        failures: cappedFailures.failures,
+        failureCount: cappedFailures.failureCount,
+        failuresTruncated: cappedFailures.failuresTruncated
       }));
     } finally {
       releaseSlot();
@@ -2241,7 +2242,7 @@ export async function startServer() {
     };
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('SIGTERM', () => shutdown('SIGTERM'));
-    
+
     // Handle uncaught exceptions
     process.on('uncaughtException', async (err) => {
       console.error('Uncaught exception:', err);
@@ -2254,7 +2255,7 @@ export async function startServer() {
       }
       process.exit(1);
     });
-    
+
     // Handle unhandled rejections
     process.on('unhandledRejection', async (reason, promise) => {
       console.error('Unhandled rejection at:', promise, 'reason:', reason);

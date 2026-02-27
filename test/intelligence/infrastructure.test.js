@@ -1,11 +1,11 @@
 /**
  * Infrastructure Integration Tests
- * 
+ *
  * Tests the complete infrastructure stack:
  * - Kafka Event Store
  * - TimescaleDB Metrics Store
  * - Tempo Tracing
- * 
+ *
  * Prerequisites: Run docker-compose.intelligence.yml before running these tests
  */
 
@@ -46,9 +46,15 @@ describe('Intelligence Layer Infrastructure', () => {
 
   afterAll(async () => {
     // Cleanup
-    if (eventStore) await eventStore.disconnect();
-    if (metricsStore) await metricsStore.disconnect();
-    if (tracingManager) await tracingManager.shutdown();
+    if (eventStore) {
+      await eventStore.disconnect();
+    }
+    if (metricsStore) {
+      await metricsStore.disconnect();
+    }
+    if (tracingManager) {
+      await tracingManager.shutdown();
+    }
   });
 
   describe('Event Store Health', () => {
@@ -63,7 +69,7 @@ describe('Intelligence Layer Infrastructure', () => {
 
     it('should write and track events', async () => {
       const initialMetrics = eventStore.getMetrics();
-      
+
       const eventId = await eventStore.writeEvent({
         decision_type: 'test',
         system_component: 'test-component',
@@ -73,7 +79,7 @@ describe('Intelligence Layer Infrastructure', () => {
       });
 
       expect(eventId).toBeDefined();
-      
+
       const finalMetrics = eventStore.getMetrics();
       expect(finalMetrics.eventsWritten).toBeGreaterThan(initialMetrics.eventsWritten);
     });
@@ -259,7 +265,7 @@ describe('Intelligence Layer Infrastructure', () => {
       const duration = endTime - startTime;
 
       console.log(`Batch operation completed in ${duration}ms (${batchSize} events + ${batchSize} metrics)`);
-      
+
       // Should complete in reasonable time
       expect(duration).toBeLessThan(5000); // 5 seconds for 200 operations
     });
@@ -272,7 +278,7 @@ describe('Intelligence Layer Infrastructure', () => {
 
       for (let i = 0; i < iterations; i++) {
         const start = process.hrtime.bigint();
-        
+
         await eventStore.writeEvent({
           decision_type: 'perf_test',
           system_component: 'perf-test',

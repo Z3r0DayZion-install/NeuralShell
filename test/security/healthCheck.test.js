@@ -16,14 +16,14 @@ describe('HealthCheck', () => {
     it('should register a health check', () => {
       const checkFn = async () => ({ available: true });
       healthCheck.register('test', checkFn);
-      
+
       expect(healthCheck.checks.has('test')).toBe(true);
     });
 
     it('should register with custom timeout', () => {
       const checkFn = async () => ({ available: true });
       healthCheck.register('test', checkFn, { timeout: 2000 });
-      
+
       const check = healthCheck.checks.get('test');
       expect(check.timeout).toBe(2000);
     });
@@ -31,7 +31,7 @@ describe('HealthCheck', () => {
     it('should default to critical check', () => {
       const checkFn = async () => ({ available: true });
       healthCheck.register('test', checkFn);
-      
+
       const check = healthCheck.checks.get('test');
       expect(check.critical).toBe(true);
     });
@@ -39,7 +39,7 @@ describe('HealthCheck', () => {
     it('should allow non-critical checks', () => {
       const checkFn = async () => ({ available: true });
       healthCheck.register('test', checkFn, { critical: false });
-      
+
       const check = healthCheck.checks.get('test');
       expect(check.critical).toBe(false);
     });
@@ -49,9 +49,9 @@ describe('HealthCheck', () => {
     it('should run healthy check', async () => {
       const checkFn = async () => ({ available: true, detail: 'ok' });
       const check = { fn: checkFn, critical: true, timeout: 1000 };
-      
+
       const result = await healthCheck.runCheck('test', check);
-      
+
       expect(result.name).toBe('test');
       expect(result.status).toBe('healthy');
       expect(result.available).toBe(true);
@@ -63,9 +63,9 @@ describe('HealthCheck', () => {
         throw new Error('Service unavailable');
       };
       const check = { fn: checkFn, critical: true, timeout: 1000 };
-      
+
       const result = await healthCheck.runCheck('test', check);
-      
+
       expect(result.name).toBe('test');
       expect(result.status).toBe('unhealthy');
       expect(result.error).toBe('Service unavailable');
@@ -78,9 +78,9 @@ describe('HealthCheck', () => {
         return { available: true };
       };
       const check = { fn: checkFn, critical: true, timeout: 100 };
-      
+
       const result = await healthCheck.runCheck('test', check);
-      
+
       expect(result.status).toBe('unhealthy');
       expect(result.error).toBe('Check timeout');
     });
@@ -91,9 +91,9 @@ describe('HealthCheck', () => {
       healthCheck.register('check1', async () => ({ available: true }));
       healthCheck.register('check2', async () => ({ available: true }));
       healthCheck.register('check3', async () => ({ available: true }));
-      
+
       const result = await healthCheck.runAll();
-      
+
       expect(result.status).toBe('healthy');
       expect(result.checks).toHaveLength(3);
       expect(result.summary.total).toBe(3);
@@ -106,9 +106,9 @@ describe('HealthCheck', () => {
         throw new Error('Critical failure');
       }, { critical: true });
       healthCheck.register('normal', async () => ({ available: true }));
-      
+
       const result = await healthCheck.runAll();
-      
+
       expect(result.status).toBe('unhealthy');
       expect(result.summary.critical).toBe(1);
     });
@@ -118,9 +118,9 @@ describe('HealthCheck', () => {
         throw new Error('Non-critical failure');
       }, { critical: false });
       healthCheck.register('critical', async () => ({ available: true }), { critical: true });
-      
+
       const result = await healthCheck.runAll();
-      
+
       expect(result.status).toBe('healthy');
       expect(result.summary.unhealthy).toBe(1);
       expect(result.summary.critical).toBe(0);
@@ -128,9 +128,9 @@ describe('HealthCheck', () => {
 
     it('should include timestamp', async () => {
       healthCheck.register('test', async () => ({ available: true }));
-      
+
       const result = await healthCheck.runAll();
-      
+
       expect(result.timestamp).toBeDefined();
       expect(() => new Date(result.timestamp)).not.toThrow();
     });
@@ -141,9 +141,9 @@ describe('HealthCheck', () => {
       healthCheck.register('unhealthy', async () => {
         throw new Error('Failed');
       }, { critical: false });
-      
+
       const result = await healthCheck.runAll();
-      
+
       expect(result.summary.total).toBe(3);
       expect(result.summary.healthy).toBe(2);
       expect(result.summary.unhealthy).toBe(1);
@@ -154,7 +154,7 @@ describe('HealthCheck', () => {
     it('should return true when all checks pass', async () => {
       healthCheck.register('check1', async () => ({ available: true }));
       healthCheck.register('check2', async () => ({ available: true }));
-      
+
       const ready = await healthCheck.isReady();
       expect(ready).toBe(true);
     });
@@ -164,7 +164,7 @@ describe('HealthCheck', () => {
       healthCheck.register('check2', async () => {
         throw new Error('Failed');
       });
-      
+
       const ready = await healthCheck.isReady();
       expect(ready).toBe(false);
     });
@@ -176,7 +176,7 @@ describe('HealthCheck', () => {
       healthCheck.register('non-critical', async () => {
         throw new Error('Failed');
       }, { critical: false });
-      
+
       const alive = await healthCheck.isAlive();
       expect(alive).toBe(true);
     });
@@ -185,7 +185,7 @@ describe('HealthCheck', () => {
       healthCheck.register('critical', async () => {
         throw new Error('Critical failure');
       }, { critical: true });
-      
+
       const alive = await healthCheck.isAlive();
       expect(alive).toBe(false);
     });
@@ -194,7 +194,7 @@ describe('HealthCheck', () => {
       healthCheck.register('non-critical', async () => {
         throw new Error('Non-critical failure');
       }, { critical: false });
-      
+
       const alive = await healthCheck.isAlive();
       expect(alive).toBe(true);
     });
@@ -206,7 +206,7 @@ describe('StandardHealthChecks', () => {
     it('should report unavailable when Redis not configured', async () => {
       const check = StandardHealthChecks.redis(null);
       const result = await check();
-      
+
       expect(result.available).toBe(false);
       expect(result.reason).toBe('not_configured');
     });
@@ -217,7 +217,7 @@ describe('StandardHealthChecks', () => {
       };
       const check = StandardHealthChecks.redis(mockRedis);
       const result = await check();
-      
+
       expect(result.available).toBe(false);
       expect(result.reason).toBe('not_connected');
     });
@@ -229,7 +229,7 @@ describe('StandardHealthChecks', () => {
       };
       const check = StandardHealthChecks.redis(mockRedis);
       const result = await check();
-      
+
       expect(result.available).toBe(true);
     });
 
@@ -242,7 +242,7 @@ describe('StandardHealthChecks', () => {
       };
       const check = StandardHealthChecks.redis(mockRedis);
       const result = await check();
-      
+
       expect(result.available).toBe(false);
       expect(result.error).toBe('Connection lost');
     });
@@ -252,7 +252,7 @@ describe('StandardHealthChecks', () => {
     it('should report unavailable when router not initialized', async () => {
       const check = StandardHealthChecks.router(null);
       const result = await check();
-      
+
       expect(result.available).toBe(false);
       expect(result.reason).toBe('not_initialized');
     });
@@ -267,7 +267,7 @@ describe('StandardHealthChecks', () => {
       };
       const check = StandardHealthChecks.router(mockRouter);
       const result = await check();
-      
+
       expect(result.available).toBe(true);
       expect(result.endpoints).toBe(3);
       expect(result.healthy).toBe(2);
@@ -283,7 +283,7 @@ describe('StandardHealthChecks', () => {
       };
       const check = StandardHealthChecks.router(mockRouter);
       const result = await check();
-      
+
       expect(result.available).toBe(false);
       expect(result.healthy).toBe(0);
     });
@@ -292,7 +292,7 @@ describe('StandardHealthChecks', () => {
       const mockRouter = {};
       const check = StandardHealthChecks.router(mockRouter);
       const result = await check();
-      
+
       expect(result.available).toBe(false);
     });
   });
@@ -301,7 +301,7 @@ describe('StandardHealthChecks', () => {
     it('should report memory usage', async () => {
       const check = StandardHealthChecks.memory(90);
       const result = await check();
-      
+
       expect(result.heapUsed).toBeDefined();
       expect(result.heapTotal).toBeDefined();
       expect(result.percentUsed).toBeDefined();
@@ -312,14 +312,14 @@ describe('StandardHealthChecks', () => {
     it('should report available when under threshold', async () => {
       const check = StandardHealthChecks.memory(99);
       const result = await check();
-      
+
       expect(result.available).toBe(true);
     });
 
     it('should use custom threshold', async () => {
       const check = StandardHealthChecks.memory(1);
       const result = await check();
-      
+
       // Memory usage should exceed 1%
       expect(result.available).toBe(false);
       expect(result.percentUsed).toBeGreaterThan(1);
@@ -330,7 +330,7 @@ describe('StandardHealthChecks', () => {
     it('should report process uptime', async () => {
       const check = StandardHealthChecks.uptime(0);
       const result = await check();
-      
+
       expect(result.available).toBe(true);
       expect(result.uptime).toBeDefined();
       expect(result.uptimeFormatted).toBeDefined();
@@ -340,14 +340,14 @@ describe('StandardHealthChecks', () => {
     it('should format uptime correctly', async () => {
       const check = StandardHealthChecks.uptime(0);
       const result = await check();
-      
+
       expect(result.uptimeFormatted).toMatch(/\d+[dhms]/);
     });
 
     it('should check minimum uptime', async () => {
       const check = StandardHealthChecks.uptime(999999);
       const result = await check();
-      
+
       expect(result.available).toBe(false);
     });
   });
@@ -356,7 +356,7 @@ describe('StandardHealthChecks', () => {
     it('should return placeholder result', async () => {
       const check = StandardHealthChecks.diskSpace();
       const result = await check();
-      
+
       expect(result.available).toBe(true);
       expect(result.note).toBe('disk_check_not_implemented');
     });

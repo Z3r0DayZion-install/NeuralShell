@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import https from 'https';
 import jwt from 'jsonwebtoken';
-import { URL } from 'node:url';
 import { timingSafeCompare, validateOAuthState } from './security-utils.js';
 import { SizeLimitedMap } from './size-limited-map.js';
 import { TIMEOUTS, SIZE_LIMITS, INTERVALS } from './constants.js';
@@ -458,10 +457,10 @@ class APIKeyManager {
     if (!keyData) {
       // Use constant-time comparison even for non-existent keys
       // to prevent timing attacks on key existence
-      const providedHash = this.hashKey(secret);
+      const timingProvidedHash = this.hashKey(secret);
       const dummyHash = this.hashKey('dummy_secret_for_timing');
       try {
-        timingSafeCompare(providedHash, dummyHash);
+        timingSafeCompare(timingProvidedHash, dummyHash);
       } catch (err) {
         // Ignore error
       }

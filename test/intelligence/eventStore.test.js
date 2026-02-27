@@ -1,6 +1,6 @@
 /**
  * Event Store Client Tests
- * 
+ *
  * Tests for the Event Store client library including:
  * - Connection management
  * - Event writing with durability
@@ -53,7 +53,7 @@ describe('EventStoreClient', () => {
     it('should generate valid UUID v7', () => {
       const id1 = client.generateEventId();
       const id2 = client.generateEventId();
-      
+
       expect(id1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
       expect(id2).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
     });
@@ -61,7 +61,7 @@ describe('EventStoreClient', () => {
     it('should generate time-ordered UUIDs', () => {
       const id1 = client.generateEventId();
       const id2 = client.generateEventId();
-      
+
       // UUID v7 is time-ordered, so id2 should be greater than id1
       expect(id2 > id1).toBe(true);
     });
@@ -101,7 +101,7 @@ describe('EventStoreClient', () => {
       };
 
       const eventId = await client.writeEvent(event);
-      
+
       expect(eventId).toBeDefined();
       expect(typeof eventId).toBe('string');
       expect(eventId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
@@ -130,9 +130,9 @@ describe('EventStoreClient', () => {
       const start = process.hrtime.bigint();
       await client.writeEvent(event);
       const end = process.hrtime.bigint();
-      
+
       const latencyMs = Number(end - start) / 1_000_000;
-      
+
       // Note: This may exceed 10ms in test environments, but should be close
       console.log(`Event write latency: ${latencyMs.toFixed(2)}ms`);
       expect(latencyMs).toBeLessThan(100); // Relaxed for test environment
@@ -160,7 +160,7 @@ describe('EventStoreClient', () => {
 
       const eventId = await client.writeEvent(event);
       expect(eventId).toBeDefined();
-      
+
       // Verify metrics were updated
       const metrics = client.getMetrics();
       expect(metrics.eventsWritten).toBeGreaterThan(0);
@@ -240,7 +240,7 @@ describe('EventStoreClient', () => {
       ];
 
       const eventIds = await client.writeBatch(events);
-      
+
       expect(eventIds).toHaveLength(3);
       expect(eventIds.every(id => typeof id === 'string')).toBe(true);
     });

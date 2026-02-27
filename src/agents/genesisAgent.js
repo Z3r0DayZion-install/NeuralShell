@@ -44,10 +44,7 @@ export class GenesisAgent extends BaseAgent {
     console.log(`[Genesis] Created workspace: ${project.path}`);
 
     // 2. Generate Code (HTML)
-    const htmlTask = `Create a single-file HTML/JS/CSS application for: ${prompt}. Return ONLY the code.`;
-    const htmlResult = await this.coder.generateAndRun(htmlTask); // We use generateAndRun just to get the code string logic
-
-    // Hardcoded robust template for demo reliability if Coder returns snippets
+    // Hardcoded robust template for demo reliability
     const finalHtml = `
 <!DOCTYPE html>
 <html>

@@ -172,15 +172,15 @@ export class SecurityLogger {
       // Track response time
       const startTime = Date.now();
 
-      reply.addHook('onSend', async (request, reply, payload) => {
+      reply.addHook('onSend', async (req, replyHook, _payload) => {
         const duration = Date.now() - startTime;
 
         const responseLog = this.createLogEntry('info', 'request_completed', {
-          method: request.method,
-          url: request.url,
-          statusCode: reply.statusCode,
+          method: req.method,
+          url: req.url,
+          statusCode: replyHook.statusCode,
           duration,
-          ip: request.ip
+          ip: req.ip
         }, correlationId);
 
         console.log(JSON.stringify(responseLog));

@@ -1,7 +1,5 @@
 import Docker from 'dockerode';
 import getPort from 'get-port';
-import path from 'path';
-import tar from 'tar-fs';
 
 /**
  * Container Manager (The Deployer)

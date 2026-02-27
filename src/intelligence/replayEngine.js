@@ -463,7 +463,12 @@ export class ReplayEngine {
     if (value1 === value2) {
       return true;
     }
-    if (value1 == null || value2 == null) {
+    if (
+      value1 === null
+      || value1 === undefined
+      || value2 === null
+      || value2 === undefined
+    ) {
       return value1 === value2;
     }
 

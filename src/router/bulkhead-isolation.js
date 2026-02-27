@@ -70,29 +70,29 @@ export class BulkheadIsolation {
     }
   }
 
-  async waitForSlot(endpointName, bulkhead) {
+  async waitForSlot(endpointName, record) {
     const startWait = Date.now();
 
     return new Promise((resolve, reject) => {
       const token = { resolve, reject };
       const timeoutHandle = setTimeout(() => {
-        const idx = bulkhead.queue.indexOf(token);
+        const idx = record.queue.indexOf(token);
         if (idx >= 0) {
-          bulkhead.queue.splice(idx, 1);
+          record.queue.splice(idx, 1);
         }
         reject(new Error(`Bulkhead timeout waiting for slot: ${endpointName}`));
-      }, bulkhead.timeoutMs);
+      }, record.timeoutMs);
 
       token.timeoutHandle = timeoutHandle;
-      bulkhead.queue.push(token);
+      record.queue.push(token);
 
       // Resolve when slot available
-      if (bulkhead.inFlight < bulkhead.maxConcurrent) {
+      if (record.inFlight < record.maxConcurrent) {
         resolve();
       }
     }).then(() => {
       const waitTime = Date.now() - startWait;
-      bulkhead.stats.totalQueueWaitMs += waitTime;
+      record.stats.totalQueueWaitMs += waitTime;
     });
   }
 

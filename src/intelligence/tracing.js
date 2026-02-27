@@ -36,7 +36,7 @@ class AdaptiveSampler {
     this.errorSampler = new AlwaysOnSampler();
   }
 
-  shouldSample(context, traceId, spanName, spanKind, attributes, links) {
+  shouldSample(ctx, traceId, spanName, spanKind, attributes, links) {
     // Check if this is an error span
     const isError = attributes['error'] === true ||
                     attributes['http.status_code'] >= 400 ||
@@ -45,10 +45,10 @@ class AdaptiveSampler {
 
     if (isError) {
       // Sample all errors
-      return this.errorSampler.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+      return this.errorSampler.shouldSample(ctx, traceId, spanName, spanKind, attributes, links);
     } else {
       // Sample 10% of successful requests
-      return this.successSampler.shouldSample(context, traceId, spanName, spanKind, attributes, links);
+      return this.successSampler.shouldSample(ctx, traceId, spanName, spanKind, attributes, links);
     }
   }
 
@@ -350,14 +350,14 @@ export class TracingManager {
       };
 
       // Add response hook to end span
-      reply.addHook('onSend', async (request, reply, payload) => {
-        span.setAttribute('http.status_code', reply.statusCode);
+      reply.addHook('onSend', async (_request, replyHook, payload) => {
+        span.setAttribute('http.status_code', replyHook.statusCode);
 
-        if (reply.statusCode >= 400) {
+        if (replyHook.statusCode >= 400) {
           span.setAttribute('error', true);
           span.setStatus({
             code: SpanStatusCode.ERROR,
-            message: `HTTP ${reply.statusCode}`
+            message: `HTTP ${replyHook.statusCode}`
           });
         } else {
           span.setStatus({ code: SpanStatusCode.OK });

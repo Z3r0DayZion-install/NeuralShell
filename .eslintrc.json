@@ -37,7 +37,24 @@
     "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0 }],
     "no-nested-ternary": "off",
     "no-unneeded-ternary": "error",
-    "no-param-reassign": ["error", { "props": true, "ignorePropertyModificationsFor": ["ep", "record", "entry"] }],
+    "no-param-reassign": [
+      "error",
+      {
+        "props": true,
+        "ignorePropertyModificationsFor": [
+          "acc",
+          "context",
+          "ep",
+          "entry",
+          "record",
+          "reply",
+          "request",
+          "span",
+          "state",
+          "ws"
+        ]
+      }
+    ],
     "no-shadow": ["error", { "builtinGlobals": false, "hoist": "all", "allow": [] }],
     "no-use-before-define": ["error", { "functions": false }],
     "no-constant-condition": ["error", { "checkLoops": false }],

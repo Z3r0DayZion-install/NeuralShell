@@ -7,7 +7,6 @@
 const { utilityProcess } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
-const crypto = require('node:crypto');
 
 const PLUGIN_POLICY = Object.freeze({
   'UI_RENDER': { level: 'SAFE' },

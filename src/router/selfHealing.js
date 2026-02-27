@@ -321,7 +321,7 @@ export class StandardHealingStrategies {
    */
   static memoryLeakRestart(processManager) {
     return {
-      handler: async (issue) => {
+      handler: async (_issue) => {
         await processManager.gracefulRestart('memory_leak_detected');
         return { action: 'process_restarted', reason: 'memory_leak' };
       },
@@ -336,7 +336,7 @@ export class StandardHealingStrategies {
    */
   static clearCache(cacheManager) {
     return {
-      handler: async (issue) => {
+      handler: async (_issue) => {
         await cacheManager.clear();
         return { action: 'cache_cleared' };
       },
@@ -350,7 +350,7 @@ export class StandardHealingStrategies {
    */
   static reconnectRedis(redisClient) {
     return {
-      handler: async (issue) => {
+      handler: async (_issue) => {
         await redisClient.disconnect();
         await redisClient.connect();
         return { action: 'redis_reconnected' };

@@ -48,7 +48,7 @@ function formatOllamaPrompt(messages) {
     .join('\n\n');
 }
 
-export function reconstructOllamaResponse(ollamaResponse, originalMessages) {
+export function reconstructOllamaResponse(ollamaResponse, _originalMessages) {
   // Extract response and preserve context
   return {
     role: 'assistant',

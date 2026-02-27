@@ -160,22 +160,22 @@ export class AutoOptimizer extends EventEmitter {
   /**
    * Run a single optimization
    */
-  async runOptimization(name, optimization, metrics) {
-    const currentValue = metrics[optimization.metric];
+  async runOptimization(name, record, metrics) {
+    const currentValue = metrics[record.metric];
 
     if (currentValue === undefined) {
       return null;
     }
 
     // Check if adjustment is needed
-    const adjustment = optimization.adjust(currentValue, optimization.target);
+    const adjustment = record.adjust(currentValue, record.target);
 
     if (!adjustment) {
       return null;
     }
 
     this.metrics.totalOptimizations++;
-    optimization.optimizationCount++;
+    record.optimizationCount++;
 
     console.log(`[AutoOptimizer] Applying ${name}: ${adjustment.action}`);
 
@@ -186,11 +186,11 @@ export class AutoOptimizer extends EventEmitter {
         action: adjustment.action,
         value: adjustment.value,
         current: currentValue,
-        target: optimization.target
+        target: record.target
       });
 
-      optimization.lastOptimized = Date.now();
-      optimization.successCount++;
+      record.lastOptimized = Date.now();
+      record.successCount++;
       this.metrics.successfulOptimizations++;
 
       return {

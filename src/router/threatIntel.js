@@ -4,7 +4,6 @@
  */
 
 import { readJsonFile, writeJsonFile } from './stateStore.js';
-import path from 'path';
 
 const INTEL_FILE = 'state/global_threat_intel.json';
 

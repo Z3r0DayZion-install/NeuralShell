@@ -312,7 +312,7 @@ function buildRequest(endpoint, payload, adapter = null) {
   function applyTemplate(input) {
     return String(input).replace(/\{(\w+)\}/g, (_m, key) => {
       const val = templateVars[key];
-      return val == null ? '' : String(val);
+      return val === null || val === undefined ? '' : String(val);
     });
   }
 
@@ -364,7 +364,17 @@ function buildRequest(endpoint, payload, adapter = null) {
       for (const [k, v] of urlObj.searchParams) {
         pairs.push([encodeRfc3986(k), encodeRfc3986(v)]);
       }
-      pairs.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0)));
+      pairs.sort((left, right) => (
+        left[0] < right[0]
+          ? -1
+          : left[0] > right[0]
+            ? 1
+            : left[1] < right[1]
+              ? -1
+              : left[1] > right[1]
+                ? 1
+                : 0
+      ));
       return pairs.map(([k, v]) => `${k}=${v}`).join('&');
     })();
 
@@ -408,7 +418,7 @@ function buildRequest(endpoint, payload, adapter = null) {
 
     const authorization = `AWS4-HMAC-SHA256 Credential=${awsAccessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-    const headers = {
+    const signedHeadersObj = {
       'Content-Type': 'application/json',
       'x-amz-date': amzDate,
       'x-amz-content-sha256': payloadHash,
@@ -416,7 +426,7 @@ function buildRequest(endpoint, payload, adapter = null) {
       Authorization: authorization
     };
 
-    return { url, headers, body: bodyText };
+    return { url, headers: signedHeadersObj, body: bodyText };
   }
 
   url = applyTemplate(url);

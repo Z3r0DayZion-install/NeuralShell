@@ -5,10 +5,10 @@ import Docker from 'dockerode';
 import { AdaptiveSandbox } from '../src/sandbox/adaptiveSandbox.js';
 import { HardenedSandbox } from '../src/sandbox/hardenedSandbox.js';
 
-async function dockerImageExists(image) {
+async function dockerImageExists(imageName) {
   const docker = new Docker();
   return await new Promise((resolve) => {
-    docker.getImage(image).inspect((err) => resolve(!err));
+    docker.getImage(imageName).inspect((err) => resolve(!err));
   });
 }
 

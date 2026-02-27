@@ -1,8 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONFIG_SCHEMA_VERSION = '1.0.0';
 
 const schema = {
@@ -205,11 +202,11 @@ function validateConfig(config, filePath = 'config') {
   return errors;
 }
 
-function validateSection(section, schema, path) {
+function validateSection(section, sectionSchema, sectionPath) {
   const errors = [];
 
-  if (schema.properties) {
-    for (const [key, propSchema] of Object.entries(schema.properties)) {
+  if (sectionSchema.properties) {
+    for (const [key, propSchema] of Object.entries(sectionSchema.properties)) {
       if (section[key] === undefined) {
         continue;
       }
@@ -217,54 +214,54 @@ function validateSection(section, schema, path) {
       const value = section[key];
 
       if (propSchema.type === 'number' && typeof value !== 'number') {
-        errors.push(`${path}.${key}: expected number, got ${typeof value}`);
+        errors.push(`${sectionPath}.${key}: expected number, got ${typeof value}`);
         continue;
       }
 
       if (propSchema.type === 'string' && typeof value !== 'string') {
-        errors.push(`${path}.${key}: expected string, got ${typeof value}`);
+        errors.push(`${sectionPath}.${key}: expected string, got ${typeof value}`);
         continue;
       }
 
       if (propSchema.type === 'boolean' && typeof value !== 'boolean') {
-        errors.push(`${path}.${key}: expected boolean, got ${typeof value}`);
+        errors.push(`${sectionPath}.${key}: expected boolean, got ${typeof value}`);
         continue;
       }
 
       if (propSchema.type === 'array' && !Array.isArray(value)) {
-        errors.push(`${path}.${key}: expected array, got ${typeof value}`);
+        errors.push(`${sectionPath}.${key}: expected array, got ${typeof value}`);
         continue;
       }
 
       if (propSchema.type === 'object' && (typeof value !== 'object' || Array.isArray(value))) {
-        errors.push(`${path}.${key}: expected object, got ${typeof value}`);
+        errors.push(`${sectionPath}.${key}: expected object, got ${typeof value}`);
         continue;
       }
 
       if (propSchema.enum && !propSchema.enum.includes(value)) {
-        errors.push(`${path}.${key}: must be one of ${propSchema.enum.join(', ')}, got '${value}'`);
+        errors.push(`${sectionPath}.${key}: must be one of ${propSchema.enum.join(', ')}, got '${value}'`);
       }
 
       if (propSchema.pattern) {
         const regex = new RegExp(propSchema.pattern);
         if (!regex.test(value)) {
-          errors.push(`${path}.${key}: must match pattern ${propSchema.pattern}`);
+          errors.push(`${sectionPath}.${key}: must match pattern ${propSchema.pattern}`);
         }
       }
 
       if (propSchema.minimum !== undefined && value < propSchema.minimum) {
-        errors.push(`${path}.${key}: must be >= ${propSchema.minimum}`);
+        errors.push(`${sectionPath}.${key}: must be >= ${propSchema.minimum}`);
       }
 
       if (propSchema.maximum !== undefined && value > propSchema.maximum) {
-        errors.push(`${path}.${key}: must be <= ${propSchema.maximum}`);
+        errors.push(`${sectionPath}.${key}: must be <= ${propSchema.maximum}`);
       }
 
       if (propSchema.format === 'uri') {
         try {
           new URL(value);
         } catch {
-          errors.push(`${path}.${key}: must be a valid URI`);
+          errors.push(`${sectionPath}.${key}: must be a valid URI`);
         }
       }
     }

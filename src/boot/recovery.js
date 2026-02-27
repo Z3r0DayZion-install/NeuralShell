@@ -28,7 +28,7 @@ async function launchRecoveryMode(result) {
   });
 
   // 8.4 Tamper Evidence Bundle
-  ipcMain.handle('recovery:export-evidence', async (event, data) => {
+  ipcMain.handle('recovery:export-evidence', async (_event, _data) => {
     // Schema validation: no input parameters required (schema: empty)
     const validate = () => true; // No-op validation for parameterless handler
     validate();
@@ -52,7 +52,7 @@ async function launchRecoveryMode(result) {
   });
 
   // 8.3 Repair Procedure
-  ipcMain.handle('recovery:repair', async (event, data) => {
+  ipcMain.handle('recovery:repair', async (_event, _data) => {
     // Schema validation: no input parameters required (schema: empty)
     const validate = () => true; // No-op validation for parameterless handler
     validate();
@@ -71,14 +71,14 @@ async function launchRecoveryMode(result) {
   });
 
   // Schema validation for status and exit handlers
-  ipcMain.handle('recovery:status', (event, data) => {
+  ipcMain.handle('recovery:status', (_event, _data) => {
     // Schema validation: no input parameters required (schema: empty)
     const validate = () => true; // No-op validation for parameterless handler
     validate();
     return result;
   });
 
-  ipcMain.handle('recovery:exit', (event, data) => {
+  ipcMain.handle('recovery:exit', (_event, _data) => {
     // Schema validation: no input parameters required (schema: empty)
     const validate = () => true; // No-op validation for parameterless handler
     validate();

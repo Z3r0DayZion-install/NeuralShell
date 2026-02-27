@@ -5,13 +5,12 @@ const logger = createLogger();
 export function createLoggingMiddleware(options = {}) {
   const {
     logRequestBody = false,
-    logResponseBody = false,
     sensitiveHeaders = ['x-prompt-token', 'x-admin-token', 'authorization'],
     excludePaths = ['/health', '/ready', '/metrics']
   } = options;
 
   return {
-    onRequest: async (request, reply) => {
+    onRequest: async (request, _reply) => {
       request.logStartTime = Date.now();
 
       const shouldLog = !excludePaths.includes(request.url.split('?')[0]);
@@ -78,8 +77,7 @@ export function createLoggingMiddleware(options = {}) {
 
 export function createMetricsLoggingMiddleware(metrics) {
   return {
-    onResponse: async (request, reply) => {
-      const path = request.url.split('?')[0];
+    onResponse: async (_request, _reply) => {
 
       // Log every 100 requests
       if (metrics.totalRequests % 100 === 0) {

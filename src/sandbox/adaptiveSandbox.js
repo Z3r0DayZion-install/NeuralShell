@@ -39,7 +39,9 @@ export class AdaptiveSandbox {
         msg.includes('ENOENT') ||
         msg.includes('npipe');
 
-      if (!dockerUnavailable) throw err;
+      if (!dockerUnavailable) {
+        throw err;
+      }
 
       if (!this.allowVmFallback) {
         throw new Error(

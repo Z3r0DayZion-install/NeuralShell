@@ -73,12 +73,12 @@ export class AnomalyDetector extends EventEmitter {
   /**
    * Update statistical measures
    */
-  updateStats(metric) {
-    const values = metric.values.map(v => v.value);
+  updateStats(record) {
+    const values = record.values.map(v => v.value);
     const n = values.length;
 
     if (n === 0) {
-      metric.stats = null;
+      record.stats = null;
       return;
     }
 
@@ -98,7 +98,7 @@ export class AnomalyDetector extends EventEmitter {
     const p95 = sorted[Math.floor(n * 0.95)];
     const p99 = sorted[Math.floor(n * 0.99)];
 
-    metric.stats = {
+    record.stats = {
       mean: isFinite(mean) ? mean : 0,
       stdDev: isFinite(stdDev) ? stdDev : 0,
       min: Math.min(...values),

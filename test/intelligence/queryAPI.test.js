@@ -1,16 +1,16 @@
 /**
  * Tests for Decision Query API
- * 
+ *
  * Tests filtering, pagination, and performance requirements.
  */
 
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { 
-  DecisionQueryAPI, 
-  DecisionQuery, 
+import {
+  DecisionQueryAPI,
+  DecisionQuery,
   QueryResult,
-  getQueryAPI 
+  getQueryAPI
 } from '../../src/intelligence/queryAPI.js';
 import { EventIndexer } from '../../src/intelligence/eventIndexer.js';
 import { getEventStore } from '../../src/intelligence/eventStore.js';
@@ -19,7 +19,7 @@ describe('DecisionQuery', () => {
   describe('constructor', () => {
     it('should create query with default values', () => {
       const query = new DecisionQuery();
-      
+
       assert.strictEqual(query.limit, 100);
       assert.strictEqual(query.sortOrder, 'desc');
       assert.strictEqual(query.startTime, undefined);
@@ -70,7 +70,7 @@ describe('DecisionQuery', () => {
     it('should reject limit < 1', () => {
       const query = new DecisionQuery({ limit: 0 });
       const result = query.validate();
-      
+
       assert.strictEqual(result.valid, false);
       assert.ok(result.errors.some(e => e.includes('limit')));
     });
@@ -78,7 +78,7 @@ describe('DecisionQuery', () => {
     it('should reject limit > 1000', () => {
       const query = new DecisionQuery({ limit: 1001 });
       const result = query.validate();
-      
+
       assert.strictEqual(result.valid, false);
       assert.ok(result.errors.some(e => e.includes('limit')));
     });
@@ -86,7 +86,7 @@ describe('DecisionQuery', () => {
     it('should reject invalid sort order', () => {
       const query = new DecisionQuery({ sortOrder: 'invalid' });
       const result = query.validate();
-      
+
       assert.strictEqual(result.valid, false);
       assert.ok(result.errors.some(e => e.includes('sortOrder')));
     });
@@ -97,7 +97,7 @@ describe('DecisionQuery', () => {
         endTime: new Date('2024-01-01')
       });
       const result = query.validate();
-      
+
       assert.strictEqual(result.valid, false);
       assert.ok(result.errors.some(e => e.includes('startTime')));
     });
@@ -107,7 +107,7 @@ describe('DecisionQuery', () => {
         minQualityScore: -1
       });
       const result = query.validate();
-      
+
       assert.strictEqual(result.valid, false);
       assert.ok(result.errors.some(e => e.includes('minQualityScore')));
     });
@@ -118,7 +118,7 @@ describe('DecisionQuery', () => {
         maxQualityScore: 80
       });
       const result = query.validate();
-      
+
       assert.strictEqual(result.valid, false);
       assert.ok(result.errors.some(e => e.includes('minQualityScore')));
     });
@@ -179,9 +179,9 @@ describe('DecisionQueryAPI', () => {
     it('should connect to PostgreSQL', async () => {
       const api = new DecisionQueryAPI();
       await api.connect();
-      
+
       assert.strictEqual(api.connected, true);
-      
+
       await api.disconnect();
     });
 
@@ -189,9 +189,9 @@ describe('DecisionQueryAPI', () => {
       const api = new DecisionQueryAPI();
       await api.connect();
       await api.connect(); // Should not throw
-      
+
       assert.strictEqual(api.connected, true);
-      
+
       await api.disconnect();
     });
   });
@@ -427,7 +427,7 @@ describe('DecisionQueryAPI', () => {
     });
 
     it('should sort in ascending order when specified', async () => {
-      const query = new DecisionQuery({ 
+      const query = new DecisionQuery({
         limit: 100,
         sortOrder: 'asc'
       });
@@ -441,19 +441,19 @@ describe('DecisionQueryAPI', () => {
 
     it('should complete query within 500ms', async () => {
       const startTime = Date.now();
-      
+
       const query = new DecisionQuery({ limit: 100 });
       await queryAPI.queryDecisions(query);
-      
+
       const duration = Date.now() - startTime;
-      
+
       // Should be well under 500ms for small dataset
       assert.ok(duration < 500, `Query took ${duration}ms, expected < 500ms`);
     });
 
     it('should reject invalid query', async () => {
       const query = new DecisionQuery({ limit: 0 });
-      
+
       await assert.rejects(
         async () => await queryAPI.queryDecisions(query),
         /Invalid query/
@@ -498,14 +498,14 @@ describe('DecisionQueryAPI', () => {
   describe('healthCheck', () => {
     it('should return healthy when connected', async () => {
       const health = await queryAPI.healthCheck();
-      
+
       assert.strictEqual(health.healthy, true);
     });
 
     it('should return unhealthy when not connected', async () => {
       const api = new DecisionQueryAPI();
       const health = await api.healthCheck();
-      
+
       assert.strictEqual(health.healthy, false);
       assert.ok(health.reason);
     });
@@ -515,7 +515,7 @@ describe('DecisionQueryAPI', () => {
     it('should return same instance', () => {
       const api1 = getQueryAPI();
       const api2 = getQueryAPI();
-      
+
       assert.strictEqual(api1, api2);
     });
   });

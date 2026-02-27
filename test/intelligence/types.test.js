@@ -1,6 +1,6 @@
 /**
  * Tests for Decision Intelligence Engine Types
- * 
+ *
  * Validates the validation functions for DecisionEvent structures.
  * Note: This is a JavaScript test file that imports the compiled TypeScript types.
  */
@@ -116,7 +116,9 @@ test('validateDecisionEvent - missing event_id', () => {
   expect(result.valid).toBe(false);
   expect(result.errors.length).toBeGreaterThan(0);
   const hasError = result.errors.some(e => e.field === 'event_id');
-  if (!hasError) throw new Error('Expected error for missing event_id');
+  if (!hasError) {
+    throw new Error('Expected error for missing event_id');
+  }
 });
 
 test('validateDecisionEvent - invalid outcome status', () => {
@@ -127,7 +129,9 @@ test('validateDecisionEvent - invalid outcome status', () => {
   const result = validateDecisionEvent(eventWithInvalidStatus);
   expect(result.valid).toBe(false);
   const hasError = result.errors.some(e => e.field === 'outcome.status');
-  if (!hasError) throw new Error('Expected error for invalid outcome status');
+  if (!hasError) {
+    throw new Error('Expected error for invalid outcome status');
+  }
 });
 
 test('validateDecisionEvent - invalid quality_score (negative)', () => {
@@ -135,7 +139,9 @@ test('validateDecisionEvent - invalid quality_score (negative)', () => {
   const result = validateDecisionEvent(eventWithNegativeScore);
   expect(result.valid).toBe(false);
   const hasError = result.errors.some(e => e.field === 'quality_score');
-  if (!hasError) throw new Error('Expected error for negative quality_score');
+  if (!hasError) {
+    throw new Error('Expected error for negative quality_score');
+  }
 });
 
 test('validateDecisionEvent - invalid quality_score (over 100)', () => {
@@ -143,7 +149,9 @@ test('validateDecisionEvent - invalid quality_score (over 100)', () => {
   const result = validateDecisionEvent(eventWithHighScore);
   expect(result.valid).toBe(false);
   const hasError = result.errors.some(e => e.field === 'quality_score');
-  if (!hasError) throw new Error('Expected error for quality_score over 100');
+  if (!hasError) {
+    throw new Error('Expected error for quality_score over 100');
+  }
 });
 
 test('validateDecisionEvent - quality_score of 0', () => {
@@ -214,7 +222,7 @@ test('formatValidationErrors - empty errors', () => {
 
 test('validateDecisionEvent - all valid outcome statuses', () => {
   const statuses = ['success', 'failure', 'partial', 'unknown'];
-  
+
   for (const status of statuses) {
     const event = {
       ...validEvent,
@@ -286,7 +294,7 @@ test('validateDecisionEvent - complex nested structures', () => {
 // Run tests
 async function runTests() {
   console.log(`\nRunning ${tests.length} tests for Decision Intelligence Engine Types...\n`);
-  
+
   for (const { name, fn } of tests) {
     try {
       await fn();
@@ -298,9 +306,9 @@ async function runTests() {
       failed++;
     }
   }
-  
+
   console.log(`\n${passed} passed, ${failed} failed\n`);
-  
+
   if (failed > 0) {
     process.exit(1);
   }

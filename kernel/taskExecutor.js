@@ -1,25 +1,24 @@
 /**
  * Secure Task Executor - Vulnerability 3 Fix
- * 
+ *
  * This module implements a secure execution model that:
  * - Maintains a task registry with absolute binary paths and SHA256 hashes
  * - Verifies binary hash before execution
  * - Uses fixed argument arrays (no string interpolation)
  * - Sets shell: false to prevent command injection
  * - Uses restricted environment variables
- * 
+ *
  * All command execution MUST go through this module.
  * spawn/exec usage outside this module is banned via AST gate.
- * 
+ *
  * Requirements: 1.3, 2.3
  */
 
-"use strict";
+'use strict';
 
 const { spawn } = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
-const path = require('node:path');
 
 /**
  * Task Registry - Defines allowed tasks with absolute binary paths and expected hashes
@@ -59,16 +58,16 @@ const IMMUTABLE_ENV = Object.freeze({
   SYSTEMROOT: process.env.SYSTEMROOT,
   USERPROFILE: process.env.USERPROFILE,
   HOME: process.env.HOME,
-  PATH: process.platform === 'win32' 
-    ? "C:\\Windows\\system32;C:\\Windows;C:\\Program Files\\Git\\bin;C:\\Program Files\\nodejs"
-    : "/usr/bin:/bin:/usr/local/bin",
+  PATH: process.platform === 'win32'
+    ? 'C:\\Windows\\system32;C:\\Windows;C:\\Program Files\\Git\\bin;C:\\Program Files\\nodejs'
+    : '/usr/bin:/bin:/usr/local/bin',
   // Preserve NODE_ENV for development mode checks
   NODE_ENV: process.env.NODE_ENV
 });
 
 /**
  * Verify Binary Hash - Validates binary integrity using SHA256
- * 
+ *
  * @param {string} binPath - Absolute path to the binary
  * @param {string|null} expected - Expected SHA256 hash (null to skip verification)
  * @returns {Promise<boolean>} - True if hash matches or verification is skipped
@@ -80,21 +79,21 @@ async function verifyBinaryHash(binPath, expected) {
     return true;
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const hash = crypto.createHash('sha256');
     const stream = fs.createReadStream(binPath);
-    
+
     stream.on('data', (chunk) => hash.update(chunk));
     stream.on('end', () => {
       const actualHash = hash.digest('hex');
       const matches = actualHash === expected;
-      
+
       if (!matches) {
         console.error(`[TaskExecutor] 🛡️ BINARY INTEGRITY FAILURE: ${binPath}`);
         console.error(`   Expected: ${expected}`);
         console.error(`   Actual:   ${actualHash}`);
       }
-      
+
       resolve(matches);
     });
     stream.on('error', (err) => {
@@ -106,10 +105,10 @@ async function verifyBinaryHash(binPath, expected) {
 
 /**
  * Execute Task - Secure task execution with verification
- * 
+ *
  * This is the ONLY function that should be used for command execution.
  * All spawn/exec usage outside this module is banned via AST gate.
- * 
+ *
  * @param {string} taskId - Task identifier from TASK_REGISTRY
  * @param {Array<string>} additionalArgs - Optional additional arguments (must be array)
  * @returns {Promise<{code: number, stdout: string, stderr: string}>} - Execution result
@@ -141,10 +140,10 @@ async function executeTask(taskId, additionalArgs = []) {
   return new Promise((resolve, reject) => {
     // Spawn process with secure options
     const proc = spawn(config.bin, args, {
-      shell: false,           // CRITICAL: Disable shell to prevent command injection
-      env: IMMUTABLE_ENV,     // Use restricted environment
+      shell: false, // CRITICAL: Disable shell to prevent command injection
+      env: IMMUTABLE_ENV, // Use restricted environment
       stdio: ['ignore', 'pipe', 'pipe'], // Ignore stdin, capture stdout/stderr
-      cwd: process.cwd()      // Use current working directory
+      cwd: process.cwd() // Use current working directory
     });
 
     let stdout = '';
@@ -176,7 +175,7 @@ async function executeTask(taskId, additionalArgs = []) {
 
 /**
  * Get Available Tasks - Returns list of available task IDs
- * 
+ *
  * @returns {Array<string>} - Array of task IDs
  */
 function getAvailableTasks() {
@@ -185,7 +184,7 @@ function getAvailableTasks() {
 
 /**
  * Get Task Info - Returns configuration for a specific task
- * 
+ *
  * @param {string} taskId - Task identifier
  * @returns {Object|null} - Task configuration or null if not found
  */

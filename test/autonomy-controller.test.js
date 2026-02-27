@@ -1,6 +1,6 @@
 /**
  * Unit tests for AutonomyController
- * 
+ *
  * Tests cover:
  * - Constructor with various feature flag combinations
  * - Module instantiation (all 9 modules)
@@ -9,7 +9,7 @@
  * - getMetrics() method
  * - Dry-run mode
  * - Kill switch
- * 
+ *
  * Validates Requirements: 2.1, 2.2, 2.5
  */
 
@@ -23,7 +23,7 @@ describe('AutonomyController', () => {
     // Reset environment variables
     delete process.env.DRY_RUN;
     delete process.env.AUTONOMY_KILL_SWITCH;
-    
+
     // Create mock logger
     mockLogger = {
       info: vi.fn(),

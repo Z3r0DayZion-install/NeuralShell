@@ -80,7 +80,7 @@ export class CostAwareRouter {
     return valueScores.sort((a, b) => b.valueScore - a.valueScore)[0].endpoint;
   }
 
-  recordCost(endpointName, costAmount, requestSize = 0) {
+  recordCost(endpointName, costAmount, _requestSize = 0) {
     const endpoint = this.endpointCosts.get(endpointName);
     if (endpoint) {
       endpoint.totalCostIncurred += costAmount;

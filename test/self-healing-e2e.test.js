@@ -1,6 +1,6 @@
 /**
  * End-to-End Test for Self-Healing Wiring
- * 
+ *
  * Tests that the self-healing module is properly wired into production-server.js
  * and responds to system events.
  */
@@ -16,7 +16,7 @@ describe('Self-Healing End-to-End Wiring', () => {
   beforeEach(async () => {
     // Set AUTO_HEALING flag
     process.env.AUTO_HEALING = '1';
-    
+
     // Create and initialize server
     server = new NeuralShellServer();
     await server.initialize();
@@ -40,7 +40,7 @@ describe('Self-Healing End-to-End Wiring', () => {
     });
 
     assert.strictEqual(response.statusCode, 200, 'Should return 200 OK');
-    
+
     const data = JSON.parse(response.body);
     assert.ok(data.enabled, 'Autonomy should be enabled');
     assert.ok(Array.isArray(data.modules), 'Should have modules array');
@@ -55,7 +55,7 @@ describe('Self-Healing End-to-End Wiring', () => {
 
     assert.strictEqual(response.statusCode, 200, 'Should return 200 OK');
     assert.strictEqual(response.headers['content-type'], 'text/plain; charset=utf-8', 'Should return text/plain');
-    
+
     const body = response.body;
     assert.ok(body.includes('self_healing_total_attempts'), 'Should include self_healing_total_attempts metric');
     assert.ok(body.includes('self_healing_successful'), 'Should include self_healing_successful metric');
@@ -85,7 +85,7 @@ describe('Self-Healing End-to-End Wiring', () => {
 
     assert.ok(result.healed, 'Should successfully heal the issue');
     assert.strictEqual(result.strategy, 'test_strategy', 'Should use test_strategy');
-    
+
     // Verify metrics were updated
     const stats = selfHealing.getStats();
     assert.ok(stats.metrics.totalHealingAttempts > 0, 'Should have healing attempts');
@@ -94,7 +94,7 @@ describe('Self-Healing End-to-End Wiring', () => {
 
   it('should log healing action when self-healing responds', async () => {
     const selfHealing = server.autonomyController.modules.selfHealing;
-    
+
     // Track healing events
     let healingEventReceived = false;
     selfHealing.once('healed', (data) => {
@@ -124,7 +124,7 @@ describe('Self-Healing End-to-End Wiring', () => {
 
   it('should respect cooldown period between healing attempts', async () => {
     const selfHealing = server.autonomyController.modules.selfHealing;
-    
+
     // Register a test strategy
     selfHealing.registerStrategy('cooldown_test', {
       handler: async (issue) => {
@@ -148,7 +148,7 @@ describe('Self-Healing End-to-End Wiring', () => {
     });
     assert.strictEqual(result2.healed, false, 'Second attempt should be prevented');
     assert.strictEqual(result2.reason, 'cooldown_active', 'Should be prevented by cooldown');
-    
+
     // Verify prevented heals metric
     const stats = selfHealing.getStats();
     assert.ok(stats.metrics.preventedHeals > 0, 'Should have prevented heals');
@@ -167,7 +167,7 @@ describe('Self-Healing End-to-End Wiring', () => {
     });
 
     assert.strictEqual(response.statusCode, 503, 'Should return 503 when autonomy not enabled');
-    
+
     const data = JSON.parse(response.body);
     assert.strictEqual(data.error, 'AUTONOMY_NOT_ENABLED', 'Should return AUTONOMY_NOT_ENABLED error');
 

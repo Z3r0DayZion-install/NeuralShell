@@ -16,7 +16,7 @@ export class ResponseStreamer {
     return `data: ${JSON.stringify(data)}\n\n`;
   }
 
-  static async *streamResponse(response, maxChunkSize = 4096) {
+  static async *streamResponse(response, _maxChunkSize = 4096) {
     if (!response.body) {
       yield JSON.stringify({ error: 'No response body' });
       return;

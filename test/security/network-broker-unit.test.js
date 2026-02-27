@@ -1,8 +1,8 @@
 /**
  * Unit Test: Network Broker Security Implementation
- * 
+ *
  * **Validates: Requirements 1.6, 2.6**
- * 
+ *
  * Tests the safeFetch function to ensure all security constraints are enforced:
  * - followRedirects: false (rejects 3xx status codes)
  * - MAX_RESPONSE_BYTES = 10MB limit
@@ -26,7 +26,7 @@ function test(name, fn) {
 
 async function runTests() {
   console.log('\n🧪 Running Network Broker Security Unit Tests\n');
-  
+
   for (const { name, fn } of tests) {
     results.total++;
     try {
@@ -42,9 +42,9 @@ async function runTests() {
       }
     }
   }
-  
+
   console.log(`\n📊 Results: ${results.passed}/${results.total} passed, ${results.failed} failed\n`);
-  
+
   if (results.failed > 0) {
     process.exit(1);
   }
@@ -53,9 +53,9 @@ async function runTests() {
 /**
  * Test that non-HTTPS protocols are rejected
  */
-test("Rejects non-HTTPS protocols", async () => {
+test('Rejects non-HTTPS protocols', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
     await safeFetch('http://example.com');
     assert.fail('Should have thrown ERR_PROTOCOL_DENIED');
@@ -67,9 +67,9 @@ test("Rejects non-HTTPS protocols", async () => {
 /**
  * Test that unpinned hosts are rejected
  */
-test("Rejects unpinned hosts", async () => {
+test('Rejects unpinned hosts', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
     await safeFetch('https://unpinned-host.com');
     assert.fail('Should have thrown ERR_PIN_REQUIRED');
@@ -81,9 +81,9 @@ test("Rejects unpinned hosts", async () => {
 /**
  * Test that invalid HTTP methods are rejected
  */
-test("Rejects invalid HTTP methods (PUT)", async () => {
+test('Rejects invalid HTTP methods (PUT)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
     await safeFetch('https://api.trusted-llm.com', { method: 'PUT' });
     assert.fail('Should have thrown ERR_METHOD_DENIED');
@@ -95,9 +95,9 @@ test("Rejects invalid HTTP methods (PUT)", async () => {
 /**
  * Test that invalid HTTP methods are rejected (DELETE)
  */
-test("Rejects invalid HTTP methods (DELETE)", async () => {
+test('Rejects invalid HTTP methods (DELETE)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
     await safeFetch('https://api.trusted-llm.com', { method: 'DELETE' });
     assert.fail('Should have thrown ERR_METHOD_DENIED');
@@ -109,9 +109,9 @@ test("Rejects invalid HTTP methods (DELETE)", async () => {
 /**
  * Test that invalid HTTP methods are rejected (PATCH)
  */
-test("Rejects invalid HTTP methods (PATCH)", async () => {
+test('Rejects invalid HTTP methods (PATCH)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
     await safeFetch('https://api.trusted-llm.com', { method: 'PATCH' });
     assert.fail('Should have thrown ERR_METHOD_DENIED');
@@ -123,12 +123,12 @@ test("Rejects invalid HTTP methods (PATCH)", async () => {
 /**
  * Test that non-whitelisted headers are rejected
  */
-test("Rejects non-whitelisted headers (Authorization)", async () => {
+test('Rejects non-whitelisted headers (Authorization)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
-    await safeFetch('https://api.trusted-llm.com', { 
-      headers: { 'Authorization': 'Bearer token' } 
+    await safeFetch('https://api.trusted-llm.com', {
+      headers: { 'Authorization': 'Bearer token' }
     });
     assert.fail('Should have thrown ERR_HEADER_DENIED');
   } catch (error) {
@@ -140,12 +140,12 @@ test("Rejects non-whitelisted headers (Authorization)", async () => {
 /**
  * Test that non-whitelisted headers are rejected (Cookie)
  */
-test("Rejects non-whitelisted headers (Cookie)", async () => {
+test('Rejects non-whitelisted headers (Cookie)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
-    await safeFetch('https://api.trusted-llm.com', { 
-      headers: { 'Cookie': 'session=abc' } 
+    await safeFetch('https://api.trusted-llm.com', {
+      headers: { 'Cookie': 'session=abc' }
     });
     assert.fail('Should have thrown ERR_HEADER_DENIED');
   } catch (error) {
@@ -157,12 +157,12 @@ test("Rejects non-whitelisted headers (Cookie)", async () => {
 /**
  * Test that non-whitelisted headers are rejected (X-Custom-Header)
  */
-test("Rejects non-whitelisted headers (X-Custom-Header)", async () => {
+test('Rejects non-whitelisted headers (X-Custom-Header)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
-    await safeFetch('https://api.trusted-llm.com', { 
-      headers: { 'X-Custom-Header': 'value' } 
+    await safeFetch('https://api.trusted-llm.com', {
+      headers: { 'X-Custom-Header': 'value' }
     });
     assert.fail('Should have thrown ERR_HEADER_DENIED');
   } catch (error) {
@@ -174,13 +174,13 @@ test("Rejects non-whitelisted headers (X-Custom-Header)", async () => {
 /**
  * Test that whitelisted headers are accepted (Accept)
  */
-test("Accepts whitelisted headers (Accept)", async () => {
+test('Accepts whitelisted headers (Accept)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   // This will fail due to unpinned host, but should pass header validation
   try {
-    await safeFetch('https://api.trusted-llm.com', { 
-      headers: { 'Accept': 'application/json' } 
+    await safeFetch('https://api.trusted-llm.com', {
+      headers: { 'Accept': 'application/json' }
     });
   } catch (error) {
     // Should fail on certificate pinning, not header validation
@@ -191,13 +191,13 @@ test("Accepts whitelisted headers (Accept)", async () => {
 /**
  * Test that whitelisted headers are accepted (Content-Type)
  */
-test("Accepts whitelisted headers (Content-Type)", async () => {
+test('Accepts whitelisted headers (Content-Type)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   // This will fail due to unpinned host, but should pass header validation
   try {
-    await safeFetch('https://api.trusted-llm.com', { 
-      headers: { 'Content-Type': 'application/json' } 
+    await safeFetch('https://api.trusted-llm.com', {
+      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     // Should fail on certificate pinning, not header validation
@@ -208,13 +208,13 @@ test("Accepts whitelisted headers (Content-Type)", async () => {
 /**
  * Test that whitelisted headers are accepted (User-Agent)
  */
-test("Accepts whitelisted headers (User-Agent)", async () => {
+test('Accepts whitelisted headers (User-Agent)', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   // This will fail due to unpinned host, but should pass header validation
   try {
-    await safeFetch('https://api.trusted-llm.com', { 
-      headers: { 'User-Agent': 'NeuralShell/1.0' } 
+    await safeFetch('https://api.trusted-llm.com', {
+      headers: { 'User-Agent': 'NeuralShell/1.0' }
     });
   } catch (error) {
     // Should fail on certificate pinning, not header validation
@@ -225,13 +225,13 @@ test("Accepts whitelisted headers (User-Agent)", async () => {
 /**
  * Test that header names are case-insensitive
  */
-test("Accepts whitelisted headers with different casing", async () => {
+test('Accepts whitelisted headers with different casing', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   // This will fail due to unpinned host, but should pass header validation
   try {
-    await safeFetch('https://api.trusted-llm.com', { 
-      headers: { 'ACCEPT': 'application/json', 'Content-TYPE': 'text/plain' } 
+    await safeFetch('https://api.trusted-llm.com', {
+      headers: { 'ACCEPT': 'application/json', 'Content-TYPE': 'text/plain' }
     });
   } catch (error) {
     // Should fail on certificate pinning, not header validation
@@ -242,9 +242,9 @@ test("Accepts whitelisted headers with different casing", async () => {
 /**
  * Test that GET method is accepted
  */
-test("Accepts GET method", async () => {
+test('Accepts GET method', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   // This will fail due to unpinned host, but should pass method validation
   try {
     await safeFetch('https://api.trusted-llm.com', { method: 'GET' });
@@ -257,9 +257,9 @@ test("Accepts GET method", async () => {
 /**
  * Test that POST method is accepted
  */
-test("Accepts POST method", async () => {
+test('Accepts POST method', async () => {
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   // This will fail due to unpinned host, but should pass method validation
   try {
     await safeFetch('https://api.trusted-llm.com', { method: 'POST' });
@@ -272,21 +272,21 @@ test("Accepts POST method", async () => {
 /**
  * Test that proxy environment variables are purged
  */
-test("Purges proxy environment variables", async () => {
+test('Purges proxy environment variables', async () => {
   // Set proxy environment variables
   process.env.HTTP_PROXY = 'http://proxy.example.com:8080';
   process.env.HTTPS_PROXY = 'http://proxy.example.com:8080';
   process.env.http_proxy = 'http://proxy.example.com:8080';
   process.env.https_proxy = 'http://proxy.example.com:8080';
-  
+
   const { safeFetch } = await import('../../src/kernel/network.js');
-  
+
   try {
     await safeFetch('https://api.trusted-llm.com');
   } catch (error) {
     // Expected to fail, but proxy vars should be purged
   }
-  
+
   // Verify proxy variables are deleted
   assert.strictEqual(process.env.HTTP_PROXY, undefined);
   assert.strictEqual(process.env.HTTPS_PROXY, undefined);

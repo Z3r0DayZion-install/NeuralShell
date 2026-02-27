@@ -106,7 +106,6 @@ test('POST /prompt returns 502 with endpoint failures', async () => {
   await app.close();
 });
 
-
 test('provider auth: mistral uses MISTRAL_API_KEY (not OPENAI_API_KEY)', async () => {
   process.env.OPENAI_API_KEY = 'openai-key';
   process.env.MISTRAL_API_KEY = 'mistral-key';

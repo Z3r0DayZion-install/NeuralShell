@@ -1,6 +1,6 @@
 /**
  * Event Indexer Tests
- * 
+ *
  * Tests for the Kafka consumer that indexes decision events in PostgreSQL.
  */
 
@@ -83,7 +83,7 @@ describe('EventIndexer', () => {
   describe('Configuration', () => {
     it('should create config with defaults', () => {
       const config = new EventIndexerConfig();
-      
+
       assert.ok(config.kafka);
       assert.ok(config.postgres);
       assert.strictEqual(config.batchSize, 100);
@@ -95,7 +95,7 @@ describe('EventIndexer', () => {
         batchSize: 50,
         batchTimeoutMs: 2000
       });
-      
+
       assert.strictEqual(config.batchSize, 50);
       assert.strictEqual(config.batchTimeoutMs, 2000);
     });
@@ -104,11 +104,11 @@ describe('EventIndexer', () => {
   describe('Connection', () => {
     it('should connect to Kafka and PostgreSQL', async () => {
       indexer = new EventIndexer(TEST_CONFIG);
-      
+
       await indexer.connect();
-      
+
       assert.strictEqual(indexer.connected, true);
-      
+
       await indexer.disconnect();
     });
 
@@ -117,9 +117,9 @@ describe('EventIndexer', () => {
         ...TEST_CONFIG,
         pgHost: 'invalid-host'
       };
-      
+
       indexer = new EventIndexer(badConfig);
-      
+
       await assert.rejects(
         async () => await indexer.connect(),
         /Failed to connect Event Indexer/
@@ -131,7 +131,7 @@ describe('EventIndexer', () => {
     beforeEach(async () => {
       indexer = new EventIndexer(TEST_CONFIG);
       await indexer.connect();
-      
+
       // Initialize event store for writing test events
       eventStore = new EventStoreClient({
         brokers: TEST_CONFIG.kafkaBrokers,
@@ -328,12 +328,12 @@ describe('EventIndexer', () => {
       await indexer.connect();
 
       const metrics = indexer.getMetrics();
-      
+
       assert.strictEqual(metrics.eventsConsumed, 0);
       assert.strictEqual(metrics.eventsIndexed, 0);
       assert.strictEqual(metrics.batchesProcessed, 0);
       assert.strictEqual(metrics.connected, true);
-      
+
       await indexer.disconnect();
     });
   });
@@ -345,9 +345,9 @@ describe('EventIndexer', () => {
       await indexer.start();
 
       const health = await indexer.healthCheck();
-      
+
       assert.strictEqual(health.healthy, true);
-      
+
       await indexer.stop();
       await indexer.disconnect();
     });
@@ -356,7 +356,7 @@ describe('EventIndexer', () => {
       indexer = new EventIndexer(TEST_CONFIG);
 
       const health = await indexer.healthCheck();
-      
+
       assert.strictEqual(health.healthy, false);
       assert.ok(health.reason);
     });

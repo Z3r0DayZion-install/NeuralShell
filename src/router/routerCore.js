@@ -1,12 +1,10 @@
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
 import { createLogger } from './logger.js';
-import { readJsonFile, writeJsonFile, fileStats } from './stateStore.js';
 import { orderEndpointsAdaptive } from './selector.js';
-import { containsBlockedTerm, parseBlockedTerms, parseCsvSet } from './policy.js';
 import { CircuitBreakerManager, STATES as CB_STATES } from './circuitBreaker.js';
 import { ResponseCache } from './responseCache.js';
-import { PriorityQueue, PRIORITIES } from './priorityQueue.js';
+import { PriorityQueue } from './priorityQueue.js';
 import { ConnectionPool } from './connectionPool.js';
 import { PrometheusExporter } from './prometheus.js';
 import { sanitizeForLogging } from './security-utils.js';
@@ -116,7 +114,7 @@ export class RouterCore extends EventEmitter {
   }
 
   initializeEndpointStats() {
-    for (const [name, ep] of this.endpoints) {
+    for (const name of this.endpoints.keys()) {
       this.endpointStats.set(name, {
         name,
         healthy: true,
@@ -239,7 +237,11 @@ export class RouterCore extends EventEmitter {
       this.metrics.total++;
       this.metrics.rejected++;
       this.prometheus.incCounter('requests_total', { method: 'prompt', endpoint: 'router' });
-      throw { code: 'OVERLOADED', statusCode: 429, requestId };
+      const err = new Error('OVERLOADED');
+      err.code = 'OVERLOADED';
+      err.statusCode = 429;
+      err.requestId = requestId;
+      throw err;
     }
 
     this.metrics.total++;
@@ -251,7 +253,11 @@ export class RouterCore extends EventEmitter {
       const endpoint = options.endpoint || this.selectEndpoint(options);
       if (!endpoint) {
         this.metrics.fail++;
-        throw { code: 'NO_ACTIVE_ENDPOINTS', statusCode: 503, requestId };
+        const err = new Error('NO_ACTIVE_ENDPOINTS');
+        err.code = 'NO_ACTIVE_ENDPOINTS';
+        err.statusCode = 503;
+        err.requestId = requestId;
+        throw err;
       }
 
       const result = await this.callEndpoint(endpoint, payload, options);
@@ -332,7 +338,11 @@ export class RouterCore extends EventEmitter {
       }
 
       this.metrics.fail++;
-      throw { code: 'ALL_ENDPOINTS_FAILED', message: err.message, statusCode: 502, requestId };
+      const wrapped = new Error(err.message);
+      wrapped.code = 'ALL_ENDPOINTS_FAILED';
+      wrapped.statusCode = 502;
+      wrapped.requestId = requestId;
+      throw wrapped;
     } finally {
       this.metrics.inFlight = Math.max(0, this.metrics.inFlight - 1);
       this.prometheus.setGauge('requests_in_flight', {}, this.metrics.inFlight);
@@ -340,7 +350,6 @@ export class RouterCore extends EventEmitter {
   }
 
   async callEndpointStreaming(ep, payload, options = {}) {
-    const startTime = Date.now();
     const timeoutMs = ep.timeoutMs || this.options.timeoutMs;
     const onChunk = options.onChunk || (() => {});
 
@@ -444,7 +453,7 @@ export class RouterCore extends EventEmitter {
     }
   }
 
-  async callEndpoint(ep, payload, options = {}) {
+  async callEndpoint(ep, payload, _options = {}) {
     const timeoutMs = ep.timeoutMs || this.options.timeoutMs;
 
     const breaker = this.circuitBreaker.getOrCreate(ep.name);

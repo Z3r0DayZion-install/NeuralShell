@@ -65,7 +65,7 @@ export class QuineEngine {
     }
 
     // 5. Shadow Write (Phase 5: Safe Mutation)
-    const shadowPath = path.join(this.shadowDir, relativePath.replace(/[\/\\]/g, '_'));
+    const shadowPath = path.join(this.shadowDir, relativePath.replace(/[/\\]/g, '_'));
     fs.writeFileSync(shadowPath, optimizedCode, 'utf8');
     console.log(`[Quine] Shadow mutation written to: ${shadowPath}`);
 
@@ -154,5 +154,3 @@ Return ONLY the improved JavaScript code. Do not include explanations or markdow
     return header + code;
   }
 }
-
-

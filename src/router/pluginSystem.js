@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { EventEmitter } from 'events';
 
 class Plugin extends EventEmitter {
@@ -44,7 +43,7 @@ class Plugin extends EventEmitter {
 }
 
 class PluginManager extends EventEmitter {
-  constructor(options = {}) {
+  constructor(_options = {}) {
     super();
     this.plugins = new Map();
     this.hooks = new Map();
@@ -85,7 +84,7 @@ class PluginManager extends EventEmitter {
       return false;
     }
 
-    for (const [hook, handlers] of this.hooks) {
+    for (const handlers of this.hooks.values()) {
       const index = handlers.findIndex(h => h.plugin === pluginName);
       if (index > -1) {
         handlers.splice(index, 1);

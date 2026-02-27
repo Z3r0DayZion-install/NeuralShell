@@ -20,6 +20,8 @@ export class CostManager extends EventEmitter {
     this.monthlyCosts = [];
     this.currentDay = this.getDay();
     this.currentMonth = this.getMonth();
+    this.currentDayCost = 0;
+    this.currentMonthCost = 0;
 
     this.metrics = {
       totalCost: 0,
@@ -115,9 +117,10 @@ export class CostManager extends EventEmitter {
     if (day !== this.currentDay) {
       this.dailyCosts.push({
         date: this.currentDay,
-        cost: this.getDailyCost()
+        cost: this.currentDayCost
       });
       this.currentDay = day;
+      this.currentDayCost = 0;
 
       // Keep last 90 days
       if (this.dailyCosts.length > 90) {
@@ -129,15 +132,19 @@ export class CostManager extends EventEmitter {
     if (month !== this.currentMonth) {
       this.monthlyCosts.push({
         month: this.currentMonth,
-        cost: this.getMonthlyCost()
+        cost: this.currentMonthCost
       });
       this.currentMonth = month;
+      this.currentMonthCost = 0;
 
       // Keep last 12 months
       if (this.monthlyCosts.length > 12) {
         this.monthlyCosts.shift();
       }
     }
+
+    this.currentDayCost += cost;
+    this.currentMonthCost += cost;
   }
 
   /**
@@ -260,15 +267,7 @@ export class CostManager extends EventEmitter {
    */
   getDailyCost() {
     const day = this.getDay();
-    let total = 0;
-
-    for (const cost of this.costs.values()) {
-      if (cost.lastUsed && this.getDay(cost.lastUsed) === day) {
-        total += cost.totalCost;
-      }
-    }
-
-    return total;
+    return day === this.currentDay ? this.currentDayCost : 0;
   }
 
   /**
@@ -276,15 +275,7 @@ export class CostManager extends EventEmitter {
    */
   getMonthlyCost() {
     const month = this.getMonth();
-    let total = 0;
-
-    for (const cost of this.costs.values()) {
-      if (cost.lastUsed && this.getMonth(cost.lastUsed) === month) {
-        total += cost.totalCost;
-      }
-    }
-
-    return total;
+    return month === this.currentMonth ? this.currentMonthCost : 0;
   }
 
   /**

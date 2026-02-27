@@ -60,7 +60,7 @@ export class MeshNode extends EventEmitter {
     ws.on('error', (err) => console.warn(`[Hive] Peer connection error (${url}):`, err.message));
   }
 
-  handleConnection(ws, isOutgoing = false) {
+  handleConnection(ws, _isOutgoing = false) {
     // Handshake
     ws.send(JSON.stringify({ type: 'handshake', id: this.id }));
 

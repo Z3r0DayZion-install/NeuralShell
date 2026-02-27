@@ -5,7 +5,7 @@
 'use strict';
 
 const Broker = require('./index');
-const { CAP_EXEC, CAP_FS, CAP_NET } = require('./tokens');
+const { CAP_EXEC, CAP_NET } = require('./tokens');
 
 const INTENT_REGISTRY = Object.freeze({
   'SYS_GET_UPTIME': async () => ({ output: process.uptime().toFixed(2) + 's' }),

@@ -161,7 +161,7 @@ describe('ConfigValidator', () => {
     it('should detect weak secrets in production', () => {
       process.env.NODE_ENV = 'production';
       process.env.API_KEY_SECRET = 'change-me-dev';
-      
+
       const config = {
         server: { port: 3000 },
         endpoints: [{ name: 'test', url: 'https://api.example.com', model: 'test-model' }],
@@ -171,7 +171,7 @@ describe('ConfigValidator', () => {
       const result = validator.validate(config);
       expect(result.valid).toBe(false);
       expect(result.errors.some(e => e.includes('API_KEY_SECRET'))).toBe(true);
-      
+
       delete process.env.API_KEY_SECRET;
     });
   });
@@ -243,7 +243,7 @@ describe('ConfigValidator', () => {
 
     it('should accept valid log levels', () => {
       const levels = ['error', 'warn', 'info', 'debug', 'trace'];
-      
+
       for (const level of levels) {
         const config = {
           server: { port: 3000 },
@@ -307,7 +307,7 @@ describe('validateEnvironment', () => {
 
     const result = validateEnvironment();
     expect(result.warnings.length).toBeGreaterThan(0);
-    
+
     delete process.env.API_KEY_SECRET;
     delete process.env.JWT_SECRET;
     delete process.env.SESSION_SECRET;

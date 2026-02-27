@@ -173,7 +173,7 @@ class PrometheusExporter {
   export() {
     const lines = [];
 
-    for (const [name, metric] of this.metrics) {
+    for (const metric of this.metrics.values()) {
       lines.push(`# HELP ${metric.name} ${metric.help}`);
       lines.push(`# TYPE ${metric.name} ${metric.type}`);
 

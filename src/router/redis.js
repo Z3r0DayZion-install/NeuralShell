@@ -333,7 +333,7 @@ class RedisBackend {
         await subscriber.subscribe(channel, (message) => {
           // Wrap callback in try-catch to handle errors
           try {
-            callback(channel, message);
+            return callback(channel, message);
           } catch (err) {
             console.error('Redis subscription callback error:', sanitizeForLogging({
               error: err.message,

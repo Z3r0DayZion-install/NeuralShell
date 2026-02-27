@@ -1,7 +1,25 @@
 import Docker from 'dockerode';
 
+function stripControlChars(str) {
+  let out = '';
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (
+      (code >= 0x00 && code <= 0x09)
+      || (code >= 0x0B && code <= 0x1F)
+      || (code >= 0x7F && code <= 0x9F)
+    ) {
+      continue;
+    }
+    out += str[i];
+  }
+  return out;
+}
+
 function withTimeout(promise, timeoutMs, errorMessage) {
-  if (!timeoutMs || timeoutMs <= 0) return promise;
+  if (!timeoutMs || timeoutMs <= 0) {
+    return promise;
+  }
   return Promise.race([
     promise,
     new Promise((_, reject) => {
@@ -13,7 +31,9 @@ function withTimeout(promise, timeoutMs, errorMessage) {
 function waitForContainer(container) {
   return new Promise((resolve, reject) => {
     container.wait((err, data) => {
-      if (err) return reject(err);
+      if (err) {
+        return reject(err);
+      }
       resolve(data);
     });
   });
@@ -139,9 +159,12 @@ export class HardenedSandbox {
         timeoutPromise
       ]);
     } catch (err) {
-      const rawOutput = outputBuffer.join('');
-      const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
-      return { success: false, error: `Sandbox Failure: ${String(err && err.message ? err.message : err)}`, output: cleanOutput };
+      const outputText = stripControlChars(outputBuffer.join('')).trim();
+      return {
+        success: false,
+        error: `Sandbox Failure: ${String(err && err.message ? err.message : err)}`,
+        output: outputText
+      };
     }
 
     if (timeoutHit || !waitResult) {
@@ -152,12 +175,11 @@ export class HardenedSandbox {
         // ignore
       }
 
-      const rawOutput = outputBuffer.join('');
-      const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+      const outputText = stripControlChars(outputBuffer.join('')).trim();
       return {
         success: false,
         error: 'Execution Timed Out',
-        output: cleanOutput,
+        output: outputText,
         exitCode: null
       };
     }
@@ -165,8 +187,7 @@ export class HardenedSandbox {
     const statusCode =
       waitResult && typeof waitResult.StatusCode === 'number' ? waitResult.StatusCode : null;
 
-    const rawOutput = outputBuffer.join('');
-    const cleanOutput = rawOutput.replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '').trim();
+    const cleanOutput = stripControlChars(outputBuffer.join('')).trim();
 
     if (statusCode === 0) {
       return {

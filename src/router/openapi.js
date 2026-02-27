@@ -4,7 +4,6 @@ function generateOpenAPISpec(options = {}) {
     description = 'Intelligent AI routing gateway with failover, rate limiting, and observability',
     version = '1.0.0',
     serverUrl = 'http://localhost:3000',
-    endpoints = [],
     auth = {}
   } = options;
 

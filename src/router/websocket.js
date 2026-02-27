@@ -131,7 +131,7 @@ class WebSocketPool {
     }
   }
 
-  handleClose(id, code, reason) {
+  handleClose(id, _code, _reason) {
     const connection = this.connections.get(id);
     if (connection) {
       this.connections.delete(id);

@@ -67,24 +67,25 @@ class PriorityQueue {
   }
 
   enqueue(item, priority = PRIORITIES.NORMAL) {
-    if (!this.queues[priority]) {
-      priority = PRIORITIES.NORMAL;
+    let queuePriority = priority;
+    if (!this.queues[queuePriority]) {
+      queuePriority = PRIORITIES.NORMAL;
     }
 
-    if (this.queues[priority].length >= (this.maxSizeByPriority[priority] || this.maxSize)) {
+    if (this.queues[queuePriority].length >= (this.maxSizeByPriority[queuePriority] || this.maxSize)) {
       this.metrics.rejected++;
-      this.metrics.rejectedByPriority[priority]++;
+      this.metrics.rejectedByPriority[queuePriority]++;
       return false;
     }
 
     const entry = {
       ...item,
-      priority,
+      priority: queuePriority,
       enqueuedAt: Date.now(),
       id: item.id || crypto.randomUUID()
     };
 
-    this.queues[priority].push(entry);
+    this.queues[queuePriority].push(entry);
     this.metrics.enqueued++;
 
     return true;

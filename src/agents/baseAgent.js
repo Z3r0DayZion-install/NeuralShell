@@ -23,7 +23,7 @@ export class BaseAgent {
     }
   }
 
-  async charge(amount, task) {
+  async charge(amount, _task) {
     // Helper to calculate cost based on task complexity
     return amount;
   }
@@ -95,7 +95,7 @@ export class BaseAgent {
   }
 
   // Override this in subclasses
-  async executeTask(task) {
+  async executeTask(_task) {
     throw new Error('executeTask not implemented');
   }
 }

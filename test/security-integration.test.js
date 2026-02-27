@@ -18,7 +18,7 @@ function test(name, fn) {
 
 async function runTests() {
   console.log('\n🔒 Running Security Integration Tests\n');
-  
+
   for (const { name, fn } of tests) {
     results.total++;
     try {
@@ -31,9 +31,9 @@ async function runTests() {
       console.log(`   Error: ${error.message}`);
     }
   }
-  
+
   console.log(`\n📊 Results: ${results.passed}/${results.total} passed, ${results.failed} failed\n`);
-  
+
   if (results.failed > 0) {
     process.exit(1);
   }
@@ -45,7 +45,7 @@ async function runTests() {
 
 test('ConfigValidator can validate router configuration', () => {
   const validator = new ConfigValidator();
-  
+
   const config = {
     server: { port: 3000, host: '0.0.0.0' },
     endpoints: [
@@ -57,7 +57,7 @@ test('ConfigValidator can validate router configuration', () => {
     logging: { level: 'info' },
     security: { enableSecurityHeaders: true, corsAllowedOrigins: ['http://localhost:3000'] }
   };
-  
+
   const result = validator.validate(config);
   assert.equal(result.valid, true);
   assert.equal(result.errors.length, 0);
@@ -65,28 +65,28 @@ test('ConfigValidator can validate router configuration', () => {
 
 test('SecurityLogger can be instantiated and used', () => {
   const logger = new SecurityLogger({ namespace: 'neuralshell' });
-  
+
   // Test various logging methods
   const authEntry = logger.logAuthAttempt(true, { ip: '127.0.0.1', apiKey: 'test-key' });
   assert.ok(authEntry.correlationId);
   assert.equal(authEntry.success, true);
-  
+
   const rateLimitEntry = logger.logRateLimit({ ip: '127.0.0.1', endpoint: '/prompt', limit: 100 });
   assert.equal(rateLimitEntry.event, 'rate_limit_exceeded');
-  
+
   const accessDeniedEntry = logger.logAccessDenied('invalid_token', { ip: '127.0.0.1' });
   assert.equal(accessDeniedEntry.event, 'access_denied');
 });
 
 test('HealthCheck can monitor router components', async () => {
   const healthCheck = new HealthCheck({ timeout: 1000 });
-  
+
   // Register checks for router components
   healthCheck.register('memory', StandardHealthChecks.memory(90), { critical: true });
   healthCheck.register('uptime', StandardHealthChecks.uptime(0), { critical: false });
-  
+
   const result = await healthCheck.runAll();
-  
+
   assert.ok(result.timestamp);
   assert.equal(result.status, 'healthy');
   assert.ok(result.checks.length >= 2);
@@ -103,54 +103,54 @@ test('Router can be built with security configuration', async () => {
     requestsPerWindow: 100,
     rateLimitWindowMs: 60000
   });
-  
+
   assert.ok(server);
   assert.ok(server.server);
-  
+
   await server.close();
 });
 
 test('ConfigValidator detects production security issues', () => {
   const originalEnv = process.env.NODE_ENV;
   process.env.NODE_ENV = 'production';
-  
+
   const validator = new ConfigValidator();
   const config = {
     server: { port: 3000 },
     endpoints: [{ name: 'test', url: 'https://api.example.com', model: 'test' }],
-    security: { 
+    security: {
       enableSecurityHeaders: false,
       corsAllowedOrigins: ['*']
     }
   };
-  
+
   const result = validator.validate(config);
-  
+
   // Should have errors about CORS wildcard in production
   assert.equal(result.valid, false);
   assert.ok(result.errors.some(e => e.includes('CORS')));
-  
+
   process.env.NODE_ENV = originalEnv;
 });
 
 test('SecurityLogger creates request logger middleware', () => {
   const logger = new SecurityLogger();
   const middleware = logger.createRequestLogger();
-  
+
   assert.equal(typeof middleware, 'function');
 });
 
 test('HealthCheck timeout handling works', async () => {
   const healthCheck = new HealthCheck({ timeout: 100 });
-  
+
   // Register a slow check that will timeout
   healthCheck.register('slow', async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
     return { available: true };
   }, { critical: false, timeout: 50 });
-  
+
   const result = await healthCheck.runAll();
-  
+
   // The slow check should have timed out
   const slowCheck = result.checks.find(c => c.name === 'slow');
   assert.equal(slowCheck.status, 'unhealthy');
@@ -161,7 +161,7 @@ test('StandardHealthChecks.router handles missing getEndpointStats', async () =>
   const mockRouter = {}; // No getEndpointStats method
   const check = StandardHealthChecks.router(mockRouter);
   const result = await check();
-  
+
   assert.equal(result.available, false);
 });
 
@@ -176,7 +176,7 @@ test('ConfigValidator validates circuit breaker settings', () => {
       timeoutMs: 5000
     }
   };
-  
+
   const result = validator.validate(config);
   assert.equal(result.valid, false);
   assert.ok(result.errors.some(e => e.includes('failureThreshold')));
@@ -192,7 +192,7 @@ test('ConfigValidator validates cache settings', () => {
       ttlSeconds: 0 // Invalid
     }
   };
-  
+
   const result = validator.validate(config);
   assert.equal(result.valid, false);
   assert.ok(result.errors.some(e => e.includes('ttlSeconds')));
@@ -201,21 +201,21 @@ test('ConfigValidator validates cache settings', () => {
 test('SecurityLogger handles null request gracefully', () => {
   const logger = new SecurityLogger();
   const correlationId = logger.getCorrelationId(null);
-  
+
   assert.ok(correlationId);
   assert.equal(typeof correlationId, 'string');
 });
 
 test('HealthCheck supports non-critical checks', async () => {
   const healthCheck = new HealthCheck({ timeout: 1000 });
-  
+
   healthCheck.register('critical', async () => ({ available: true }), { critical: true });
   healthCheck.register('non-critical', async () => {
     throw new Error('Non-critical failure');
   }, { critical: false });
-  
+
   const result = await healthCheck.runAll();
-  
+
   // Should be healthy because only non-critical check failed
   assert.equal(result.status, 'healthy');
   assert.equal(result.summary.unhealthy, 1);
@@ -232,7 +232,7 @@ test('ConfigValidator warns about high cache TTL', () => {
       ttlSeconds: 7200 // Very high
     }
   };
-  
+
   const result = validator.validate(config);
   assert.ok(result.warnings.some(w => w.includes('ttlSeconds')));
 });
@@ -245,7 +245,7 @@ test('SecurityLogger logs data access events', () => {
     ip: '192.168.1.1',
     success: true
   });
-  
+
   assert.equal(entry.event, 'data_access');
   assert.equal(entry.resource, 'user_profile');
   assert.equal(entry.action, 'read');
@@ -254,15 +254,15 @@ test('SecurityLogger logs data access events', () => {
 
 test('HealthCheck provides summary statistics', async () => {
   const healthCheck = new HealthCheck({ timeout: 1000 });
-  
+
   healthCheck.register('check1', async () => ({ available: true }));
   healthCheck.register('check2', async () => ({ available: true }));
   healthCheck.register('check3', async () => {
     throw new Error('Failed');
   });
-  
+
   const result = await healthCheck.runAll();
-  
+
   assert.equal(result.summary.total, 3);
   assert.equal(result.summary.healthy, 2);
   assert.equal(result.summary.unhealthy, 1);

@@ -8,7 +8,7 @@
  */
 
 import pg from 'pg';
-import { trace, context, SpanStatusCode } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 const { Pool } = pg;
 const tracer = trace.getTracer('neuralshell-metrics-store');

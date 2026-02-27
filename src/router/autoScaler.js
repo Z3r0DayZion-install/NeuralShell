@@ -114,7 +114,7 @@ export class AutoScaler extends EventEmitter {
    * Make scaling decision
    */
   makeDecision(current) {
-    const { cpuLoad, memoryLoad, requestRate } = current;
+    const { cpuLoad, memoryLoad } = current;
 
     // Scale up conditions
     if (cpuLoad > this.scaleUpThreshold || memoryLoad > this.scaleUpThreshold) {

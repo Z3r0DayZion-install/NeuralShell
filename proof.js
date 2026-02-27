@@ -26,15 +26,21 @@ function safeTimestamp() {
 function extractProofSummary(text) {
   const lines = String(text || '').split(/\r?\n/);
   const start = lines.findIndex((l) => l.includes('--- PROOF SUMMARY ---'));
-  if (start === -1) return null;
+  if (start === -1) {
+    return null;
+  }
   const end = lines.findIndex((l, i) => i > start && l.includes('---------------------'));
-  if (end === -1) return null;
+  if (end === -1) {
+    return null;
+  }
   return lines.slice(start, end + 1).join('\n');
 }
 
 function readIfExists(p) {
   try {
-    if (!fs.existsSync(p)) return null;
+    if (!fs.existsSync(p)) {
+      return null;
+    }
     return fs.readFileSync(p, 'utf8');
   } catch {
     return null;
@@ -87,7 +93,9 @@ async function main() {
   for (const p of targets) {
     const text = readIfExists(p);
     const block = text ? extractProofSummary(text) : null;
-    if (!block) continue;
+    if (!block) {
+      continue;
+    }
     printedAny = true;
     process.stdout.write(`\n=== ${p} ===\n`);
     process.stdout.write(block + '\n');
@@ -107,4 +115,3 @@ main().catch((err) => {
   process.stderr.write(err && err.stack ? err.stack + '\n' : String(err) + '\n');
   process.exit(1);
 });
-

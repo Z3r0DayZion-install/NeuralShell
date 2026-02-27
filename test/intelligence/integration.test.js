@@ -1,6 +1,6 @@
 /**
  * Integration tests for Decision Intelligence Engine with autonomous systems
- * 
+ *
  * Tests that self-healing, auto-scaler, and anomaly detector properly
  * emit Decision_Events when making autonomous decisions.
  */
@@ -16,7 +16,7 @@ describe('Decision Intelligence Engine Integration', () => {
 
   beforeEach(async () => {
     decisionEngine = getDecisionEngine();
-    
+
     // Mock the recordDecision method to avoid Kafka dependency
     vi.spyOn(decisionEngine, 'recordDecision').mockResolvedValue(undefined);
   });
@@ -96,13 +96,13 @@ describe('Decision Intelligence Engine Integration', () => {
 
       // First healing
       await orchestrator.heal({ type: 'test-issue' });
-      
+
       // Second healing (should be prevented by cooldown)
       const result = await orchestrator.heal({ type: 'test-issue' });
 
       expect(result.healed).toBe(false);
       expect(result.reason).toBe('cooldown_active');
-      
+
       // Should have recorded 2 decision events
       expect(decisionEngine.recordDecision).toHaveBeenCalledTimes(2);
     });

@@ -6,7 +6,6 @@
 
 const crypto = require('node:crypto');
 const fs = require('node:fs');
-const path = require('node:path');
 
 // Embedded Public Key (Root of Trust)
 const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----

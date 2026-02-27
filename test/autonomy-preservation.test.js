@@ -1,13 +1,13 @@
 /**
  * Preservation Property Tests
- * 
+ *
  * These tests capture the baseline behavior of the system BEFORE the autonomy fix.
  * They verify that non-autonomous functionality remains unchanged after the fix.
- * 
+ *
  * Property 2: For any HTTP request, metrics query, or application lifecycle event
  * that does NOT involve autonomous systems, the fixed code SHALL produce exactly
  * the same behavior as the original code.
- * 
+ *
  * Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7
  */
 
@@ -104,7 +104,7 @@ describe('Preservation Property Tests', () => {
       expect(response.statusCode).toBe(200);
       // Actual format is JSON, not Prometheus text
       expect(response.headers['content-type']).toContain('application/json');
-      
+
       // Verify it's valid JSON
       const data = JSON.parse(response.body);
       expect(data).toBeDefined();
@@ -160,7 +160,7 @@ describe('Preservation Property Tests', () => {
         method: 'GET',
         url: '/metrics/autonomy'
       });
-      
+
       // Baseline: This endpoint should not exist yet (404)
       // After fix with autonomy disabled, it should still return 404 or 503
       expect([404, 503]).toContain(response.statusCode);
@@ -171,7 +171,7 @@ describe('Preservation Property Tests', () => {
         method: 'GET',
         url: '/admin/autonomy'
       });
-      
+
       // Baseline: This endpoint should not exist yet (404)
       // After fix with autonomy disabled, it should still return 404 or 503
       expect([404, 503]).toContain(response.statusCode);
@@ -181,7 +181,7 @@ describe('Preservation Property Tests', () => {
   describe('Property 2.6: Request Handling Preservation', () => {
     it('should handle multiple concurrent health check requests', async () => {
       // Property-based approach: Generate multiple requests
-      const requests = Array.from({ length: 10 }, () => 
+      const requests = Array.from({ length: 10 }, () =>
         app.inject({
           method: 'GET',
           url: '/health'
@@ -189,7 +189,7 @@ describe('Preservation Property Tests', () => {
       );
 
       const responses = await Promise.all(requests);
-      
+
       // All should succeed with same format
       for (const response of responses) {
         expect(response.statusCode).toBe(200);
@@ -205,7 +205,7 @@ describe('Preservation Property Tests', () => {
         { 'Accept': 'application/json' },
         { 'Accept': '*/*' },
         { 'User-Agent': 'test-client' },
-        { 'Accept': 'application/json', 'User-Agent': 'test' },
+        { 'Accept': 'application/json', 'User-Agent': 'test' }
       ];
 
       for (const headers of headerCombinations) {
@@ -230,7 +230,7 @@ describe('Preservation Property Tests', () => {
       // Verify core components are available
       expect(server.getRouter()).toBeDefined();
       expect(server.getApp()).toBeDefined();
-      
+
       // Health check should work (depends on proper initialization)
       const response = await app.inject({
         method: 'GET',
