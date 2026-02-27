@@ -4,6 +4,8 @@ param(
 
   [string]$PfxPassphrase = "",
 
+  [string]$PfxPassphraseEnvVar = "",
+
   [string]$CaCerPath = "",
 
   [ValidateSet("CurrentUser", "LocalMachine")]
@@ -38,6 +40,15 @@ if (-not $caCer) {
 }
 
 if ([string]::IsNullOrWhiteSpace($PfxPassphrase)) {
+  if ($PfxPassphraseEnvVar) {
+    $fromEnv = [string][Environment]::GetEnvironmentVariable($PfxPassphraseEnvVar)
+    if (-not [string]::IsNullOrWhiteSpace($fromEnv)) {
+      $PfxPassphrase = $fromEnv
+    }
+  }
+}
+
+if ([string]::IsNullOrWhiteSpace($PfxPassphrase)) {
   $pfxSecure = Read-Host -Prompt "Enter PFX passphrase" -AsSecureString
 } else {
   $pfxSecure = ConvertTo-SecureString -String $PfxPassphrase -AsPlainText -Force
@@ -51,8 +62,12 @@ Import-Certificate -FilePath $caCer -CertStoreLocation $trustStore | Out-Null
 
 Write-Host "[client-setup] importing client PFX -> $clientStore"
 $imported = Import-PfxCertificate -FilePath $clientPfx -CertStoreLocation $clientStore -Password $pfxSecure
+$certObj = $imported
+if ($imported -is [System.Array]) {
+  $certObj = $imported | Select-Object -First 1
+}
 
-$thumb = $imported.Thumbprint
+$thumb = $certObj.Thumbprint
 if (-not $thumb) {
   throw "Import-PfxCertificate succeeded but returned no thumbprint."
 }

@@ -49,7 +49,8 @@ On each client machine, copy:
 Then run:
 
 ```powershell
-pwsh -File .\scripts\client-setup.ps1 -ClientPfxPath .\certs\clients\<device>.pfx -CaCerPath .\certs\ca\ca.cer -TestBaseUrl https://<router-ip>:4443
+$env:PFX_PASS='(pfx passphrase)'
+pwsh -File .\scripts\client-setup.ps1 -ClientPfxPath .\certs\clients\<device>.pfx -CaCerPath .\certs\ca\ca.cer -PfxPassphraseEnvVar PFX_PASS -TestBaseUrl https://<router-ip>:4443
 ```
 
 ## Pre-Deployment Verification (30 minutes)
