@@ -5,23 +5,23 @@
 NeuralShell supports three deployment profiles via `NS_PROFILE` (or `server.profile` in `config.yaml`):
 
 - `local` (default): binds to loopback (`127.0.0.1`) and can run without tokens.
-- `lan`: intended for home/office networks; requires `ADMIN_TOKEN`, `PROMPT_TOKEN`, and `security.adminIpAllowlist` when binding to a non-loopback host.
-- `public`: same requirements as `lan`, plus you should terminate TLS in front of it and enable strict allowlists.
+- `lan`: intended for home/office networks; requires `ADMIN_TOKEN`, `PROMPT_TOKEN`, `security.adminIpAllowlist`, and TLS when binding to a non-loopback host (or set `NS_ALLOW_INSECURE_HTTP=1` only on a trusted isolated LAN).
+- `public`: same requirements as `lan` but should use TLS (prefer mTLS) and strict allowlists.
 
 **LAN quick setup (recommended):**
 ```bash
 export NS_PROFILE=lan
 export HOST=0.0.0.0
-export ADMIN_TOKEN='change-me'
-export PROMPT_TOKEN='change-me-too'
+export ADMIN_TOKEN='use-a-strong-random-token-32+chars'
+export PROMPT_TOKEN='use-a-strong-random-token-32+chars'
 ```
 ```powershell
 $env:NS_PROFILE='lan'
 $env:HOST='0.0.0.0'
-$env:ADMIN_TOKEN='change-me'
-$env:PROMPT_TOKEN='change-me-too'
+$env:ADMIN_TOKEN='use-a-strong-random-token-32+chars'
+$env:PROMPT_TOKEN='use-a-strong-random-token-32+chars'
 ```
-Then set `security.adminIpAllowlist` to your LAN CIDR(s) (IPv4 CIDR supported) in `config.yaml`.
+Then set `security.adminIpAllowlist` and `server.tls` in `config.yaml` (IPv4 CIDR supported for allowlists).
 
 ## Pre-Deployment Verification (30 minutes)
 
@@ -75,6 +75,7 @@ curl http://localhost:3000/health
 
 # Test prompt endpoint
 curl -X POST http://localhost:3000/prompt \
+  -H "x-prompt-token: $PROMPT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"role": "user", "content": "hello"}]}'
 

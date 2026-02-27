@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import Fastify from 'fastify';
 import fastifyWebsocket from '@fastify/websocket';
 import fastifySwagger from '@fastify/swagger';
@@ -169,6 +170,7 @@ export class NeuralShellServer {
     this.config = null;
     this.app = null;
     this.server = null; // HTTP server handle
+    this._httpsOptions = null;
     this.runtimeMetrics = {
       startedAtMs: Date.now(),
       requestsTotal: 0,
@@ -291,6 +293,68 @@ export class NeuralShellServer {
       );
     }
 
+    const allowInsecureHttp = String(process.env.NS_ALLOW_INSECURE_HTTP || '').trim() === '1';
+    const tlsConfig = this.config.server?.tls && typeof this.config.server.tls === 'object' ? this.config.server.tls : {};
+    const tlsEnabled = tlsConfig.enabled === true || String(process.env.NS_TLS || '').trim() === '1';
+
+    if (bindsToPublic && (profile === 'lan' || profile === 'public') && !tlsEnabled && !allowInsecureHttp) {
+      throw new Error(
+        `Refusing to start: NS_PROFILE=${profile} with server.host=${bindHost} requires TLS (server.tls.enabled=true) ` +
+          'or set NS_ALLOW_INSECURE_HTTP=1 for trusted isolated LANs.'
+      );
+    }
+
+    const resolveMaybeRelativePath = (p) => {
+      const raw = String(p || '').trim();
+      if (!raw) {
+        return '';
+      }
+      return path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), raw);
+    };
+
+    let tlsMeta = { enabled: false };
+    if (tlsEnabled) {
+      const certPath = resolveMaybeRelativePath(tlsConfig.certPath || process.env.NS_TLS_CERT);
+      const keyPath = resolveMaybeRelativePath(tlsConfig.keyPath || process.env.NS_TLS_KEY);
+      const caPath = resolveMaybeRelativePath(tlsConfig.caPath || process.env.NS_TLS_CA);
+      const requireClientCert =
+        tlsConfig.requireClientCert === true || String(process.env.NS_TLS_REQUIRE_CLIENT_CERT || '').trim() === '1';
+
+      if (!certPath || !keyPath) {
+        throw new Error('TLS is enabled but server.tls.certPath and server.tls.keyPath are required.');
+      }
+      if (!fs.existsSync(certPath)) {
+        throw new Error(`TLS is enabled but certPath does not exist: ${certPath}`);
+      }
+      if (!fs.existsSync(keyPath)) {
+        throw new Error(`TLS is enabled but keyPath does not exist: ${keyPath}`);
+      }
+      if (requireClientCert && !caPath) {
+        throw new Error('TLS mTLS is enabled (requireClientCert=true) but server.tls.caPath is empty.');
+      }
+      if (requireClientCert && caPath && !fs.existsSync(caPath)) {
+        throw new Error(`TLS mTLS is enabled but caPath does not exist: ${caPath}`);
+      }
+
+      const httpsOptions = {
+        cert: fs.readFileSync(certPath),
+        key: fs.readFileSync(keyPath)
+      };
+      if (caPath && fs.existsSync(caPath)) {
+        httpsOptions.ca = fs.readFileSync(caPath);
+      }
+      if (requireClientCert) {
+        httpsOptions.requestCert = true;
+        httpsOptions.rejectUnauthorized = true;
+      }
+
+      this._httpsOptions = httpsOptions;
+      tlsMeta = { enabled: true, requireClientCert, certPath, keyPath, caPath };
+    } else {
+      this._httpsOptions = null;
+      tlsMeta = { enabled: false };
+    }
+
     const adminToken =
       configuredAdminToken || (profile === 'local' ? crypto.randomBytes(24).toString('hex') : '');
     if (!configuredAdminToken && profile === 'local') {
@@ -308,16 +372,26 @@ export class NeuralShellServer {
       ipDenylist: Array.isArray(this.config.security?.ipDenylist) ? this.config.security.ipDenylist : []
     };
     this._security.adminIpAllowlist = adminIpAllowlist;
+    this._security.allowInsecureHttp = allowInsecureHttp;
+    this._security.tls = tlsMeta;
 
     const fastifyLoggerEnabled =
       (this.config.logging?.level || 'info') !== 'error' &&
       process.env.NODE_ENV !== 'test' &&
       process.env.PROOF_MODE !== '1';
 
+    const http2Requested = this.config.server?.enableHttp2 === true;
+    if (http2Requested && !this._httpsOptions) {
+      console.warn('[Server] server.enableHttp2 requested but TLS is not enabled; ignoring http2.');
+    }
+
     this.app = Fastify({
       logger: fastifyLoggerEnabled,
       trustProxy: this.config.server?.trustProxy === true || process.env.TRUST_PROXY === '1',
-      bodyLimit: this.config.server?.requestBodyLimitBytes || 262144
+      requestTimeout: this.config.server?.requestTimeoutMs || 5000,
+      bodyLimit: this.config.server?.requestBodyLimitBytes || 262144,
+      http2: Boolean(this._httpsOptions) && http2Requested,
+      https: this._httpsOptions || undefined
     });
 
     this.app.addHook('onRequest', async (request, reply) => {
@@ -642,6 +716,14 @@ export class NeuralShellServer {
         host: '127.0.0.1',
         profile: 'local',
         trustProxy: false,
+        enableHttp2: false,
+        tls: {
+          enabled: false,
+          certPath: '',
+          keyPath: '',
+          caPath: '',
+          requireClientCert: false
+        },
         requestTimeoutMs: 5000,
         maxConcurrentRequests: 100,
         gracefulShutdownTimeoutMs: 30000
@@ -1478,6 +1560,7 @@ autonomy_modules_total 0
       throw new Error(`Invalid port: ${configuredPort}`);
     }
     const host = this.config.server?.host || '0.0.0.0';
+    const proofMode = process.env.NODE_ENV === 'test' || process.env.PROOF_MODE === '1';
 
     console.log(`NeuralShell starting with ${this.config.endpoints?.length || 0} endpoints`);
 
@@ -1488,7 +1571,6 @@ autonomy_modules_total 0
     } catch (err) {
       const code = err && typeof err === 'object' ? err.code : null;
       if (code === 'EADDRINUSE') {
-        const proofMode = process.env.NODE_ENV === 'test' || process.env.PROOF_MODE === '1';
         if (proofMode && Number.isFinite(port) && port > 0) {
           console.log(`[proof-port] Port collision on ${port}; retrying with ephemeral port`);
           await this.app.listen({ port: 0, host });
@@ -1511,7 +1593,12 @@ autonomy_modules_total 0
 
     const addr = this.server && typeof this.server.address === 'function' ? this.server.address() : null;
     const actualPort = addr && typeof addr === 'object' && typeof addr.port === 'number' ? addr.port : port;
-    console.log(`Server listening at http://127.0.0.1:${actualPort}`);
+    const scheme = this._httpsOptions ? 'https' : 'http';
+    if (proofMode) {
+      console.log(`Server listening at http://127.0.0.1:${actualPort}`);
+    } else {
+      console.log(`Server listening at ${scheme}://${host}:${actualPort}`);
+    }
 
     // Start autonomous systems AFTER server is listening
     if (this.autonomyController) {

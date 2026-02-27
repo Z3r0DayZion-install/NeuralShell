@@ -50,6 +50,7 @@ Run on your LAN with fail-closed defaults:
 - Bind a non-loopback host (e.g. `HOST=0.0.0.0`)
 - Set `ADMIN_TOKEN` and `PROMPT_TOKEN`
 - Set `security.adminIpAllowlist` in `config.yaml` to your LAN CIDR(s)
+- Enable TLS via `server.tls.enabled=true` (or set `NS_ALLOW_INSECURE_HTTP=1` only on a trusted isolated LAN)
 
 ## 🧠 Mission Control
 Access the Dashboard at: **`http://localhost:3000/admin-dashboard.html`**

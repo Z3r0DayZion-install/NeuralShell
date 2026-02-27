@@ -16,6 +16,16 @@ const schema = {
         port: { type: 'number', minimum: 0, maximum: 65535 },
         host: { type: 'string' },
         trustProxy: { type: 'boolean' },
+        tls: {
+          type: 'object',
+          properties: {
+            enabled: { type: 'boolean' },
+            certPath: { type: 'string' },
+            keyPath: { type: 'string' },
+            caPath: { type: 'string' },
+            requireClientCert: { type: 'boolean' }
+          }
+        },
         requestTimeoutMs: { type: 'number', minimum: 0 },
         requestBodyLimitBytes: { type: 'number', minimum: 0 },
         maxConcurrentRequests: { type: 'number', minimum: 1 },
@@ -262,6 +272,8 @@ function validateSection(section, schema, path) {
 }
 
 function mergeWithDefaults(config) {
+  const serverInput = config.server && typeof config.server === 'object' ? config.server : {};
+  const tlsInput = serverInput.tls && typeof serverInput.tls === 'object' ? serverInput.tls : {};
   return {
     version: CONFIG_SCHEMA_VERSION,
     server: {
@@ -274,7 +286,15 @@ function mergeWithDefaults(config) {
       maxConcurrentRequests: 32,
       gracefulShutdownTimeoutMs: 30000,
       enableHttp2: false,
-      ...config.server
+      ...serverInput,
+      tls: {
+        enabled: false,
+        certPath: '',
+        keyPath: '',
+        caPath: '',
+        requireClientCert: false,
+        ...tlsInput
+      }
     },
     endpoints: config.endpoints || [],
     routing: {

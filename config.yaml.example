@@ -19,6 +19,14 @@ server:
   maxConcurrentRequests: 32
   gracefulShutdownTimeoutMs: 30000
   enableHttp2: false
+  # TLS (recommended for lan/public). For mTLS, set requireClientCert=true and provide caPath.
+  tls:
+    enabled: false
+    certPath: "./certs/neuralshell.crt"
+    keyPath: "./certs/neuralshell.key"
+    # CA bundle used to validate client certificates when requireClientCert=true
+    caPath: "./certs/ca.crt"
+    requireClientCert: false
 
 # Endpoint Configuration
 endpoints:

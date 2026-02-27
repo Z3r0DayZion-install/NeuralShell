@@ -293,6 +293,7 @@ security:
       PROOF_MODE: '1',
       NS_PROFILE: 'lan',
       HOST: '0.0.0.0',
+      NS_ALLOW_INSECURE_HTTP: '1',
       ADMIN_TOKEN: 'this-is-a-strong-admin-token',
       PROMPT_TOKEN: 'this-is-a-strong-prompt-token',
       PLUGINS_ENABLED: '0',
