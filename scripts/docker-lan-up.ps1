@@ -71,9 +71,10 @@ try {
   if ($ReadOnly) {
     $args += @(
       "--read-only",
-      "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
-      "--tmpfs", "/app/state:rw,nosuid,nodev,size=128m",
-      "--tmpfs", "/app/logs:rw,nosuid,nodev,size=64m"
+      "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m,uid=1001,gid=1001,mode=1777",
+      "--tmpfs", "/app/state:rw,nosuid,nodev,size=256m,uid=1001,gid=1001,mode=1777",
+      "--tmpfs", "/app/logs:rw,nosuid,nodev,size=64m,uid=1001,gid=1001,mode=1777",
+      "--tmpfs", "/app/deployments:rw,nosuid,nodev,size=256m,uid=1001,gid=1001,mode=1777"
     )
   }
 

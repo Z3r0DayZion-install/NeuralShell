@@ -1356,12 +1356,35 @@ export class NeuralShellServer {
         endpoint = this.modeRouter.selectEndpoint(activeMode);
       }
 
-      if (stream) {
-        return this.handleStreaming(request, reply, { messages, model, temperature, max_tokens, endpoint });
-      }
+      const extractErrMsg = (err) => {
+        if (!err) {
+          return 'Request failed';
+        }
+        if (err instanceof AggregateError) {
+          const agg = err.aggregateErrors || err.errors || [];
+          const first = Array.isArray(agg) && agg.length > 0 ? agg[0] : null;
+          return String((first && first.message) ? first.message : (err.message || 'Upstream connection failed'));
+        }
+        if (err instanceof Error) {
+          return err.message || 'Request failed';
+        }
+        return String(err);
+      };
 
-      const result = await this.router.executeRequest({ messages, model, temperature, max_tokens }, { endpoint });
-      return { ...result, mode: activeMode };
+      try {
+        if (stream) {
+          return this.handleStreaming(request, reply, { messages, model, temperature, max_tokens, endpoint });
+        }
+
+        const result = await this.router.executeRequest({ messages, model, temperature, max_tokens }, { endpoint });
+        return { ...result, mode: activeMode };
+      } catch (err) {
+        const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : 502;
+        const code = err?.code ? String(err.code) : 'UPSTREAM_ERROR';
+        const message = extractErrMsg(err);
+        reply.status(statusCode);
+        return { error: code, message };
+      }
     });
 
     this.app.get('/v1/models', async () => ({

@@ -80,6 +80,16 @@ Stop:
 pwsh -File .\scripts\docker-lan-down.ps1
 ```
 
+### Use it from this same PC (no other clients)
+
+```powershell
+node .\scripts\ns-client.mjs --base-url https://localhost:4443 --mode health
+node .\scripts\ns-client.mjs --base-url https://localhost:4443 --mode prompt --message "hello"
+node .\scripts\ns-client.mjs --base-url https://localhost:4443 --mode tenants
+```
+
+If your LAN config has `features.dryRun: true`, `/prompt` will return a deterministic `dry-run` response until you configure a real upstream endpoint.
+
 ### Client onboarding (Windows)
 
 On each client machine, copy:
