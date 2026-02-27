@@ -50,6 +50,14 @@ pwsh -File .\scripts\open-lan-firewall.ps1 -Port 4443
 
 This creates a Windows Firewall inbound allow rule for RFC1918 networks on `Private`/`Domain` profiles.
 
+### Smoke test mTLS from the router host
+
+```powershell
+$env:NS_TLS_PFX_PASSPHRASE = (node -e "console.log(JSON.parse(require('fs').readFileSync('./local/lan-secrets.json','utf8')).NS_TLS_PFX_PASSPHRASE)")
+$env:ADMIN_TOKEN = (node -e "console.log(JSON.parse(require('fs').readFileSync('./local/lan-secrets.json','utf8')).ADMIN_TOKEN)")
+node .\scripts\smoke-mtls.mjs --base-url https://localhost:4443 --ca-pem .\certs\ca\ca.crt --client-pfx .\certs\clients\client-desktop.pfx --client-pass-env NS_TLS_PFX_PASSPHRASE --admin-token-env ADMIN_TOKEN --expect-client-cert-required
+```
+
 ### Client onboarding (Windows)
 
 On each client machine, copy:
