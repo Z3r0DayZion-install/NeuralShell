@@ -58,6 +58,14 @@ $env:ADMIN_TOKEN = (node -e "console.log(JSON.parse(require('fs').readFileSync('
 node .\scripts\smoke-mtls.mjs --base-url https://localhost:4443 --ca-pem .\certs\ca\ca.crt --client-pfx .\certs\clients\client-desktop.pfx --client-pass-env NS_TLS_PFX_PASSPHRASE --admin-token-env ADMIN_TOKEN --expect-client-cert-required
 ```
 
+### One-shot LAN status (router host)
+
+Runs: docker container check, firewall rule check, localhost + LAN mTLS smoke tests.
+
+```powershell
+pwsh -File .\scripts\lan-status.ps1
+```
+
 ### Client onboarding (Windows)
 
 On each client machine, copy:
@@ -70,6 +78,14 @@ Then run:
 ```powershell
 $env:PFX_PASS='(pfx passphrase)'
 pwsh -File .\scripts\client-setup.ps1 -ClientPfxPath .\certs\clients\<device>.pfx -CaCerPath .\certs\ca\ca.cer -PfxPassphraseEnvVar PFX_PASS -TestBaseUrl https://<router-ip>:4443
+```
+
+### Build client kits (router host)
+
+Build kits for all `certs/clients/*.pfx`:
+
+```powershell
+pwsh -File .\scripts\make-client-kits.ps1
 ```
 
 ## Pre-Deployment Verification (30 minutes)
