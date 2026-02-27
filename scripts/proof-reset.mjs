@@ -7,6 +7,7 @@ const ROOT = path.join(__dirname, '..');
 
 const TARGETS = [
   path.join(ROOT, 'proof', 'latest', 'proof-manifest.json'),
+  path.join(ROOT, 'proof', 'latest', 'run-pointer.json'),
   path.join(ROOT, 'proof', 'latest', 'runtime'),
   path.join(ROOT, 'proof', 'latest', 'spawn')
 ];
