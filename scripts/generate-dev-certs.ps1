@@ -8,6 +8,26 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function New-RandomPassphrase([int]$length = 32) {
+  $alphabet = @()
+  $alphabet += 48..57   # 0-9
+  $alphabet += 65..90   # A-Z
+  $alphabet += 97..122  # a-z
+  -join (Get-Random -Count $length -InputObject $alphabet | ForEach-Object { [char]$_ })
+}
+
+function Normalize-StringList([string[]]$items) {
+  $out = @()
+  foreach ($item in ($items | Where-Object { $_ -ne $null })) {
+    $raw = [string]$item
+    foreach ($piece in ($raw -split ',')) {
+      $t = $piece.Trim()
+      if ($t) { $out += $t }
+    }
+  }
+  return $out
+}
+
 function Ensure-Dir([string]$p) {
   if (-not (Test-Path -LiteralPath $p)) {
     New-Item -ItemType Directory -Path $p | Out-Null
@@ -40,6 +60,16 @@ $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $outRoot = (Resolve-Path -LiteralPath $repoRoot).Path
 $certRoot = Join-Path $outRoot $OutDir
 
+$ServerDns = Normalize-StringList $ServerDns
+$ServerIp = Normalize-StringList $ServerIp
+$ClientNames = Normalize-StringList $ClientNames
+
+$generatedPassphrase = $false
+if ([string]::IsNullOrWhiteSpace($PfxPassphrase)) {
+  $PfxPassphrase = New-RandomPassphrase 32
+  $generatedPassphrase = $true
+}
+
 $caDir = Join-Path $certRoot "ca"
 $serverDir = Join-Path $certRoot "server"
 $clientsDir = Join-Path $certRoot "clients"
@@ -50,6 +80,9 @@ Ensure-Dir $serverDir
 Ensure-Dir $clientsDir
 
 Write-Host "[certs] output=$certRoot"
+if ($generatedPassphrase) {
+  Write-Host "[certs] generated PFX passphrase (store safely): $PfxPassphrase"
+}
 
 $notAfterCa = (Get-Date).AddYears(10)
 $notAfterLeaf = (Get-Date).AddYears(2)
@@ -134,25 +167,25 @@ if ($ClientNames.Count -gt 0) {
   }
 }
 
-Write-Host ""
-Write-Host "[next] config.yaml (LAN, TLS):"
-Write-Host "server:"
-Write-Host "  profile: \"lan\""
-Write-Host "  host: \"0.0.0.0\""
-Write-Host "  tls:"
-Write-Host "    enabled: true"
-Write-Host ("    pfxPath: \"./{0}\"" -f (Join-Path $OutDir "server/neuralshell.pfx").Replace("\\","/"))
-Write-Host ("    caPath: \"./{0}\"" -f (Join-Path $OutDir "ca/ca.crt").Replace("\\","/"))
-Write-Host "    requireClientCert: false  # set true for mTLS"
-Write-Host ""
-Write-Host "[next] env (optional):"
-Write-Host "  NS_TLS=1"
-Write-Host "  NS_TLS_PFX=./certs/server/neuralshell.pfx"
-Write-Host "  NS_TLS_CA=./certs/ca/ca.crt"
-Write-Host "  NS_TLS_REQUIRE_CLIENT_CERT=0"
+Write-Host ''
+Write-Host '[next] config.yaml (LAN, TLS):'
+Write-Host 'server:'
+Write-Host '  profile: "lan"'
+Write-Host '  host: "0.0.0.0"'
+Write-Host '  tls:'
+Write-Host '    enabled: true'
+Write-Host ('    pfxPath: "./{0}"' -f (Join-Path $OutDir 'server/neuralshell.pfx').Replace('\','/'))
+Write-Host ('    caPath: "./{0}"' -f (Join-Path $OutDir 'ca/ca.crt').Replace('\','/'))
+Write-Host '    requireClientCert: false  # set true for mTLS'
+Write-Host ''
+Write-Host '[next] env (optional):'
+Write-Host '  NS_TLS=1'
+Write-Host '  NS_TLS_PFX=./certs/server/neuralshell.pfx'
+Write-Host '  NS_TLS_CA=./certs/ca/ca.crt'
+Write-Host '  NS_TLS_REQUIRE_CLIENT_CERT=0'
 if ($PfxPassphrase) {
-  Write-Host "  NS_TLS_PFX_PASSPHRASE=(your passphrase)"
+  Write-Host '  NS_TLS_PFX_PASSPHRASE=(your passphrase)'
 }
-Write-Host ""
-Write-Host "[note] For browser trust (no warnings), install the CA certificate into Trusted Root manually:"
+Write-Host ''
+Write-Host '[note] For browser trust (no warnings), install the CA certificate into Trusted Root manually:'
 Write-Host ("  {0}" -f $caOut.cer)
