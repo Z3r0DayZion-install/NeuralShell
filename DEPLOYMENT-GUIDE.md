@@ -102,6 +102,12 @@ Build kits for all `certs/clients/*.pfx`:
 pwsh -File .\scripts\make-client-kits.ps1
 ```
 
+Package the newest kit for each client as a zip (plus SHA256 manifest):
+
+```powershell
+pwsh -File .\scripts\package-client-kits.ps1 -LatestOnly
+```
+
 ## Pre-Deployment Verification (30 minutes)
 
 ### 1. Verify All Tests Pass
