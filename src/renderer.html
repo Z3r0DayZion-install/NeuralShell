@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>NeuralShell v5</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="appBanner" aria-live="polite" role="status"></div>
+  <div id="loadScreen" aria-live="polite" role="status">
+    <div id="loadCard">
+      <div id="loadSpinner"></div>
+      <h2>NeuralShell v5</h2>
+      <p id="loadScreenText">Booting workspace...</p>
+    </div>
+  </div>
+  <div id="setupWizardOverlay" hidden aria-hidden="true">
+    <div id="setupWizardDialog" role="dialog" aria-modal="true" aria-labelledby="setupWizardTitle">
+      <h3 id="setupWizardTitle">Quick Setup</h3>
+      <input id="wizardProfileNameInput" type="text" placeholder="Profile name (e.g. Local Ollama)">
+      <input id="wizardBaseUrlInput" type="text" placeholder="Bridge URL (http://127.0.0.1:11434)">
+      <input id="wizardDefaultModelInput" type="text" placeholder="Default model (e.g. llama3)">
+      <label><input id="wizardConnectOnStartupInput" type="checkbox" checked> Auto-connect on startup</label>
+      <button id="wizardTestBtn">Test Bridge</button>
+      <button id="wizardSaveBtn">Save & Continue</button>
+      <button id="wizardSkipBtn">Skip</button>
+      <pre id="wizardOutput"></pre>
+    </div>
+  </div>
+  <div id="app">
+    <!-- Left panel: model and session management -->
+    <aside id="leftPanel">
+      <h2>NeuralShell v5</h2>
+      <section id="modelSelector">
+        <label for="modelSelect">Model:</label>
+        <select id="modelSelect">
+          <option value="llama2">Llama 2</option>
+          <option value="mistral">Mistral</option>
+          <option value="llama3" selected>Llama 3</option>
+        </select>
+        <button id="refreshModelsBtn">Refresh Models</button>
+      </section>
+      <section id="sessionManager">
+        <h3>Sessions</h3>
+        <input id="sessionSearchInput" type="text" placeholder="Search sessions">
+        <select id="sessionSortSelect">
+          <option value="name_asc">Sort: Name A-Z</option>
+          <option value="name_desc">Sort: Name Z-A</option>
+          <option value="time_desc">Sort: Newest</option>
+          <option value="time_asc">Sort: Oldest</option>
+        </select>
+        <ul id="sessionList"></ul>
+        <input id="sessionName" type="text" placeholder="Session name">
+        <input id="sessionPass" type="password" placeholder="Passphrase">
+        <button id="saveSessionBtn">Save</button>
+        <button id="loadSessionBtn">Load</button>
+        <button id="renameSessionBtn">Rename</button>
+        <button id="deleteSessionBtn">Delete</button>
+        <button id="duplicateSessionBtn">Duplicate</button>
+        <button id="importBundleBtn" title="Import NeuralLink Bundle">Import Bundle</button>
+        <pre id="sessionMetadataOutput"></pre>
+      </section>
+      <section id="identityPanel">
+        <h3>🔑 Identity</h3>
+        <div id="identityFingerprint" style="font-family: monospace; font-size: 11px; opacity: 0.7;">Loading...</div>
+        <ul id="identityPeerList" style="font-size: 11px; max-height: 80px; overflow-y: auto;"></ul>
+        <button id="identityRotateBtn" title="Generate a new device keypair">Rotate Key</button>
+      </section>
+      <section id="auditDashboard">
+        <h3>📋 Audit Log</h3>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+          <span id="daemonStatusBadge"
+            style="font-size:10px; padding:2px 6px; border-radius:4px; background:#444; color:#ccc;">daemon: ?</span>
+          <button id="auditRefreshBtn" style="font-size:10px; padding:2px 6px;">Refresh</button>
+          <button id="auditVerifyBtn" style="font-size:10px; padding:2px 6px;">Verify Chain</button>
+        </div>
+        <ul id="auditFeed"
+          style="font-size:10px; font-family:monospace; max-height:140px; overflow-y:auto; list-style:none; padding:0; margin:0;">
+        </ul>
+      </section>
+      <section id="pluginPanel">
+        <h3>Plugins</h3>
+        <button id="refreshCommandsBtn">Refresh Commands</button>
+        <button id="commandHelpBtn">Command Help</button>
+        <ul id="commandList"></ul>
+      </section>
+      <section id="settingsPanel">
+        <h3>Settings</h3>
+        <div id="settingsTabs">
+          <button id="settingsTabNetworkBtn" data-settings-tab="network">Network</button>
+          <button id="settingsTabInterfaceBtn" data-settings-tab="interface">Interface</button>
+          <button id="settingsTabAutosaveBtn" data-settings-tab="autosave">Autosave</button>
+        </div>
+        <div class="settingsSection" data-settings-section="network">
+          <select id="bridgeProfileSelect"></select>
+          <input id="bridgeProfileNameInput" type="text" placeholder="Bridge profile name">
+          <input id="baseUrlInput" type="text" placeholder="Ollama URL (http://127.0.0.1:11434)">
+          <input id="timeoutInput" type="number" min="1000" max="120000" step="500" placeholder="Timeout ms">
+          <input id="retryInput" type="number" min="0" max="10" step="1" placeholder="Retry count">
+          <input id="tokenBudgetInput" type="number" min="0" max="200000" step="100" placeholder="Token budget (0=off)">
+          <label><input id="connectOnStartupInput" type="checkbox" checked> Auto-connect on startup</label>
+          <label><input id="allowRemoteBridgeInput" type="checkbox"> Allow non-local bridge URLs</label>
+          <button id="testBridgeBtn">Test Bridge</button>
+          <button id="saveBridgeProfileBtn">Save Bridge Profile</button>
+          <pre id="bridgeStatusOutput"></pre>
+        </div>
+        <div class="settingsSection" data-settings-section="interface" hidden>
+          <select id="themeSelect">
+            <option value="dark">Dark Theme</option>
+            <option value="light">Light Theme</option>
+          </select>
+          <label>Personality
+            <select id="personalityProfileSelect">
+              <option value="balanced">Balanced</option>
+              <option value="engineer">Engineer</option>
+              <option value="founder">Founder</option>
+              <option value="analyst">Analyst</option>
+              <option value="creative">Creative</option>
+            </select>
+          </label>
+          <label>Safety policy
+            <select id="safetyPolicySelect">
+              <option value="strict">Strict</option>
+              <option value="balanced">Balanced</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <label><input id="clockEnabledInput" type="checkbox" checked> Show built-in clock</label>
+          <label><input id="clock24hInput" type="checkbox"> Use 24-hour format</label>
+          <label>Clock UTC offset
+            <input id="clockUtcOffsetInput" type="text" placeholder="local or +00:00">
+          </label>
+          <label><input id="rgbEnabledInput" type="checkbox"> Enable RGB sync</label>
+          <label>RGB provider
+            <select id="rgbProviderSelect">
+              <option value="none">None</option>
+              <option value="openrgb">OpenRGB</option>
+            </select>
+          </label>
+          <input id="rgbHostInput" type="text" placeholder="RGB host (127.0.0.1)">
+          <input id="rgbPortInput" type="number" min="1" max="65535" step="1" placeholder="RGB port (6742)">
+          <input id="rgbTargetsInput" type="text" placeholder="RGB targets (comma-separated ids)">
+          <button id="rgbPreviewMoodBtn">Preview Mood Sync</button>
+          <button id="rgbRunDemoBtn">Run RGB Demo</button>
+          <button id="runAutonomyBenchmarkBtn">Run Autonomy Benchmark</button>
+          <button id="verifyAuditBtn">Verify Audit Chain</button>
+          <button id="loadAuditBtn">Load Audit Tail</button>
+          <pre id="rgbStatusOutput"></pre>
+          <pre id="auditOutput"></pre>
+        </div>
+        <div class="settingsSection" data-settings-section="autosave" hidden>
+          <input id="autosaveNameInput" type="text" placeholder="Autosave session name">
+          <input id="autosaveIntervalInput" type="number" min="1" max="120" step="1"
+            placeholder="Autosave interval (minutes)">
+          <label><input id="autosaveEnabledInput" type="checkbox"> Enable autosave</label>
+        </div>
+        <button id="applySettingsBtn">Apply Settings</button>
+        <button id="repairIndexBtn">Repair Session Index</button>
+        <button id="exportStateBtn">Export State</button>
+        <button id="importStateBtn">Import State</button>
+        <input id="importStateFile" type="file" accept="application/json,.json" hidden>
+      </section>
+    </aside>
+    <!-- Centre panel: chat history and input -->
+    <main id="centerPanel">
+      <div id="topMenuBar" role="toolbar" aria-label="Quick actions">
+        <button id="menuFocusAllBtn">Overview</button>
+        <button id="menuFocusChatBtn">Chat</button>
+        <button id="menuFocusSessionsBtn">Sessions</button>
+        <button id="menuFocusSettingsBtn">Settings</button>
+        <button id="menuFocusLogsBtn">Logs</button>
+        <button id="menuQuickSaveBtn">Quick Save</button>
+        <button id="toggleFocusModeBtn">Focus Mode</button>
+        <button id="toggleCommandPaletteBtn">Command Palette</button>
+        <button id="togglePreviewBtn">Split Preview</button>
+        <button id="toggleDensityBtn">Density</button>
+        <button id="flushQueueBtn">Flush Queue</button>
+        <button id="autonomousStartBtn">Autonomous Start</button>
+        <button id="autonomousStopBtn">Autonomous Stop</button>
+        <button id="autonomousResumeBtn">Autonomous Resume</button>
+      </div>
+      <div id="timelineBar">
+        <label for="timelineRange">Timeline</label>
+        <input id="timelineRange" type="range" min="0" max="0" value="0">
+        <span id="timelineLabel">0 / 0</span>
+      </div>
+      <div id="commandChips"></div>
+      <div id="chatSearchBar">
+        <input id="chatSearchInput" type="text" placeholder="Search in chat">
+        <button id="chatSearchBtn">Search</button>
+        <button id="chatSearchClearBtn">Clear</button>
+        <button id="newChatBtn">New Chat</button>
+        <button id="deleteLastExchangeBtn">Delete Last Exchange</button>
+        <button id="undoBtn">Undo</button>
+      </div>
+      <div id="chatSplitPane">
+        <div id="chatHistory" role="log" aria-live="polite" aria-label="Chat history"></div>
+        <div id="previewDivider" role="separator" aria-orientation="vertical" hidden></div>
+        <div id="chatPreviewPane" hidden>
+          <h4>Live Preview</h4>
+          <div id="chatPreviewOutput"></div>
+        </div>
+      </div>
+      <div id="typingIndicator" aria-live="polite"></div>
+      <div id="chatTools">
+        <select id="snippetSelect">
+          <option value="">Prompt snippet...</option>
+          <option value="Summarize this conversation in 5 bullets.">Summarize</option>
+          <option value="Rewrite this for clarity and brevity.">Rewrite</option>
+          <option value="List risks and mitigations.">Risk review</option>
+        </select>
+        <button id="insertSnippetBtn">Insert Snippet</button>
+        <button id="editLastBtn">Edit Last</button>
+        <button id="regenerateBtn">Regenerate</button>
+        <button id="exportChatBtn">Export Chat</button>
+        <button id="exportMarkdownBtn">Export Markdown</button>
+        <button id="copyMarkdownBtn">Copy Markdown</button>
+        <button id="copyLastAssistantBtn">Copy Last Reply</button>
+        <button id="shortcutHelpBtn">Shortcuts</button>
+        <button id="importChatBtn">Import Chat</button>
+        <input id="importChatFile" type="file" accept="application/json,.json,.md,.txt" hidden>
+      </div>
+      <div id="promptContainer">
+        <textarea id="promptInput" rows="3" placeholder="Type message…"></textarea>
+        <div id="promptMetrics">Chars: 0 | Words: 0 | Tokens~: 0</div>
+        <label><input id="autoScrollInput" type="checkbox" checked> Auto-scroll</label>
+        <button id="sendBtn">Send</button>
+        <button id="stopBtn" disabled>Stop</button>
+        <button id="retryBtn" disabled>Retry</button>
+        <button id="exportBundleBtn">Export Bundle</button>
+      </div>
+      <section id="utilityDeck">
+        <h3>Utility Deck</h3>
+        <div id="macroButtons">
+          <button id="macroSummarizeBtn">Macro: Summarize</button>
+          <button id="macroRisksBtn">Macro: Risks</button>
+          <button id="macroRewriteBtn">Macro: Rewrite</button>
+        </div>
+        <textarea id="stickyNoteInput" rows="3" placeholder="Sticky notes (saved locally)"></textarea>
+        <div id="bookmarkPanel">
+          <h4>Bookmarks</h4>
+          <ul id="bookmarkList"></ul>
+        </div>
+        <div id="snapshotPanel">
+          <h4>Snapshots</h4>
+          <button id="saveSnapshotBtn">Save Snapshot</button>
+          <select id="snapshotSelect"></select>
+          <button id="loadSnapshotBtn">Load Snapshot</button>
+        </div>
+        <div id="templatePanel">
+          <h4>Prompt Templates</h4>
+          <input id="templateNameInput" type="text" placeholder="Template name">
+          <textarea id="templateBodyInput" rows="2" placeholder="Template body"></textarea>
+          <button id="saveTemplateBtn">Save Template</button>
+          <select id="templateSelect"></select>
+          <button id="applyTemplateBtn">Apply Template</button>
+        </div>
+        <div id="historyPanel">
+          <h4>Command History</h4>
+          <ul id="commandHistoryList"></ul>
+        </div>
+        <div id="readabilityPanel">
+          <h4>Readability</h4>
+          <label for="fontScaleRange">Font Scale</label>
+          <input id="fontScaleRange" type="range" min="85" max="130" step="1" value="100">
+        </div>
+        <div id="backupPanel">
+          <h4>Auto Backup</h4>
+          <label><input id="autoBackupEnabledInput" type="checkbox"> Enable auto backup</label>
+          <input id="autoBackupIntervalInput" type="number" min="1" max="60" step="1" value="5"
+            placeholder="Backup interval (min)">
+        </div>
+        <div id="themeSlotPanel">
+          <h4>Theme Slots</h4>
+          <button id="saveThemeSlot1Btn">Save Slot 1</button>
+          <button id="applyThemeSlot1Btn">Apply Slot 1</button>
+          <button id="saveThemeSlot2Btn">Save Slot 2</button>
+          <button id="applyThemeSlot2Btn">Apply Slot 2</button>
+          <button id="saveThemeSlot3Btn">Save Slot 3</button>
+          <button id="applyThemeSlot3Btn">Apply Slot 3</button>
+        </div>
+        <div id="undoTrailPanel">
+          <h4>Undo Trail</h4>
+          <ul id="undoTrailList"></ul>
+        </div>
+        <div id="settingsGuardPanel">
+          <h4>Settings Guard</h4>
+          <div id="settingsGuardOutput">Ready</div>
+        </div>
+        <div id="labsPanel">
+          <h4>Labs</h4>
+          <div id="labsButtons">
+            <button id="labsThemeShuffleBtn">Shuffle Theme</button>
+            <button id="labsPanicResetBtn">Panic Reset UI</button>
+            <button id="labsToggleAmbientBtn">Toggle Ambient FX</button>
+            <button id="labsSnapshotDiffBtn">Snapshot Diff</button>
+            <button id="labsExportTemplatesBtn">Export Templates</button>
+            <button id="labsImportTemplatesBtn">Import Templates</button>
+            <input id="labsImportTemplatesFile" type="file" accept="application/json,.json" hidden>
+            <button id="labsRestoreBackupBtn">Restore Latest Backup</button>
+            <button id="labsFocusTimerStartBtn">Focus Timer Start</button>
+            <button id="labsFocusTimerStopBtn">Focus Timer Stop</button>
+            <button id="labsRandomPromptBtn">Random Prompt</button>
+          </div>
+          <div id="labsStatusOutput">Labs ready.</div>
+        </div>
+        <div id="autonomousPanel">
+          <h4>Autonomous Mode</h4>
+          <input id="autonomousGoalInput" type="text" placeholder="Autonomous goal (what to accomplish)">
+          <input id="autonomousIntervalInput" type="number" min="3" max="120" step="1" value="12"
+            placeholder="Interval seconds">
+          <input id="autonomousMaxStepsInput" type="number" min="1" max="200" step="1" value="20"
+            placeholder="Max steps">
+          <label><input id="multiAgentEnabledInput" type="checkbox"> Multi-agent mode
+            (planner/executor/verifier)</label>
+          <label>Approval:
+            <select id="multiAgentApprovalSelect">
+              <option value="auto">Auto approve</option>
+              <option value="manual">Manual approve</option>
+            </select>
+          </label>
+          <div id="autonomousPlanOutput">Plan: not configured.</div>
+          <div id="autonomousStatusOutput">Autonomous mode idle.</div>
+          <div id="autonomousCheckpointOutput">Checkpoint: none.</div>
+          <div id="multiAgentStatusOutput">Multi-agent: idle.</div>
+          <div id="autonomousActions">
+            <button id="multiAgentApproveBtn">Approve Next Step</button>
+            <button id="autonomousReplayBtn">Replay Last Run Prompts</button>
+            <button id="autonomousClearHistoryBtn">Clear Run History</button>
+          </div>
+          <ul id="autonomousRunList"></ul>
+        </div>
+      </section>
+    </main>
+    <!-- Right panel: system monitor and LLM status -->
+    <aside id="rightPanel">
+      <section id="systemMonitor">
+        <h3>System</h3>
+        <div id="cpuUsage">CPU: …</div>
+        <div id="memoryUsage">Memory: …</div>
+        <div id="neuralLinkMetrics" style="border-top: 1px solid var(--accent); margin-top: 10px; padding-top: 10px;">
+          <div style="font-size: 0.85em; color: var(--accent); opacity: 0.8;">NEURALLINK™ KERNEL</div>
+          <div style="font-size: 0.7em; opacity: 0.5;">Initializing HUD...</div>
+          <div id="activeTransfersContainer" style="margin-top: 8px;"></div>
+        </div>
+        <div id="tokensUsed">Tokens: …</div>
+        <div id="platformInfo">Platform: …</div>
+        <div id="clockTime">Clock: --:--:--</div>
+      </section>
+      <section id="llmStatus">
+        <h3>LLM Status</h3>
+        <div id="statusLabel" role="status" aria-live="polite">Checking…</div>
+        <div id="statusMeta"></div>
+        <button id="runSelfTestBtn">Run Self-Test</button>
+        <button id="loadLogsBtn">Load Logs</button>
+        <button id="clearLogsBtn">Clear Logs</button>
+        <button id="exportLogsBtn">Export Logs</button>
+        <pre id="logsOutput"></pre>
+      </section>
+      <section id="chatLogPanel">
+        <h3>Chat History Log</h3>
+        <button id="loadChatLogsBtn">Load Chat Logs</button>
+        <button id="clearChatLogsBtn">Clear Chat Logs</button>
+        <button id="exportChatLogsBtn">Export Chat Logs</button>
+        <pre id="chatLogsOutput"></pre>
+      </section>
+      <section id="buttonAuditPanel">
+        <h3>Button Audit</h3>
+        <button id="runButtonAuditBtn">Run Button Audit</button>
+        <pre id="buttonAuditOutput"></pre>
+      </section>
+      <section id="missionControlPanel">
+        <h3>Mission Control</h3>
+        <div id="missionHealth">Health: --</div>
+        <div id="missionAnomalies">Anomalies: --</div>
+        <div id="missionHeatmap">Activity: --</div>
+      </section>
+      <section id="pluginMarketplacePanel">
+        <h3>Plugin Marketplace</h3>
+        <div id="pluginMarketplaceOutput"></div>
+      </section>
+      <section id="themeStudioPanel">
+        <h3>Theme Studio</h3>
+        <label>Accent <input id="themeAccentInput" type="color" value="#34d1bf"></label>
+        <label>Hot Accent <input id="themeHotInput" type="color" value="#ff8f3f"></label>
+        <label>Background Start <input id="themeBgStartInput" type="color" value="#091321"></label>
+        <button id="saveThemePresetBtn">Save Preset</button>
+        <button id="resetThemePresetBtn">Reset Preset</button>
+      </section>
+      <section id="notificationPanel">
+        <h3>Notifications</h3>
+        <pre id="notificationOutput"></pre>
+      </section>
+    </aside>
+  </div>
+  <div id="shortcutOverlay" hidden aria-hidden="true">
+    <div id="shortcutDialog" role="dialog" aria-modal="true" aria-labelledby="shortcutTitle">
+      <h3 id="shortcutTitle">Keyboard Shortcuts</h3>
+      <ul id="shortcutList">
+        <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd>: Send prompt</li>
+        <li><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>K</kbd>: Focus prompt</li>
+        <li><kbd>/</kbd>: Focus chat search</li>
+        <li><kbd>Esc</kbd>: Close this panel</li>
+      </ul>
+      <button id="shortcutCloseBtn">Close</button>
+    </div>
+  </div>
+  <div id="commandPalette" hidden aria-hidden="true">
+    <div id="commandPaletteDialog" role="dialog" aria-modal="true" aria-labelledby="commandPaletteTitle">
+      <h3 id="commandPaletteTitle">Command Palette</h3>
+      <input id="commandPaletteInput" type="text" placeholder="Type command name...">
+      <ul id="commandPaletteList"></ul>
+      <button id="commandPaletteCloseBtn">Close</button>
+    </div>
+  </div>
+  <script src="ui/MetricsWidget.js"></script>
+  <script src="renderer.js"></script>
+</body>
+
+</html>

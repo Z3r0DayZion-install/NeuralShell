@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+npm-debug.log
+package-lock.json.bak
+yarn.lock
+
+# Build outputs
+dist
+dist_fresh
+release
+build
+*.exe
+*.dmg
+*.zip
+*.AppImage
+
+# Logs
+*.log
+**/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+.env.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# Testing & benchmarks
+tear
+__tests__
+coverage
+.nyc_output
+
+# Temporary
+tmp
+temp
+state/transfers
+state/registry_tmp.json
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Documentation (optional)
+*.md
+docs
+
+# Hidden directories
+.snapshots
+.well-known

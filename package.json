@@ -1,0 +1,99 @@
+{
+  "name": "neuralshell-v5",
+  "version": "5.0.0",
+  "description": "NeuralShell v5 – modular chat client with model switching and session management",
+  "author": "NeuralShell Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/cleanup-guard.test.js && node tear/release-freshness.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js",
+    "smoke:packaged": "node tear/smoke-packaged.js",
+    "smoke:packaged:strict": "node tear/smoke-packaged.js --strict-launch --require-uptime-ms=4500",
+    "diagnose:packaged": "node tear/diagnose-packaged-launch.js --require-uptime-ms=4500",
+    "release:gate": "node tear/release-gate.js",
+    "release:gate:strict": "node tear/release-gate.js --strict-packaged",
+    "release:manifest": "node scripts/release-manifest.js",
+    "release:status": "node tear/release-status.js",
+    "release:verify:fresh": "node tear/verify-release-freshness.js",
+    "benchmark:autonomy": "node tear/benchmark-autonomy.js",
+    "benchmark:regression": "node tear/regression-eval.js",
+    "redteam:nightly": "node tear/redteam-nightly.js",
+    "kpi:operator": "node tear/operator-kpi.js",
+    "slo:gate": "node tear/slo-gate.js",
+    "diagnose:crash": "node tear/classify-crash.js",
+    "replay:autonomy": "node tear/replay-autonomy.js",
+    "sbom:generate": "node scripts/generate-sbom.js",
+    "attest:release": "node scripts/generate-attestation.js",
+    "ship": "node scripts/ship.js",
+    "ship:strict": "node scripts/ship-strict.js",
+    "verify:strict": "npm test && npm run benchmark:autonomy && npm run benchmark:regression && npm run redteam:nightly && npm run release:gate:strict && npm run release:manifest && npm run release:status && npm run release:verify:fresh && npm run kpi:operator && npm run slo:gate",
+    "verify:all": "npm test && npm run build",
+    "icons:generate": "node tear/generate-icons.js",
+    "build": "set PATH=C:\\Windows\\System32;%PATH%&& set ComSpec=C:\\Windows\\System32\\cmd.exe&& electron-builder",
+    "dist": "set PATH=C:\\Windows\\System32;%PATH%&& set ComSpec=C:\\Windows\\System32\\cmd.exe&& electron-builder --publish never"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.9",
+    "electron-updater": "^6.7.3"
+  },
+  "devDependencies": {
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
+    "icon-gen": "^5.0.0",
+    "pngjs": "^7.0.0"
+  },
+  "build": {
+    "productName": "NeuralShell",
+    "appId": "com.neuralshell.app",
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!dist_fresh/**",
+      "!release/**",
+      "!tmp/**",
+      "!**/*.log",
+      "!bin/**"
+    ],
+    "asarUnpack": [
+      "**/bin/*.exe"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": [
+          "neural-linkd.exe"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://updates.neuralshell.app/desktop/"
+      }
+    ]
+  }
+}

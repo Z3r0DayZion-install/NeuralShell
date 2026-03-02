@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  neuralshell:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neuralshell-app
+    environment:
+      NODE_ENV: development
+      NODE_OPTIONS: --max-old-space-size=512
+    volumes:
+      # Source code bind mount for live reload during development
+      - ./src:/app/src
+      - ./assets:/app/assets
+      # Avoid syncing node_modules from host
+      - /app/node_modules
+      # Persist state and logs
+      - ./state:/app/state
+      - neuralshell-logs:/app/logs
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ollama
+    networks:
+      - neuralshell-net
+    restart: unless-stopped
+    # Health check
+    healthcheck:
+      test: ["CMD", "npm", "run", "release:status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Local Ollama instance for development/testing
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-backend
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - neuralshell-net
+    restart: unless-stopped
+    # Pre-pull a model on first run (optional, remove if not needed)
+    # command: ollama pull llama3
+
+volumes:
+  neuralshell-logs:
+  ollama-data:
+
+networks:
+  neuralshell-net:
+    driver: bridge
