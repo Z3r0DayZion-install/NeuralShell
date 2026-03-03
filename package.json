@@ -2,6 +2,7 @@
   "name": "neuralshell-v5",
   "version": "1.0.0-OMEGA",
   "description": "NeuralShell v5 – modular chat client with model switching and session management",
+  "main": "src/main.js",
   "author": "NeuralShell Team",
   "license": "MIT",
   "engines": {
@@ -9,9 +10,8 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/cleanup-guard.test.js && node tear/release-freshness.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js",
+    "test": "node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/cleanup-guard.test.js && node tear/release-manifest.test.js && node tear/ship-entrypoints.test.js && node tear/release-freshness.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js",
     "determinism:test": "node scripts/determinism_test.js",
-    "icons:generate": "node scripts/generate-icons.js",
     "smoke:packaged:strict": "node tear/smoke-packaged.js --strict-launch --require-uptime-ms=4500",
     "diagnose:packaged": "node tear/diagnose-packaged-launch.js --require-uptime-ms=4500",
     "release:gate": "node tear/release-gate.js",
@@ -19,6 +19,7 @@
     "release:manifest": "node scripts/release-manifest.js",
     "release:status": "node tear/release-status.js",
     "release:verify:fresh": "node tear/verify-release-freshness.js",
+    "release:verify:fresh:strict": "node tear/verify-release-freshness.js --strict-installer",
     "benchmark:autonomy": "node tear/benchmark-autonomy.js",
     "benchmark:regression": "node tear/regression-eval.js",
     "redteam:nightly": "node tear/redteam-nightly.js",

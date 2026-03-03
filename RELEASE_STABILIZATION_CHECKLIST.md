@@ -32,4 +32,6 @@
 - If strict launch fails, run `npm run diagnose:packaged` and inspect `release/packaged-launch-diagnostic.json`.
 - If installer packaging fails due NSIS mmap, ship `win-unpacked` and track installer issue separately.
 - Run `npm run release:manifest` and archive `release/manifest.json`.
+- Run `npm run release:verify:fresh` for default unpacked-or-installer validation.
+- Run `npm run release:verify:fresh:strict` when installer presence must be enforced.
 - For full automated pass, run `npm run ship`.

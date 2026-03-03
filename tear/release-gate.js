@@ -19,6 +19,13 @@ function existsNonEmpty(filePath) {
   return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
 }
 
+function verifyBenchmarkReport() {
+  const reportPath = path.join(root, "release", "autonomy-benchmark.json");
+  assert(existsNonEmpty(reportPath), `Missing autonomy benchmark report: ${reportPath}`);
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+  assert(Number.isFinite(Number(report.percent)), "Autonomy benchmark report is missing a numeric percent.");
+}
+
 function verifyArtifacts() {
   const exePath = path.join(root, "dist", "win-unpacked", "NeuralShell.exe");
   const appAsar = path.join(root, "dist", "win-unpacked", "resources", "app.asar");
@@ -40,8 +47,10 @@ function verifyOfflineFirstGuardrails() {
 
 function main() {
   const strictPackaged = process.argv.includes("--strict-packaged");
+  fs.mkdirSync(path.join(root, "release"), { recursive: true });
   run("npm test");
   run("npm run benchmark:autonomy");
+  verifyBenchmarkReport();
   if (strictPackaged) {
     try {
       run("node tear/smoke-packaged.js --strict-launch --require-uptime-ms=4500");

@@ -13,24 +13,44 @@ function readJson(relPath) {
   }
 }
 
-function exists(relPath) {
+function existsNonEmpty(relPath) {
   const filePath = path.join(root, relPath);
-  return fs.existsSync(filePath);
+  return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
+}
+
+function findInstallerExe() {
+  const distDir = path.join(root, "dist");
+  if (!fs.existsSync(distDir)) return null;
+  const entries = fs.readdirSync(distDir, { withFileTypes: true });
+  const installers = entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => /^NeuralShell Setup .+\.exe$/i.test(name))
+    .sort();
+  if (installers.length === 0) {
+    return null;
+  }
+  return path.posix.join("dist", installers[installers.length - 1]);
 }
 
 function main() {
   const manifest = readJson("release/manifest.json");
   const benchmark = readJson("release/autonomy-benchmark.json");
   const diagnose = readJson("release/packaged-launch-diagnostic.json");
+  const installerPath = findInstallerExe();
 
+  const artifacts = {
+    installerExe: installerPath ? existsNonEmpty(installerPath) : false,
+    unpackedExe: existsNonEmpty("dist/win-unpacked/NeuralShell.exe"),
+    appAsar: existsNonEmpty("dist/win-unpacked/resources/app.asar"),
+    updateYml: existsNonEmpty("dist/win-unpacked/resources/app-update.yml")
+  };
+
+  const profile = artifacts.installerExe ? "installer+unpacked" : "unpacked-only";
   const summary = {
     generatedAt: new Date().toISOString(),
-    artifacts: {
-      installerExe: exists("dist/NeuralShell Setup 5.0.0.exe"),
-      unpackedExe: exists("dist/win-unpacked/NeuralShell.exe"),
-      appAsar: exists("dist/win-unpacked/resources/app.asar"),
-      updateYml: exists("dist/win-unpacked/resources/app-update.yml")
-    },
+    profile,
+    artifacts,
     manifest: manifest
       ? { fileCount: manifest.fileCount, generatedAt: manifest.generatedAt, version: manifest.version }
       : null,

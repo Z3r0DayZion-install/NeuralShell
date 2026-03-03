@@ -22,7 +22,13 @@ function ageMinutes(isoTs) {
   return (Date.now() - ts) / (1000 * 60);
 }
 
+function assertArtifact(status, key) {
+  const ok = Boolean(status.artifacts && status.artifacts[key]);
+  assert(ok, `release/status.json indicates missing ${key}`);
+}
+
 function main() {
+  const strictInstaller = process.argv.includes("--strict-installer");
   assert(fs.existsSync(statusFile), `Missing release status file: ${statusFile}`);
   assert(fs.existsSync(manifestFile), `Missing release manifest file: ${manifestFile}`);
   assert(fs.existsSync(benchmarkFile), `Missing autonomy benchmark file: ${benchmarkFile}`);
@@ -31,10 +37,12 @@ function main() {
   const manifest = readJson(manifestFile);
   const benchmark = readJson(benchmarkFile);
 
-  assert(status.artifacts && status.artifacts.installerExe, "release/status.json indicates missing installerExe");
-  assert(status.artifacts && status.artifacts.unpackedExe, "release/status.json indicates missing unpackedExe");
-  assert(status.artifacts && status.artifacts.appAsar, "release/status.json indicates missing appAsar");
-  assert(status.artifacts && status.artifacts.updateYml, "release/status.json indicates missing updateYml");
+  assertArtifact(status, "unpackedExe");
+  assertArtifact(status, "appAsar");
+  assertArtifact(status, "updateYml");
+  if (strictInstaller) {
+    assertArtifact(status, "installerExe");
+  }
 
   assert(Number(manifest.fileCount) >= 20, "manifest fileCount unexpectedly low.");
   assert(Number(benchmark.percent) >= 80, "benchmark percent below required floor.");
@@ -48,8 +56,18 @@ function main() {
   assert(manifestAge <= maxAgeMin, `release manifest is stale (${manifestAge.toFixed(1)} min old).`);
   assert(benchmarkAge <= maxAgeMin, `benchmark report is stale (${benchmarkAge.toFixed(1)} min old).`);
 
+  const expectedProfile = strictInstaller ? "installer+unpacked" : "unpacked-only";
+  if (typeof status.profile === "string") {
+    assert(
+      status.profile === expectedProfile || (!strictInstaller && status.profile === "installer+unpacked"),
+      `release status profile mismatch. expected ${strictInstaller ? "installer+unpacked" : "unpacked-only|installer+unpacked"}, got ${status.profile}`
+    );
+  }
+
   console.log("Release freshness verification passed.");
-  console.log(`Ages(min): status=${statusAge.toFixed(1)} manifest=${manifestAge.toFixed(1)} benchmark=${benchmarkAge.toFixed(1)}`);
+  console.log(
+    `Mode=${strictInstaller ? "strict-installer" : "default"} Ages(min): status=${statusAge.toFixed(1)} manifest=${manifestAge.toFixed(1)} benchmark=${benchmarkAge.toFixed(1)}`
+  );
 }
 
 main();

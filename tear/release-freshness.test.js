@@ -12,6 +12,12 @@ function run() {
   if (!src.includes("status.json") || !src.includes("manifest.json") || !src.includes("autonomy-benchmark.json")) {
     throw new Error("Release freshness verifier missing required checks.");
   }
+  if (!src.includes("--strict-installer")) {
+    throw new Error("Release freshness verifier missing strict installer mode.");
+  }
+  if (!src.includes("status.profile")) {
+    throw new Error("Release freshness verifier missing status profile validation.");
+  }
   console.log("Release freshness test passed.");
 }
 
