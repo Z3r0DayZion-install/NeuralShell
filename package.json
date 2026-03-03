@@ -5,13 +5,13 @@
   "author": "NeuralShell Team",
   "license": "MIT",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=20.0.0 <21"
   },
-  "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "test": "node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/cleanup-guard.test.js && node tear/release-freshness.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js",
-    "smoke:packaged": "node tear/smoke-packaged.js",
+    "determinism:test": "node scripts/determinism_test.js",
+    "icons:generate": "node scripts/generate-icons.js",
     "smoke:packaged:strict": "node tear/smoke-packaged.js --strict-launch --require-uptime-ms=4500",
     "diagnose:packaged": "node tear/diagnose-packaged-launch.js --require-uptime-ms=4500",
     "release:gate": "node tear/release-gate.js",

@@ -1,0 +1,24 @@
+{
+  "schema_version": "omega_registry.v2",
+  "registry_version": 3,
+  "updated_at": "2026-03-03T03:38:58.721Z",
+  "previous_hash": "7fe0dbf1f54c63c7bfc058cf596785e6a2317466a7dbbab4e9c1dd539a585fc6",
+  "governance_fingerprint": "76bb525ffe1cd289ee2d078f96a01c2e1251543187fc9c0a7b84e7865f07e545",
+  "entries": [
+    {
+      "module_name": "neuralshell-v5",
+      "repository_url": "ERROR: Command failed: git remote get-url origin\nerror: No such remote 'origin'\n",
+      "omega_version": "v20.17.0",
+      "build_hash": "b0b4d72746bf79fb95daf8e4e06785ca316fcf77593e98d16a320ae3a68de9c3",
+      "sbom_hash": "1c5699d107b05f7f0f2de4c3960e777c2bbc5fd5bcc42c1989c5eb2cf970dcd4",
+      "var_proof_signature": "liInyAiQBxb96ggGYH7DACPbvZv6N68Yn3lbkwJOwbIwFNgsnss0uJSYGIhCw5SK6QqAKOyTJ4n+Z7/ukOVPAQ==",
+      "root_fingerprint": "75cb2558e5aca6e8e763f4af871d88fb5fc2b5f87f6f612353f0d520b37f7cd9",
+      "compliance_version": "OMEGA_v1",
+      "verified_at_commit": "2ef3fed9bcbfcbb5a439635f58ea622c2d16eff1",
+      "verified_at": "2026-03-03T03:38:58.720Z",
+      "status": "ACTIVE"
+    }
+  ],
+  "registry_hash": "b9681c1c4ec725739f1eb75b3d29a0477737d3b3de7bedf86758985a8f47e23a",
+  "signature": "E0Qh7d2RlIwfo6ZN+2jrG+Y6FEr5lYfEKwBmUq2cJqAluoRLQiQLTJPFsRmudUYcuiCC0rPKXAsuAF3HM7aOCg=="
+}

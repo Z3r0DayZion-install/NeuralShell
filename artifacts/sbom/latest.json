@@ -1,6 +1,5 @@
 {
   "schemaVersion": "sbom.v1",
-  "generatedAt": "2026-03-03T01:01:55.267Z",
   "application": "neuralshell-v5",
   "version": "5.0.0",
   "dependencyCount": 441,
@@ -10,7 +9,7 @@
       "name": "@neural/omega-core",
       "version": "1.0.0",
       "path": "../omega-core",
-      "actualIntegrity": "14adec92d97aab51326139a7e53616254034aff9e95b6ea04c5de25b36d17f8a"
+      "actualIntegrity": "20b5f6d8c2fe27011bdda72ad3b1406ea24859798671831089dd96f5f5a97d32"
     },
     {
       "name": "@babel/code-frame",
@@ -519,7 +518,7 @@
     {
       "name": "@neural/omega-core",
       "path": "node_modules/@neural/omega-core",
-      "actualIntegrity": "14adec92d97aab51326139a7e53616254034aff9e95b6ea04c5de25b36d17f8a"
+      "actualIntegrity": "20b5f6d8c2fe27011bdda72ad3b1406ea24859798671831089dd96f5f5a97d32"
     },
     {
       "name": "@npmcli/agent",
@@ -1121,7 +1120,7 @@
       "version": "1.1.4",
       "path": "node_modules/color-name",
       "declaredIntegrity": "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==",
-      "actualIntegrity": "4a557ea373907e4643badb89ff21b3f4b969d20631086d78eab2e03d05c2efa4"
+      "actualIntegrity": "9b3157989b9f3003214f45738990404e3ad3e0825360362ba87e523c4c463317"
     },
     {
       "name": "color-string",
@@ -2297,7 +2296,7 @@
       "version": "0.2.1",
       "path": "node_modules/node-api-version",
       "declaredIntegrity": "sha512-2xP/IGGMmmSQpI1+O/k72jF/ykvZ89JeuKX3TLJAYPDVLUalrshrLHkeVcCCZqG/eEa635cr8IBYzgnDvM2O8Q==",
-      "actualIntegrity": "22b8f138e9eff852a031161a351e8973d2abb4cd8813a9939d79fcc3746f7677"
+      "actualIntegrity": "15f8e4d8a1636bf64de4b96cc80b7810e0eb3ffad5619002ff5381bf5eb9d238"
     },
     {
       "name": "semver",
@@ -3046,7 +3045,7 @@
       "version": "15.1.1",
       "path": "node_modules/xmlbuilder",
       "declaredIntegrity": "sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==",
-      "actualIntegrity": "8a34e6b05d7b47fc7105969b7600e8c39346f196c9abb898910b56ce359a8885"
+      "actualIntegrity": "e01755e66adf108b9e8a627fa91f30c2723468cf042abef0a81302aedd3381e1"
     },
     {
       "name": "y18n",
@@ -3090,5 +3089,6 @@
       "declaredIntegrity": "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==",
       "actualIntegrity": "e94d571d03c65c94eab2216f4fde773918a152d5d36e5672e1f5c158ff6ac42d"
     }
-  ]
+  ],
+  "generatedAt": "2026-03-03T03:38:58.567Z"
 }

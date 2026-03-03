@@ -1,18 +1,18 @@
 {
-  "ts": "2026-03-02T21:42:46.028Z",
+  "ts": "2026-03-03T02:07:26.699Z",
   "minUptimeDelta": 0.1,
   "configs": {
     "normal": {
       "version": "1.0.0",
       "server": {
-        "port": 52155,
+        "port": 51813,
         "host": "127.0.0.1",
         "requestTimeoutMs": 1000
       },
       "endpoints": [
         {
           "name": "ollama-proof",
-          "url": "http://127.0.0.1:52154/__proof/ollama",
+          "url": "http://127.0.0.1:51812/__proof/ollama",
           "model": "dummy",
           "weight": 1,
           "priority": 1,
@@ -34,7 +34,7 @@
       },
       "__proof": {
         "mode": "normal",
-        "upstreamPort": 52154
+        "upstreamPort": 51812
       }
     },
     "dry": {
@@ -47,7 +47,7 @@
       "endpoints": [
         {
           "name": "ollama-proof",
-          "url": "http://127.0.0.1:52154/__proof/ollama",
+          "url": "http://127.0.0.1:51812/__proof/ollama",
           "model": "dummy",
           "weight": 1,
           "priority": 1,
@@ -69,7 +69,7 @@
       },
       "__proof": {
         "mode": "dry",
-        "upstreamPort": 52154
+        "upstreamPort": 51812
       }
     }
   }

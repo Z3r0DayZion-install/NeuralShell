@@ -68,7 +68,7 @@ neuralshell_failures_total 0
 === dry metrics#2 ===
 # HELP neuralshell_uptime_seconds The uptime of the server in seconds.
 # TYPE neuralshell_uptime_seconds gauge
-neuralshell_uptime_seconds 0.31
+neuralshell_uptime_seconds 0.30
 # HELP neuralshell_requests_total Total number of requests processed.
 # TYPE neuralshell_requests_total counter
 neuralshell_requests_total 5
