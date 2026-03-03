@@ -13,9 +13,16 @@ const EXPECTED_OMEGA_VERSION = '1.0.0-OMEGA';
 
 // Hardcoded hash of the canonical omega-core package.json to detect shadow packages
 function getCanonicalOmegaHash() {
-    const canonicalPath = path.join(__dirname, '../../../../omega-core/package.json');
-    if (!fs.existsSync(canonicalPath)) return 'MISSING_CANONICAL';
-    return crypto.createHash('sha256').update(fs.readFileSync(canonicalPath)).digest('hex');
+    const canonicalCandidates = [
+      path.join(__dirname, '../../../../omega-core/package.json'),
+      path.join(__dirname, '../../vendor/omega-core/package.json')
+    ];
+    for (const canonicalPath of canonicalCandidates) {
+      if (fs.existsSync(canonicalPath)) {
+        return crypto.createHash('sha256').update(fs.readFileSync(canonicalPath)).digest('hex');
+      }
+    }
+    return 'MISSING_CANONICAL';
 }
 
 function computeModuleHash(dir) {
@@ -90,7 +97,12 @@ async function scanModule(targetDir) {
 
     if (usesOmega) {
         const declaredVersion = deps['@neural/omega-core'];
-        if (declaredVersion && !declaredVersion.includes(EXPECTED_OMEGA_VERSION) && declaredVersion !== 'file:../omega-core') {
+        if (
+            declaredVersion &&
+            !declaredVersion.includes(EXPECTED_OMEGA_VERSION) &&
+            declaredVersion !== 'file:../omega-core' &&
+            declaredVersion !== 'file:vendor/omega-core'
+        ) {
             violations.push(`Version Skew Detected: Expected ${EXPECTED_OMEGA_VERSION}, got ${declaredVersion}`);
         }
 

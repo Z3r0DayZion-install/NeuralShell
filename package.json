@@ -38,7 +38,7 @@
     "dist": "set PATH=C:\\Windows\\System32;%PATH%&& set ComSpec=C:\\Windows\\System32\\cmd.exe&& electron-builder --publish never"
   },
   "dependencies": {
-    "@neural/omega-core": "file:../omega-core",
+    "@neural/omega-core": "file:vendor/omega-core",
     "dayjs": "^1.11.9",
     "electron-updater": "^6.7.3",
     "node-fetch": "^2.7.0"

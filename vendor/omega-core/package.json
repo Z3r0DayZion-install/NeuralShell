@@ -1,0 +1,7 @@
+{
+  "name": "@neural/omega-core",
+  "version": "1.0.0-OMEGA",
+  "description": "In-repo OMEGA compatibility core for NeuralShell CI and packaging",
+  "main": "index.js",
+  "license": "MIT"
+}
