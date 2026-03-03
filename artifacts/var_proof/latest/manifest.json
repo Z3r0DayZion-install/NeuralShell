@@ -1,13 +1,13 @@
 {
   "schemaVersion": "var_proof.v1",
-  "createdAt": "2026-03-03T01:01:05.798Z",
+  "createdAt": "2026-03-03T01:01:55.437Z",
   "repo": {
-    "commit": "43477137cd373970a8c9be9e530b7ad30f965dc4",
+    "commit": "5421a2e08b094c0e7225f0631a982f7ba9d381b2",
     "branch": "master"
   },
   "build": {
     "buildHash": "8fbcbbf22d72fdf670acf279cca466366a6359bb8dc1fe90d6d52de9a97ed3df",
-    "sbomHash": "9cbd20fa8ebbe911d07bd673402e3d57b4cbbd818551759b00b8c6af5ca8de10"
+    "sbomHash": "8965b9644e677854c4342da4e207b0583bd1137bff10041a3ba715760fb0f6d0"
   },
   "inputs": {
     "lockfileSha256": "c67cd0ef59049d295c3d06428023bb638b3101d58b5e01b4c3ea3c6ad3cca987",
