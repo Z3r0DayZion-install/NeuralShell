@@ -9,7 +9,13 @@ function run() {
     throw new Error("Missing verify-release-freshness.js");
   }
   const src = fs.readFileSync(target, "utf8");
-  if (!src.includes("status.json") || !src.includes("manifest.json") || !src.includes("autonomy-benchmark.json")) {
+  if (
+    !src.includes("status.json") ||
+    !src.includes("manifest.json") ||
+    !src.includes("autonomy-benchmark.json") ||
+    !src.includes("checksums.txt") ||
+    !src.includes("checksums.json")
+  ) {
     throw new Error("Release freshness verifier missing required checks.");
   }
   if (!src.includes("--strict-installer")) {

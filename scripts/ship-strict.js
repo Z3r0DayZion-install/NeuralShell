@@ -14,6 +14,7 @@ function main() {
     "npm run release:gate:strict",
     "npm run release:manifest",
     "npm run release:status",
+    "npm run release:checksums",
     "npm run release:verify:fresh:strict"
   ];
 

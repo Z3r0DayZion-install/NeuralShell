@@ -23,6 +23,7 @@ jobs:
       - name: Run release contract tests
         run: |
           node tear/release-manifest.test.js
+          node tear/release-checksums.test.js
           node tear/ship-entrypoints.test.js
           node tear/release-freshness.test.js
 
@@ -34,6 +35,8 @@ jobs:
 
           const files = [
             "dist/NeuralShell Setup 5.0.0.exe",
+            "dist/NeuralShell Setup 5.0.0.exe.blockmap",
+            "dist/OMEGA.yml",
             "dist/win-unpacked/NeuralShell.exe",
             "dist/win-unpacked/resources/app.asar",
             "dist/win-unpacked/resources/app-update.yml"
@@ -76,4 +79,5 @@ jobs:
         run: |
           npm run release:manifest
           npm run release:status
+          npm run release:checksums
           npm run release:verify:fresh

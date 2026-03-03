@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const root = path.resolve(__dirname, "..");
 
@@ -33,6 +34,38 @@ function findInstallerExe() {
   return path.posix.join("dist", installers[installers.length - 1]);
 }
 
+function safeExec(command) {
+  try {
+    return execSync(command, { cwd: root, stdio: ["ignore", "pipe", "ignore"] }).toString("utf8").trim();
+  } catch {
+    return null;
+  }
+}
+
+function collectProvenance() {
+  const gitCommit = process.env.GITHUB_SHA || safeExec("git rev-parse HEAD");
+  const gitBranch = process.env.GITHUB_REF_NAME || safeExec("git rev-parse --abbrev-ref HEAD");
+  const gitTag = process.env.GITHUB_REF_TYPE === "tag"
+    ? process.env.GITHUB_REF_NAME
+    : safeExec("git describe --tags --exact-match");
+
+  return {
+    git: {
+      commit: gitCommit || null,
+      branch: gitBranch || null,
+      tag: gitTag || null
+    },
+    github: {
+      repository: process.env.GITHUB_REPOSITORY || null,
+      workflow: process.env.GITHUB_WORKFLOW || null,
+      runId: process.env.GITHUB_RUN_ID || null,
+      runAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
+      ref: process.env.GITHUB_REF || null,
+      sha: process.env.GITHUB_SHA || null
+    }
+  };
+}
+
 function main() {
   const manifest = readJson("release/manifest.json");
   const benchmark = readJson("release/autonomy-benchmark.json");
@@ -57,6 +90,7 @@ function main() {
     benchmark: benchmark
       ? { percent: benchmark.percent, verdict: benchmark.verdict, generatedAt: benchmark.generatedAt }
       : null,
+    provenance: collectProvenance(),
     packagedDiagnostics: diagnose
       ? {
         strictPass: diagnose.strictPass,

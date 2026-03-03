@@ -1,0 +1,56 @@
+name: Release Tag
+
+on:
+  push:
+    tags:
+      - "v*-OMEGA*"
+
+permissions:
+  contents: write
+
+jobs:
+  release_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Generate icons
+        run: npm run icons:generate
+
+      - name: Test
+        run: npm test
+
+      - name: Build installer
+        run: npm run build
+
+      - name: Generate release metadata
+        run: |
+          npm run benchmark:autonomy
+          npm run release:manifest
+          npm run release:status
+          npm run release:checksums
+          npm run release:verify:fresh:strict
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/NeuralShell Setup *.exe
+            dist/NeuralShell Setup *.exe.blockmap
+            dist/OMEGA.yml
+            release/manifest.json
+            release/status.json
+            release/autonomy-benchmark.json
+            release/checksums.txt
+            release/checksums.json
+          fail_on_unmatched_files: true
