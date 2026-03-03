@@ -1,0 +1,76 @@
+{
+  "ts": "2026-03-02T21:42:46.028Z",
+  "minUptimeDelta": 0.1,
+  "configs": {
+    "normal": {
+      "version": "1.0.0",
+      "server": {
+        "port": 52155,
+        "host": "127.0.0.1",
+        "requestTimeoutMs": 1000
+      },
+      "endpoints": [
+        {
+          "name": "ollama-proof",
+          "url": "http://127.0.0.1:52154/__proof/ollama",
+          "model": "dummy",
+          "weight": 1,
+          "priority": 1,
+          "enabled": true
+        }
+      ],
+      "routing": {
+        "strategy": "failover"
+      },
+      "rateLimit": {
+        "enabled": false
+      },
+      "features": {
+        "dryRun": false,
+        "replay": false,
+        "plugins": false,
+        "streaming": false,
+        "idempotency": false
+      },
+      "__proof": {
+        "mode": "normal",
+        "upstreamPort": 52154
+      }
+    },
+    "dry": {
+      "version": "1.0.0",
+      "server": {
+        "port": 0,
+        "host": "127.0.0.1",
+        "requestTimeoutMs": 1000
+      },
+      "endpoints": [
+        {
+          "name": "ollama-proof",
+          "url": "http://127.0.0.1:52154/__proof/ollama",
+          "model": "dummy",
+          "weight": 1,
+          "priority": 1,
+          "enabled": true
+        }
+      ],
+      "routing": {
+        "strategy": "failover"
+      },
+      "rateLimit": {
+        "enabled": false
+      },
+      "features": {
+        "dryRun": true,
+        "replay": false,
+        "plugins": false,
+        "streaming": false,
+        "idempotency": false
+      },
+      "__proof": {
+        "mode": "dry",
+        "upstreamPort": 52154
+      }
+    }
+  }
+}

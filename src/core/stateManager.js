@@ -22,6 +22,8 @@ class StateManager {
       theme: 'dark',
       chat: [],
       tokens: 0,
+      xp: 0,
+      tier: 0,
       settings: {
         ollamaBaseUrl: 'http://127.0.0.1:11434',
         timeoutMs: 15000,

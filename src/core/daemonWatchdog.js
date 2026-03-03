@@ -8,7 +8,7 @@
  * so the UI can reflect the daemon's actual state rather than silently failing.
  */
 
-const { spawn } = require("child_process");
+const { kernel, CAP_PROC } = require("../kernel");
 const path = require("path");
 const fs = require("fs");
 const EventEmitter = require("events");
@@ -96,43 +96,48 @@ class DaemonWatchdog extends EventEmitter {
         console.log(`[DaemonWatchdog] Spawning: ${exeResolved} (attempt ${this._restarts})`);
 
         try {
-            this._proc = spawn(exeResolved, this.args, {
-                stdio: ["ignore", "pipe", "pipe"],
-                windowsHide: true,
-                detached: false
-            });
+            // Using kernel broker for isolated spawning
+            // In a fully integrated Omega build, the daemon would be spawned via the pre-registered 'neural-linkd:start' task.
+            // Since DaemonWatchdog tries to resolve the path dynamically, we'll use the kernel spawnDaemon.
+            // Note: The ExecutionBroker is hardcoded to the bin path, so we just invoke the task.
+            kernel.request(CAP_PROC, 'spawnDaemon', { taskId: 'neural-linkd:start' })
+                .then(proc => {
+                    this._proc = proc;
+                    this.emit("started", { pid: this._proc.pid, attempt: this._restarts });
+
+                    this._proc.on("stdout", line => {
+                        console.log(`[neural-linkd] ${line.trimEnd()}`);
+                        this.emit("daemon-log", { level: "info", line: line.trimEnd() });
+                    });
+
+                    this._proc.on("stderr", line => {
+                        console.error(`[neural-linkd:err] ${line.trimEnd()}`);
+                        this.emit("daemon-log", { level: "error", line: line.trimEnd() });
+                    });
+
+                    this._proc.on("exit", (code, signal) => {
+                        console.warn(`[DaemonWatchdog] Daemon exited — code=${code} signal=${signal}`);
+                        this._proc = null;
+                        this.emit("stopped", { code, signal });
+                        this._scheduleRestart();
+                    });
+
+                    this._proc.on("error", err => {
+                        console.error("[DaemonWatchdog] Process error:", err.message);
+                        this.emit("error", { error: err.message });
+                    });
+                })
+                .catch(err => {
+                    console.error("[DaemonWatchdog] Failed to spawn via kernel:", err.message);
+                    this.emit("spawn-failed", { error: err.message });
+                    this._scheduleRestart();
+                });
         } catch (err) {
-            console.error("[DaemonWatchdog] Failed to spawn:", err.message);
+            console.error("[DaemonWatchdog] Sync error during spawn:", err.message);
             this.emit("spawn-failed", { error: err.message });
             this._scheduleRestart();
             return;
         }
-
-        this.emit("started", { pid: this._proc.pid, attempt: this._restarts });
-
-        this._proc.stdout.on("data", chunk => {
-            const line = chunk.toString().trimEnd();
-            console.log(`[neural-linkd] ${line}`);
-            this.emit("daemon-log", { level: "info", line });
-        });
-
-        this._proc.stderr.on("data", chunk => {
-            const line = chunk.toString().trimEnd();
-            console.error(`[neural-linkd:err] ${line}`);
-            this.emit("daemon-log", { level: "error", line });
-        });
-
-        this._proc.on("exit", (code, signal) => {
-            console.warn(`[DaemonWatchdog] Daemon exited — code=${code} signal=${signal}`);
-            this._proc = null;
-            this.emit("stopped", { code, signal });
-            this._scheduleRestart();
-        });
-
-        this._proc.on("error", err => {
-            console.error("[DaemonWatchdog] Process error:", err.message);
-            this.emit("error", { error: err.message });
-        });
     }
 
     _scheduleRestart() {

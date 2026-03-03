@@ -32,6 +32,16 @@
   <div id="app">
     <!-- Left panel: model and session management -->
     <aside id="leftPanel">
+      <div id="tierPanel" style="display:flex; gap:2px; margin-bottom:10px; flex-wrap:wrap;">
+        <span class="tierBadge" data-tier="0">Tier0</span>
+        <span class="tierBadge" data-tier="1">Tier1</span>
+        <span class="tierBadge" data-tier="2">Tier2</span>
+        <span class="tierBadge" data-tier="3">Tier3</span>
+        <span class="tierBadge" data-tier="4">Tier4</span>
+        <span class="tierBadge" data-tier="5">Tier5</span>
+        <span class="tierBadge" data-tier="founder">Founder</span>
+        <span class="tierBadge" data-tier="sentinel">Sentinel</span>
+      </div>
       <h2>NeuralShell v5</h2>
       <section id="modelSelector">
         <label for="modelSelect">Model:</label>
@@ -86,6 +96,38 @@
         <button id="commandHelpBtn">Command Help</button>
         <ul id="commandList"></ul>
       </section>
+      <section id="ritualEngine">
+        <h3>🧿 Ritual Engine</h3>
+        <select id="ritualSelect"></select>
+        <button id="ritualTriggerBtn">Trigger Ritual</button>
+        <div style="margin-top:4px;">
+          <input id="ritualScheduleTime" type="datetime-local">
+          <button id="ritualScheduleBtn">Schedule</button>
+        </div>
+        <ul id="scheduledRitualList" style="font-size:10px; max-height:60px; overflow-y:auto;"></ul>
+      </section>
+      <section id="vaultManager">
+        <h3>🔒 Vault Manager</h3>
+        <input id="vaultPass" type="password" placeholder="Vault Password">
+        <button id="vaultUnlockBtn">Unlock</button>
+        <button id="vaultLockBtn">Lock</button>
+        <div style="margin-top:4px;">
+          <button id="vaultCompactBtn">Compact (.neurovault)</button>
+          <button id="vaultTearBtn">Encrypt (.tear)</button>
+        </div>
+      </section>
+      <section id="historyLoader">
+        <h3>📂 History Loader</h3>
+        <input id="historyFileInput" type="file" multiple accept=".txt,.json,.zip" hidden>
+        <button id="selectHistoryBtn">Select Files</button>
+        <button id="injectHistoryBtn">Inject Selected</button>
+        <ul id="historyFileList" style="font-size:10px; max-height:80px; overflow-y:auto;"></ul>
+      </section>
+      <section id="empireControlPlane">
+        <h3>🏛️ Empire Control Plane</h3>
+        <button id="scanEmpireBtn" class="btn" style="width: 100%; margin-bottom: 5px;">Scan Workspace</button>
+        <div id="empireStatusList" style="font-size:11px; max-height:120px; overflow-y:auto; background: rgba(0,0,0,0.4); padding: 5px; border-radius: 4px;"></div>
+      </section>
       <section id="settingsPanel">
         <h3>Settings</h3>
         <div id="settingsTabs">
@@ -118,8 +160,18 @@
               <option value="founder">Founder</option>
               <option value="analyst">Analyst</option>
               <option value="creative">Creative</option>
+              <option value="override">Override</option>
+              <option value="god">God</option>
             </select>
           </label>
+          <div id="fxToggles" style="display:flex; flex-direction:column; gap:4px; margin-top:10px;">
+            <label><input id="nightVisionToggle" type="checkbox"> 🌙 Night Vision</label>
+            <label><input id="glowToggle" type="checkbox"> ✨ Glow FX</label>
+            <label><input id="audioToggle" type="checkbox"> 🔊 Audio FX</label>
+            <label><input id="typewriterToggle" type="checkbox"> ⌨️ Typewriter Mode</label>
+            <label><input id="autopilotToggle" type="checkbox"> 🤖 Autopilot</label>
+            <button id="detectLLMBtn">Detect Local LLM</button>
+          </div>
           <label>Safety policy
             <select id="safetyPolicySelect">
               <option value="strict">Strict</option>

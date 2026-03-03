@@ -1,0 +1,69 @@
+{
+  "ts": "2026-03-02T21:42:46.041Z",
+  "node": "v20.17.0",
+  "platform": "win32",
+  "runTagBase": "2026-03-02T21-42-45-272Z",
+  "algo": "sha256",
+  "entries": [
+    {
+      "name": "runtime.server.log",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\server.log",
+      "exists": true,
+      "sha256": "c25b754dac66c34d4a71f1130e57de6c02b700b6c876f7d3705004814cf3bcb4"
+    },
+    {
+      "name": "runtime.stdout.log",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\stdout.log",
+      "exists": true,
+      "sha256": "fa7bd701df9a0c6a25ca3592b0a175a43b90a4924ef4ca6c9a50478a2094260e"
+    },
+    {
+      "name": "runtime.stderr.log",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\stderr.log",
+      "exists": true,
+      "sha256": "bd66f49ebf0adb6e61f64a87c2a9b84c071e54f888a97e40a0b5d4fc34674d18"
+    },
+    {
+      "name": "runtime.metrics.txt",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\metrics.txt",
+      "exists": true,
+      "sha256": "00410f1094ea85d029ff6fb2f87bca169725b74fee5d3299efb714b5f26b2566"
+    },
+    {
+      "name": "runtime.config.json",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\config.json",
+      "exists": true,
+      "sha256": "2e722d4d4b4f54bd5f46436e58f4dcbf8ecc25d7e83582a1f11a7cb1da2e6bf3"
+    },
+    {
+      "name": "runtime.metadata.json",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\metadata.json",
+      "exists": true,
+      "sha256": "735e151d6e635b4d071b62948c652d366d18ece75a8de4a793d607ca93c12e34"
+    },
+    {
+      "name": "spawn.server.log",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\spawn\\server.log",
+      "exists": false,
+      "sha256": null
+    },
+    {
+      "name": "production-server.js",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\production-server.js",
+      "exists": true,
+      "sha256": "e6a09c285569572cd9733430b2805e03bfb9efeef0a7533e52c832750dc8d849"
+    },
+    {
+      "name": "tear-runtime.js",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\NeuralShell_Desktop\\tear-runtime.js",
+      "exists": false,
+      "sha256": null
+    },
+    {
+      "name": "NeuralShell-TEAR-Runtime.exe",
+      "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\NeuralShell_Desktop\\dist\\NeuralShell-TEAR-Runtime.exe",
+      "exists": false,
+      "sha256": null
+    }
+  ]
+}

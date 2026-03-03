@@ -1,5 +1,14 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("path");
+
+const intentFirewall = require("./security/intentFirewall");
+const { kernel, CAP_FS, CAP_NET, CAP_PROC, CAP_CRYPTO } = require("./kernel");
+
+const { verifyIntegrity } = require("./main/integrity/verify");
+const { createRecoveryWindow } = require("./main/recovery/recoveryWindow");
+const { attemptRepair } = require("./main/recovery/repair");
+
+const { scanWorkspace } = require('./core/empireValidator');
 
 const llmService = require("./core/llmService");
 const { LLMService } = require("./core/llmService");
@@ -29,6 +38,10 @@ let systemMonitor;
 let rgbController;
 let auditChain;
 let daemonWatchdog;
+let xpManager;
+let ritualManager;
+let historyLoader;
+let secretVault;
 
 let mainWindow = null;
 let bridgeHealthTimer = null;
@@ -340,8 +353,46 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      sandbox: true,
+      enableRemoteModule: false,
+      webSecurity: true
     }
+  });
+
+  // Zero-Renderer Network Lockdown
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    const url = details.url;
+    // Allow internal file loading and devtools
+    if (url.startsWith('file://') || url.startsWith('devtools://')) {
+      return callback({ cancel: false });
+    }
+    // Block ALL other outbound requests from renderer
+    console.warn(`[SECURITY] Blocked renderer network request: ${url}`);
+    callback({ cancel: true });
+  });
+
+  // Navigation Guards
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) {
+      event.preventDefault();
+      console.warn(`[SECURITY] Blocked navigation to: ${url}`);
+    }
+  });
+
+  mainWindow.webContents.on('new-window', (event, url) => {
+    event.preventDefault();
+    console.warn(`[SECURITY] Blocked new window request to: ${url}`);
+  });
+
+  // Strict CSP
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none';"]
+      }
+    });
   });
 
   mainWindow.on("closed", () => {
@@ -352,6 +403,14 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  // --- INTEGRITY BOOT ---
+  const report = await verifyIntegrity();
+  if (!report.ok) {
+    console.error('[SECURITY] Integrity check failed. Booting into Recovery Mode.');
+    createRecoveryWindow(report);
+    return; // Stop normal boot
+  }
+
   logger = require("./core/logger");
   chatLogStore = require("./core/chatLogStore");
   pluginLoader = require("./core/pluginLoader");
@@ -359,11 +418,15 @@ app.whenReady().then(async () => {
   stateManager = require("./core/stateManager");
   systemMonitor = require("./core/systemMonitor");
   rgbController = require("./core/rgbController");
+  xpManager = require("./core/xpManager");
+  ritualManager = require("./core/ritualManager");
+  historyLoader = require("./core/historyLoader");
+  secretVault = require("./core/secretVault");
   auditChain = new AuditChain(path.join(app.getPath("userData"), "audit-chain.jsonl"));
 
   stateManager.load();
   auditChain.init();
-  identityKernel.init();
+  await identityKernel.init();
   const settings = stateManager.get("settings") || {};
   applyBridgeSettings(settings);
   llmService.setModel(stateManager.get("model") || "llama3");
@@ -845,4 +908,122 @@ ipcMain.handle("chatlog:export", async () => {
 
 ipcMain.handle("chatlog:clear", async () => {
   return chatLogStore.clear();
+});
+
+// ---------------- XP IPC ----------------
+
+ipcMain.handle("xp:status", async () => xpManager.getStatus());
+
+ipcMain.handle("xp:add", async (_event, amount) => {
+  const res = xpManager.addXP(Number(amount));
+  if (res.leveledUp) {
+    sendToRenderer("xp-update", { leveledUp: true, tier: res.tier });
+  }
+  return res;
+});
+
+// ---------------- RITUAL IPC ----------------
+
+ipcMain.handle("ritual:list", async () => ritualManager.getRituals());
+
+ipcMain.handle("ritual:execute", async (_event, id) => {
+  const res = ritualManager.execute(id);
+  if (res.success) {
+    sendToRenderer("ritual-triggered", res);
+  }
+  return res;
+});
+
+ipcMain.handle("ritual:schedule", async (_event, id, timestamp) => {
+  return ritualManager.schedule(id, timestamp);
+});
+
+ipcMain.handle("ritual:setAutoTrigger", async (_event, criteria) => {
+  return ritualManager.setAutoTrigger(criteria);
+});
+
+ipcMain.handle("ritual:scheduled", async () => ritualManager.getScheduled());
+
+// ---------------- HISTORY IPC ----------------
+
+ipcMain.handle("history:parse", async (_event, filePath) => {
+  return historyLoader.parse(filePath);
+});
+
+ipcMain.handle("history:format", async (_event, logs) => {
+  return historyLoader.formatForInjection(logs);
+});
+
+// ---------------- VAULT IPC ----------------
+
+ipcMain.handle("vault:lock", async () => {
+  return secretVault.lock();
+});
+
+ipcMain.handle("vault:unlock", async (_event, password) => {
+  return secretVault.unlock(password);
+});
+
+ipcMain.handle("vault:compact", async (_event, data, format) => {
+  return secretVault.compact(data, format);
+});
+
+// ---------------- ENHANCED LLM IPC ----------------
+
+ipcMain.handle("llm:autoDetect", async () => {
+  return llmService.autoDetectLocalLLM();
+});
+
+ipcMain.handle("llm:setPersona", async (_event, personaId) => {
+  return llmService.setPersona(personaId);
+});
+
+// ---------------- RECOVERY IPC ----------------
+
+ipcMain.handle("recovery:repair", async () => {
+  const report = await verifyIntegrity();
+  if (report.ok) return true;
+  return await attemptRepair(report.failedFiles);
+});
+
+ipcMain.handle("recovery:restart", () => {
+  app.relaunch();
+  app.exit(0);
+});
+
+// ---------------- EMPIRE IPC ----------------
+
+ipcMain.handle("empire:scan", async () => {
+  // Scan one level up from NeuralShell (the GitHub workspace root)
+  const workspaceRoot = path.join(__dirname, '../../');
+  return await scanWorkspace(workspaceRoot);
+});
+
+// ---------------- KERNEL IPC ----------------
+
+ipcMain.handle("kernel:request", async (_event, intent, payload) => {
+  try {
+    // 1. Validate intent and payload via Firewall
+    const transaction = await intentFirewall.validate(intent, payload);
+
+    // 2. Human-in-the-loop approval if required
+    if (transaction.requiresApproval) {
+      // For this prototype, we'll log and auto-approve, or prompt if UI exists
+      console.log(`[FIREWALL] Intent "${intent}" requires approval. Processing...`);
+    }
+
+    // 3. Route to Capability Kernel
+    switch (intent) {
+      case 'kernel:net:fetch':
+        return await kernel.request(CAP_NET, 'safeFetch', transaction.payload);
+      case 'session:save':
+        // Legacy routing for now, or migrate sessionManager to CAP_FS
+        return await runBuiltInCommand('save', [payload.name, payload.passphrase]);
+      default:
+        throw new Error(`Intent "${intent}" not yet routed in kernel.`);
+    }
+  } catch (err) {
+    logger.log("warn", `kernel:request denied: ${err.message}`, { intent, payload });
+    throw err;
+  }
 });

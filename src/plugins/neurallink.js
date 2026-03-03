@@ -1,20 +1,15 @@
-const { exec } = require("child_process");
 const path = require("path");
+
+// Use injected kernelAPI for capability-based execution
+const kernelAPI = require("kernelAPI");
 
 // Path to the NeuralLink CLI
 // NOTE: Adjusting for the user's environment
 const CLI_PATH = "neural-link.exe";
 
-function runLinkCommand(args) {
-    return new Promise((resolve, reject) => {
-        exec(`${CLI_PATH} ${args}`, (error, stdout, stderr) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve(stdout.trim());
-        });
-    });
+async function runLinkCommand(args) {
+    const output = await kernelAPI.runProcess(CLI_PATH, args.split(' '));
+    return output.trim();
 }
 
 module.exports = {

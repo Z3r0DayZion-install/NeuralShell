@@ -187,3 +187,49 @@ structured modules.
 This increase reflects additional modules, UI logic and IPC handlers
 necessary to support the new functionality. Care was taken to
 maintain separation of concerns and readability.
+
+## 5.2.0 – Phase 700: Execution Fusion (Mar 2026)
+
+This release integrates the advanced "Phase 700" features from the Execution
+Fusion prototype, introducing gamification, automation, and enhanced security.
+
+### XP & Tier System
+- **Progression Engine** – Added `src/core/xpManager.js` to track user actions
+  and award XP.
+- **Rank Tiers** – Implemented 8 tiers (Tier 0-5, Founder, Sentinel) with
+  automatic leveling and UI badges.
+- **Persistence** – XP and Tiers are persisted via the modular state manager.
+
+### Ritual & Automation Engine
+- **Ritual Manager** – Added `src/core/ritualManager.js` to handle complex
+  behavioral triggers and manual rituals.
+- **Scheduling** – Support for time-based ritual execution and scheduling.
+- **AutoTriggers** – Framework for file-pattern and XP-threshold based
+  automation.
+
+### Vault & Security Hardening
+- **Enhanced SecretVault** – Added session-based locking and "Founder Key"
+  unlocking to `src/core/secretVault.js`.
+- **Compaction** – Implemented data compaction into `.neurovault` and
+  encrypted `.tear` formats for portable archives.
+- **Build Verification** – Added self-diagnostic integrity checks to
+  `src/core/systemMonitor.js`.
+
+### History & Archive Loading
+- **Archive Importer** – Added `src/core/historyLoader.js` to parse and
+  inject legacy chat logs (.txt, .json) into active sessions.
+- **Context Injection** – Formats archives for seamless LLM consumption.
+
+### UI/UX & FX
+- **Modular Layout** – Expanded the renderer with new panels for Rituals,
+  Vault, and History management.
+- **FX Suite** – Added Night Vision mode, Glow FX, and Typewriter effects.
+- **Autopilot** – Implemented an autonomous interaction loop for background
+  analysis.
+- **Ollama Detection** – Added one-click local LLM auto-detection.
+- **Persona Switcher** – Support for switching system prompts between
+  predefined personas (Balanced, Engineer, Founder, God, etc.).
+
+### Lines of Code
+- **Before:** ~1 538 (v5.1.0)
+- **After:** ~2 100 (v5.2.0)

@@ -16,6 +16,41 @@
   --chat-font-scale: 100%;
 }
 
+body.night-vision {
+  --bg-start: #001b00;
+  --bg-end: #000a00;
+  --panel: rgba(0, 20, 0, 0.85);
+  --panel-soft: rgba(0, 15, 0, 0.8);
+  --line: rgba(0, 255, 60, 0.25);
+  --line-strong: rgba(0, 255, 60, 0.5);
+  --text: #00ff3c;
+  --muted: #008f21;
+  --accent: #00ff3c;
+  --accent-hot: #00ff3c;
+  --good: #00ff3c;
+  --warn: #00ff3c;
+  --bad: #ff3333;
+  --shadow: 0 0 20px rgba(0, 255, 60, 0.1);
+}
+
+.tierBadge {
+  font-size: 9px;
+  padding: 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--muted);
+  cursor: default;
+  transition: all 0.2s ease;
+}
+
+.tierBadge.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(52, 209, 191, 0.1);
+  box-shadow: 0 0 8px rgba(52, 209, 191, 0.2);
+}
+
 * {
   box-sizing: border-box;
 }

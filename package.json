@@ -1,6 +1,6 @@
 {
   "name": "neuralshell-v5",
-  "version": "5.0.0",
+  "version": "1.0.0-OMEGA",
   "description": "NeuralShell v5 – modular chat client with model switching and session management",
   "author": "NeuralShell Team",
   "license": "MIT",
@@ -37,10 +37,15 @@
     "dist": "set PATH=C:\\Windows\\System32;%PATH%&& set ComSpec=C:\\Windows\\System32\\cmd.exe&& electron-builder --publish never"
   },
   "dependencies": {
+    "@neural/omega-core": "file:../omega-core",
     "dayjs": "^1.11.9",
-    "electron-updater": "^6.7.3"
+    "electron-updater": "^6.7.3",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.0",
+    "@babel/traverse": "^7.29.0",
+    "ajv": "^6.14.0",
     "electron": "^40.4.1",
     "electron-builder": "^26.7.0",
     "icon-gen": "^5.0.0",

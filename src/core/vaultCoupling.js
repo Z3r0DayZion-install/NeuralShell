@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { exec } = require("child_process");
+const { kernel, CAP_PROC } = require("../kernel");
 const secretVault = require("./secretVault");
 const identityKernel = require("./identityKernel");
 
@@ -70,16 +70,9 @@ class VaultBundler {
      * @param {string} peerId 
      */
     async sendBundle(bundlePath, peerId) {
-        return new Promise((resolve, reject) => {
-            // Using the CLI path from previous context
-            const CLI_PATH = "neural-link.exe";
-            exec(`${CLI_PATH} send "${bundlePath}" --to ${peerId}`, (error, stdout, stderr) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(stdout.trim());
-            });
+        return await kernel.request(CAP_PROC, 'executeTask', {
+            taskId: 'neural-link:send',
+            extraArgs: [`"${bundlePath}"`, '--to', peerId]
         });
     }
 

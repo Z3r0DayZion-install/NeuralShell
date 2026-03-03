@@ -1,23 +1,68 @@
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
+const { kernel, CAP_PROC } = require("../kernel");
+
+// Provide safe wrapped API to plugins
+const safeLogger = require("./logger");
 
 class PluginLoader {
   constructor() {
     this.plugins = [];
     this.commands = new Map();
-    const pluginDir = path.join(__dirname, "..", "plugins");
-    if (fs.existsSync(pluginDir)) {
-      fs.readdirSync(pluginDir).forEach((file) => {
-        if (!file.endsWith(".js")) return;
-        const pluginPath = path.join(pluginDir, file);
+    this.pluginDir = path.join(__dirname, "..", "plugins");
+  }
+
+  async init() {
+    if (fs.existsSync(this.pluginDir)) {
+      const files = fs.readdirSync(this.pluginDir);
+      for (const file of files) {
+        if (!file.endsWith(".js")) continue;
+        const pluginPath = path.join(this.pluginDir, file);
         try {
-          const plugin = require(pluginPath);
+          const pluginCode = fs.readFileSync(pluginPath, "utf8");
+          
+          // Create isolated sandbox
+          const sandbox = {
+            module: { exports: {} },
+            console: {
+              log: (...args) => safeLogger.info(`[Plugin:${file}] ` + args.join(' ')),
+              warn: (...args) => safeLogger.warn(`[Plugin:${file}] ` + args.join(' ')),
+              error: (...args) => safeLogger.error(`[Plugin:${file}] ` + args.join(' '))
+            },
+            // Polyfill a very restricted require for legacy plugin compat
+            require: (moduleName) => {
+              if (['fs', 'child_process', 'net', 'http', 'https', 'crypto'].includes(moduleName)) {
+                throw new Error(`Capability Sandboxing blocked forbidden import: ${moduleName}`);
+              }
+              if (moduleName.includes('logger')) {
+                return safeLogger;
+              }
+              if (moduleName === 'path') {
+                return path;
+              }
+              throw new Error(`Sandboxed require denied: ${moduleName}`);
+            },
+            // Capability injection
+            kernelAPI: {
+              runProcess: async (cmd, args) => {
+                // Request capability explicitly via the microkernel
+                return await kernel.request(CAP_PROC, 'execute', { command: cmd, args });
+              }
+            }
+          };
+
+          vm.createContext(sandbox);
+          const script = new vm.Script(pluginCode, { filename: file });
+          script.runInContext(sandbox, { timeout: 1000 }); // Prevent infinite loop at load
+
+          const plugin = sandbox.module.exports;
           this.plugins.push(plugin);
           this.registerPluginCommands(plugin, file);
         } catch (err) {
-          console.warn("Failed to load plugin", file, err);
+          console.warn("Failed to load plugin", file, err.message);
         }
-      });
+      }
     }
   }
 
@@ -44,6 +89,7 @@ class PluginLoader {
       return { ok: false, error: "Unknown command." };
     }
     try {
+      // Execute in sandbox conceptually, but the function is already bound to its context
       const result = await command.execute(ctx);
       return { ok: true, result };
     } catch (err) {
@@ -66,7 +112,7 @@ class PluginLoader {
         try {
           await plugin.onLoad();
         } catch (err) {
-          console.warn("Plugin onLoad error", err);
+          console.warn("Plugin onLoad error", err.message);
         }
       }
     }
@@ -78,7 +124,7 @@ class PluginLoader {
         try {
           await plugin.onMessage(message, conversation);
         } catch (err) {
-          console.warn("Plugin onMessage error", err);
+          console.warn("Plugin onMessage error", err.message);
         }
       }
     }
@@ -90,7 +136,7 @@ class PluginLoader {
         try {
           await plugin.onShutdown();
         } catch (err) {
-          console.warn("Plugin onShutdown error", err);
+          console.warn("Plugin onShutdown error", err.message);
         }
       }
     }

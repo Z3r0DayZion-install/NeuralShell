@@ -1,4 +1,6 @@
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const stateManager = require('./stateManager');
 
 /**
@@ -25,9 +27,9 @@ class SystemMonitor {
       }
       totalIdle += cpu.times.idle;
     });
-    const idle = totalIdle / cpus.length;
-    const total = totalTick / cpus.length;
-    const usage = 100 - Math.round((idle / total) * 100);
+    const idle = totalIdle / (cpus.length || 1);
+    const total = totalTick / (cpus.length || 1);
+    const usage = 100 - Math.round((idle / (total || 1)) * 100);
     return usage;
   }
 
@@ -42,6 +44,8 @@ class SystemMonitor {
     const freeMem = os.freemem();
     const usedMem = totalMem - freeMem;
     const tokens = stateManager.get('tokens') || 0;
+    const xp = stateManager.get('xp') || 0;
+    const tier = stateManager.get('tier') || 0;
     const memoryMb = Math.round(usedMem / (1024 * 1024));
     const cpuPercent = this.getCpuUsage();
     return {
@@ -56,9 +60,43 @@ class SystemMonitor {
       memoryMb,
       tokens,
       tokensUsed: tokens,
+      xp,
+      tier,
       platform: os.platform(),
       arch: os.arch(),
-      uptime: os.uptime()
+      uptime: os.uptime(),
+      integrity: this.verifyBuild()
+    };
+  }
+
+  /**
+   * Verify build integrity by checking for required source files.
+   */
+  verifyBuild() {
+    const root = path.join(__dirname, '..');
+    const required = [
+      'main.js',
+      'preload.js',
+      'renderer.html',
+      'renderer.js',
+      'style.css',
+      'core/stateManager.js',
+      'core/llmService.js',
+      'core/secretVault.js',
+      'core/xpManager.js',
+      'core/ritualManager.js',
+      'core/historyLoader.js'
+    ];
+
+    const results = required.map(file => {
+      const exists = fs.existsSync(path.join(root, file));
+      return { file, exists };
+    });
+
+    return {
+      ok: results.every(r => r.exists),
+      results,
+      timestamp: new Date().toISOString()
     };
   }
 }

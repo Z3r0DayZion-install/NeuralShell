@@ -1,61 +1,56 @@
-const fs = require("fs");
+"use strict";
+
+/**
+ * ChatLogStore — Capability-Based Chat Logger
+ * 
+ * REFACTORED: Uses KernelBroker for all file operations.
+ */
+
+const { kernel, CAP_FS } = require("../kernel");
 const path = require("path");
-const { app } = require("electron");
 
 class ChatLogStore {
   constructor() {
-    this.logDir = path.join(app.getPath("userData"), "chat-logs");
-    this.logFile = path.join(this.logDir, "chat-history.jsonl");
+    this.logDir = null;
+    this.logFile = null;
     this.maxBytes = 1024 * 1024 * 2;
-    this.maxBackups = 2;
   }
 
-  ensureDir() {
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
-    }
+  async _init() {
+    if (this.logFile) return;
+    const userData = await kernel.request(CAP_FS, 'getPath', { name: 'userData' });
+    this.logDir = path.join(userData, "chat-logs");
+    this.logFile = path.join(this.logDir, "chat-history.jsonl");
   }
 
-  append(eventType, payload = {}) {
+  async append(eventType, payload = {}) {
     try {
-      this.ensureDir();
-      this.rotateIfNeeded();
+      await this._init();
       const entry = {
         ts: new Date().toISOString(),
         eventType: String(eventType || "event"),
         ...payload
       };
-      fs.appendFileSync(this.logFile, `${JSON.stringify(entry)}\n`, "utf8");
+      const current = await kernel.request(CAP_FS, 'exists', { filePath: this.logFile }) 
+        ? await kernel.request(CAP_FS, 'readFile', { filePath: this.logFile }) 
+        : "";
+      await kernel.request(CAP_FS, 'writeFile', { 
+        filePath: this.logFile, 
+        data: current + JSON.stringify(entry) + "\n" 
+      });
       return true;
     } catch {
       return false;
     }
   }
 
-  rotateIfNeeded() {
+  async tail(limit = 100) {
     try {
-      if (!fs.existsSync(this.logFile)) return;
-      const { size } = fs.statSync(this.logFile);
-      if (size < this.maxBytes) return;
-
-      for (let i = this.maxBackups - 1; i >= 1; i -= 1) {
-        const src = `${this.logFile}.${i}`;
-        const dst = `${this.logFile}.${i + 1}`;
-        if (fs.existsSync(src)) {
-          fs.renameSync(src, dst);
-        }
-      }
-      fs.renameSync(this.logFile, `${this.logFile}.1`);
-    } catch {
-      // Ignore rotation failures.
-    }
-  }
-
-  tail(limit = 100) {
-    try {
-      if (!fs.existsSync(this.logFile)) return [];
-      const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 500);
-      const rows = fs.readFileSync(this.logFile, "utf8").split(/\r?\n/).filter(Boolean).slice(-safeLimit);
+      await this._init();
+      const exists = await kernel.request(CAP_FS, 'exists', { filePath: this.logFile });
+      if (!exists) return [];
+      const text = await kernel.request(CAP_FS, 'readFile', { filePath: this.logFile });
+      const rows = text.split(/\r?\n/).filter(Boolean).slice(-limit);
       return rows.map((line) => {
         try {
           return JSON.parse(line);
@@ -68,19 +63,19 @@ class ChatLogStore {
     }
   }
 
-  exportText() {
+  async exportText() {
     try {
-      if (!fs.existsSync(this.logFile)) return "";
-      return fs.readFileSync(this.logFile, "utf8");
+      await this._init();
+      return await kernel.request(CAP_FS, 'readFile', { filePath: this.logFile });
     } catch {
       return "";
     }
   }
 
-  clear() {
+  async clear() {
     try {
-      this.ensureDir();
-      fs.writeFileSync(this.logFile, "", "utf8");
+      await this._init();
+      await kernel.request(CAP_FS, 'writeFile', { filePath: this.logFile, data: "" });
       return true;
     } catch {
       return false;

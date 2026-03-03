@@ -199,7 +199,30 @@ const ui = {
   chatLogsOutput: document.getElementById("chatLogsOutput"),
   buttonAuditOutput: document.getElementById("buttonAuditOutput"),
   shortcutOverlay: document.getElementById("shortcutOverlay"),
-  shortcutCloseBtn: document.getElementById("shortcutCloseBtn")
+  shortcutCloseBtn: document.getElementById("shortcutCloseBtn"),
+  tierBadges: document.querySelectorAll(".tierBadge"),
+  ritualSelect: document.getElementById("ritualSelect"),
+  ritualTriggerBtn: document.getElementById("ritualTriggerBtn"),
+  ritualScheduleTime: document.getElementById("ritualScheduleTime"),
+  ritualScheduleBtn: document.getElementById("ritualScheduleBtn"),
+  scheduledRitualList: document.getElementById("scheduledRitualList"),
+  vaultPass: document.getElementById("vaultPass"),
+  vaultUnlockBtn: document.getElementById("vaultUnlockBtn"),
+  vaultLockBtn: document.getElementById("vaultLockBtn"),
+  vaultCompactBtn: document.getElementById("vaultCompactBtn"),
+  vaultTearBtn: document.getElementById("vaultTearBtn"),
+  historyFileInput: document.getElementById("historyFileInput"),
+  selectHistoryBtn: document.getElementById("selectHistoryBtn"),
+  injectHistoryBtn: document.getElementById("injectHistoryBtn"),
+  historyFileList: document.getElementById("historyFileList"),
+  nightVisionToggle: document.getElementById("nightVisionToggle"),
+  glowToggle: document.getElementById("glowToggle"),
+  audioToggle: document.getElementById("audioToggle"),
+  typewriterToggle: document.getElementById("typewriterToggle"),
+  autopilotToggle: document.getElementById("autopilotToggle"),
+  detectLLMBtn: document.getElementById("detectLLMBtn"),
+  scanEmpireBtn: document.getElementById("scanEmpireBtn"),
+  empireStatusList: document.getElementById("empireStatusList")
 };
 
 const appBanner = document.getElementById("appBanner");
@@ -242,7 +265,12 @@ const state = {
   multiAgentPendingApproval: null,
   multiAgentApprovalGranted: false,
   multiAgentLastPlan: "",
-  multiAgentLastVerification: ""
+  multiAgentLastVerification: "",
+  xp: 0,
+  tier: 0,
+  historyFiles: [],
+  scheduledRituals: [],
+  autopilotActive: false
 };
 
 const ONBOARD_FLAG = "ns5_onboarded_v1";
@@ -1808,6 +1836,7 @@ async function sendPrompt() {
     const text = reply && reply.message ? reply.message.content || "" : "";
     state.chat.push(toMessage("assistant", text));
     renderChat();
+    await api.xp.add(10);
     await persistChatState();
     setStatus("Ready", `${state.chat.length} messages`);
     appendAuditEvent({
@@ -2980,6 +3009,9 @@ async function init() {
   await refreshSystemStats();
   runOnboarding();
   wireGlobalShortcuts();
+  wireNewFeatures();
+  await updateXPStatus();
+  await refreshRituals();
   setInterval(refreshSystemStats, 5000);
   hideLoadScreen();
 }
@@ -3037,6 +3069,203 @@ function openShortcutOverlay() {
   ui.shortcutOverlay.hidden = false;
   ui.shortcutOverlay.setAttribute("aria-hidden", "false");
   ui.shortcutCloseBtn.focus();
+}
+async function updateXPStatus() {
+  const status = await api.xp.status();
+  state.xp = status.xp;
+  state.tier = status.tier;
+  ui.tierBadges.forEach(badge => {
+    badge.classList.toggle('is-active', badge.dataset.tier == state.tier);
+  });
+  if (ui.xpSpan) ui.xpSpan.textContent = `XP: ${state.xp}`;
+}
+
+async function refreshRituals() {
+  const rituals = await api.ritual.list();
+  ui.ritualSelect.innerHTML = rituals.map(r => `<option value="${r.id}">${r.name} (+${r.xpAward} XP)</option>`).join('');
+  const scheduled = await api.ritual.getScheduled();
+  ui.scheduledRitualList.innerHTML = scheduled.map(s => `<li>${s.ritualId} @ ${new Date(s.timestamp).toLocaleTimeString()}</li>`).join('');
+}
+
+async function refreshHistoryFiles() {
+  ui.historyFileList.innerHTML = state.historyFiles.map((f, i) => `<li>${f.name} <button onclick="removeHistoryFile(${i})">x</button></li>`).join('');
+}
+
+window.removeHistoryFile = (index) => {
+  state.historyFiles.splice(index, 1);
+  refreshHistoryFiles();
+};
+
+function startAutopilot() {
+  if (state.autopilotInterval) clearInterval(state.autopilotInterval);
+  state.autopilotInterval = setInterval(async () => {
+    if (state.isBusy) return;
+    const prompts = [
+      "Analyze the current system state.",
+      "Are there any anomalies in the audit log?",
+      "Summarize our progress so far.",
+      "Check LLM health and connection stability.",
+      "Perform a quick self-test."
+    ];
+    const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+    ui.promptInput.value = randomPrompt;
+    await sendPrompt();
+  }, 30000);
+}
+
+function stopAutopilot() {
+  if (state.autopilotInterval) {
+    clearInterval(state.autopilotInterval);
+    state.autopilotInterval = null;
+  }
+}
+
+function wireNewFeatures() {
+  // XP & Tiers
+  api.xp.onUpdate((data) => {
+    if (data.leveledUp) {
+      showBanner(`LEVEL UP! You are now ${data.tier}.`, 'good');
+    }
+    updateXPStatus();
+  });
+
+  // Rituals
+  ui.ritualTriggerBtn.addEventListener('click', async () => {
+    const id = ui.ritualSelect.value;
+    const res = await api.ritual.execute(id);
+    if (res.success) {
+      showBanner(`Ritual executed: ${res.ritual}`, 'good');
+    }
+  });
+
+  ui.ritualScheduleBtn.addEventListener('click', async () => {
+    const id = ui.ritualSelect.value;
+    const time = new Date(ui.ritualScheduleTime.value).getTime();
+    const res = await api.ritual.schedule(id, time);
+    if (res.success) {
+      showBanner('Ritual scheduled', 'info');
+      refreshRituals();
+    }
+  });
+
+  api.on('ritual-triggered', (res) => {
+    showBanner(`Scheduled Ritual Triggered: ${res.ritual}`, 'good');
+    refreshRituals();
+  });
+
+  // Vault
+  ui.vaultUnlockBtn.addEventListener('click', async () => {
+    const pass = ui.vaultPass.value;
+    const res = await api.vault.unlock(pass);
+    if (res) showBanner('Vault Unlocked', 'good');
+  });
+
+  ui.vaultLockBtn.addEventListener('click', async () => {
+    await api.vault.lock();
+    showBanner('Vault Locked', 'warn');
+  });
+
+  ui.vaultCompactBtn.addEventListener('click', async () => {
+    const data = { chat: state.chat, xp: state.xp, tier: state.tier };
+    const path = await api.vault.compact(data, 'neurovault');
+    showBanner(`Vault compacted: ${path}`, 'good');
+  });
+
+  ui.vaultTearBtn.addEventListener('click', async () => {
+    const data = { chat: state.chat, xp: state.xp, tier: state.tier };
+    const path = await api.vault.compact(data, 'tear');
+    showBanner(`Vault encrypted: ${path}`, 'good');
+  });
+
+  // History
+  ui.selectHistoryBtn.addEventListener('click', () => ui.historyFileInput.click());
+  ui.historyFileInput.addEventListener('change', (evt) => {
+    state.historyFiles = Array.from(evt.target.files);
+    refreshHistoryFiles();
+  });
+
+  ui.injectHistoryBtn.addEventListener('click', async () => {
+    if (!state.historyFiles.length) return;
+    for (const file of state.historyFiles) {
+      const res = await api.history.parse(file.path);
+      if (res.success) {
+        const formatted = await api.history.format(res.logs);
+        ui.promptInput.value += `\n\n[Injected History from ${file.name}]:\n${formatted}`;
+      }
+    }
+    updatePromptMetrics();
+    showBanner('History injected into prompt', 'info');
+  });
+
+  // FX & Toggles
+  ui.nightVisionToggle.addEventListener('change', () => {
+    document.body.classList.toggle('night-vision', ui.nightVisionToggle.checked);
+  });
+
+  ui.autopilotToggle.addEventListener('change', () => {
+    if (ui.autopilotToggle.checked) startAutopilot();
+    else stopAutopilot();
+  });
+
+  ui.detectLLMBtn.addEventListener('click', async () => {
+    const res = await api.llm.autoDetect();
+    if (res.success) {
+      showBanner(`Ollama detected at ${res.url}`, 'good');
+      ui.baseUrlInput.value = res.url;
+    } else {
+      showBanner('Ollama not detected locally', 'bad');
+    }
+  });
+
+  ui.personalityProfileSelect.addEventListener('change', async () => {
+    const persona = ui.personalityProfileSelect.value;
+    if (['override', 'god'].includes(persona)) {
+      await api.llm.setPersona(persona);
+      showBanner(`Persona set to ${persona}`, 'warn');
+    }
+  });
+
+  // Empire Control Plane
+  if (ui.scanEmpireBtn) {
+    ui.scanEmpireBtn.addEventListener('click', async () => {
+      ui.scanEmpireBtn.disabled = true;
+      ui.scanEmpireBtn.textContent = 'Scanning Workspace...';
+      ui.empireStatusList.innerHTML = '<span style="color: var(--muted)">Initializing OMEGA AST Scanners...</span>';
+      
+      try {
+        const results = await api.empire.scan();
+        if (!results || results.length === 0) {
+          ui.empireStatusList.innerHTML = '<span style="color: var(--warn)">No empire modules detected in workspace.</span>';
+        } else {
+          ui.empireStatusList.innerHTML = results.map(r => {
+            const color = r.compliant ? 'var(--good)' : 'var(--bad)';
+            const statusText = r.compliant ? 'OMEGA COMPLIANT' : 'UNTRUSTED';
+            const capStr = r.capabilities.length ? r.capabilities.join(', ') : 'None';
+            const violationsHTML = r.violations.length 
+              ? `<div style="color: var(--bad); margin-top: 4px;">Violations: ${r.violations.length}</div>` 
+              : '';
+
+            return `
+              <div style="border: 1px solid ${color}; padding: 6px; margin-bottom: 6px; border-radius: 4px; background: rgba(0,0,0,0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <strong style="color: var(--text)">${r.module}</strong>
+                  <span style="color: ${color}; font-weight: bold;">[${statusText}]</span>
+                </div>
+                <div style="color: var(--muted); margin-top: 4px;">Caps: ${capStr}</div>
+                ${violationsHTML}
+              </div>
+            `;
+          }).join('');
+        }
+        showBanner('Empire scan complete.', 'info');
+      } catch (err) {
+        ui.empireStatusList.innerHTML = `<span style="color: var(--bad)">Scan Failed: ${err.message}</span>`;
+      } finally {
+        ui.scanEmpireBtn.disabled = false;
+        ui.scanEmpireBtn.textContent = 'Scan Workspace';
+      }
+    });
+  }
 }
 
 function closeShortcutOverlay() {

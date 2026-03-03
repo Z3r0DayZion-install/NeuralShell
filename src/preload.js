@@ -13,11 +13,19 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   'log:log', 'log:tail', 'log:clear', 'log:export',
   'chatlog:tail', 'chatlog:export', 'chatlog:clear',
   'identity:pubkey', 'identity:trust-peer', 'identity:revoke-peer', 'identity:list-peers', 'identity:rotate',
-  'daemon:status'
+  'daemon:status',
+  'xp:status', 'xp:add',
+  'ritual:list', 'ritual:execute', 'ritual:schedule', 'ritual:setAutoTrigger', 'ritual:scheduled',
+  'history:parse', 'history:format',
+  'vault:lock', 'vault:unlock', 'vault:compact',
+  'llm:autoDetect', 'llm:setPersona',
+  'kernel:request',
+  'recovery:repair', 'recovery:restart',
+  'empire:scan'
 ]);
 
 const ALLOWED_SEND_CHANNELS = new Set([]);
-const ALLOWED_ON_CHANNELS = new Set(['llm-status-change', 'daemon-status', 'transfer-progress']);
+const ALLOWED_ON_CHANNELS = new Set(['llm-status-change', 'daemon-status', 'transfer-progress', 'xp-update', 'ritual-triggered']);
 
 function assertAllowed(set, channel, type) {
   if (!set.has(channel)) {
@@ -105,7 +113,44 @@ contextBridge.exposeInMainWorld('api', {
      * been propagated to the main process.
      * @returns {Promise<boolean>}
      */
-    cancelStream: () => ipcRenderer.invoke('llm:cancelStream')
+    cancelStream: () => ipcRenderer.invoke('llm:cancelStream'),
+    /**
+     * Auto-detect local Ollama instance.
+     */
+    autoDetect: () => ipcRenderer.invoke('llm:autoDetect'),
+    /**
+     * Set the current persona for the assistant.
+     * @param {string} personaId
+     */
+    setPersona: (personaId) => ipcRenderer.invoke('llm:setPersona', personaId)
+  },
+  xp: {
+    status: () => ipcRenderer.invoke('xp:status'),
+    add: (amount) => ipcRenderer.invoke('xp:add', amount),
+    onUpdate: (fn) => ipcRenderer.on('xp-update', (_e, data) => fn(data))
+  },
+  ritual: {
+    list: () => ipcRenderer.invoke('ritual:list'),
+    execute: (id) => ipcRenderer.invoke('ritual:execute', id),
+    schedule: (id, timestamp) => ipcRenderer.invoke('ritual:schedule', id, timestamp),
+    setAutoTrigger: (criteria) => ipcRenderer.invoke('ritual:setAutoTrigger', criteria),
+    getScheduled: () => ipcRenderer.invoke('ritual:scheduled'),
+    onTrigger: (fn) => ipcRenderer.on('ritual-triggered', (_e, data) => fn(data))
+  },
+  history: {
+    parse: (filePath) => ipcRenderer.invoke('history:parse', filePath),
+    format: (logs) => ipcRenderer.invoke('history:format', logs)
+  },
+  vault: {
+    lock: () => ipcRenderer.invoke('vault:lock'),
+    unlock: (password) => ipcRenderer.invoke('vault:unlock', password),
+    compact: (data, format) => ipcRenderer.invoke('vault:compact', data, format)
+  },
+  kernel: {
+    request: (intent, payload) => ipcRenderer.invoke('kernel:request', intent, payload)
+  },
+  empire: {
+    scan: () => ipcRenderer.invoke('empire:scan')
   },
   state: {
     /**

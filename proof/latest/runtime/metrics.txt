@@ -1,0 +1,88 @@
+
+=== normal metrics#1 ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.03
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 0
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 0
+
+=== normal metrics#1b ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.17
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 4
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 0
+
+=== normal metrics#2 ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.34
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 5
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 0
+
+=== normal metrics#3 ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.36
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 10
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 1
+
+=== dry metrics#1 ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.01
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 0
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 0
+
+=== dry metrics#1b ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.15
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 4
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 0
+
+=== dry metrics#2 ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.31
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 5
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 0
+
+=== dry metrics#3 ===
+# HELP neuralshell_uptime_seconds The uptime of the server in seconds.
+# TYPE neuralshell_uptime_seconds gauge
+neuralshell_uptime_seconds 0.31
+# HELP neuralshell_requests_total Total number of requests processed.
+# TYPE neuralshell_requests_total counter
+neuralshell_requests_total 8
+# HELP neuralshell_failures_total Total number of failures.
+# TYPE neuralshell_failures_total counter
+neuralshell_failures_total 0

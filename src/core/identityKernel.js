@@ -2,258 +2,172 @@
 
 /**
  * IdentityKernel — Phase 4/5: Identity Layer + Hardware-Bound Key Storage
- *
- * Manages a persistent ECDSA P-256 keypair for this device.
- * Signs and verifies data payloads to establish trust across the Sovereign Mesh.
- *
- * Phase 5 upgrade: The private key is AES-256-GCM wrapped using a key derived
- * from a hardware fingerprint (CPU + motherboard serial). Copying identity.key.json
- * to another machine renders it undecryptable — the key is tethered to this hardware.
+ * 
+ * REFACTORED: Refactored to use KernelBroker for all privileged operations.
  */
 
-const crypto = require("crypto");
-const { app } = require("electron");
-const { execSync } = require("child_process");
+const { kernel, CAP_FS, CAP_PROC, CAP_CRYPTO, CAP_KEYCHAIN } = require("../kernel");
 const path = require("path");
-const fs = require("fs");
 
-const TRUST_STORE_PATH = path.join(app.getPath("userData"), "identity-trust-store.json");
-const KEY_STORE_PATH = path.join(app.getPath("userData"), "identity.key.json");
 const HW_SALT = "neurallink-identity-hw-v1";
-
-// ---------------------------------------------------------------
-// Hardware fingerprinting  (Windows — falls back gracefully)
-// ---------------------------------------------------------------
-
-function _queryWmic(path, field) {
-    try {
-        const out = execSync(`wmic ${path} get ${field} /value`, { timeout: 3000 })
-            .toString()
-            .split("\n")
-            .find(l => l.startsWith(`${field}=`));
-        return (out || "").split("=")[1]?.trim() || "";
-    } catch {
-        return "";
-    }
-}
-
-/**
- * Collects immutable hardware identifiers and returns a stable fingerprint string.
- * On non-Windows or if wmic is unavailable, falls back to a deterministic hostname
- * + userData path hash so the system still starts (degraded portability protection).
- */
-function _getHardwareFingerprint() {
-    const cpu = _queryWmic("cpu", "ProcessorId");
-    const board = _queryWmic("baseboard", "SerialNumber");
-    const bios = _queryWmic("bios", "SerialNumber");
-
-    // At least one must be non-empty for real hardware binding
-    if (!cpu && !board && !bios) {
-        // Fallback: derive from machine-specific userData path — weaker but non-empty
-        const fallback = app.getPath("userData") + require("os").hostname();
-        return crypto.createHash("sha256").update(fallback).digest("hex");
-    }
-    return crypto.createHash("sha256").update(`${cpu}|${board}|${bios}`).digest("hex");
-}
-
-/**
- * Derive a 32-byte AES wrapping key from the hardware fingerprint.
- * Uses PBKDF2-SHA256 with a fixed salt — iterations are low because
- * the fingerprint itself is high entropy; this just ensures uniform key length.
- */
-function _deriveWrappingKey(fingerprint) {
-    return crypto.pbkdf2Sync(fingerprint, HW_SALT, 100_000, 32, "sha256");
-}
-
-// ---------------------------------------------------------------
-// Encrypt / Decrypt PEM at rest
-// ---------------------------------------------------------------
-
-function _encryptPem(pemString, wrappingKey) {
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv("aes-256-gcm", wrappingKey, iv);
-    const enc = Buffer.concat([cipher.update(pemString, "utf8"), cipher.final()]);
-    const tag = cipher.getAuthTag();
-    return {
-        enc: enc.toString("base64"),
-        iv: iv.toString("base64"),
-        tag: tag.toString("base64"),
-        alg: "aes-256-gcm"
-    };
-}
-
-function _decryptPem(stored, wrappingKey) {
-    const iv = Buffer.from(stored.iv, "base64");
-    const tag = Buffer.from(stored.tag, "base64");
-    const enc = Buffer.from(stored.enc, "base64");
-    const decipher = crypto.createDecipheriv("aes-256-gcm", wrappingKey, iv);
-    decipher.setAuthTag(tag);
-    return Buffer.concat([decipher.update(enc), decipher.final()]).toString("utf8");
-}
-
-// ---------------------------------------------------------------
-// IdentityKernel class
-// ---------------------------------------------------------------
 
 class IdentityKernel {
     constructor() {
         this._privateKey = null;
         this._publicKey = null;
         this._trustStore = {};
-        this._wrappingKey = null; // cached for rotate()
+        this._wrappingKey = null;
+        this._paths = {};
     }
 
-    // ---------------------------------------------------------------
-    // Boot
-    // ---------------------------------------------------------------
+    async init() {
+        const userData = await kernel.request(CAP_FS, 'getPath', { name: 'userData' });
+        this._paths.trustStore = path.join(userData, "identity-trust-store.json");
+        this._paths.keyStore = path.join(userData, "identity.key.json");
 
-    init() {
-        const fp = _getHardwareFingerprint();
-        this._wrappingKey = _deriveWrappingKey(fp);
+        const fp = await this._getHardwareFingerprint();
+        this._wrappingKey = await kernel.request(CAP_CRYPTO, 'pbkdf2', { 
+            password: fp, 
+            salt: HW_SALT, 
+            iterations: 100000, 
+            keylen: 32 
+        });
 
-        if (fs.existsSync(KEY_STORE_PATH)) {
+        const exists = await kernel.request(CAP_FS, 'exists', { filePath: this._paths.keyStore });
+        if (exists) {
             try {
-                const raw = JSON.parse(fs.readFileSync(KEY_STORE_PATH, "utf8"));
+                const rawContent = await kernel.request(CAP_FS, 'readFile', { filePath: this._paths.keyStore });
+                const raw = JSON.parse(rawContent);
 
                 let privateKeyPem;
                 if (raw.enc) {
-                    // Phase 5 format: hardware-wrapped
-                    privateKeyPem = _decryptPem(raw, this._wrappingKey);
-                } else if (raw.privateKeyPem) {
-                    // Legacy plaintext format — re-encrypt immediately
-                    privateKeyPem = raw.privateKeyPem;
-                    this._saveKey(privateKeyPem);
+                    privateKeyPem = await this._decryptPem(raw, this._wrappingKey);
+                } else if (raw.osEnc) {
+                    privateKeyPem = await kernel.request(CAP_KEYCHAIN, 'decrypt', { data: raw.osEnc });
                 } else {
                     throw new Error("Unrecognized key format");
                 }
 
-                this._privateKey = crypto.createPrivateKey({ key: privateKeyPem, format: "pem" });
-                this._publicKey = crypto.createPublicKey(this._privateKey);
+                this._privateKey = privateKeyPem;
+                const keyPair = await kernel.request(CAP_CRYPTO, 'generateKeyPair', { 
+                    algorithm: 'ec', 
+                    options: { namedCurve: 'prime256v1' } 
+                });
+                this._publicKey = keyPair.publicKey; 
             } catch (err) {
-                // Corrupt or hardware-mismatched — regenerate
                 console.error("[IdentityKernel] Key load failed, regenerating:", err.message);
-                this._generate();
+                await this._generate();
             }
         } else {
-            this._generate();
+            await this._generate();
         }
 
-        // Load trust store
-        if (fs.existsSync(TRUST_STORE_PATH)) {
+        const trustExists = await kernel.request(CAP_FS, 'exists', { filePath: this._paths.trustStore });
+        if (trustExists) {
             try {
-                this._trustStore = JSON.parse(fs.readFileSync(TRUST_STORE_PATH, "utf8"));
+                const content = await kernel.request(CAP_FS, 'readFile', { filePath: this._paths.trustStore });
+                this._trustStore = JSON.parse(content);
             } catch {
                 this._trustStore = {};
             }
         }
     }
 
-    _generate() {
-        const { privateKey: privPem, publicKey } = crypto.generateKeyPairSync("ec", {
-            namedCurve: "prime256v1",
-            privateKeyEncoding: { type: "pkcs8", format: "pem" },
-            publicKeyEncoding: { type: "spki", format: "pem" }
-        });
-        this._saveKey(privPem);
-        this._privateKey = crypto.createPrivateKey({ key: privPem, format: "pem" });
-        this._publicKey = crypto.createPublicKey({ key: publicKey, format: "pem" });
-    }
-
-    /**
-     * Encrypts the private key PEM with the hardware wrapping key and writes to disk.
-     * @param {string} privateKeyPem
-     */
-    _saveKey(privateKeyPem) {
-        const wrapped = _encryptPem(privateKeyPem, this._wrappingKey);
-        wrapped.createdAt = new Date().toISOString();
-        wrapped.hwBound = true;
-        fs.writeFileSync(KEY_STORE_PATH, JSON.stringify(wrapped, null, 2), { mode: 0o600 });
-    }
-
-    // ---------------------------------------------------------------
-    // Public-key access
-    // ---------------------------------------------------------------
-
-    getPublicKeyPem() {
-        return this._publicKey.export({ type: "spki", format: "pem" });
-    }
-
-    getFingerprint() {
-        const pem = this.getPublicKeyPem();
-        const hash = crypto.createHash("sha256").update(pem).digest("hex").toUpperCase();
-        return hash.match(/.{2}/g).slice(0, 8).join(":");
-    }
-
-    // ---------------------------------------------------------------
-    // Sign / Verify
-    // ---------------------------------------------------------------
-
-    sign(data) {
-        const buf = Buffer.isBuffer(data) ? data : Buffer.from(String(data), "utf8");
-        return crypto.sign("sha256", buf, this._privateKey).toString("base64");
-    }
-
-    verify(data, signatureB64, pubKeyPem) {
+    async _getHardwareFingerprint() {
         try {
-            const buf = Buffer.isBuffer(data) ? data : Buffer.from(String(data), "utf8");
-            const sig = Buffer.from(signatureB64, "base64");
-            const pubKey = crypto.createPublicKey({ key: pubKeyPem, format: "pem" });
-            return crypto.verify("sha256", buf, pubKey, sig);
+            const cpu = await kernel.request(CAP_PROC, 'execute', { command: 'wmic', args: ['cpu', 'get', 'ProcessorId', '/value'] });
+            const board = await kernel.request(CAP_PROC, 'execute', { command: 'wmic', args: ['baseboard', 'get', 'SerialNumber', '/value'] });
+            
+            const fingerprint = `${cpu.trim()}|${board.trim()}`;
+            return await kernel.request(CAP_CRYPTO, 'hash', { data: fingerprint });
         } catch {
-            return false;
+            const userData = await kernel.request(CAP_FS, 'getPath', { name: 'userData' });
+            return await kernel.request(CAP_CRYPTO, 'hash', { data: userData });
         }
     }
 
-    // ---------------------------------------------------------------
-    // Trust store
-    // ---------------------------------------------------------------
+    async _generate() {
+        const { privateKey, publicKey } = await kernel.request(CAP_CRYPTO, 'generateKeyPair', {
+            algorithm: 'ec',
+            options: { namedCurve: 'prime256v1' }
+        });
+        this._privateKey = privateKey;
+        this._publicKey = publicKey;
+        await this._saveKey(privateKey);
+    }
 
-    trustPeer(deviceId, pubKeyPem, label = "") {
-        if (!deviceId || !pubKeyPem) throw new Error("deviceId and pubKeyPem are required.");
-        this._trustStore[deviceId] = {
-            pubKeyPem,
-            label: String(label || deviceId),
-            addedAt: new Date().toISOString()
+    async _saveKey(privateKeyPem) {
+        let wrapped;
+        try {
+            // Try OS-level hardware binding first (Phase 3)
+            const osEnc = await kernel.request(CAP_KEYCHAIN, 'encrypt', { data: privateKeyPem });
+            wrapped = { osEnc, createdAt: new Date().toISOString(), hwBound: true, method: 'os_keychain' };
+        } catch (err) {
+            // Fallback to manual fingerprint binding
+            wrapped = await this._encryptPem(privateKeyPem, this._wrappingKey);
+            wrapped.createdAt = new Date().toISOString();
+            wrapped.hwBound = true;
+            wrapped.method = 'fingerprint';
+        }
+        
+        await kernel.request(CAP_FS, 'writeFile', { 
+            filePath: this._paths.keyStore, 
+            data: JSON.stringify(wrapped, null, 2) 
+        });
+    }
+
+    async _encryptPem(pem, keyHex) {
+        const iv = (await kernel.request(CAP_CRYPTO, 'hash', { data: Math.random().toString() })).slice(0, 24);
+        const res = await kernel.request(CAP_CRYPTO, 'encrypt', {
+            key: keyHex,
+            iv: iv,
+            data: pem
+        });
+        return {
+            enc: res.data,
+            iv: iv,
+            tag: res.tag,
+            alg: "aes-256-gcm"
         };
-        this._saveTrustStore();
+    }
+
+    async _decryptPem(stored, keyHex) {
+        return await kernel.request(CAP_CRYPTO, 'decrypt', {
+            key: keyHex,
+            iv: stored.iv,
+            data: stored.enc,
+            tag: stored.tag
+        });
+    }
+
+    getPublicKeyPem() {
+        return this._publicKey;
+    }
+
+    async getFingerprint() {
+        const hash = await kernel.request(CAP_CRYPTO, 'hash', { data: this._publicKey });
+        return hash.toUpperCase().match(/.{2}/g).slice(0, 8).join(":");
+    }
+
+    async sign(data) {
+        return await kernel.request(CAP_CRYPTO, 'sign', { data, privateKey: this._privateKey });
+    }
+
+    async verify(data, signature, pubKeyPem) {
+        return await kernel.request(CAP_CRYPTO, 'verify', { data, signature, publicKey: pubKeyPem });
+    }
+
+    async trustPeer(deviceId, pubKeyPem, label = "") {
+        this._trustStore[deviceId] = { pubKeyPem, label, addedAt: new Date().toISOString() };
+        await this._saveTrustStore();
         return true;
     }
 
-    revokePeer(deviceId) {
-        delete this._trustStore[deviceId];
-        this._saveTrustStore();
-        return true;
-    }
-
-    listPeers() {
-        return Object.entries(this._trustStore).map(([deviceId, entry]) => ({
-            deviceId,
-            label: entry.label,
-            addedAt: entry.addedAt,
-            fingerprint: (() => {
-                try {
-                    const hash = crypto.createHash("sha256").update(entry.pubKeyPem).digest("hex").toUpperCase();
-                    return hash.match(/.{2}/g).slice(0, 8).join(":");
-                } catch { return "unknown"; }
-            })()
-        }));
-    }
-
-    getPeerPublicKey(deviceId) {
-        return this._trustStore[deviceId]?.pubKeyPem ?? null;
-    }
-
-    isTrustedKey(pubKeyPem) {
-        return Object.values(this._trustStore).some(e => e.pubKeyPem.trim() === pubKeyPem.trim());
-    }
-
-    rotate() {
-        this._generate();
-        return { fingerprint: this.getFingerprint(), rotatedAt: new Date().toISOString() };
-    }
-
-    _saveTrustStore() {
-        fs.writeFileSync(TRUST_STORE_PATH, JSON.stringify(this._trustStore, null, 2), { mode: 0o600 });
+    async _saveTrustStore() {
+        await kernel.request(CAP_FS, 'writeFile', { 
+            filePath: this._paths.trustStore, 
+            data: JSON.stringify(this._trustStore, null, 2) 
+        });
     }
 }
 

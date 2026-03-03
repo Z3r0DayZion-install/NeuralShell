@@ -1,0 +1,65 @@
+{
+  "phase": "runtime",
+  "startedAt": "2026-03-02T21:42:45.275Z",
+  "finishedAt": "2026-03-02T21:42:46.029Z",
+  "durationMs": 754,
+  "budgetMs": 30000,
+  "ok": true,
+  "artifactDir": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\state\\proofs\\2026-03-02T21-42-45-272Z-runtime",
+  "coldStart": {
+    "purged": true,
+    "deletedPaths": [],
+    "targets": [
+      "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\state",
+      "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\NeuralShell_Desktop\\.tear_runtime"
+    ]
+  },
+  "summary": {
+    "normal": {
+      "ok": true,
+      "port": 3000,
+      "baseUrl": "http://127.0.0.1:3000",
+      "portCollision": {
+        "reservedPort": 52155,
+        "actualPort": 3000
+      },
+      "restartResetOk": true,
+      "restartRequests0": 0,
+      "restartFailures0": 0,
+      "memory": {
+        "rssBefore": 47353856,
+        "rssAfter": 48685056,
+        "deltaMb": 1.27,
+        "maxMb": 80
+      },
+      "uptimeDeltaSec": 0.31,
+      "requestsDelta": 5,
+      "failuresDelta": 1,
+      "expectedRequestsDelta": 5,
+      "expectedFailuresDelta": 1,
+      "shutdownCheckOk": true,
+      "shutdownEvidence": "fetch failed"
+    },
+    "dry": {
+      "ok": true,
+      "port": 3000,
+      "baseUrl": "http://127.0.0.1:3000",
+      "restartResetOk": true,
+      "restartRequests0": 0,
+      "restartFailures0": 0,
+      "memory": {
+        "rssBefore": 49426432,
+        "rssAfter": 49729536,
+        "deltaMb": 0.289,
+        "maxMb": 80
+      },
+      "uptimeDeltaSec": 0.3,
+      "requestsDelta": 3,
+      "failuresDelta": 0,
+      "expectedRequestsDelta": 3,
+      "expectedFailuresDelta": 0,
+      "shutdownCheckOk": true,
+      "shutdownEvidence": "fetch failed"
+    }
+  }
+}
