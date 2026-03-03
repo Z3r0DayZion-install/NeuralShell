@@ -84,6 +84,18 @@ function main() {
     );
   }
 
+  assert(status.provenance && typeof status.provenance === "object", "release status missing provenance.");
+  assert(status.provenance.git && typeof status.provenance.git === "object", "release status missing provenance.git.");
+  assert(
+    Object.prototype.hasOwnProperty.call(status.provenance.git, "commit"),
+    "release status provenance.git missing commit field."
+  );
+  assert(
+    Object.prototype.hasOwnProperty.call(status.provenance.git, "tag"),
+    "release status provenance.git missing tag field."
+  );
+  assert(status.provenance.github && typeof status.provenance.github === "object", "release status missing provenance.github.");
+
   console.log("Release freshness verification passed.");
   console.log(
     `Mode=${strictInstaller ? "strict-installer" : "default"} Ages(min): status=${statusAge.toFixed(1)} manifest=${manifestAge.toFixed(1)} benchmark=${benchmarkAge.toFixed(1)} checksums=${checksumsAge.toFixed(1)}`

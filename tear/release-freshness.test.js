@@ -24,6 +24,9 @@ function run() {
   if (!src.includes("status.profile")) {
     throw new Error("Release freshness verifier missing status profile validation.");
   }
+  if (!src.includes("provenance")) {
+    throw new Error("Release freshness verifier missing provenance validation hooks.");
+  }
   console.log("Release freshness test passed.");
 }
 
