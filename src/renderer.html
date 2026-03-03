@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NeuralShell</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="grid">
+        <select id="modelSelect"></select>
+        <button id="refreshModelsBtn">Refresh Models</button>
+        <div id="statusLabel"></div>
+        <div id="statusMeta"></div>
+        <ul id="sessionList"></ul>
+        <button id="runSelfTestBtn">Self Test</button>
+        <button id="runButtonAuditBtn">Button Audit</button>
+        <input id="sessionSearchInput" />
+        <select id="sessionSortSelect"></select>
+        <input id="sessionName" />
+        <input id="sessionPass" type="password" />
+        <pre id="sessionMetadataOutput"></pre>
+        <button id="saveSessionBtn">Save Session</button>
+        <button id="loadSessionBtn">Load Session</button>
+        <button id="renameSessionBtn">Rename Session</button>
+        <button id="deleteSessionBtn">Delete Session</button>
+        <button id="duplicateSessionBtn">Duplicate Session</button>
+        <div id="chatHistory"></div>
+        <div id="typingIndicator"></div>
+        <input id="chatSearchInput" />
+        <button id="chatSearchBtn">Search Chat</button>
+        <button id="chatSearchClearBtn">Clear Search</button>
+        <button id="newChatBtn">New Chat</button>
+        <button id="deleteLastExchangeBtn">Delete Last</button>
+        <textarea id="promptInput"></textarea>
+        <div id="promptMetrics"></div>
+        <input id="autoScrollInput" type="checkbox" />
+        <button id="sendBtn">Send</button>
+        <button id="stopBtn">Stop</button>
+        <button id="retryBtn">Retry</button>
+        <button id="editLastBtn">Edit Last</button>
+        <select id="snippetSelect"></select>
+        <button id="insertSnippetBtn">Insert Snippet</button>
+        <button id="regenerateBtn">Regenerate</button>
+        <button id="exportChatBtn">Export Chat</button>
+        <button id="exportMarkdownBtn">Export Markdown</button>
+        <button id="copyMarkdownBtn">Copy Markdown</button>
+        <button id="copyLastAssistantBtn">Copy Last Assistant</button>
+        <button id="shortcutHelpBtn">Shortcuts</button>
+        <button id="importChatBtn">Import Chat</button>
+        <input id="importChatFile" type="file" />
+        <button id="refreshCommandsBtn">Refresh Commands</button>
+        <ul id="commandList"></ul>
+        <input id="baseUrlInput" />
+        <input id="timeoutInput" type="number" />
+        <input id="retryInput" type="number" />
+        <select id="themeSelect"></select>
+        <input id="tokenBudgetInput" type="number" />
+        <input id="autosaveNameInput" />
+        <input id="autosaveIntervalInput" type="number" />
+        <input id="autosaveEnabledInput" type="checkbox" />
+        <button id="applySettingsBtn">Apply Settings</button>
+        <button id="repairIndexBtn">Repair Index</button>
+        <button id="exportStateBtn">Export State</button>
+        <button id="importStateBtn">Import State</button>
+        <input id="importStateFile" type="file" />
+        <div id="cpuUsage"></div>
+        <div id="memoryUsage"></div>
+        <div id="tokensUsed"></div>
+        <div id="platformInfo"></div>
+        <div id="clockTime"></div>
+        <button id="loadLogsBtn">Load Logs</button>
+        <button id="clearLogsBtn">Clear Logs</button>
+        <button id="exportLogsBtn">Export Logs</button>
+        <pre id="logsOutput"></pre>
+        <button id="loadChatLogsBtn">Load Chat Logs</button>
+        <button id="clearChatLogsBtn">Clear Chat Logs</button>
+        <button id="exportChatLogsBtn">Export Chat Logs</button>
+        <pre id="chatLogsOutput"></pre>
+        <pre id="buttonAuditOutput"></pre>
+        <div id="shortcutOverlay"></div>
+        <button id="shortcutCloseBtn">Close Shortcuts</button>
+        <button id="undoBtn">Undo</button>
+        <button id="commandHelpBtn">Command Help</button>
+      </section>
+    </main>
+    <script src="renderer.js"></script>
+  </body>
+</html>
