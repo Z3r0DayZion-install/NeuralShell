@@ -3,6 +3,8 @@ const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
 
+const { deterministicStringify } = require('./_omega_utils');
+
 /**
  * OMEGA Compliance Registry Manager
  * 
@@ -17,12 +19,12 @@ const GOV_KEY_DIR = path.join(ROOT, 'tools/integrity/keys');
 const EXPECTED_GOV_FINGERPRINT = '76bb525ffe1cd289ee2d078f96a01c2e1251543187fc9c0a7b84e7865f07e545';
 
 function run(cmd) {
-    try { return execSync(cmd, { cwd: ROOT, encoding: 'utf8' }).trim(); }
+    try { return require('child_process').execSync(cmd, { cwd: ROOT, encoding: 'utf8' }).trim(); }
     catch (e) { return `ERROR: ${e.message}`; }
 }
 
 function getDeterministicHash(obj) {
-    const payload = JSON.stringify(obj, null, 2);
+    const payload = deterministicStringify(obj);
     return crypto.createHash('sha256').update(payload).digest('hex');
 }
 
@@ -104,7 +106,8 @@ async function updateRegistry(modulePath, status = 'ACTIVE') {
         throw new Error('GOV_BLOCK: Governance fingerprint mismatch.');
     }
 
-    const finalPayload = JSON.stringify({ ...nextRegistry, signature: "" }, null, 2);
+    // SIGN THE DETERMINISTIC STRING (Must clear both signature and registry_hash for payload parity)
+    const finalPayload = deterministicStringify({ ...nextRegistry, signature: "", registry_hash: "" });
     const privateKey = crypto.createPrivateKey(fs.readFileSync(privKeyPath));
     const signature = crypto.sign(null, Buffer.from(finalPayload), privateKey);
 

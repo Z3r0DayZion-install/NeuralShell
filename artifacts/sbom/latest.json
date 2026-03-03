@@ -1,13 +1,13 @@
 {
   "schemaVersion": "sbom.v1",
   "application": "neuralshell-v5",
-  "version": "5.0.0",
+  "version": "1.0.0-OMEGA",
   "dependencyCount": 441,
-  "lockfileHash": "c67cd0ef59049d295c3d06428023bb638b3101d58b5e01b4c3ea3c6ad3cca987",
+  "lockfileHash": "5e8d32755740892d0749957c83d9e2de577aebedfe488e6aee79f03f383d918b",
   "components": [
     {
       "name": "@neural/omega-core",
-      "version": "1.0.0",
+      "version": "1.0.0-OMEGA",
       "path": "../omega-core",
       "actualIntegrity": "20b5f6d8c2fe27011bdda72ad3b1406ea24859798671831089dd96f5f5a97d32"
     },
@@ -3090,5 +3090,5 @@
       "actualIntegrity": "e94d571d03c65c94eab2216f4fde773918a152d5d36e5672e1f5c158ff6ac42d"
     }
   ],
-  "generatedAt": "2026-03-03T03:38:58.567Z"
+  "generatedAt": "2026-03-03T04:02:10.490Z"
 }

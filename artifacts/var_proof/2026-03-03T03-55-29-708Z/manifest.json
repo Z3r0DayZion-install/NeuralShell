@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "var_proof.v1",
+  "repo": {
+    "commit": "62c77e53fd01f8ecfbe6fe553bd2101217229c68",
+    "branch": "master"
+  },
+  "build": {
+    "buildHash": "15b715b38e85b612808c7b75f9573d17cd8735f1ae72bf7d56d088d0ee83e0a0",
+    "sbomHash": "97f85a86d703fc5231088e367c9b6de5f863dcae558ce04006024d0439ce6a4b"
+  },
+  "inputs": {
+    "lockfileSha256": "5e8d32755740892d0749957c83d9e2de577aebedfe488e6aee79f03f383d918b",
+    "nodeVersion": "v20.17.0"
+  },
+  "proofs": {
+    "omegaSecuritySuite": "PASS",
+    "runtimeProof": "PASS",
+    "metricsProof": "PASS",
+    "astGate": "PASS"
+  },
+  "createdAt": "2026-03-03T03:55:29.741Z"
+}

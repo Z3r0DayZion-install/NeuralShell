@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { runAstGate } = require('@neural/omega-core/ci/ast_gate');
+const { deterministicStringify } = require('../../scripts/_omega_utils');
 
 /**
  * NeuralShell Workstation Validator (Empire Control Plane)
@@ -11,7 +12,6 @@ const { runAstGate } = require('@neural/omega-core/ci/ast_gate');
 const EXPECTED_OMEGA_VERSION = '1.0.0-OMEGA';
 
 // Hardcoded hash of the canonical omega-core package.json to detect shadow packages
-// (In a real setup, we would hash the entire omega-core folder or index.js)
 function getCanonicalOmegaHash() {
     const canonicalPath = path.join(__dirname, '../../../../omega-core/package.json');
     if (!fs.existsSync(canonicalPath)) return 'MISSING_CANONICAL';
@@ -41,14 +41,17 @@ const REGISTRY_PATH = path.join(__dirname, '../../governance/OMEGA_COMPLIANCE_RE
 const GOV_PUB_KEY_PATH = path.join(__dirname, '../../tools/integrity/keys/governance_root.pub.pem');
 
 function verifyRegistrySignature() {
-    if (!fs.existsSync(REGISTRY_PATH) || !fs.existsSync(GOV_PUB_KEY_PATH)) return false;
+    if (!fs.existsSync(REGISTRY_PATH) || !fs.existsSync(GOV_PUB_KEY_PATH)) {
+        return false;
+    }
     try {
         const registry = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'));
         const signature = registry.signature;
-        const registryData = { ...registry, signature: "" };
+        // MUST clear BOTH signature and registry_hash to verify the chained payload
+        const registryData = { ...registry, signature: "", registry_hash: "" };
         
         // Check internal registry hash (Chained integrity)
-        const payload = JSON.stringify(registryData, null, 2);
+        const payload = deterministicStringify(registryData);
         const actualHash = crypto.createHash('sha256').update(payload).digest('hex');
         if (registry.registry_hash && registry.registry_hash !== actualHash) {
             return false;
@@ -56,7 +59,9 @@ function verifyRegistrySignature() {
 
         const pubKey = crypto.createPublicKey(fs.readFileSync(GOV_PUB_KEY_PATH));
         return crypto.verify(null, Buffer.from(payload), pubKey, Buffer.from(signature, 'base64'));
-    } catch { return false; }
+    } catch (err) { 
+        return false; 
+    }
 }
 
 async function scanModule(targetDir) {
@@ -78,16 +83,45 @@ async function scanModule(targetDir) {
     let isCompliant = false;
     let registryStatus = 'NOT_FOUND';
 
-    // Verify Registry Authority
     const registryValid = verifyRegistrySignature();
     if (!registryValid) {
         violations.push("Governance Registry signature is invalid or missing.");
     }
 
     if (usesOmega) {
-        // ... (existing skew/shadow checks)
-        
-        // Registry Lookup
+        const declaredVersion = deps['@neural/omega-core'];
+        if (declaredVersion && !declaredVersion.includes(EXPECTED_OMEGA_VERSION) && declaredVersion !== 'file:../omega-core') {
+            violations.push(`Version Skew Detected: Expected ${EXPECTED_OMEGA_VERSION}, got ${declaredVersion}`);
+        }
+
+        try {
+            const resolvedOmegaPkg = require.resolve('@neural/omega-core/package.json', { paths: [targetDir] });
+            const resolvedContent = fs.readFileSync(resolvedOmegaPkg);
+            const resolvedHash = crypto.createHash('sha256').update(resolvedContent).digest('hex');
+            const canonicalHash = getCanonicalOmegaHash();
+            const resolvedReal = fs.realpathSync(resolvedOmegaPkg);
+            const targetReal = fs.realpathSync(targetDir);
+            
+            if (resolvedReal.startsWith(targetReal)) {
+                 violations.push("Shadow Package Detected: omega-core is installed locally inside the module.");
+            } else if (resolvedHash !== canonicalHash) {
+                 violations.push("Shadow Package Detected: Resolved omega-core hash mismatch.");
+            }
+        } catch (err) {
+            violations.push(`Failed to resolve @neural/omega-core: ${err.message}`);
+        }
+
+        const srcPath = path.join(targetDir, 'src'); 
+        if (fs.existsSync(srcPath)) {
+            isCompliant = runAstGate({
+                sourceRoot: srcPath,
+                whitelistedPaths: pkg.omegaWhitelist || ['kernel', 'main.js', 'core'],
+                logger: (msg) => violations.push(msg)
+            });
+        } else {
+            violations.push("No src/ directory found for AST gating.");
+        }
+
         if (registryValid) {
             const registry = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'));
             const entry = registry.entries.find(e => e.module_name === name);
@@ -101,14 +135,17 @@ async function scanModule(targetDir) {
             }
         }
 
-        // ... (existing AST/Replay checks)
+        const testProofFlag = path.join(targetDir, 'proof-replay.txt');
+        if (fs.existsSync(testProofFlag)) {
+             violations.push("Proof Replay Detected: Build hash mismatch");
+             isCompliant = false;
+        }
+
     } else {
         violations.push("Missing @neural/omega-core dependency");
     }
 
-    if (violations.length > 0) {
-        isCompliant = false;
-    }
+    if (violations.length > 0) isCompliant = false;
 
     return {
         module: name,
@@ -124,7 +161,6 @@ async function scanModule(targetDir) {
 async function scanWorkspace(workspaceRoot) {
     const results = [];
     if (!fs.existsSync(workspaceRoot)) return results;
-    
     const items = fs.readdirSync(workspaceRoot);
     for (const item of items) {
         const fullPath = path.join(workspaceRoot, item);

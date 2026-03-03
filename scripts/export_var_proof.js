@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const os = require('os');
 const { execSync } = require('child_process');
 
-const { computeBuildHash } = require('./compute_build_hash');
+const { computeBuildHash, deterministicStringify, EXPECTED_ROOT_FP } = require('./_omega_utils');
 const { generateSBOM } = require('./generate-sbom');
 
 /**
@@ -15,7 +15,6 @@ const { generateSBOM } = require('./generate-sbom');
 
 const ROOT = path.join(__dirname, '../');
 const PROOF_BASE_DIR = path.join(ROOT, 'artifacts', 'var_proof');
-const EXPECTED_PUBKEY_HASH = '75cb2558e5aca6e8e763f4af871d88fb5fc2b5f87f6f612353f0d520b37f7cd9';
 
 function ensureDir(p) {
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
@@ -52,11 +51,11 @@ async function exportProof(options = { isDeterministicTest: false }) {
   }
 
   // 1. Deterministic BUILD LOCK
-  const buildHash = computeBuildHash();
+  const buildHash = computeBuildHash(ROOT);
 
   // 2. Deterministic SBOM SEAL
   const sbom = generateSBOM({ includeTimestamp: !options.isDeterministicTest });
-  const sbomHash = crypto.createHash('sha256').update(JSON.stringify(sbom)).digest('hex');
+  const sbomHash = crypto.createHash('sha256').update(deterministicStringify(sbom)).digest('hex');
 
   const TIMESTAMP = options.isDeterministicTest ? 'DETERMINISTIC_TEST' : new Date().toISOString().replace(/[:.]/g, '-');
   const OUT_DIR = path.join(PROOF_BASE_DIR, TIMESTAMP);
@@ -91,8 +90,8 @@ async function exportProof(options = { isDeterministicTest: false }) {
     manifest.createdAt = new Date().toISOString();
   }
 
-  // Deterministic JSON stringify (object keys are ordered by insertion, which is fixed above)
-  const manifestContent = JSON.stringify(manifest, null, 2);
+  // Deterministic JSON stringify
+  const manifestContent = deterministicStringify(manifest);
   fs.writeFileSync(path.join(OUT_DIR, 'manifest.json'), manifestContent);
 
   // 4. Signing
@@ -107,7 +106,7 @@ async function exportProof(options = { isDeterministicTest: false }) {
   const pubKeyContent = fs.readFileSync(pubKeyPath);
   const actualPubKeyHash = crypto.createHash('sha256').update(pubKeyContent).digest('hex');
 
-  if (actualPubKeyHash !== EXPECTED_PUBKEY_HASH) {
+  if (actualPubKeyHash !== EXPECTED_ROOT_FP) {
     throw new Error(`OMEGA_BLOCK: Root public key fingerprint mismatch.`);
   }
 
