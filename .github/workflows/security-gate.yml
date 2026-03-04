@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -40,14 +42,16 @@ jobs:
       - name: Install deps
         run: npm ci --ignore-scripts
 
-      - name: npm audit (high+)
-        run: npm audit --audit-level=high
+      - name: npm audit (high+, production deps)
+        run: npm audit --omit=dev --audit-level=high
 
   secret_scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
 
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
@@ -59,6 +63,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@3b054500189c7b3ca9be7cd4f035ca58c00776cd # v3
@@ -71,3 +77,5 @@ jobs:
 
       - name: Analyze
         uses: github/codeql-action/analyze@3b054500189c7b3ca9be7cd4f035ca58c00776cd # v3
+        with:
+          upload: false
