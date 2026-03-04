@@ -12,6 +12,7 @@ function run() {
   if (
     !src.includes("status.json") ||
     !src.includes("manifest.json") ||
+    !src.includes("provenance.json") ||
     !src.includes("autonomy-benchmark.json") ||
     !src.includes("checksums.txt") ||
     !src.includes("checksums.json")

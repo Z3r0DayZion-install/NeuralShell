@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, "..");
 const exePath = path.join(root, "dist", "win-unpacked", "NeuralShell.exe");
 const appAsar = path.join(root, "dist", "win-unpacked", "resources", "app.asar");
 const updateYml = path.join(root, "dist", "win-unpacked", "resources", "app-update.yml");
+const smokeReport = path.join(root, "release", "packaged-smoke-report.json");
 
 function assert(condition, message) {
   if (!condition) {
@@ -17,44 +18,103 @@ function existsNonEmpty(filePath) {
   return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
 }
 
+function parseIntArg(name, fallback) {
+  const arg = process.argv.find((x) => String(x || "").startsWith(`${name}=`));
+  if (!arg) return fallback;
+  const n = Number(String(arg).split("=")[1]);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 async function smokeLaunch() {
   const strict = process.argv.includes("--strict-launch");
-  const uptimeArg = process.argv.find((x) => /^--require-uptime-ms=\d+$/i.test(String(x || "")));
-  const requireUptimeMs = uptimeArg ? Number(String(uptimeArg).split("=")[1]) : 3500;
-  const skipLaunch = process.env.SMOKE_SKIP_LAUNCH === "1" || process.env.CI === "true";
+  const timeoutMs = parseIntArg("--timeout-ms", 25000);
+  const skipLaunch = process.env.SMOKE_SKIP_LAUNCH === "1";
   if (skipLaunch) {
-    console.log("Packaged launch skipped (SMOKE_SKIP_LAUNCH=1 or CI=true).");
+    console.log("Packaged launch skipped (SMOKE_SKIP_LAUNCH=1).");
     return;
   }
 
+  fs.mkdirSync(path.dirname(smokeReport), { recursive: true });
+  if (fs.existsSync(smokeReport)) {
+    fs.rmSync(smokeReport, { force: true });
+  }
+
   await new Promise((resolve, reject) => {
-    let exited = false;
-    const startedAt = Date.now();
-    const child = spawn(exePath, [], { cwd: path.dirname(exePath), windowsHide: true, stdio: "ignore" });
-    const timeout = setTimeout(() => {
-      if (!exited) {
-        child.kill();
-        const uptime = Date.now() - startedAt;
-        console.log(`Packaged app reached uptime ${uptime}ms.`);
-        resolve();
+    let finished = false;
+
+    const child = spawn(exePath, ["--smoke-mode"], {
+      cwd: path.dirname(exePath),
+      windowsHide: true,
+      stdio: "ignore",
+      env: {
+        ...process.env,
+        NEURAL_SMOKE_MODE: "1",
+        NEURAL_SMOKE_REPORT: smokeReport
       }
-    }, requireUptimeMs);
+    });
+
+    const timeout = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      try {
+        child.kill();
+      } catch {
+        // ignore
+      }
+      reject(new Error(`Packaged smoke probe timed out after ${timeoutMs}ms.`));
+    }, timeoutMs);
 
     child.on("exit", (code) => {
-      exited = true;
+      if (finished) return;
+      finished = true;
       clearTimeout(timeout);
-      const uptime = Date.now() - startedAt;
-      if (strict) {
-        const hint = Number(code) === 2147483651
-          ? "Likely GUI/runtime bootstrap failure in this environment. Run: npm run diagnose:packaged"
-          : "Unexpected early exit. Inspect packaged runtime logs and dependencies.";
-        reject(new Error(`Packaged app exited early with code ${code} at ${uptime}ms. ${hint}`));
+
+      if (!fs.existsSync(smokeReport)) {
+        reject(new Error(`Missing packaged smoke report: ${smokeReport} (exit=${code})`));
         return;
       }
-      console.log(`Packaged app exited early with code ${code} at ${uptime}ms (non-strict).`);
+
+      let report;
+      try {
+        report = JSON.parse(fs.readFileSync(smokeReport, "utf8"));
+      } catch (err) {
+        reject(new Error(`Unable to parse smoke report JSON: ${err.message || err}`));
+        return;
+      }
+
+      const checks = report && report.checks ? report.checks : {};
+      const rendererLoad = Boolean(checks.rendererLoad);
+      const rendererDom = Boolean(checks.rendererDom);
+      const ipcHandshake = Boolean(checks.ipcHandshake);
+      const passed = Boolean(report && report.passed);
+
+      if (!rendererLoad || !rendererDom || !ipcHandshake) {
+        reject(
+          new Error(
+            `Smoke probe failed checks: rendererLoad=${rendererLoad} rendererDom=${rendererDom} ipcHandshake=${ipcHandshake}`
+          )
+        );
+        return;
+      }
+
+      if (strict && (!passed || Number(code) !== 0)) {
+        reject(
+          new Error(
+            `Strict smoke launch failed. exit=${code} passed=${passed} error=${report.error || "none"}`
+          )
+        );
+        return;
+      }
+
+      console.log(
+        `Packaged smoke report validated. exit=${code} passed=${passed} uptimeMs=${Number(report.uptimeMs) || 0}`
+      );
       resolve();
     });
+
     child.on("error", (err) => {
+      if (finished) return;
+      finished = true;
       clearTimeout(timeout);
       reject(err);
     });

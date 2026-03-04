@@ -1,0 +1,4 @@
+# Local generated artifacts that may drift between proof/export runs.
+artifacts/sbom/latest.json
+artifacts/var_proof/**
+governance/OMEGA_COMPLIANCE_REGISTRY.json

@@ -10,6 +10,7 @@ function run(stage) {
 
 function main() {
   const stages = [
+    "npm run release:worktree:strict",
     "npm run build",
     "npm run release:gate:strict",
     "npm run release:manifest",

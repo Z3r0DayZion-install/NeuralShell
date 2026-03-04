@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+if [[ "${NEURAL_SKIP_PREPUSH:-0}" == "1" ]]; then
+  echo "[pre-push] Skipping pre-push gate because NEURAL_SKIP_PREPUSH=1"
+  exit 0
+fi
+
+echo "[pre-push] Running NeuralShell pre-push gate"
+node "$repo_root/scripts/prepush-gate.js"

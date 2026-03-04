@@ -27,12 +27,16 @@
 - Verify no uncaught UI errors in normal interaction.
 
 ## Release Gate
+- Run `npm run release:worktree` (local allowlist mode).
+- Run `npm run release:worktree:strict` for final tag validation.
 - Run `npm run release:gate`.
 - Run `npm run release:gate:strict` when validating machine-level launch stability.
 - If strict launch fails, run `npm run diagnose:packaged` and inspect `release/packaged-launch-diagnostic.json`.
 - If installer packaging fails due NSIS mmap, ship `win-unpacked` and track installer issue separately.
 - Run `npm run release:manifest` and archive `release/manifest.json`.
+- Run `npm run release:status` and archive `release/status.json` + `release/provenance.json`.
 - Run `npm run release:checksums` and archive `release/checksums.txt` + `release/checksums.json`.
 - Run `npm run release:verify:fresh` for default unpacked-or-installer validation.
 - Run `npm run release:verify:fresh:strict` when installer presence must be enforced.
+- Run `npm run release:notes -- --tag=<tag>` to generate release summary + changelog snapshot.
 - For full automated pass, run `npm run ship`.

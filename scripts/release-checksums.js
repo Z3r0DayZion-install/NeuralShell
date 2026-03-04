@@ -56,6 +56,7 @@ function resolveTargets(rootDir) {
     readUpdateMetadataPath(rootDir),
     "release/manifest.json",
     "release/status.json",
+    "release/provenance.json",
     "release/autonomy-benchmark.json"
   ];
 

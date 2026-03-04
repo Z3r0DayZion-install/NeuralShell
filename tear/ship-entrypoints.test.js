@@ -19,6 +19,7 @@ function requireScript(filePath, requiredCommands) {
 
 function run() {
   requireScript(path.join(root, "scripts", "ship.js"), [
+    "npm run release:worktree",
     "npm run build",
     "npm run release:gate",
     "npm run release:manifest",
@@ -28,6 +29,7 @@ function run() {
   ]);
 
   requireScript(path.join(root, "scripts", "ship-strict.js"), [
+    "npm run release:worktree:strict",
     "npm run build",
     "npm run release:gate:strict",
     "npm run release:manifest",

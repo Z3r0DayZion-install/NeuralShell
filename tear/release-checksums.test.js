@@ -28,6 +28,7 @@ async function run() {
     writeFile(fixtureRoot, "dist/OMEGA.yml", "version: 9.9.9");
     writeFile(fixtureRoot, "release/manifest.json", '{"ok":true}');
     writeFile(fixtureRoot, "release/status.json", '{"ok":true}');
+    writeFile(fixtureRoot, "release/provenance.json", '{"ok":true}');
     writeFile(fixtureRoot, "release/autonomy-benchmark.json", '{"percent":100}');
 
     const fixedNow = "2026-03-03T00:00:00.000Z";
@@ -38,7 +39,7 @@ async function run() {
     assert(fs.existsSync(first.outJson), "checksums.json not created.");
 
     const text = fs.readFileSync(first.outTxt, "utf8").trim().split(/\r?\n/).filter(Boolean);
-    assert(text.length === 6, `Expected 6 checksum entries, got ${text.length}.`);
+    assert(text.length === 7, `Expected 7 checksum entries, got ${text.length}.`);
     for (const line of text) {
       assert(/^[a-f0-9]{64}\s\s.+$/i.test(line), `Invalid checksum line format: ${line}`);
     }
@@ -46,11 +47,13 @@ async function run() {
     const parsed = JSON.parse(fs.readFileSync(first.outJson, "utf8"));
     assert(parsed.generatedAt === fixedNow, "checksums.json generatedAt mismatch.");
     assert(Array.isArray(parsed.entries), "checksums.json entries must be array.");
-    assert(parsed.entries.length === 6, "checksums.json entries length mismatch.");
+    assert(parsed.entries.length === 7, "checksums.json entries length mismatch.");
 
     const manifestEntry = parsed.entries.find((entry) => entry.path === "release/manifest.json");
     assert(Boolean(manifestEntry), "Missing release/manifest.json checksum entry.");
     assert(manifestEntry.sha256 === sha256('{"ok":true}'), "Unexpected checksum for release/manifest.json.");
+    const provenanceEntry = parsed.entries.find((entry) => entry.path === "release/provenance.json");
+    assert(Boolean(provenanceEntry), "Missing release/provenance.json checksum entry.");
 
     assert(
       JSON.stringify(first.entries) === JSON.stringify(second.entries),

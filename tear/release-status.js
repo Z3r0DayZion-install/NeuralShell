@@ -102,10 +102,26 @@ function main() {
   };
 
   const statusFile = path.join(root, "release", "status.json");
+  const provenanceFile = path.join(root, "release", "provenance.json");
   fs.mkdirSync(path.dirname(statusFile), { recursive: true });
   fs.writeFileSync(statusFile, `${JSON.stringify(summary, null, 2)}\n`, "utf8");
+  fs.writeFileSync(
+    provenanceFile,
+    `${JSON.stringify(
+      {
+        generatedAt: summary.generatedAt,
+        profile: summary.profile,
+        provenance: summary.provenance,
+        artifacts: summary.artifacts
+      },
+      null,
+      2
+    )}\n`,
+    "utf8"
+  );
 
   console.log(`Release status written: ${statusFile}`);
+  console.log(`Release provenance written: ${provenanceFile}`);
   console.log(JSON.stringify(summary, null, 2));
 }
 

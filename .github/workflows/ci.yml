@@ -44,11 +44,17 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Verify strict clean worktree
+        run: npm run release:worktree:strict
+
       - name: Generate icons
         run: npm run icons:generate
 
       - name: Build installer
         run: npm run build
+
+      - name: Packaged smoke test (strict)
+        run: npm run smoke:packaged:strict
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -59,3 +65,4 @@ jobs:
             dist/*.blockmap
             dist/OMEGA.yml
             dist/latest.yml
+            release/packaged-smoke-report.json

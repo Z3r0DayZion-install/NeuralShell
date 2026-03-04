@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, session } = require("electron");
+const fs = require("fs");
 const path = require("path");
 
 const intentFirewall = require("./security/intentFirewall");
@@ -45,6 +46,12 @@ let secretVault;
 
 let mainWindow = null;
 let bridgeHealthTimer = null;
+let smokeFinalized = false;
+
+const SMOKE_MODE =
+  process.argv.includes("--smoke-mode") ||
+  process.env.NEURAL_SMOKE_MODE === "1";
+const SMOKE_REPORT_PATH = process.env.NEURAL_SMOKE_REPORT || null;
 
 const BUILT_IN_COMMANDS = [
   { name: "help", description: "List available commands.", args: [], source: "core" },
@@ -70,6 +77,122 @@ const BUILT_IN_COMMANDS = [
 function sendToRenderer(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, payload);
+  }
+}
+
+function writeSmokeReport(payload) {
+  if (!SMOKE_REPORT_PATH) return;
+  try {
+    const reportPath = path.isAbsolute(SMOKE_REPORT_PATH)
+      ? SMOKE_REPORT_PATH
+      : path.join(process.cwd(), SMOKE_REPORT_PATH);
+    fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+    fs.writeFileSync(reportPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  } catch (err) {
+    console.warn(`[SMOKE] Failed writing smoke report: ${err.message || err}`);
+  }
+}
+
+function finishSmoke(code, payload) {
+  if (smokeFinalized) return;
+  smokeFinalized = true;
+  writeSmokeReport(payload);
+  setTimeout(() => app.exit(code), 80);
+  app.quit();
+}
+
+function waitForRendererLoad(win, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    if (!win || win.isDestroyed()) {
+      reject(new Error("Main window is unavailable for smoke probe."));
+      return;
+    }
+
+    const onLoaded = () => {
+      cleanup();
+      resolve();
+    };
+    const onFail = (_event, code, desc) => {
+      cleanup();
+      reject(new Error(`Renderer load failed (${code}): ${desc}`));
+    };
+    const onTimeout = () => {
+      cleanup();
+      reject(new Error(`Renderer load timed out after ${timeoutMs}ms.`));
+    };
+    const cleanup = () => {
+      clearTimeout(timer);
+      win.webContents.removeListener("did-finish-load", onLoaded);
+      win.webContents.removeListener("did-fail-load", onFail);
+    };
+
+    const timer = setTimeout(onTimeout, timeoutMs);
+    win.webContents.once("did-finish-load", onLoaded);
+    win.webContents.once("did-fail-load", onFail);
+
+    if (!win.webContents.isLoadingMainFrame()) {
+      onLoaded();
+    }
+  });
+}
+
+async function runSmokeProbe() {
+  if (!SMOKE_MODE) return;
+
+  const startedAt = Date.now();
+  const report = {
+    generatedAt: new Date().toISOString(),
+    mode: "smoke",
+    checks: {
+      rendererLoad: false,
+      rendererDom: false,
+      ipcHandshake: false
+    }
+  };
+
+  try {
+    await waitForRendererLoad(mainWindow, 15000);
+    report.checks.rendererLoad = true;
+
+    const domReady = await mainWindow.webContents.executeJavaScript(
+      "Boolean(document.getElementById('sendBtn'))",
+      true
+    );
+    report.checks.rendererDom = Boolean(domReady);
+
+    const handshake = await mainWindow.webContents.executeJavaScript(
+      `(async () => {
+        if (!window.api || typeof window.api.invoke !== "function") {
+          return { ok: false, reason: "window.api.invoke is unavailable" };
+        }
+        try {
+          const ping = await window.api.invoke("llm:ping");
+          const stats = await window.api.invoke("system:stats");
+          const statsOk = Boolean(stats && typeof stats === "object");
+          return { ok: true, ping: Boolean(ping), statsOk };
+        } catch (error) {
+          return {
+            ok: false,
+            reason: error && error.message ? error.message : String(error)
+          };
+        }
+      })()`,
+      true
+    );
+
+    report.checks.ipcHandshake = Boolean(handshake && handshake.ok);
+    report.handshake = handshake;
+    report.passed =
+      report.checks.rendererLoad &&
+      report.checks.rendererDom &&
+      report.checks.ipcHandshake;
+    report.uptimeMs = Date.now() - startedAt;
+    finishSmoke(report.passed ? 0 : 2, report);
+  } catch (err) {
+    report.passed = false;
+    report.error = err.message || String(err);
+    report.uptimeMs = Date.now() - startedAt;
+    finishSmoke(2, report);
   }
 }
 
@@ -450,6 +573,11 @@ app.whenReady().then(async () => {
   startBridgeHealthLoop();
   createWindow();
   auditChain.append({ event: "app_ready", settingsVersion: Number(stateManager.get("stateVersion") || 0) });
+
+  if (SMOKE_MODE) {
+    await runSmokeProbe();
+    return;
+  }
 
   // --- DaemonWatchdog ---
   daemonWatchdog = new DaemonWatchdog();

@@ -1,35 +1,107 @@
-# NeuralShell™
+# NeuralShell
 
-NeuralShell is a cryptographically sovereign, capability-based microkernel workstation. It is designed for high-security environments where execution integrity and network isolation are non-negotiable.
+NeuralShell is an Electron workstation with strict IPC validation, offline-first defaults, and release provenance gates.
 
-## OMEGA ENFORCEMENT MODE
+## Quick Start
 
-NeuralShell operates in **OMEGA ENFORCEMENT MODE**, which provides a Level 10 security posture:
-- **Capability Microkernel:** All privileged OS operations are brokered via `Symbol` capability tokens.
-- **Zero-Renderer Network:** The renderer process has zero network authority. All traffic is brokered by the kernel.
-- **SPKI Pinning:** Outbound connections strictly enforce SHA-256 certificate pinning.
-- **Intent Firewall:** Deterministic IPC validation via strict JSON schemas and NFC normalization.
-- **Binary Hash Anchors:** Every executable task is hashed and verified before spawning.
-- **Self-Healing Boot:** Signed manifests detect tampering and trigger automated recovery from trusted snapshots.
-
-## SOVEREIGN TRUST ANCHORS
-
-The integrity and governance of the Neural Empire are secured by two independent Ed25519 trust anchors. To verify the sovereignty of this environment, ensure the public key fingerprints match the following:
-
-### 1. OMEGA Root Fingerprint (Technical Integrity)
-Used to sign `VAR_PROOF` bundles and verify artifact bit-for-bit parity.
-- **Fingerprint (SHA-256):** `75cb2558e5aca6e8e763f4af871d88fb5fc2b5f87f6f612353f0d520b37f7cd9`
-
-### 2. OMEGA Governance Fingerprint (Ecosystem Authority)
-Used to sign the `OMEGA_COMPLIANCE_REGISTRY.json` and grant `ACTIVE` status to modules.
-- **Fingerprint (SHA-256):** `76bb525ffe1cd289ee2d078f96a01c2e1251543187fc9c0a7b84e7865f07e545`
-
-## Verification & Build
-
-To perform a full security audit and generate a signed proof bundle:
+1. Install dependencies:
 
 ```powershell
-./ci-gate.ps1
+npm ci
 ```
 
-This will execute the AST enforcement gate, the Omega security suite, the runtime proofs, and the self-verifying proof exporter.
+2. Install local git hooks (recommended):
+
+```powershell
+npm run hooks:install
+```
+
+3. Run tests:
+
+```powershell
+npm test
+```
+
+4. Run app:
+
+```powershell
+npm start
+```
+
+## Build
+
+Generate icons first, then package:
+
+```powershell
+npm run icons:generate
+npm run build
+```
+
+## Release Flow
+
+Standard release verification:
+
+```powershell
+npm run ship
+```
+
+Strict release verification (clean tree + strict packaged smoke):
+
+```powershell
+npm run ship:strict
+```
+
+Tag release workflow (GitHub Actions):
+
+1. Ensure `master` commit has successful `CI`, `Merge Gate`, `Release Contract`, and `Security Gate` runs.
+2. Push a tag like `v1.1.0-OMEGA`.
+3. `Release Tag` workflow publishes installer + checksums + provenance + changelog snapshot.
+
+Detailed operator guide: [RUNBOOK_TAG_RELEASE.md](docs/RUNBOOK_TAG_RELEASE.md)
+
+## Rollback
+
+1. Identify prior stable tag from Releases.
+2. Re-point update channel to previous release artifacts (`dist/OMEGA.yml` + installer + blockmap).
+3. If needed, mark current release as superseded and publish rollback note.
+
+Hotfix/rollback guide: [RUNBOOK_HOTFIX.md](docs/RUNBOOK_HOTFIX.md)
+
+## Troubleshooting
+
+- Packaged startup issues:
+
+```powershell
+npm run diagnose:packaged
+```
+
+- Strict packaged smoke only:
+
+```powershell
+npm run smoke:packaged:strict
+```
+
+- Verify release metadata freshness:
+
+```powershell
+npm run release:verify:fresh
+npm run release:verify:fresh:strict
+```
+
+- Bypass local pre-push gate once:
+
+```powershell
+$env:NEURAL_SKIP_PREPUSH="1"
+git push
+```
+
+## Security Gates
+
+- Dependency review on PRs (`high` severity fails).
+- `npm audit --audit-level=high` in CI.
+- Secret scan via Gitleaks.
+- CodeQL analysis on `master` and PRs.
+
+## License
+
+MIT

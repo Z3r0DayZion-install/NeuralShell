@@ -53,11 +53,12 @@ function main() {
   assert(Number(manifest.fileCount) >= 20, "manifest fileCount unexpectedly low.");
   assert(Number(benchmark.percent) >= 80, "benchmark percent below required floor.");
   assert(Array.isArray(checksums.entries), "checksums metadata entries must be an array.");
-  assert(checksums.entries.length >= 6, "checksums metadata unexpectedly short.");
+  assert(checksums.entries.length >= 7, "checksums metadata unexpectedly short.");
 
   const requiredChecksumPaths = new Set([
     "release/manifest.json",
     "release/status.json",
+    "release/provenance.json",
     "release/autonomy-benchmark.json"
   ]);
   const checksumPaths = new Set(checksums.entries.map((entry) => String(entry.path || "")));
