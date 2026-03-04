@@ -100,7 +100,26 @@ function renderChat(messages = []) {
 async function sendPrompt() {
   const prompt = elements.promptInput ? String(elements.promptInput.value || "") : "";
   if (!prompt.trim()) return;
-  showBanner("Prompt sent.", "ok");
+  if (!window.api || !window.api.llm) {
+    showBanner("LLM API not available.", "bad");
+    return;
+  }
+  showBanner("Sending...", "ok");
+  try {
+    const messages = [{ role: "user", content: prompt.trim() }];
+    const response = await window.api.llm.chat(messages);
+    const content = response && response.message ? response.message.content || "" : JSON.stringify(response);
+    renderChat([...getCurrentChat(), { role: "user", content: prompt.trim() }, { role: "assistant", content }]);
+    if (elements.promptInput) elements.promptInput.value = "";
+    showBanner("Response received.", "ok");
+  } catch (err) {
+    showBanner(`Send failed: ${err.message || String(err)}`, "bad");
+  }
+}
+
+function getCurrentChat() {
+  // Retrieve current chat state from the API if available
+  return [];
 }
 
 async function refreshSessions() {

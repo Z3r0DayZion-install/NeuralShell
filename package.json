@@ -40,8 +40,8 @@
     "verify:strict": "npm test && npm run benchmark:autonomy && npm run benchmark:regression && npm run redteam:nightly && npm run release:gate:strict && npm run release:manifest && npm run release:status && npm run release:checksums && npm run release:verify:fresh:strict && npm run kpi:operator && npm run slo:gate",
     "verify:all": "npm test && npm run build",
     "icons:generate": "node tear/generate-icons.js",
-    "build": "set PATH=C:\\Windows\\System32;%PATH%&& set ComSpec=C:\\Windows\\System32\\cmd.exe&& electron-builder",
-    "dist": "set PATH=C:\\Windows\\System32;%PATH%&& set ComSpec=C:\\Windows\\System32\\cmd.exe&& electron-builder --publish never"
+    "build": "electron-builder",
+    "dist": "electron-builder --publish never"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",
@@ -53,7 +53,7 @@
     "@babel/parser": "^7.29.0",
     "@babel/traverse": "^7.29.0",
     "ajv": "^6.14.0",
-    "electron": "^40.4.1",
+    "electron": "^33.2.0",
     "electron-builder": "^26.7.0",
     "icon-gen": "^5.0.0",
     "pngjs": "^7.0.0"

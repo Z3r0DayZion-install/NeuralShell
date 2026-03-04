@@ -15,7 +15,7 @@ const kernelConfig = {
   },
   network: {
     pinnedKeys: new Map([
-      ['updates.neuralshell.app', ['sha256/f7bb5d8487103251d86776295da97742d17c3857e4c029a68a99-ebff-11f0-b275-28dfeb5c36cb']]
+      ['updates.neuralshell.app', []] // TODO: pin actual TLS certificate hash before release
     ]),
     maxResponseSize: 5 * 1024 * 1024,
     timeoutMs: 15000
@@ -25,22 +25,24 @@ const kernelConfig = {
       'neural-link:devices': {
         path: path.join(__dirname, '../../bin/neural-link.exe'),
         args: ['devices'],
-        hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2' // Must be replaced with actual hash in prod
+        hash: null // TODO: compute and pin actual binary hash before release
       },
       'neural-link:send': {
         path: path.join(__dirname, '../../bin/neural-link.exe'),
         args: ['send'],
-        hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'
+        hash: null // TODO: compute and pin actual binary hash before release
       },
       'neural-linkd:start': {
         path: path.join(__dirname, '../../bin/neural-linkd.exe'),
         args: [],
-        hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'
+        hash: null // TODO: compute and pin actual binary hash before release
       },
       'ollama:list': {
-        path: 'C:\\Users\\KickA\\AppData\\Local\\Programs\\Ollama\\ollama.exe',
+        path: process.platform === 'win32'
+          ? path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Ollama', 'ollama.exe')
+          : 'ollama',
         args: ['list'],
-        hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'
+        hash: null // TODO: compute and pin actual binary hash before release
       }
     }
   },
