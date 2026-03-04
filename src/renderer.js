@@ -756,14 +756,17 @@ function bindEvents() {
       showBanner("Session name and passphrase are required.", "bad");
       return;
     }
-    const payload = await window.api.session.load(name, pass);
+    const api = window.api;
+    const payload = await api.session.load(name, pass);
     appState.chat = Array.isArray(payload && payload.chat) ? payload.chat.slice() : [];
     appState.model = String((payload && payload.model) || appState.model);
     if (payload && typeof payload.settings === "object") {
       appState.settings = { ...appState.settings, ...payload.settings };
-      appState.settings = await window.api.settings.update(appState.settings);
+      appState.settings = await api.settings.update(appState.settings);
     }
-    await window.api.llm.setModel(appState.model);
+    const state = { selectedModel: appState.model };
+    await api.llm.setModel(state.selectedModel);
+    await api.state.set("model", state.selectedModel);
     renderChat(appState.chat);
     await persistChatState();
     await refreshModels();
@@ -901,10 +904,15 @@ function bindEvents() {
   if (el.importStateBtn) el.importStateBtn.onclick = async () => {
     const file = el.importStateFile && el.importStateFile.files ? el.importStateFile.files[0] : null;
     if (!file) return;
-    await window.api.state.import(JSON.parse(await file.text()));
-    await loadInitialState();
-    await refreshModels();
-    await refreshSessions();
+    try {
+      await window.api.state.import(JSON.parse(await file.text()));
+      await loadInitialState();
+      await refreshModels();
+      await refreshSessions();
+      showBanner("State import completed.", "ok");
+    } catch (err) {
+      showBanner(`State import failed: ${err.message}`, "bad");
+    }
   };
   if (el.runSelfTestBtn) el.runSelfTestBtn.onclick = async () => { const result = await window.api.command.run("selftest", []); if (el.logsOutput) el.logsOutput.textContent = JSON.stringify(result, null, 2); };
   if (el.runButtonAuditBtn) el.runButtonAuditBtn.onclick = () => {
