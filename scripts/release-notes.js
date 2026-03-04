@@ -32,6 +32,19 @@ function listReleaseTags() {
   return output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 }
 
+function inferPreviousTag(currentTag) {
+  const tags = listReleaseTags();
+  const previousFromList = tags.find((item) => item !== currentTag) || null;
+  if (previousFromList) return previousFromList;
+
+  try {
+    // Fallback for shallow checkouts where tag listing can be incomplete.
+    return run("git describe --tags --abbrev=0 HEAD^");
+  } catch {
+    return null;
+  }
+}
+
 function commitLines(range) {
   const output = run(`git log --pretty=format:%h%x09%s ${range}`);
   if (!output) return [];
@@ -113,8 +126,7 @@ function main() {
     throw new Error("Release tag is required (--tag=... or GITHUB_REF_NAME).\n");
   }
 
-  const tags = listReleaseTags();
-  const previousTag = tags.find((item) => item !== tag) || null;
+  const previousTag = inferPreviousTag(tag);
   const range = previousTag ? `${previousTag}..HEAD` : "HEAD";
   const commits = commitLines(range);
   const checksums = readChecksums(checksumsPath);
