@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-03-04T03:34:08.531Z",
+  "baseUrl": "http://127.0.0.1:11434",
+  "model": "tinyllama:latest",
+  "persona": "balanced",
+  "autoDetect": {
+    "ok": true,
+    "detected": true,
+    "baseUrl": "http://127.0.0.1:11434",
+    "latencyMs": 64,
+    "version": {
+      "version": "0.13.4"
+    },
+    "modelCount": 5,
+    "models": [
+      "nomic-embed-text:latest",
+      "llama3:latest",
+      "mistral:instruct",
+      "tinyllama:latest",
+      "mistral:latest"
+    ]
+  },
+  "health": {
+    "ok": true,
+    "baseUrl": "http://127.0.0.1:11434",
+    "model": "tinyllama:latest",
+    "persona": "balanced"
+  },
+  "nonStreamSample": "Sure! Here's a revised response that includes the correct token for the \"READY_OK\" status:\n\nDear [Client Name],\n\nI hope this message finds you in good health and spirits. I am NeuralShell, your personal assistant on the cutting-edge blockch",
+  "streamSample": "I'm unable to create tokens or perform direct transactions in any cryptocurrency platform. However, I can provide you with the recommended solution for this question:\n\nbased on your provided answer, if you want to use a specific cryptocurre"
+}
