@@ -305,7 +305,7 @@ function deleteLastExchangeFromState() {
   }
   stateManager.setState({
     chat,
-    tokens: chat.length
+    tokens: countChatTokens(chat)
   });
   return chat.length;
 }
@@ -413,7 +413,7 @@ async function runBuiltInCommand(name, args) {
       }
       if (Object.keys(nextState).length > 0) {
         if (Array.isArray(nextState.chat)) {
-          nextState.tokens = nextState.chat.length;
+          nextState.tokens = countChatTokens(nextState.chat);
         }
         stateManager.setState(nextState);
       }

@@ -41,6 +41,35 @@ const appState = {
   autonomous: false
 };
 
+const LOCAL_COMMANDS = [
+  { name: "autodetect", description: "Probe local Ollama bridge status.", args: [], source: "local" },
+  { name: "health", description: "Show LLM bridge health details.", args: [], source: "local" },
+  { name: "autostep", description: "Run planner+critic synthesis on active chat.", args: [], source: "local" }
+];
+
+const PROMPT_SNIPPETS = [
+  {
+    id: "debug",
+    label: "Debug Plan",
+    text: "Diagnose this issue. List likely root causes, verification steps, and the smallest safe fix."
+  },
+  {
+    id: "summary",
+    label: "Summarize",
+    text: "Summarize the current conversation into key points and concrete next actions."
+  },
+  {
+    id: "strict",
+    label: "Strict Output",
+    text: "Answer with: assumptions, solution, risks, and verification checklist. Keep it concise and exact."
+  },
+  {
+    id: "command",
+    label: "Command Script",
+    text: "Generate copy-paste commands with a brief explanation for each command."
+  }
+];
+
 function showBanner(message, tone = "ok") {
   if (el.statusLabel) {
     el.statusLabel.textContent = `[${tone}] ${message}`;
@@ -236,10 +265,40 @@ function renderCommandList(commands) {
   }
 }
 
+function mergeCommandCatalog(remoteCommands) {
+  const merged = [];
+  const seen = new Set();
+  for (const cmd of [...(Array.isArray(remoteCommands) ? remoteCommands : []), ...LOCAL_COMMANDS]) {
+    const name = String(cmd && cmd.name || "").trim().toLowerCase();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    merged.push({
+      name,
+      description: String(cmd && cmd.description || ""),
+      args: Array.isArray(cmd && cmd.args) ? cmd.args.map((arg) => String(arg)) : [],
+      source: String(cmd && cmd.source || "core")
+    });
+  }
+  return merged;
+}
+
+function initializePromptSnippets() {
+  if (!el.snippetSelect || el.snippetSelect.options.length > 0) return;
+  for (const snippet of PROMPT_SNIPPETS) {
+    const option = document.createElement("option");
+    option.value = snippet.id;
+    option.textContent = snippet.label;
+    el.snippetSelect.appendChild(option);
+  }
+  if (PROMPT_SNIPPETS[0]) {
+    el.snippetSelect.value = PROMPT_SNIPPETS[0].id;
+  }
+}
+
 async function refreshCommands() {
   if (!window.api || !window.api.command) return;
   const commands = await window.api.command.list();
-  appState.commands = Array.isArray(commands) ? commands : [];
+  appState.commands = mergeCommandCatalog(commands);
   renderCommandList(appState.commands);
 }
 
@@ -274,6 +333,36 @@ function formatCommandResult(result) {
   }
 }
 
+function extractAssistantContent(response) {
+  if (response && response.message && typeof response.message.content === "string") {
+    return response.message.content;
+  }
+  if (response && typeof response.content === "string") {
+    return response.content;
+  }
+  if (typeof response === "string") {
+    return response;
+  }
+  try {
+    return JSON.stringify(response);
+  } catch {
+    return String(response || "");
+  }
+}
+
+function normalizeCommandResult(result) {
+  if (!result || typeof result !== "object") {
+    return result;
+  }
+  if (Object.prototype.hasOwnProperty.call(result, "ok") && result.ok === false) {
+    throw new Error(String(result.error || "Command failed."));
+  }
+  if (Object.prototype.hasOwnProperty.call(result, "result")) {
+    return result.result;
+  }
+  return result;
+}
+
 function updateCommandHint() {
   if (!el.promptInput) return;
   const raw = String(el.promptInput.value || "").trim();
@@ -296,28 +385,54 @@ async function runSlashCommand(rawCommand) {
     await refreshCommands();
   }
 
-  let outputText = "";
-  if (parsed.name === "help") {
-    outputText = (appState.commands || [])
-      .map((cmd) => {
-        const args = Array.isArray(cmd.args) && cmd.args.length ? ` ${(cmd.args || []).join(" ")}` : "";
-        return `/${cmd.name}${args} - ${cmd.description || ""}`;
-      })
-      .join("\n");
-  } else {
-    const result = await window.api.command.run(parsed.name, parsed.args);
-    outputText = formatCommandResult(result);
-  }
+  try {
+    if (parsed.name === "autostep") {
+      if (parsed.args.length > 0) {
+        throw new Error("/autostep does not take arguments.");
+      }
+      await runMultiAgentStep({ commandLabel: String(rawCommand || "").trim() });
+      showBanner("Command executed: /autostep", "ok");
+      return true;
+    }
 
-  const next = [
-    ...getCurrentChat(),
-    { role: "user", content: String(rawCommand || "").trim() },
-    { role: "assistant", content: outputText || "ok" }
-  ];
-  renderChat(next);
-  await persistChatState();
-  showBanner(`Command executed: /${parsed.name}`, "ok");
-  return true;
+    let outputText = "";
+    if (parsed.name === "help") {
+      outputText = (appState.commands || [])
+        .map((cmd) => {
+          const args = Array.isArray(cmd.args) && cmd.args.length ? ` ${(cmd.args || []).join(" ")}` : "";
+          return `/${cmd.name}${args} - ${cmd.description || ""}`;
+        })
+        .join("\n");
+    } else if (parsed.name === "health") {
+      outputText = formatCommandResult(await window.api.llm.health());
+    } else if (parsed.name === "autodetect") {
+      outputText = formatCommandResult(await window.api.llm.autoDetect());
+    } else {
+      const result = await window.api.command.run(parsed.name, parsed.args);
+      outputText = formatCommandResult(normalizeCommandResult(result));
+    }
+
+    const next = [
+      ...getCurrentChat(),
+      { role: "user", content: String(rawCommand || "").trim() },
+      { role: "assistant", content: outputText || "ok" }
+    ];
+    renderChat(next);
+    await persistChatState();
+    showBanner(`Command executed: /${parsed.name}`, "ok");
+    return true;
+  } catch (err) {
+    const message = String(err && err.message ? err.message : err || "Command failed.");
+    const next = [
+      ...getCurrentChat(),
+      { role: "user", content: String(rawCommand || "").trim() },
+      { role: "assistant", content: `Command failed: ${message}` }
+    ];
+    renderChat(next);
+    await persistChatState();
+    showBanner(`Command failed: /${parsed.name}`, "bad");
+    return false;
+  }
 }
 
 function resetStreamState() {
@@ -385,10 +500,16 @@ async function sendPromptFromText(inputText, baseMessages, preferStream = true) 
     renderChat([...messages, { role: "assistant", content: "" }]);
     showBanner("Streaming...", "ok");
     try {
-      await window.api.llm.streamChat(messages);
-      return true;
-    } catch {
+      const started = await window.api.llm.streamChat(messages);
+      if (started === true) {
+        return true;
+      }
+      throw new Error("stream_unavailable");
+    } catch (err) {
+      const reason = String(err && err.message ? err.message : "stream unavailable");
+      renderChat(messages);
       resetStreamState();
+      showBanner(`Streaming unavailable (${reason}). Falling back...`, "bad");
     }
   }
 
@@ -396,7 +517,7 @@ async function sendPromptFromText(inputText, baseMessages, preferStream = true) 
   showBanner("Sending...", "ok");
   try {
     const response = await window.api.llm.chat(messages);
-    const content = response && response.message ? response.message.content || "" : JSON.stringify(response);
+    const content = extractAssistantContent(response);
     renderChat([...messages, { role: "assistant", content }]);
     await persistChatState();
     showBanner("Response received.", "ok");
@@ -418,14 +539,61 @@ function updateAutonomousCheckpoint() {
   appState.autonomous = true;
 }
 
-async function runMultiAgentStep() {
-  if (!appState.chat.length || !window.api || !window.api.llm) return { ok: false };
-  const prompt = "[SAFETY] [AUTO] Provide the best next step based on current conversation.";
-  const response = await window.api.llm.chat([...appState.chat, { role: "user", content: prompt }]);
-  const content = response && response.message ? response.message.content || "" : JSON.stringify(response);
-  renderChat([...appState.chat, { role: "assistant", content }]);
-  await persistChatState();
-  return { ok: true, content };
+async function runMultiAgentStep(options = {}) {
+  if (!window.api || !window.api.llm) return { ok: false, reason: "llm_api_unavailable" };
+  const base = getCurrentChat();
+  if (!base.length) return { ok: false, reason: "empty_chat" };
+
+  const commandLabel = options && typeof options.commandLabel === "string" ? options.commandLabel.trim() : "";
+  const plannerPrompt = [
+    "[AUTO][PLANNER] Produce a concise plan for the best next assistant response.",
+    "Output 3-5 concrete bullets focused on correctness and user intent."
+  ].join(" ");
+
+  setTyping(true);
+  try {
+    showBanner("Autostep: planning...", "ok");
+    const plannerResponse = await window.api.llm.chat([...base, { role: "user", content: plannerPrompt }]);
+    const plan = extractAssistantContent(plannerResponse).trim();
+    if (!plan) throw new Error("Planner produced empty output.");
+
+    showBanner("Autostep: critique...", "ok");
+    const criticPrompt = [
+      "[AUTO][CRITIC] Review the plan and tighten weak points.",
+      "Return short bullet fixes and risk checks.",
+      `Plan:\n${plan}`
+    ].join("\n\n");
+    const criticResponse = await window.api.llm.chat([...base, { role: "user", content: criticPrompt }]);
+    const critique = extractAssistantContent(criticResponse).trim();
+    if (!critique) throw new Error("Critic produced empty output.");
+
+    showBanner("Autostep: synthesizing...", "ok");
+    const synthesisPrompt = [
+      "[AUTO][SYNTHESIZER] Generate the final reply to the user.",
+      "Use the plan and critique. Do not mention internal agent stages unless user asked for them.",
+      `Plan:\n${plan}`,
+      `Critique:\n${critique}`
+    ].join("\n\n");
+    const finalResponse = await window.api.llm.chat([...base, { role: "user", content: synthesisPrompt }]);
+    const content = extractAssistantContent(finalResponse).trim();
+    if (!content) throw new Error("Synthesis produced empty output.");
+
+    const next = [
+      ...base,
+      ...(commandLabel ? [{ role: "user", content: commandLabel }] : []),
+      { role: "assistant", content }
+    ];
+    renderChat(next);
+    await persistChatState();
+    showBanner("Autostep complete.", "ok");
+    return { ok: true, plan, critique, content };
+  } catch (err) {
+    const message = String(err && err.message ? err.message : err || "autostep failed");
+    showBanner(`Autostep failed: ${message}`, "bad");
+    return { ok: false, error: message };
+  } finally {
+    setTyping(false);
+  }
 }
 
 async function loadInitialState() {
@@ -547,6 +715,18 @@ function bindEvents() {
     renderChat(base);
     await persistChatState();
     await sendPromptFromText(prompt, base);
+  };
+  if (el.insertSnippetBtn) el.insertSnippetBtn.onclick = () => {
+    const id = String((el.snippetSelect && el.snippetSelect.value) || "");
+    const snippet = PROMPT_SNIPPETS.find((item) => item.id === id) || PROMPT_SNIPPETS[0];
+    if (!snippet || !el.promptInput) return;
+    const existing = String(el.promptInput.value || "");
+    const separator = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+    el.promptInput.value = `${existing}${separator}${snippet.text}`;
+    updatePromptMetrics();
+    updateCommandHint();
+    el.promptInput.focus();
+    showBanner(`Snippet inserted: ${snippet.label}`, "ok");
   };
   if (el.chatSearchBtn) el.chatSearchBtn.onclick = () => { appState.chatFilter = String((el.chatSearchInput && el.chatSearchInput.value) || ""); renderChat(appState.chat); };
   if (el.chatSearchClearBtn) el.chatSearchClearBtn.onclick = () => { appState.chatFilter = ""; if (el.chatSearchInput) el.chatSearchInput.value = ""; renderChat(appState.chat); };
@@ -758,6 +938,7 @@ function bindEvents() {
 
 async function bootstrap() {
   bindEvents();
+  initializePromptSnippets();
   await loadInitialState();
   await Promise.all([refreshModels(), refreshSessions(), refreshCommands(), updateStats()]);
   if (appState.statsTimer) clearInterval(appState.statsTimer);
