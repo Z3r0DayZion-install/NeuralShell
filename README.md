@@ -88,6 +88,14 @@ npm run release:verify:fresh
 npm run release:verify:fresh:strict
 ```
 
+- Offline checksum verification:
+
+```powershell
+.\scripts\verify.ps1 -SelfTest
+.\scripts\verify.ps1
+.\scripts\verify.ps1 -Installer
+```
+
 - Bypass local pre-push gate once:
 
 ```powershell
