@@ -16,12 +16,18 @@ function toPosix(relPath) {
 }
 
 function parseStatusLine(line) {
-  const raw = String(line || "");
-  if (raw.length < 4) {
+  const raw = String(line || "").replace(/^\uFEFF/, "");
+  if (raw.length < 3) {
     return null;
   }
-  const code = raw.slice(0, 2);
-  let filePath = raw.slice(3).trim();
+
+  const match = raw.match(/^(.{2})\s(.*)$/);
+  if (!match) {
+    return null;
+  }
+
+  const code = match[1];
+  let filePath = match[2].trim();
 
   // Handle rename format: old/path -> new/path
   const renameParts = filePath.split(" -> ");
