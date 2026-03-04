@@ -77,11 +77,16 @@ function resolveInputPath(candidate, fallback) {
 }
 
 function inferVersion(manifestEntries, packageVersion) {
+  const installerVersions = [];
   for (const entry of manifestEntries) {
     const match = /^dist\/NeuralShell Setup (.+)\.exe$/i.exec(entry.path);
     if (match && match[1]) {
-      return match[1];
+      installerVersions.push(String(match[1]));
     }
+  }
+  if (installerVersions.length > 0) {
+    installerVersions.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+    return installerVersions[installerVersions.length - 1];
   }
   return packageVersion;
 }
