@@ -310,6 +310,27 @@ function deleteLastExchangeFromState() {
   return chat.length;
 }
 
+function countWords(text) {
+  return String(text || "").trim().split(/\s+/).filter(Boolean).length;
+}
+
+function countChatTokens(messages) {
+  if (!Array.isArray(messages)) return 0;
+  let total = 0;
+  for (const message of messages) {
+    total += countWords(message && message.content);
+  }
+  return total;
+}
+
+function persistConversation(chat) {
+  const safeChat = Array.isArray(chat) ? chat : [];
+  stateManager.setState({
+    chat: safeChat,
+    tokens: countChatTokens(safeChat)
+  });
+}
+
 async function runBuiltInCommand(name, args) {
   switch (name) {
     case "help":
@@ -453,6 +474,7 @@ async function runBuiltInCommand(name, args) {
       if (!["balanced", "engineer", "founder", "analyst", "creative"].includes(profile)) {
         throw new Error("persona must be one of: balanced, engineer, founder, analyst, creative.");
       }
+      llmService.setPersona(profile);
       const merged = {
         ...(stateManager.get("settings") || {}),
         personalityProfile: profile
@@ -553,6 +575,7 @@ app.whenReady().then(async () => {
   const settings = stateManager.get("settings") || {};
   applyBridgeSettings(settings);
   llmService.setModel(stateManager.get("model") || "llama3");
+  llmService.setPersona(settings.personalityProfile || "balanced");
   rgbController.configure(settings);
   await rgbController.applyMood("idle", settings.personalityProfile || "balanced");
 
@@ -670,6 +693,13 @@ ipcMain.handle("llm:chat", async (_event, messages) => {
 
   const response = await llmService.chat(payload, false);
   const assistantContent = response && response.message ? response.message.content || "" : "";
+  const assistantMessage = {
+    role: "assistant",
+    content: String(assistantContent || "")
+  };
+  const nextChat = [...payload, assistantMessage];
+  persistConversation(nextChat);
+  systemMonitor.addTokens(countWords(assistantContent));
   chatLogStore.append("assistant_message", {
     model: stateManager.get("model") || "unknown",
     content: assistantContent
@@ -703,6 +733,12 @@ ipcMain.handle("llm:stream", async (_event, messages) => {
       assistantBuffer += token;
       sendToRenderer("llm-stream-data", chunk);
     }
+    const assistantMessage = {
+      role: "assistant",
+      content: String(assistantBuffer || "")
+    };
+    persistConversation([...payload, assistantMessage]);
+    systemMonitor.addTokens(countWords(assistantBuffer));
     chatLogStore.append("assistant_message_stream", {
       model: stateManager.get("model") || "unknown",
       content: assistantBuffer
@@ -725,7 +761,7 @@ ipcMain.handle("model:set", async (_event, model) => {
   const safeModel = validateModel(model);
   llmService.setModel(safeModel);
   stateManager.set("model", safeModel);
-  return true;
+  return safeModel;
 });
 
 // ---------------- STATE IPC ----------------
@@ -734,12 +770,49 @@ ipcMain.handle("state:get", async () => stateManager.getState());
 
 ipcMain.handle("state:set", async (_event, key, value) => {
   const safeKey = validateStateKey(key);
+  if (safeKey === "model") {
+    const safeModel = validateModel(value);
+    llmService.setModel(safeModel);
+    stateManager.set("model", safeModel);
+    return true;
+  }
+  if (safeKey === "settings") {
+    const merged = {
+      ...(stateManager.get("settings") || {}),
+      ...validateSettings(value)
+    };
+    stateManager.set("settings", merged);
+    llmService.setPersona(merged.personalityProfile || "balanced");
+    applyBridgeSettings(merged);
+    return true;
+  }
+  if (safeKey === "chat") {
+    const safeChat = validateMessages(value);
+    persistConversation(safeChat);
+    return true;
+  }
   stateManager.set(safeKey, value);
   return true;
 });
 
 ipcMain.handle("state:update", async (_event, updates) => {
   const safeUpdates = validateStateUpdates(updates);
+  if (safeUpdates.model != null) {
+    llmService.setModel(validateModel(safeUpdates.model));
+  }
+  if (safeUpdates.settings != null) {
+    const merged = {
+      ...(stateManager.get("settings") || {}),
+      ...validateSettings(safeUpdates.settings)
+    };
+    safeUpdates.settings = merged;
+    llmService.setPersona(merged.personalityProfile || "balanced");
+    applyBridgeSettings(merged);
+  }
+  if (safeUpdates.chat != null) {
+    safeUpdates.chat = validateMessages(safeUpdates.chat);
+    safeUpdates.tokens = countChatTokens(safeUpdates.chat);
+  }
   stateManager.setState(safeUpdates);
   return true;
 });
@@ -750,6 +823,24 @@ ipcMain.handle("state:export", async () => {
 
 ipcMain.handle("state:import", async (_event, payload) => {
   const safeState = validateImportedState(payload);
+  if (safeState.model) {
+    llmService.setModel(safeState.model);
+  }
+  if (safeState.settings) {
+    const mergedSettings = {
+      ...(stateManager.get("settings") || {}),
+      ...safeState.settings
+    };
+    safeState.settings = mergedSettings;
+    llmService.setPersona(mergedSettings.personalityProfile || "balanced");
+    applyBridgeSettings(mergedSettings);
+    if (rgbController) {
+      rgbController.configure(mergedSettings);
+    }
+  }
+  if (safeState.chat) {
+    safeState.tokens = countChatTokens(safeState.chat);
+  }
   stateManager.setState(safeState);
   chatLogStore.append("state_import", { keys: Object.keys(safeState) });
   return true;
@@ -768,6 +859,7 @@ ipcMain.handle("settings:update", async (_event, settings) => {
     ...safeSettings
   };
   stateManager.set("settings", merged);
+  llmService.setPersona(merged.personalityProfile || "balanced");
   applyBridgeSettings(merged);
   if (rgbController) {
     rgbController.configure(merged);
@@ -1103,7 +1195,13 @@ ipcMain.handle("llm:autoDetect", async () => {
 });
 
 ipcMain.handle("llm:setPersona", async (_event, personaId) => {
-  return llmService.setPersona(personaId);
+  const result = llmService.setPersona(personaId);
+  const merged = {
+    ...(stateManager.get("settings") || {}),
+    personalityProfile: result.persona
+  };
+  stateManager.set("settings", merged);
+  return result;
 });
 
 // ---------------- RECOVERY IPC ----------------
