@@ -25,7 +25,7 @@ jobs:
       - name: Verify required workflow checks
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/verify-required-checks.js --required=CI,Merge Gate,Release Contract,Security Gate
+        run: node scripts/verify-required-checks.js "--required=CI,Merge Gate,Release Contract,Security Gate"
 
   release_windows:
     runs-on: windows-latest
