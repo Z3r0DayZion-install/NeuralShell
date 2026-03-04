@@ -14,28 +14,62 @@ const path = require('path');
  * - Fixed argument structures
  */
 
-const TASK_REGISTRY = {
-  'neural-link:devices': {
-    path: path.join(__dirname, '../../bin/neural-link.exe'),
-    args: ['devices'],
-    hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2' // Must be replaced with actual hash in prod
-  },
-  'neural-link:send': {
-    path: path.join(__dirname, '../../bin/neural-link.exe'),
-    args: ['send'],
-    hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'
-  },
-  'neural-linkd:start': {
-    path: path.join(__dirname, '../../bin/neural-linkd.exe'),
-    args: [],
-    hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'
-  },
-  'ollama:list': {
-    path: 'C:\\Users\\KickA\\AppData\\Local\\Programs\\Ollama\\ollama.exe',
-    args: ['list'],
-    hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'
+const SHA256_HEX = /^[a-f0-9]{64}$/;
+
+function normalizeTaskEnvSuffix(taskId) {
+  return taskId.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+}
+
+function sha256File(filePath) {
+  const content = fs.readFileSync(filePath);
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+function buildTaskRegistry() {
+  const defaultOllamaPath = process.platform === 'win32'
+    ? path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Ollama', 'ollama.exe')
+    : (process.env.NEURALSHELL_OLLAMA_PATH || '');
+  const specs = {
+    'neural-link:devices': {
+      path: path.join(__dirname, '../../bin/neural-link.exe'),
+      args: ['devices']
+    },
+    'neural-link:send': {
+      path: path.join(__dirname, '../../bin/neural-link.exe'),
+      args: ['send']
+    },
+    'neural-linkd:start': {
+      path: path.join(__dirname, '../../bin/neural-linkd.exe'),
+      args: []
+    },
+    'ollama:list': {
+      path: defaultOllamaPath,
+      args: ['list']
+    }
+  };
+  const registry = {};
+  for (const [taskId, spec] of Object.entries(specs)) {
+    if (!spec.path || !path.isAbsolute(spec.path) || !fs.existsSync(spec.path)) {
+      continue;
+    }
+    const envKey = `NEURALSHELL_TASK_HASH_${normalizeTaskEnvSuffix(taskId)}`;
+    const expectedHash = String(process.env[envKey] || '').trim().toLowerCase();
+    if (!SHA256_HEX.test(expectedHash)) {
+      continue;
+    }
+    if (sha256File(spec.path) !== expectedHash) {
+      continue;
+    }
+    registry[taskId] = {
+      path: fs.realpathSync(spec.path),
+      args: spec.args,
+      hash: expectedHash
+    };
   }
-};
+  return registry;
+}
+
+const TASK_REGISTRY = buildTaskRegistry();
 
 class ExecutionBroker {
   /**
@@ -106,12 +140,13 @@ class ExecutionBroker {
       throw new Error(`OMEGA_BLOCK: Unknown daemon task "${taskId}"`);
     }
 
-    if (!task.hash || !this._verifyHash(task.path, task.hash)) {
+    const realPath = fs.realpathSync(task.path);
+    if (!task.hash || !this._verifyHash(realPath, task.hash)) {
       throw new Error(`OMEGA_BLOCK: Binary hash mismatch for daemon "${taskId}"`);
     }
 
     const safeOptions = {
-      cwd: path.dirname(task.path),
+      cwd: path.dirname(realPath),
       env: { PATH: process.env.PATH },
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
@@ -119,7 +154,7 @@ class ExecutionBroker {
     };
 
     const finalArgs = [...task.args, ...extraArgs];
-    const child = spawn(task.path, finalArgs, safeOptions);
+    const child = spawn(realPath, finalArgs, safeOptions);
     
     // We cannot return the raw child process across the kernel boundary easily if we strictly freeze it.
     // However, the caller (daemonWatchdog) needs to monitor stdout/stderr/exit.

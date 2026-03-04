@@ -19,11 +19,22 @@ const PROXY_ENV_VARS = ['http_proxy', 'https_proxy', 'all_proxy', 'no_proxy', 'H
 
 class NetworkBroker {
   constructor() {
-    this.pinnedKeys = new Map([
-      ['updates.neuralshell.app', ['sha256/f7bb5d8487103251d86776295da97742d17c3857e4c029a68a99-ebff-11f0-b275-28dfeb5c36cb']]
-    ]);
+    this.pinnedKeys = this._loadPinnedKeys();
     this.maxResponseSize = 5 * 1024 * 1024; // 5 MB
     this.timeoutMs = 15000;
+  }
+
+  _loadPinnedKeys() {
+    const pins = new Map();
+    const raw = String(process.env.NEURALSHELL_UPDATES_TLS_PINS || '');
+    const parsedPins = raw
+      .split(',')
+      .map((pin) => pin.trim())
+      .filter((pin) => /^sha256\/[A-Za-z0-9+/=]+$/.test(pin));
+    if (parsedPins.length > 0) {
+      pins.set('updates.neuralshell.app', parsedPins);
+    }
+    return pins;
   }
 
   /**

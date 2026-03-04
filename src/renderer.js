@@ -83,7 +83,8 @@ for (const id of REQUIRED_IDS) {
 const state = {
   selectedModel: "llama3",
   clockUtcOffset: "+00:00",
-  autonomous: false
+  autonomous: false,
+  chatHistory: []
 };
 
 function showBanner(message, tone = "ok") {
@@ -94,22 +95,24 @@ function showBanner(message, tone = "ok") {
 
 function renderChat(messages = []) {
   if (!elements.chatHistory) return;
-  elements.chatHistory.textContent = JSON.stringify(messages, null, 2);
+  state.chatHistory = Array.isArray(messages) ? messages.slice() : [];
+  elements.chatHistory.textContent = JSON.stringify(state.chatHistory, null, 2);
 }
 
 async function sendPrompt() {
   const prompt = elements.promptInput ? String(elements.promptInput.value || "") : "";
-  if (!prompt.trim()) return;
+  const trimmedPrompt = prompt.trim();
+  if (!trimmedPrompt) return;
   if (!window.api || !window.api.llm) {
     showBanner("LLM API not available.", "bad");
     return;
   }
   showBanner("Sending...", "ok");
   try {
-    const messages = [{ role: "user", content: prompt.trim() }];
+    const messages = [...getCurrentChat(), { role: "user", content: trimmedPrompt }];
     const response = await window.api.llm.chat(messages);
     const content = response && response.message ? response.message.content || "" : JSON.stringify(response);
-    renderChat([...getCurrentChat(), { role: "user", content: prompt.trim() }, { role: "assistant", content }]);
+    renderChat([...messages, { role: "assistant", content }]);
     if (elements.promptInput) elements.promptInput.value = "";
     showBanner("Response received.", "ok");
   } catch (err) {
@@ -118,8 +121,7 @@ async function sendPrompt() {
 }
 
 function getCurrentChat() {
-  // Retrieve current chat state from the API if available
-  return [];
+  return state.chatHistory.slice();
 }
 
 async function refreshSessions() {
@@ -146,8 +148,9 @@ async function refreshModels() {
 
 async function persistChatState() {
   if (!window.api || !window.api.state || !window.api.llm) return;
-  await api.llm.setModel(state.selectedModel);
-  await api.state.set("model", state.selectedModel);
+  await window.api.llm.setModel(state.selectedModel);
+  await window.api.state.set("model", state.selectedModel);
+  await window.api.state.set("chatHistory", state.chatHistory);
 }
 
 function updateAutonomousCheckpoint() {
@@ -178,7 +181,10 @@ if (elements.importStateBtn && elements.importStateFile) {
       const file = elements.importStateFile.files && elements.importStateFile.files[0];
       if (!file) return;
       const payload = JSON.parse(await file.text());
-      await api.state.import(payload);
+      await window.api.state.import(payload);
+      if (Array.isArray(payload.chatHistory)) {
+        renderChat(payload.chatHistory);
+      }
       showBanner("State import complete.", "ok");
     } catch (err) {
       showBanner(`State import failed: ${err.message}`, "bad");
