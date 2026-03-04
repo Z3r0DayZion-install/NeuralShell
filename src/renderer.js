@@ -28,6 +28,7 @@ for (const id of IDS) {
 const appState = {
   model: "llama3",
   chat: [],
+  commands: [],
   settings: {},
   sessionsMeta: {},
   lastPrompt: "",
@@ -64,10 +65,35 @@ function filteredChat(messages) {
 
 function renderChat(messages = []) {
   appState.chat = Array.isArray(messages) ? messages.slice() : [];
-  const view = filteredChat(appState.chat)
-    .map((m, i) => `[${i + 1}] ${String(m.role || "").toUpperCase()}\n${String(m.content || "")}`)
-    .join("\n\n");
-  if (el.chatHistory) el.chatHistory.textContent = view;
+  if (el.chatHistory) {
+    const list = filteredChat(appState.chat);
+    el.chatHistory.innerHTML = "";
+    for (let i = 0; i < list.length; i += 1) {
+      const row = list[i] || {};
+      const role = String(row.role || "assistant").toLowerCase();
+      const item = document.createElement("article");
+      item.className = `chat-msg role-${role}`;
+      const head = document.createElement("header");
+      head.className = "chat-head";
+      head.textContent = `${i + 1}. ${role}`;
+      const body = document.createElement("pre");
+      body.className = "chat-content";
+      body.textContent = String(row.content || "");
+      item.appendChild(head);
+      item.appendChild(body);
+      el.chatHistory.appendChild(item);
+    }
+    if (!list.length) {
+      const empty = document.createElement("div");
+      empty.className = "chat-empty";
+      empty.textContent = "No messages yet.";
+      el.chatHistory.appendChild(empty);
+    }
+    const auto = !el.autoScrollInput || el.autoScrollInput.checked;
+    if (auto) {
+      el.chatHistory.scrollTop = el.chatHistory.scrollHeight;
+    }
+  }
   if (el.tokensUsed) el.tokensUsed.textContent = String(countTokens(appState.chat));
 }
 
@@ -199,6 +225,101 @@ async function refreshModels() {
   }
 }
 
+function renderCommandList(commands) {
+  if (!el.commandList) return;
+  el.commandList.innerHTML = "";
+  for (const cmd of commands || []) {
+    const li = document.createElement("li");
+    const args = Array.isArray(cmd.args) && cmd.args.length ? ` ${(cmd.args || []).join(" ")}` : "";
+    li.textContent = `/${cmd.name}${args} - ${cmd.description || ""}`;
+    el.commandList.appendChild(li);
+  }
+}
+
+async function refreshCommands() {
+  if (!window.api || !window.api.command) return;
+  const commands = await window.api.command.list();
+  appState.commands = Array.isArray(commands) ? commands : [];
+  renderCommandList(appState.commands);
+}
+
+function parseCommandTokens(input) {
+  const tokens = [];
+  const re = /"([^"]*)"|'([^']*)'|(\S+)/g;
+  let match;
+  while ((match = re.exec(input)) !== null) {
+    tokens.push(match[1] ?? match[2] ?? match[3]);
+  }
+  return tokens;
+}
+
+function parseSlashCommand(text) {
+  const raw = String(text || "").trim();
+  if (!raw.startsWith("/")) return null;
+  const payload = raw.slice(1).trim();
+  if (!payload) return { name: "help", args: [] };
+  const tokens = parseCommandTokens(payload);
+  if (!tokens.length) return { name: "help", args: [] };
+  return { name: String(tokens[0] || "").toLowerCase(), args: tokens.slice(1).map(String) };
+}
+
+function formatCommandResult(result) {
+  if (result == null) return "ok";
+  if (typeof result === "string") return result;
+  if (typeof result === "number" || typeof result === "boolean") return String(result);
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
+  }
+}
+
+function updateCommandHint() {
+  if (!el.promptInput) return;
+  const raw = String(el.promptInput.value || "").trim();
+  if (!raw.startsWith("/")) return;
+  const name = raw.slice(1).split(/\s+/)[0].toLowerCase();
+  const matches = appState.commands
+    .filter((cmd) => String(cmd && cmd.name || "").toLowerCase().startsWith(name))
+    .slice(0, 5)
+    .map((cmd) => `/${cmd.name}`);
+  if (el.statusMeta) {
+    el.statusMeta.textContent = matches.length ? `Commands: ${matches.join(", ")}` : "No matching commands.";
+  }
+}
+
+async function runSlashCommand(rawCommand) {
+  const parsed = parseSlashCommand(rawCommand);
+  if (!parsed || !window.api || !window.api.command) return false;
+
+  if (!appState.commands.length) {
+    await refreshCommands();
+  }
+
+  let outputText = "";
+  if (parsed.name === "help") {
+    outputText = (appState.commands || [])
+      .map((cmd) => {
+        const args = Array.isArray(cmd.args) && cmd.args.length ? ` ${(cmd.args || []).join(" ")}` : "";
+        return `/${cmd.name}${args} - ${cmd.description || ""}`;
+      })
+      .join("\n");
+  } else {
+    const result = await window.api.command.run(parsed.name, parsed.args);
+    outputText = formatCommandResult(result);
+  }
+
+  const next = [
+    ...getCurrentChat(),
+    { role: "user", content: String(rawCommand || "").trim() },
+    { role: "assistant", content: outputText || "ok" }
+  ];
+  renderChat(next);
+  await persistChatState();
+  showBanner(`Command executed: /${parsed.name}`, "ok");
+  return true;
+}
+
 function resetStreamState() {
   appState.streamInFlight = false;
   appState.streamBase = [];
@@ -236,6 +357,16 @@ async function handleStreamError(event) {
 async function sendPromptFromText(inputText, baseMessages, preferStream = true) {
   const text = String(inputText || "").trim();
   if (!text || !window.api || !window.api.llm || appState.streamInFlight) return false;
+
+  const slash = parseSlashCommand(text);
+  if (slash) {
+    if (el.promptInput && el.promptInput.value.trim() === text) {
+      el.promptInput.value = "";
+      updatePromptMetrics();
+    }
+    await runSlashCommand(text);
+    return true;
+  }
 
   const base = Array.isArray(baseMessages) ? baseMessages.slice() : getCurrentChat();
   const messages = [...base, { role: "user", content: text }];
@@ -344,8 +475,14 @@ function bindEvents() {
 
   if (el.promptInput) {
     el.promptInput.addEventListener("input", updatePromptMetrics);
+    el.promptInput.addEventListener("input", updateCommandHint);
     el.promptInput.addEventListener("keydown", (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        sendPrompt().catch(() => {});
+        return;
+      }
+      if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         sendPrompt().catch(() => {});
       }
@@ -542,15 +679,25 @@ function bindEvents() {
     showBanner("Settings applied.", "ok");
   };
 
-  if (el.refreshCommandsBtn) el.refreshCommandsBtn.onclick = async () => {
-    const commands = await window.api.command.list();
-    if (!el.commandList) return;
-    el.commandList.innerHTML = "";
-    for (const cmd of commands || []) {
-      const li = document.createElement("li");
-      li.textContent = `/${cmd.name} ${(cmd.args || []).join(" ")} - ${cmd.description || ""}`;
-      el.commandList.appendChild(li);
+  if (el.refreshCommandsBtn) el.refreshCommandsBtn.onclick = () => refreshCommands().catch((err) => showBanner(err.message || String(err), "bad"));
+  if (el.commandHelpBtn) el.commandHelpBtn.onclick = () => {
+    if (el.promptInput) {
+      el.promptInput.value = "/help";
+      updatePromptMetrics();
+      updateCommandHint();
+      el.promptInput.focus();
     }
+  };
+  if (el.undoBtn) el.undoBtn.onclick = () => {
+    if (el.deleteLastExchangeBtn && typeof el.deleteLastExchangeBtn.onclick === "function") {
+      el.deleteLastExchangeBtn.onclick();
+    }
+  };
+  if (el.shortcutHelpBtn) el.shortcutHelpBtn.onclick = () => {
+    if (el.shortcutOverlay) el.shortcutOverlay.textContent = "Enter send | Shift+Enter newline | /help commands | Ctrl+Enter send";
+  };
+  if (el.shortcutCloseBtn) el.shortcutCloseBtn.onclick = () => {
+    if (el.shortcutOverlay) el.shortcutOverlay.textContent = "";
   };
   if (el.exportChatBtn) el.exportChatBtn.onclick = () => download("neuralshell-chat.json", JSON.stringify(appState.chat, null, 2), "application/json;charset=utf-8");
   if (el.exportMarkdownBtn) el.exportMarkdownBtn.onclick = () => download("neuralshell-chat.md", markdown(appState.chat), "text/markdown;charset=utf-8");
@@ -612,7 +759,7 @@ function bindEvents() {
 async function bootstrap() {
   bindEvents();
   await loadInitialState();
-  await Promise.all([refreshModels(), refreshSessions(), updateStats()]);
+  await Promise.all([refreshModels(), refreshSessions(), refreshCommands(), updateStats()]);
   if (appState.statsTimer) clearInterval(appState.statsTimer);
   appState.statsTimer = setInterval(() => {
     updateStats().catch(() => {});
