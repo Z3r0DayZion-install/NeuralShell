@@ -1,0 +1,10 @@
+{"type":"SECURITY_ADVISORY","vulnerability":"sandbox_escape_proof","signature":"pLt8fA8NNsOpMas5EnY18LfQOWU2/pIB6Ha097TZhMNDs8jjJXZdtt3B9UWH/3oCT0BrhTHJLKB7BmwnQjELDA==","nodeId":"b3f6c6c1a0e7c506398a3e0c44be761c8fe47e633dc28789179122be0071974e"}
+{"type":"SECURITY_ADVISORY","vulnerability":"sandbox_escape_proof","signature":"lfl+HCgr5ffCIwcKvJI5V8ysPqfDJ2O1GB/J230CFptPIGORUdjrCz7Bky5Gv01m1VRJrpZWB5mgQiMtgsirCQ==","nodeId":"a07a91e7933372498d04f6e424f257a1db48babf978f8c58017e6c8869bf962e"}
+{"type":"SECURITY_ADVISORY","vulnerability":"sandbox_escape_proof","signature":"DethM+SOFyFn1iRe2PdwJmySBlSFYIhpZsz/h8HkXrP1NTK+aENzcxvpQugPzU58EjexlLIAOrOOjuUBBPteAg==","nodeId":"4af01fb9a41ace76c99430e2d9212a42a02154444690f70d9841c19171d08ea3"}
+{"type":"SECURITY_ADVISORY","vulnerability":"sandbox_escape_proof","signature":"WQFYeRs6XP0gdK+en4Ee0kA5TF7Djm7hvL65/flxj4l5skKA5PtunT3G8wgGbs1yjhqPXOGzUY3v93GskWZwAw==","nodeId":"9e5038fd5e3286d4f283c4a1f322a2feea6877dd8c1ea158dd9623658a8e9425"}
+{"type":"SECURITY_ADVISORY","vulnerability":"sandbox_escape_proof","signature":"KQbwjDF2V8uq31qY06/pMoVsB9rOX4CqfHtuomp/ulMRXBUbhIKMA/51xhKE0FsxT76Qb4Qq93ws8TtrUXiuAQ==","nodeId":"93639b5e6159ca6ca3e152e36aae0344d12a1142344010956524ae6337ef3903"}
+{"type":"SECURITY_ADVISORY","vulnerability":"sandbox_escape_proof","signature":"2IdbalUOZa5HDt+rquAJaRgDO5erfNVL+qnXsJ7zGuFZPDTHAiE+USoJqPIquRKVdjhB4IPu0ngZPaJGapO1AA==","nodeId":"39910c1c04a05b3c2725b2dc29a4b97ab99e747427987ec66c3b83d15259b30d"}
+{"type":"SECURITY_ADVISORY","vulnerability":"sandbox_escape_proof","signature":"yOIAfGRmtuXGoiSf0ctYhWUCXqxvId/p4LXzmosXU6LN6PBajixV6p7fzdQf8CmhpyOM7IG8A5bM8NyhwV3FBQ==","nodeId":"02a187df692d68d70ea1d8cfd3e9c6d8563d773119d4c832d4148db6c09c66ed"}
+{"type":"FILE_TRUST_INDEX","file":"echo.js","hash":"CF1A10CBFD25B0DB5DCF7D4EB65BC9D96AA3D0533E7793CD9FE9AEE76373CCF8"}
+{"type":"FILE_TRUST_INDEX","file":"recursiveAuditor.js","hash":"F71DD206D98BA175957CACBB9659DCEF4282478CB5F1251A5D2B3B3B7CF71DF5"}
+{"type":"FILE_TRUST_INDEX","file":"sovereign-proxy.js","hash":"2C5F1754E6F2F61336D0CDD0E95EF09D069C478073FAF4E984BB219A0891491E"}

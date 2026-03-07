@@ -13,11 +13,25 @@ function withMockedElectron(userDataPath, fn) {
     if (request === "electron") {
       return {
         app: {
-          getPath(name) {
-            if (name === "userData") return userDataPath;
-            return userDataPath;
-          }
+          getPath(name) { return userDataPath; },
+          getAppPath() { return userDataPath; }
+        },
+        safeStorage: {
+          isEncryptionAvailable() { return false; }
         }
+      };
+    }
+    if (request === "@neural/omega-core") {
+      return {
+        createKernel: () => ({ request: async () => ({}) }),
+        CAP_FS: "fs", CAP_NET: "net", CAP_PROC: "proc", CAP_CRYPTO: "crypto", CAP_KEYCHAIN: "keychain"
+      };
+    }
+    // Mock identityKernel to return a stable fingerprint for tests
+    if (request.endsWith("identityKernel") || request === "./identityKernel") {
+      return {
+        getFingerprint: () => "test-fingerprint-123",
+        init: async () => true
       };
     }
     return originalLoad.call(this, request, parent, isMain);
@@ -67,7 +81,7 @@ test("StateManager migrates v1 state to v2 bridge profile settings", () => {
       fs.writeFileSync(stateManager.stateFile, JSON.stringify(legacy, null, 2), "utf8");
       stateManager.load();
       const settings = stateManager.get("settings");
-      assert.equal(stateManager.get("stateVersion"), 2);
+      assert.equal(stateManager.get("stateVersion"), 3);
       assert.ok(Array.isArray(settings.connectionProfiles));
       assert.equal(settings.connectionProfiles.length, 1);
       assert.equal(settings.connectionProfiles[0].baseUrl, "http://localhost:11434");
