@@ -1,9 +1,21 @@
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const { kernel, CAP_PROC } = require("../kernel");
 
 let keyPair = null;
 let hardwareFingerprint = null;
 const peers = new Map();
+
+function getIdentityPath() {
+  try {
+    const { app } = require("electron");
+    if (app && typeof app.getPath === "function") {
+      return path.join(app.getPath("userData"), "identity.omega");
+    }
+  } catch {}
+  return path.join(process.cwd(), "identity.omega");
+}
 
 /**
  * Gather immutable hardware IDs via the OMEGA-gated wmic broker.
@@ -24,9 +36,50 @@ async function getHardwareId() {
   }
 }
 
+function getHardwareEncryptionKey() {
+  return crypto.createHash("sha256").update(hardwareFingerprint).digest();
+}
+
+function saveKeyPair() {
+  if (!keyPair) return;
+  const pem = keyPair.privateKey.export({ type: "pkcs8", format: "pem" });
+  const key = getHardwareEncryptionKey();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+  let encrypted = cipher.update(pem, "utf8", "hex");
+  encrypted += cipher.final("hex");
+  const payload = iv.toString("hex") + ":" + encrypted;
+  fs.writeFileSync(getIdentityPath(), payload, "utf8");
+}
+
+function loadKeyPair() {
+  const p = getIdentityPath();
+  if (!fs.existsSync(p)) return false;
+  try {
+    const payload = fs.readFileSync(p, "utf8");
+    const parts = payload.split(":");
+    const iv = Buffer.from(parts.shift(), "hex");
+    const encryptedText = Buffer.from(parts.join(":"), "hex");
+    const key = getHardwareEncryptionKey();
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+    let decrypted = decipher.update(encryptedText, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    
+    const privateKey = crypto.createPrivateKey(decrypted);
+    const publicKey = crypto.createPublicKey(privateKey);
+    keyPair = { privateKey, publicKey };
+    return true;
+  } catch (err) {
+    throw new Error("IDENTITY_LOCK_FAILURE: Failed to decrypt node identity. Hardware mismatch detected.");
+  }
+}
+
 function ensureKeyPair() {
   if (!keyPair) {
-    keyPair = crypto.generateKeyPairSync("ed25519");
+    if (!loadKeyPair()) {
+      keyPair = crypto.generateKeyPairSync("ed25519");
+      saveKeyPair();
+    }
   }
   return keyPair;
 }
@@ -48,8 +101,8 @@ function fingerprintFromPem(pem) {
 }
 
 async function init() {
-  ensureKeyPair();
   await getHardwareId();
+  ensureKeyPair();
   return true;
 }
 
