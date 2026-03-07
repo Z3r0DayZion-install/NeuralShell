@@ -567,7 +567,11 @@ app.whenReady().then(async () => {
   ritualManager = require("./core/ritualManager");
   historyLoader = require("./core/historyLoader");
   secretVault = require("./core/secretVault");
-  auditChain = new AuditChain(path.join(app.getPath("userData"), "audit-chain.jsonl"));
+  const AgentController = require("./core/agentController");
+  agentController = new AgentController({ llmService, sessionManager });
+  auditChain = new AuditChain(
+    path.join(app.getPath("userData"), "audit-chain.jsonl")
+  );
 
   stateManager.load();
   auditChain.init();
