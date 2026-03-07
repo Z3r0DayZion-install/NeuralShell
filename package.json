@@ -21,6 +21,7 @@
     "release:gate": "node tear/release-gate.js",
     "release:gate:strict": "node tear/release-gate.js --strict-packaged",
     "release:manifest": "node scripts/release-manifest.js",
+    "release:sign": "node scripts/sign-release.js",
     "release:status": "node tear/release-status.js",
     "release:checksums": "node scripts/release-checksums.js",
     "release:notes": "node scripts/release-notes.js",

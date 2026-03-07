@@ -14,6 +14,7 @@ function main() {
     "npm run build",
     "npm run release:gate",
     "npm run release:manifest",
+    "node scripts/sign-release.js",
     "npm run release:status",
     "npm run release:checksums",
     "npm run release:verify:fresh"

@@ -5,36 +5,26 @@
  * remains in cryptographic consensus with the Swarm Guardians.
  */
 
-const fs = require("fs");
-const path = require("path");
-
-const LEDGER_PATH = path.join(__dirname, "../../../governance/THREAT_LEDGER.jsonl");
-
 module.exports = {
   name: "swarm-consensus",
   description: "Synchronizes the Threat Ledger with the Sovereign Swarm network.",
-  register({ registerCommand }) {
+  register({ registerCommand, kernel }) {
     registerCommand({
       name: "swarm-sync",
       description: "Perform a decentralized sync of the threat ledger to acquire the latest trust indices.",
       async run() {
-        const sdk = require('../../kernel/agent-sdk');
-        
         console.log("[SWARM] Initiating consensus protocol over sovereign proxy...");
 
-        // In a true P2P deployment, this would query known Guardian nodes.
-        // For the IP Gold master, we simulate fetching the master consensus list.
         try {
-          // Utilizing the local proxy plugin (which must be trusted) to fetch updates anonymously.
-          const proxyContext = { method: "GET", url: "https://raw.githubusercontent.com/neural-swarm/ledger/main/latest.jsonl" };
+          const ledgerPath = "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\governance\\THREAT_LEDGER.jsonl";
           
           // Simulation of network sync delay
-          await new Promise(r => setTimeout(r, 1500));
+          await new Promise(r => setTimeout(r, 1000));
           
           let localEntries = 0;
-          if (fs.existsSync(LEDGER_PATH)) {
-             const lines = fs.readFileSync(LEDGER_PATH, "utf8").split("\n").filter(Boolean);
-             localEntries = lines.length;
+          if (await kernel.request(kernel.CAP_FS, "exists", { filePath: ledgerPath })) {
+             const content = await kernel.request(kernel.CAP_FS, "readFile", { filePath: ledgerPath });
+             localEntries = content.split("\n").filter(Boolean).length;
           }
 
           return {

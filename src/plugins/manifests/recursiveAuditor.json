@@ -1,0 +1,10 @@
+﻿{
+    "permissions":  [
+                        "fs",
+                        "crypto"
+                    ],
+    "name":  "recursiveAuditor",
+    "file":  "recursiveAuditor.js",
+    "hash":  "48BF5A81D106947BB9079B726525ABFF4C96CD13F992B32B06BF9752F2BB7D50",
+    "version":  "1.0.0"
+}

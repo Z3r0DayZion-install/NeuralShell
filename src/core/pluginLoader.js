@@ -1,36 +1,89 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
+const { kernel: rawKernel, ...caps } = require("../kernel");
 
 const commandHandlers = new Map();
 const AUTONOMOUS_DIR = path.join(__dirname, "../plugins/autonomous");
+const MANIFESTS_DIR = path.join(__dirname, "../plugins/manifests");
 
 /**
- * NeuralShell Plugin Loader — Sovereign & Extensible
+ * NeuralShell Plugin Loader — Sovereign Capability Gating (OMEGA)
  */
 
+function calculateHash(filePath) {
+  const fileBuffer = fs.readFileSync(filePath);
+  return crypto.createHash("sha256").update(fileBuffer).digest("hex").toUpperCase();
+}
+
+/**
+ * Creates a scoped kernel for a plugin, enforcing permission boundaries.
+ */
+function createScopedKernel(permissions) {
+  return {
+    async request(capability, method, params) {
+      // Capability Gating
+      if (capability === caps.CAP_NET && !permissions.includes("net")) {
+        throw new Error("CAPABILITY_DENIED: Network access not authorized by manifest.");
+      }
+      if (capability === caps.CAP_FS && !permissions.includes("fs")) {
+        throw new Error("CAPABILITY_DENIED: FileSystem access not authorized by manifest.");
+      }
+      if (capability === caps.CAP_PROC && !permissions.includes("proc")) {
+        throw new Error("CAPABILITY_DENIED: Process execution not authorized by manifest.");
+      }
+      if (capability === caps.CAP_CRYPTO && !permissions.includes("crypto")) {
+        throw new Error("CAPABILITY_DENIED: Crypto access not authorized by manifest.");
+      }
+      if (capability === caps.CAP_KEYCHAIN && !permissions.includes("keychain")) {
+        throw new Error("CAPABILITY_DENIED: Keychain access not authorized by manifest.");
+      }
+      
+      return rawKernel.request(capability, method, params);
+    },
+    ...caps // Include CAP_FS, CAP_NET, etc. constants
+  };
+}
+
 async function onLoad() {
-  if (!fs.existsSync(AUTONOMOUS_DIR)) {
-    fs.mkdirSync(AUTONOMOUS_DIR, { recursive: true });
-  }
+  if (!fs.existsSync(AUTONOMOUS_DIR)) fs.mkdirSync(AUTONOMOUS_DIR, { recursive: true });
+  if (!fs.existsSync(MANIFESTS_DIR)) fs.mkdirSync(MANIFESTS_DIR, { recursive: true });
 
-  // Load built-in plugins if any exist in src/plugins/
-  // ...
-
-  // Load Autonomous Plugins (Agent-authored)
   const files = fs.readdirSync(AUTONOMOUS_DIR);
   for (const file of files) {
-    if (file.endsWith(".js")) {
-      try {
-        const pluginPath = path.join(AUTONOMOUS_DIR, file);
-        // Clear cache to allow hot-reloading
-        delete require.cache[require.resolve(pluginPath)];
-        const plugin = require(pluginPath);
-        if (plugin && typeof plugin.register === "function") {
-          plugin.register({ registerCommand });
-        }
-      } catch (err) {
-        console.error(`[PLUGINS] Failed to load autonomous plugin ${file}:`, err.message);
+    if (!file.endsWith(".js")) continue;
+    
+    try {
+      const pluginPath = path.join(AUTONOMOUS_DIR, file);
+      const manifestPath = path.join(MANIFESTS_DIR, file.replace(".js", ".json"));
+      
+      if (!fs.existsSync(manifestPath)) {
+        console.error(`[PLUGINS] Blocked: Plugin ${file} has no manifest.`);
+        continue;
       }
+
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      const actualHash = calculateHash(pluginPath);
+      
+      if (actualHash !== manifest.hash.toUpperCase()) {
+        console.error(`[PLUGINS] Blocked: Integrity mismatch for ${file}. Expected ${manifest.hash}, got ${actualHash}`);
+        continue;
+      }
+
+      const scopedKernel = createScopedKernel(manifest.permissions || []);
+      
+      delete require.cache[require.resolve(pluginPath)];
+      const plugin = require(pluginPath);
+      
+      if (plugin && typeof plugin.register === "function") {
+        plugin.register({ 
+          registerCommand, 
+          kernel: scopedKernel 
+        });
+        console.log(`[PLUGINS] Verified & Loaded: ${manifest.name} v${manifest.version}`);
+      }
+    } catch (err) {
+      console.error(`[PLUGINS] Failed to load autonomous plugin ${file}:`, err.message);
     }
   }
   return true;

@@ -6,20 +6,15 @@
  * to prevent node fingerprinting and tracking.
  */
 
-const ALLOWED_HEADERS = ['Accept', 'Accept-Encoding', 'Accept-Language', 'Content-Type', 'Content-Length'];
-
 module.exports = {
   name: "sovereign-proxy",
   description: "Anonymous HTTPS proxy with strict header scrubbing and referer neutralization.",
-  register({ registerCommand }) {
+  register({ registerCommand, kernel }) {
     registerCommand({
       name: "proxy",
       description: "Perform an anonymous request through the sovereign proxy.",
       args: ["method", "url", "body?"],
       async run(context) {
-        // Load the agent-sdk dynamically to ensure kernel binding
-        const sdk = require('../../kernel/agent-sdk');
-        
         const method = String(context.method || "GET").toUpperCase();
         const url = String(context.url || "");
         const body = context.body || null;
@@ -30,29 +25,19 @@ module.exports = {
 
         // --- STRICT HEADER SCRUBBING ---
         const scrubbedHeaders = {
-          'User-Agent': 'NeuralShell-Sovereign-Node/1.1.1-OMEGA', // Standardized
-          'Referer': '', // Explicitly neutralized
-          'Cookie': '',  // Explicitly cleared
-          'Origin': ''   // Explicitly cleared
+          'User-Agent': 'NeuralShell-Sovereign-Node/1.1.1-OMEGA',
+          'Accept': 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'
         };
-
-        // Transfer allowed headers from user input if provided
-        if (context.headers && typeof context.headers === 'object') {
-          for (const [key, value] of Object.entries(context.headers)) {
-            const normalizedKey = key.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join('-');
-            if (ALLOWED_HEADERS.includes(normalizedKey)) {
-              scrubbedHeaders[normalizedKey] = value;
-            }
-          }
-        }
 
         console.log(`[PROXY] Initiating ${method} to: ${url}`);
         
         try {
-          const response = await sdk.fetch(url, {
+          const response = await kernel.request(kernel.CAP_NET, "safeFetch", {
+            url,
             method,
             headers: scrubbedHeaders,
-            body: body ? JSON.stringify(body) : undefined
+            body
           });
 
           return {
@@ -60,7 +45,8 @@ module.exports = {
             status: response.status,
             anonymity: "VERIFIED",
             scrubbed: ["User-Agent", "Cookie", "Referer", "Origin"],
-            data: typeof response.data === 'string' ? response.data.slice(0, 1000) : response.data
+            // data is base64 encoded from the kernel
+            data: response.data 
           };
         } catch (err) {
           return {

@@ -4,7 +4,7 @@
 module.exports = {
   name: "echo-plugin",
   description: "Simple echo for testing plugin loaders",
-  register({ registerCommand }) {
+  register({ registerCommand, kernel }) {
     registerCommand({
       name: "echo",
       description: "Echoes back the input text",

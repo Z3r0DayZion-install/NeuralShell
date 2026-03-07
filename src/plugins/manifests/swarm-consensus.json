@@ -1,0 +1,10 @@
+﻿{
+    "permissions":  [
+                        "net",
+                        "fs"
+                    ],
+    "name":  "swarm-consensus",
+    "file":  "swarm-consensus.js",
+    "hash":  "A15EFCDBB0DEA087C40B5577DBE677A627B5CB7A83D3EAAE1FDB00C98697928B",
+    "version":  "1.0.0"
+}
