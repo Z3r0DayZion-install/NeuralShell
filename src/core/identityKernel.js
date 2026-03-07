@@ -32,7 +32,8 @@ async function getHardwareId() {
     return hardwareFingerprint;
   } catch (err) {
     // Fallback to hostname if wmic fails
-    return crypto.createHash("sha256").update(require("os").hostname()).digest("hex");
+    hardwareFingerprint = crypto.createHash("sha256").update(require("os").hostname()).digest("hex");
+    return hardwareFingerprint;
   }
 }
 
