@@ -5,6 +5,7 @@ const SOURCE_ROOT = path.join(__dirname, '../../src');
 
 const success = runAstGate({
   sourceRoot: SOURCE_ROOT,
+  logger: (msg) => console.log(`[AST GATE] ${msg}`),
   whitelistedPaths: [
     'kernel', 
     'main.js', 
@@ -21,5 +22,8 @@ const success = runAstGate({
 });
 
 if (!success) {
+  console.log('[AST GATE FAILURE]');
   process.exit(1);
 }
+
+console.log('FINISH: 0 ERRORS');

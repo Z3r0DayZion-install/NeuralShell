@@ -1,7 +1,28 @@
 const crypto = require("crypto");
+const { kernel, CAP_PROC } = require("../kernel");
 
 let keyPair = null;
+let hardwareFingerprint = null;
 const peers = new Map();
+
+/**
+ * Gather immutable hardware IDs via the OMEGA-gated wmic broker.
+ */
+async function getHardwareId() {
+  if (hardwareFingerprint) return hardwareFingerprint;
+  try {
+    const cpuId = await kernel.request(CAP_PROC, "execute", { command: "wmic", args: ["cpu", "get", "processorid"] });
+    const baseboard = await kernel.request(CAP_PROC, "execute", { command: "wmic", args: ["baseboard", "get", "serialnumber"] });
+    
+    hardwareFingerprint = crypto.createHash("sha256")
+      .update(cpuId.trim() + baseboard.trim())
+      .digest("hex");
+    return hardwareFingerprint;
+  } catch (err) {
+    // Fallback to hostname if wmic fails
+    return crypto.createHash("sha256").update(require("os").hostname()).digest("hex");
+  }
+}
 
 function ensureKeyPair() {
   if (!keyPair) {
@@ -11,18 +32,24 @@ function ensureKeyPair() {
 }
 
 function publicKeyPem() {
-  return ensureKeyPair().publicKey.export({
-    type: "spki",
-    format: "pem"
-  }).toString("utf8");
+  return ensureKeyPair()
+    .publicKey.export({
+      type: "spki",
+      format: "pem"
+    })
+    .toString("utf8");
 }
 
 function fingerprintFromPem(pem) {
-  return crypto.createHash("sha256").update(String(pem || "")).digest("hex");
+  return crypto
+    .createHash("sha256")
+    .update(String(pem || ""))
+    .digest("hex");
 }
 
 async function init() {
   ensureKeyPair();
+  await getHardwareId();
   return true;
 }
 
@@ -71,7 +98,32 @@ function getPublicKeyPem() {
 }
 
 function getFingerprint() {
-  return fingerprintFromPem(publicKeyPem());
+  const keyFingerprint = fingerprintFromPem(publicKeyPem());
+  // Hardware Binding: Node ID is a hash of the Cryptographic Key + the Physical Silicon ID
+  return crypto.createHash("sha256")
+    .update(keyFingerprint + (hardwareFingerprint || ""))
+    .digest("hex");
+}
+
+/**
+ * Sign a payload using the local identity (Silicon-Bound).
+ */
+function signPayload(payload) {
+  const kp = ensureKeyPair();
+  const signature = crypto.sign(null, Buffer.from(JSON.stringify(payload)), kp.privateKey);
+  return signature.toString('base64');
+}
+
+/**
+ * Verify a payload's signature against a known public key.
+ */
+function verifyPayload(payload, signatureBase64, pubKeyPem) {
+  try {
+    const pubKey = crypto.createPublicKey(pubKeyPem);
+    return crypto.verify(null, Buffer.from(JSON.stringify(payload)), pubKey, Buffer.from(signatureBase64, 'base64'));
+  } catch (err) {
+    return false;
+  }
 }
 
 module.exports = {
@@ -81,5 +133,7 @@ module.exports = {
   trustPeer,
   revokePeer,
   listPeers,
-  rotate
+  rotate,
+  signPayload,
+  verifyPayload
 };

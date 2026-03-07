@@ -23,9 +23,15 @@ function assert(condition, message) {
 function validateName(name) {
   const normalized = String(name == null ? "" : name).trim();
   assert(normalized.length > 0, "Invalid session name.");
-  assert(!normalized.includes("/") && !normalized.includes("\\"), "Session name contains invalid characters.");
+  assert(
+    !normalized.includes("/") && !normalized.includes("\\"),
+    "Session name contains invalid characters."
+  );
   assert(!normalized.includes(".."), "Invalid session name.");
-  assert(/^[a-zA-Z0-9._-]+$/.test(normalized), "Session name contains invalid characters.");
+  assert(
+    /^[a-zA-Z0-9._-]+$/.test(normalized),
+    "Session name contains invalid characters."
+  );
   return normalized;
 }
 
@@ -40,7 +46,13 @@ function sha256(text) {
 }
 
 function deriveKey(passphrase, saltHex) {
-  return crypto.pbkdf2Sync(passphrase, Buffer.from(saltHex, "hex"), 100000, 32, "sha256");
+  return crypto.pbkdf2Sync(
+    passphrase,
+    Buffer.from(saltHex, "hex"),
+    100000,
+    32,
+    "sha256"
+  );
 }
 
 function encryptPayload(payload, passphrase) {
@@ -61,7 +73,11 @@ function encryptPayload(payload, passphrase) {
 
 function decryptPayload(envelope, passphrase) {
   const key = deriveKey(passphrase, envelope.salt);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(envelope.iv, "hex"));
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    key,
+    Buffer.from(envelope.iv, "hex")
+  );
   decipher.setAuthTag(Buffer.from(envelope.tag, "hex"));
   const decrypted = Buffer.concat([
     decipher.update(Buffer.from(envelope.data, "base64")),
@@ -89,7 +105,8 @@ function countTokensFromChat(chat) {
   }
   let count = 0;
   for (const message of chat) {
-    const content = message && typeof message.content === "string" ? message.content : "";
+    const content =
+      message && typeof message.content === "string" ? message.content : "";
     const words = content.trim().split(/\s+/).filter(Boolean).length;
     count += words;
   }
@@ -127,7 +144,8 @@ function saveSession(name, payload, passphrase) {
   fs.mkdirSync(sessionsDir, { recursive: true });
   const safeName = validateName(name);
   const safePassphrase = validatePassphrase(passphrase);
-  const safePayload = payload && typeof payload === "object" ? payload : { chat: [] };
+  const safePayload =
+    payload && typeof payload === "object" ? payload : { chat: [] };
 
   const encrypted = encryptPayload(safePayload, safePassphrase);
   const envelope = {
@@ -202,7 +220,9 @@ function renameSession(oldName, newName) {
 }
 
 function search(query) {
-  const q = String(query || "").trim().toLowerCase();
+  const q = String(query || "")
+    .trim()
+    .toLowerCase();
   const names = listSessions();
   if (!q) return names.map((name) => ({ name, ...(index[name] || {}) }));
   return names

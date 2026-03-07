@@ -1,4 +1,4 @@
-const { IntentFirewall } = require('@neural/omega-core');
+const { IntentFirewall } = require("@neural/omega-core");
 
 /**
  * NeuralShell Intent Firewall
@@ -6,55 +6,66 @@ const { IntentFirewall } = require('@neural/omega-core');
  */
 
 const INTENT_REGISTRY = {
-  'llm:chat': {
+  "llm:chat": {
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
         messages: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              role: { type: 'string', enum: ['user', 'assistant', 'system'] },
-              content: { type: 'string', maxLength: 32768 }
+              role: { type: "string", enum: ["user", "assistant", "system"] },
+              content: { type: "string", maxLength: 32768 }
             },
-            required: ['role', 'content']
+            required: ["role", "content"]
           }
         },
-        stream: { type: 'boolean' }
+        stream: { type: "boolean" }
       },
-      required: ['messages'],
+      required: ["messages"],
       additionalProperties: false
     },
     requiresApproval: false
   },
-  'session:save': {
+  "session:save": {
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        name: { type: 'string', minLength: 1, maxLength: 255 },
-        data: { type: 'object' },
-        passphrase: { type: 'string', minLength: 8 }
+        name: { type: "string", minLength: 1, maxLength: 255 },
+        data: { type: "object" },
+        passphrase: { type: "string", minLength: 8 }
       },
-      required: ['name', 'data', 'passphrase'],
+      required: ["name", "data", "passphrase"],
       additionalProperties: false
     },
     requiresApproval: false
   },
-  'kernel:net:fetch': {
+  "kernel:net:fetch": {
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        url: { type: 'string', pattern: '^https://' },
-        method: { type: 'string', enum: ['GET', 'POST'] },
-        headers: { type: 'object' },
-        body: { type: 'object' },
-        timeoutMs: { type: 'number', minimum: 1000, maximum: 30000 }
+        url: { type: "string", pattern: "^https://" },
+        method: { type: "string", enum: ["GET", "POST"] },
+        headers: { type: "object" },
+        body: { type: "object" },
+        timeoutMs: { type: "number", minimum: 1000, maximum: 30000 }
       },
-      required: ['url'],
+      required: ["url"],
       additionalProperties: false
     },
     requiresApproval: true // Sensitive network intent
+  },
+  "kernel:agent:run": {
+    schema: {
+      type: "object",
+      properties: {
+        prompt: { type: "string", minLength: 1, maxLength: 4096 }
+      },
+      required: ["prompt"],
+      additionalProperties: false
+    },
+    requiresApproval: true // Critical code execution intent
   }
 };
 

@@ -34,14 +34,14 @@ function validateInvokeChannels() {
   const mainJs = read("src/main.js");
   const preloadJs = read("src/preload.js");
 
-  const mainHandles = collectMatches(mainJs, /ipcMain\.handle\("([^"]+)"/g);
-  const preloadInvoke = collectMatches(preloadJs, /'([^']+)'/g);
+  const mainHandles = collectMatches(mainJs, /ipcMain\.handle\(\s*"([^"]+)"/g);
+  const preloadInvoke = collectMatches(preloadJs, /"([^"]+)"/g);
 
   // Restrict preload string scan to channels found near ALLOWED_INVOKE_CHANNELS.
   const invokeBlockMatch = preloadJs.match(/const ALLOWED_INVOKE_CHANNELS = new Set\(\[([\s\S]*?)\]\);/);
   assert(invokeBlockMatch, "Could not find ALLOWED_INVOKE_CHANNELS block in preload.js");
   const invokeBlock = invokeBlockMatch[1];
-  const invokeChannels = collectMatches(invokeBlock, /'([^']+)'/g);
+  const invokeChannels = collectMatches(invokeBlock, /"([^"]+)"/g);
 
   const missingInPreload = setDiff(mainHandles, invokeChannels);
   const extraInPreload = setDiff(invokeChannels, mainHandles);
@@ -63,7 +63,7 @@ function validateStreamEventBridge() {
   const mainJs = read("src/main.js");
   const preloadJs = read("src/preload.js");
 
-  const forwardedInPreload = collectMatches(preloadJs, /ipcRenderer\.on\('([^']+)'/g);
+  const forwardedInPreload = collectMatches(preloadJs, /ipcRenderer\.on\("([^"]+)"\)/g);
   const sentInMain = collectMatches(mainJs, /sendToRenderer\("([^"]+)"/g);
 
   const missingFromMain = setDiff(forwardedInPreload, sentInMain);

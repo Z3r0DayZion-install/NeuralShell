@@ -1,0 +1,22 @@
+{
+  "build": {
+    "buildHash": "4292bb4b8c54408e211ceaecbb72bb5307765d9942ed04940bac066267c4f9af",
+    "sbomHash": "eeb083694d65537e0a139d9acb474c397b7bac62c75b2c658de768952d2205aa"
+  },
+  "createdAt": "2026-03-06T06:13:48.998Z",
+  "inputs": {
+    "lockfileSha256": "05e827f1b6c0971924f6ab73ffab7c1a8ec287e7070543083db5e3c42044b42c",
+    "nodeVersion": "v20.17.0"
+  },
+  "proofs": {
+    "omegaSecuritySuite": "PASS",
+    "runtimeProof": "PASS",
+    "metricsProof": "PASS",
+    "astGate": "PASS"
+  },
+  "repo": {
+    "commit": "fe1bcd77bb74aa429517ef4ef0d0cadd2a77c189",
+    "branch": "master"
+  },
+  "schemaVersion": "var_proof.v1"
+}

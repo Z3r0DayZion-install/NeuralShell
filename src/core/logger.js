@@ -30,7 +30,10 @@ function clear() {
 
 function exportText() {
   return entries
-    .map((row) => `${row.ts} [${row.level}] ${row.message} ${JSON.stringify(row.meta)}`)
+    .map(
+      (row) =>
+        `${row.ts} [${row.level}] ${row.message} ${JSON.stringify(row.meta)}`
+    )
     .join("\n");
 }
 

@@ -19,7 +19,8 @@ class RgbController {
   }
 
   configure(settings) {
-    this.settings = settings && typeof settings === "object" ? { ...settings } : {};
+    this.settings =
+      settings && typeof settings === "object" ? { ...settings } : {};
     return this.settings;
   }
 

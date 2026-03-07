@@ -35,7 +35,10 @@ class AuditChain {
   }
 
   append(payload) {
-    const safePayload = payload && typeof payload === "object" ? payload : { value: String(payload || "") };
+    const safePayload =
+      payload && typeof payload === "object"
+        ? payload
+        : { value: String(payload || "") };
     const rowBase = {
       index: this._nextIndex,
       timestamp: new Date().toISOString(),
@@ -52,7 +55,9 @@ class AuditChain {
   }
 
   tail(limit = 50) {
-    const max = Number.isFinite(Number(limit)) ? Math.max(0, Number(limit)) : 50;
+    const max = Number.isFinite(Number(limit))
+      ? Math.max(0, Number(limit))
+      : 50;
     const rows = this._readRows();
     return rows.slice(-max);
   }

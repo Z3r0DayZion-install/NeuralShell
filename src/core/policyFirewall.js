@@ -23,19 +23,25 @@ function evaluateText(policy, text) {
 
   return {
     blocked: true,
-    reason: strict ? "Blocked by strict safety policy." : "Blocked by balanced safety policy."
+    reason: strict
+      ? "Blocked by strict safety policy."
+      : "Blocked by balanced safety policy."
   };
 }
 
 function enforcePolicyOnMessages(policy, messages) {
   const joined = Array.isArray(messages)
-    ? messages.map((m) => (m && typeof m.content === "string" ? m.content : "")).join("\n")
+    ? messages
+        .map((m) => (m && typeof m.content === "string" ? m.content : ""))
+        .join("\n")
     : "";
   return evaluateText(policy, joined);
 }
 
 function enforcePolicyOnArgs(policy, args) {
-  const joined = Array.isArray(args) ? args.map((arg) => String(arg || "")).join(" ") : "";
+  const joined = Array.isArray(args)
+    ? args.map((arg) => String(arg || "")).join(" ")
+    : "";
   return evaluateText(policy, joined);
 }
 

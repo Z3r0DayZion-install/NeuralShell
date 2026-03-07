@@ -8,6 +8,11 @@ const rituals = [
     id: "focus-sync",
     title: "Focus Sync",
     description: "Align environment state before deep work."
+  },
+  {
+    id: "autonomous-evolution",
+    title: "Autonomous Evolution",
+    description: "Agent recursively reviews documentation and proposes system upgrades."
   }
 ];
 
@@ -48,7 +53,8 @@ function schedule(id, timestamp) {
 }
 
 function setAutoTrigger(criteria) {
-  autoTriggerCriteria = criteria && typeof criteria === "object" ? criteria : null;
+  autoTriggerCriteria =
+    criteria && typeof criteria === "object" ? criteria : null;
   return {
     success: true,
     criteria: autoTriggerCriteria

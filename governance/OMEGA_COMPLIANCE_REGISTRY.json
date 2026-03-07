@@ -1,8 +1,8 @@
 {
   "schema_version": "omega_registry.v2",
-  "registry_version": 11,
-  "updated_at": "2026-03-03T04:02:07.944Z",
-  "previous_hash": "f6739c80b19d95be517e6bd75290674db43f2aed24c5a70a69f67323687267d8",
+  "registry_version": 12,
+  "updated_at": "2026-03-03T05:55:51.424Z",
+  "previous_hash": "6c4949a5f80dfb638984da9aeeb214cd1c669fa8ad3b8b754bb441d79e2b9159",
   "governance_fingerprint": "76bb525ffe1cd289ee2d078f96a01c2e1251543187fc9c0a7b84e7865f07e545",
   "entries": [
     {
@@ -17,8 +17,21 @@
       "verified_at_commit": "62c77e53fd01f8ecfbe6fe553bd2101217229c68",
       "verified_at": "2026-03-03T04:02:07.944Z",
       "status": "ACTIVE"
+    },
+    {
+      "module_name": "neuraltube",
+      "repository_url": "ERROR: Command failed: git remote get-url origin\nerror: No such remote 'origin'\n",
+      "omega_version": "v20.17.0",
+      "build_hash": "debd3d9fed5077e23f59c8d8042f2334f6b80175c52233e4e34cc2dc0026c7ef",
+      "sbom_hash": "403b427ef6039a50f8430e1a28258396353bd8f49d5b78cb6641df9b81c7f87d",
+      "var_proof_signature": "Je1ONu4Hcwsvu5BrCWBNFDO2U6CFkUawNea5TwmFyW31Eu2G4HUN7ax99Ap5jOGtJ2LLUDxj0RSMYekUz+AEDw==",
+      "root_fingerprint": "75cb2558e5aca6e8e763f4af871d88fb5fc2b5f87f6f612353f0d520b37f7cd9",
+      "compliance_version": "OMEGA_v1",
+      "verified_at_commit": "2f4d46514d499497813ae3cba3346453e9610c6a",
+      "verified_at": "2026-03-03T05:55:51.424Z",
+      "status": "ACTIVE"
     }
   ],
-  "registry_hash": "6c4949a5f80dfb638984da9aeeb214cd1c669fa8ad3b8b754bb441d79e2b9159",
-  "signature": "qWSQSHnyRAMRDuoY2vZ8rXWcQhiF9+tPvQE9hXVW1gk6pUvE89JvhNoeIkf3iOpTe0Eb6JqJkQfuab4MnRhrBg=="
+  "registry_hash": "e36607b4c3aa74edf1c199a45e0ce2ae688f90a1eb3eb7aa42d7c18417527b8a",
+  "signature": "bvQNUCJKn2xzqpyDodof/CINs9ZapbzXXADsJwuymz/iZ4ZFzaENRt2CbCOZuiQblfMUtVHdNFTR+OPzNPUZDQ=="
 }

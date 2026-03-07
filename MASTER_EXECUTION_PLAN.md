@@ -1,51 +1,54 @@
 # MASTER EXECUTION PLAN — NEURALSHELL v5.2.0 (OMEGA)
 
-Project: NeuralShell
-Governance: Deterministic Multi-Agent Governance System (DMAGS)
-Security Posture: OMEGA ENFORCEMENT MODE (Level 5)
+**Project:** NeuralShell
+**Governance:** Deterministic Multi-Agent Governance System (DMAGS)
+**Security Posture:** OMEGA ENFORCEMENT MODE (Level 5) + Sovereign Swarm
 
-## 1. OMEGA Requirements
-- **Omega Network Broker**: Strict header allowlist, proxy scrubbing, redirect denial, and raw Buffer payloads.
-- **Omega Execution Model**: Task registry (taskId map), SHA-256 binary hash verification, and zero environment inheritance.
-- **Fail-Closed Architecture**: Any security policy violation results in immediate process termination (Exit Code 42).
-- **Tamper-Evident Proofs**: Ed25519-signed VAR_PROOF bundles for every build.
+## 1. OMEGA Architectural Rules
 
-## 2. Timeline
-- **Phase 1-10 (Completed)**: Capability Kernel, Intent Firewall, Signed Boot, Plugin Sandboxing, and Secure Updater.
-- **OMEGA Integration (Completed)**: Hardened brokers, Runtime proofs, and signed evidence bundles.
-- **Sovereign Operational Leverage (Completed)**: Deterministic build lock, SBOM supply chain sealing, and OMEGA Whitepaper.
+NeuralShell operates under strict OMEGA rules to ensure total system integrity and hardware-rooted sovereignty:
 
-## 3. Governance Gates
-- [x] Stage 1: Architecture Integrity (SYSTEM_MAP.md, ARCHITECTURE_RISKS.md)
-- [x] Stage 2: Security Hardening (THREAT_MODEL.md, VULNERABILITY_LIST.md)
-- [x] Stage 3: Performance Validation (PERFORMANCE_REPORT.md)
-- [x] Stage 4: UX / Flow (UX_REPORT.md)
-- [x] Stage 5: Monetization & Licensing
-- [x] Stage 6: Release Discipline (VAR_PROOF Bundle, SBOM, Build Lock)
+1.  **Capability-Based Kernel (TCB)**: All privileged operations (Network, FileSystem, Process Execution) are routed through `@neural/omega-core`. Direct usage of Node.js primitives (`fs`, `child_process`, `https`) outside the broker is strictly forbidden and verified via AST gating.
+2.  **Intent Firewall**: All user and agent requests are evaluated against a strict JSON schema registry. Unauthorized intents are blocked before reaching the kernel.
+3.  **Hardware-Bound Identity (Silicon Anchor)**: The node's Ed25519 cryptographic identity is irrevocably bound to the physical hardware (CPU ID + Baseboard Serial) via the OMEGA-gated `wmic` broker. Node fingerprints cannot be spoofed or transferred.
+4.  **Distributed Threat Intelligence (Swarm Consensus)**: The system utilizes a P2P Threat Ledger (`governance/THREAT_LEDGER.jsonl`). Security patches and autonomous updates require a cryptographically verified **Quorum of Guardians (2/3 nodes)** before execution.
+5.  **Test-Driven Autonomy**: The internal Code Agent cannot modify the system without generating and passing a sandbox-executed Unit Test suite.
 
-## 4. OMEGA Sovereignty Proofs
-### 4.1 Deterministic Build Lock
-Build integrity is guaranteed by a bit-for-bit `BUILD_HASH` computed across all source inputs and configurations.
-- **Generator:** `scripts/compute_build_hash.js`
-- **Result:** Included in signed `VAR_PROOF`.
+## 2. VAR_PROOF Artifact Schema
 
-### 4.2 Supply Chain Sealing (SBOM)
-Every dependency is monitored and hashed to prevent supply chain poisoning.
-- **Generator:** `scripts/generate-sbom.js`
-- **Integrity:** Verified against on-disk `node_modules`.
+The system produces a deterministic, cryptographically signed `VAR_PROOF` bundle to mathematically guarantee the integrity of a build.
 
-### 4.3 Technical Whitepaper
-A formal specification of the OMEGA architecture is available in `docs/OMEGA_TECHNICAL_WHITEPAPER.md`.
+*   **Location:** `artifacts/var_proof/<timestamp>/` (and `artifacts/var_proof/latest/`)
+*   **Contents:**
+    *   `manifest.json`: Contains the Git commit hash, `package-lock.json` hash, deterministic machine ID, and the exact pass/fail status of all enforcement gates (AST, Security Suite, Runtime).
+    *   `signature.sig`: An Ed25519 signature of the `manifest.json`, signed by the hardware-bound Governance Root Key.
 
-## 5. Local Reproduction / CI Steps
-To verify the system and generate a signed proof bundle:
-```powershell
-./ci-gate.ps1
-```
-This script executes:
-1. `npm ci --ignore-scripts`
-2. `node tools/security/ast_gate.js` (AST scan for forbidden imports)
-3. `node tests/omega_security.test.js` (Omega policy verification)
-4. `node scripts/runtime_proof.cjs` (Runtime server and metrics verification)
-5. `npm test` (Project unit tests)
-6. `node scripts/export_var_proof.js` (Sign and export evidence, SBOM, and Build Lock)
+## 3. Local Reproduction & Audit Commands
+
+To independently verify the OMEGA CI Gate and system integrity, an auditor must execute the following sequence:
+
+1.  **Dependency Alignment:** `npm ci`
+2.  **Comprehensive Unit Tests:** `npm test`
+3.  **OMEGA Security Suite (8 Assertions):** `node tests/omega_security.test.js`
+4.  **Deterministic Runtime & Metrics Proof:** `node scripts/runtime_proof.cjs`
+5.  **Sovereign Integrity Proof (Hardware & Swarm):** `node verifiable_proof.js`
+6.  **Seal the Build:** `node scripts/export_var_proof.js`
+
+*For automated continuous integration, execute:* `.\ci-gate.ps1`
+
+## 4. Current Status
+
+**ACHIEVED**: The system has successfully passed the OMEGA Finish Acceptance Checklist. The TCB is locked, the agent is sovereign, and the hardware identity is bound. The repository is ready for a Golden Master release.
+
+## 5. Sovereign Bounties (Active Missions)
+
+The following missions are authorized for the Autonomous Evolution ritual:
+
+1.  **Mission: "Sovereign Proxy"**
+    *   **Goal:** Build a plugin that implements a secure, local HTTPS proxy using the `Neural-SDK`.
+    *   **Requirement:** It must scrub all `User-Agent` and `Cookie` headers from outbound requests to ensure total anonymity.
+    *   **Status:** OPEN
+
+2.  **Mission: "Recursive Auditor"**
+    *   **Goal:** Build a plugin that performs a daily scan of `src/plugins/autonomous/` and verifies the SHA256 of every file against the `THREAT_LEDGER`.
+    *   **Status:** OPEN

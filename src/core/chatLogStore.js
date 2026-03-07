@@ -11,7 +11,8 @@ function append(type, payload = {}) {
   entries.push({
     ts: new Date().toISOString(),
     type: String(type || "event"),
-    payload: payload && typeof payload === "object" ? payload : { value: payload }
+    payload:
+      payload && typeof payload === "object" ? payload : { value: payload }
   });
   trim();
   return true;
@@ -28,7 +29,9 @@ function clear() {
 }
 
 function exportText() {
-  return entries.map((row) => `${row.ts} [${row.type}] ${JSON.stringify(row.payload)}`).join("\n");
+  return entries
+    .map((row) => `${row.ts} [${row.type}] ${JSON.stringify(row.payload)}`)
+    .join("\n");
 }
 
 module.exports = {

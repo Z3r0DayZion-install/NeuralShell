@@ -1,0 +1,12 @@
+--- NEURALSHELL SOVEREIGN RELEASE CERTIFICATE ---
+{
+  "type": "SOVEREIGN_RELEASE_CERTIFICATE",
+  "version": "5.2.0-OMEGA",
+  "buildHash": "0028872513f5ff7540790eeec26545ec391db10827f5b55fca327b721163140b",
+  "nodeId": "bde1782653d3bad4ca7aadd03e93bc72366e0f586bb99a149eccd4a735090021",
+  "timestamp": "2026-03-06T07:50:31.655Z"
+}
+
+SIGNATURE:
+79OVhZlB1qOeuVl9dr+lO0NsQipQ1GS0mL0nL3PJT6GLiKq2WKzmKXPzEFdt+sS5l3jCOv4bH0wrzO0dtYoFCw==
+---------------------------------------------------

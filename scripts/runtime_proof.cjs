@@ -1142,7 +1142,7 @@ async function run() {
         expectedFailuresDelta
       };
 
-      const exitCode = await stopChild(child);
+      const exitCode = await stopChild(child, 2500);
       assert.equal(exitCode, 0, `${tag}: server should exit 0 on shutdown`);
 
       // Shutdown down-ness check: /metrics must be unreachable after shutdown.

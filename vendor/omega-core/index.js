@@ -79,6 +79,7 @@ function createKernel(config = {}) {
 
   async function executeTask(payload = {}) {
     const taskId = String(payload.taskId || "");
+    const extraArgs = Array.isArray(payload.extraArgs) ? payload.extraArgs : [];
     const taskRegistry = kernelConfig?.execution?.taskRegistry || {};
     const task = taskRegistry[taskId];
     if (!task) {
@@ -95,8 +96,12 @@ function createKernel(config = {}) {
       throw omegaBlock("Binary hash mismatch.");
     }
 
+    const finalArgs = task.allowExtraArgs 
+      ? [...(Array.isArray(task.args) ? task.args : []), ...extraArgs]
+      : (Array.isArray(task.args) ? task.args : []);
+
     return await new Promise((resolve, reject) => {
-      const child = spawn(taskPath, Array.isArray(task.args) ? task.args : [], {
+      const child = spawn(taskPath, finalArgs, {
         windowsHide: true,
         stdio: ["ignore", "pipe", "pipe"],
         env: {}
