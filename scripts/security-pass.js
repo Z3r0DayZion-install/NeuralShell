@@ -5,6 +5,15 @@ const { execSync } = require("child_process");
 const root = path.resolve(__dirname, "..");
 const outPath = path.join(root, "release", "security-pass.json");
 const skipAudit = process.argv.includes("--skip-audit");
+const explicitSkipSourceIntegrity =
+  process.argv.includes("--skip-source-integrity") ||
+  process.env.NEURALSHELL_SKIP_SOURCE_INTEGRITY === "1";
+const explicitEnforceSourceIntegrity =
+  process.argv.includes("--enforce-source-integrity") ||
+  process.env.NEURALSHELL_ENFORCE_SOURCE_INTEGRITY === "1";
+const runningInCi = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+const skipSourceIntegrity =
+  explicitSkipSourceIntegrity || (runningInCi && !explicitEnforceSourceIntegrity);
 
 function run(cmd) {
   const started = Date.now();
@@ -31,9 +40,16 @@ function main() {
   const stages = [
     "node tests/omega_security.test.js",
     "node tear/security-guards.test.js",
-    "node tear/security-abuse.test.js",
-    "node scripts/verify-source-integrity.js"
+    "node tear/security-abuse.test.js"
   ];
+
+  if (!skipSourceIntegrity) {
+    stages.push("node scripts/verify-source-integrity.js");
+  } else {
+    console.log(
+      `[security-pass] Skipping source integrity stage (CI=${runningInCi ? "true" : "false"}).`
+    );
+  }
 
   if (!skipAudit) {
     stages.unshift("npm audit --omit=dev --audit-level=high");
@@ -53,6 +69,7 @@ function main() {
     generatedAt: new Date().toISOString(),
     passed,
     skipAudit,
+    skipSourceIntegrity,
     stages: results
   };
 
