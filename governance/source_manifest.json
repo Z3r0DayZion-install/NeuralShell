@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-08T22:38:04.477Z",
-  "commit": "0e6317d7080ec205959dcb16a3bfba6596db804f",
+  "generatedAt": "2026-03-08T23:52:21.049Z",
+  "commit": "2078184db30dd7f8979fa827b0154202770e46f3",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -305,8 +305,8 @@
     "governance/OMEGA_RELEASE_LEDGER.md": "a70015f73d46069b12b5c2aceef105e147f73c181c82ac51789937c39a4a960d",
     "governance/THREAT_LEDGER.jsonl": "5ea48724895a4a30d6f2602c45983f35ae0672547f09afa0396910da2f008634",
     "governance/branch_protection_policy.json": "d7539f6305083a52324b839a366c1645ad98e48f25a4cededf30b8b3624e7ea5",
-    "package-lock.json": "36d1c85077dc2488fce54d902732e5c58567636137b38f246fb224efe9918aa4",
-    "package.json": "e2c57f7fd477e5a304569fa9064dcc437d8703ddd53e3d7c20e16772b3afedd5",
+    "package-lock.json": "8863a621a826ae874ba3ea39a4bccec39c3df57446354b4715ca2e0ecc942f9c",
+    "package.json": "b132c43724186279bb57adebd788d1e4dd103396821eeec5e0256634b7dead0a",
     "production-server.js": "3415d790f5cc37bfe04dfe94ac07e026cdc40496713ba538b76894197692ab1e",
     "proof/latest/proof-manifest.json": "366beca59d6c08d281ae059db5498db72ef906bdd9ec5b757806a166f75dbb54",
     "proof/latest/runtime/config.json": "04462a347748134d8e1e19d481c94436d60575a25d666172288e8de14880127e",
@@ -329,6 +329,7 @@
     "scripts/generate-sbom.js": "1048161983cd4074d0e47f35253d661f96f474872efe093d1d3240af95ce0bd0",
     "scripts/generate-source-manifest.js": "7ab7cbcded85f6963f1512a598ff1907df506b49cce5662ed91895c8a1c3a9da",
     "scripts/install-hooks.js": "f660aa38d6a75da93e430edc4b86b9ebc4e646208ee1f64ea5eb024f2542848b",
+    "scripts/maintenance-clean-verify.js": "8ce6933502db7d0b7539f1f1225378813b88c843aa581322dd30e882c1b3ffd2",
     "scripts/omega_verify.js": "484029c7f71cdc3dc966bcf8b2225f9d260c7e03279a5c300710eadc02b35501",
     "scripts/performance-gate.js": "3f59a74448fcff556b61a298f958002aafd2d735c449ef00c3707b7af1f34a81",
     "scripts/prepush-gate.js": "8fffe56e2ed7fc7b994e5c916b9c1fd313a02d87fe2d262f45c35cded329d733",
