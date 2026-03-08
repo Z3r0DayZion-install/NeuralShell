@@ -53,6 +53,19 @@ function saveKeyPair() {
   fs.writeFileSync(getIdentityPath(), payload, "utf8");
 }
 
+function quarantineIdentityFile(reason = "invalid") {
+  const p = getIdentityPath();
+  if (!fs.existsSync(p)) return null;
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backup = `${p}.${reason}.${stamp}.bak`;
+  try {
+    fs.renameSync(p, backup);
+    return backup;
+  } catch {
+    return null;
+  }
+}
+
 function loadKeyPair() {
   const p = getIdentityPath();
   if (!fs.existsSync(p)) return false;
@@ -71,7 +84,9 @@ function loadKeyPair() {
     keyPair = { privateKey, publicKey };
     return true;
   } catch (err) {
-    throw new Error("IDENTITY_LOCK_FAILURE: Failed to decrypt node identity. Hardware mismatch detected.");
+    quarantineIdentityFile("lock-failure");
+    keyPair = null;
+    return false;
   }
 }
 
