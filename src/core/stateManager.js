@@ -96,6 +96,18 @@ fs.mkdirSync(path.dirname(stateFile), { recursive: true });
 
 let state = defaultState();
 
+function quarantineStateFile(reason = "invalid") {
+  if (!fs.existsSync(stateFile)) return null;
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backup = path.join(stateDir, `state.${reason}.${stamp}.bak`);
+  try {
+    fs.renameSync(stateFile, backup);
+    return backup;
+  } catch {
+    return null;
+  }
+}
+
 function save() {
   const identityKernel = require("./identityKernel");
   state.nodeId = identityKernel.getFingerprint(); // Link state record to physical node ID
@@ -130,7 +142,10 @@ function load() {
         throw new Error("SECURE_LOAD_FAILURE: Version 3 state must be hardware-locked (encrypted).");
       }
     } catch (jsonErr) {
-      throw new Error("HARDWARE_LOCK_FAILURE: Failed to decrypt state. Is this the original hardware?");
+      quarantineStateFile("hardware-lock-failure");
+      state = defaultState();
+      save();
+      return state;
     }
   }
 
@@ -161,7 +176,10 @@ function load() {
   // Final Hardware Check (for v3+)
   const identityKernel = require("./identityKernel");
   if (parsed.nodeId && parsed.nodeId !== identityKernel.getFingerprint()) {
-    throw new Error("HARDWARE_MISMATCH: This state file was created on a different physical machine.");
+    quarantineStateFile("hardware-mismatch");
+    state = defaultState();
+    save();
+    return state;
   }
 
   state = parsed;
