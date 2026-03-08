@@ -18,6 +18,7 @@ module.exports = [
         clearInterval: "readonly",
         __dirname: "readonly",
         URL: "readonly",
+        fetch: "readonly",
         AbortController: "readonly",
         queueMicrotask: "readonly",
       },
@@ -41,6 +42,8 @@ module.exports = [
       globals: {
         window: "readonly",
         document: "readonly",
+        navigator: "readonly",
+        Blob: "readonly",
         CustomEvent: "readonly",
         Event: "readonly",
         api: "readonly",

@@ -28,5 +28,8 @@ jobs:
       - name: Verify strict clean worktree
         run: npm run release:worktree:strict
 
+      - name: Run lint
+        run: npm run lint
+
       - name: Run full test suite
         run: npm test

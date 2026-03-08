@@ -1,5 +1,7 @@
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
+const crypto = require("crypto");
 const { spawn } = require("child_process");
 
 const root = path.resolve(__dirname, "..");
@@ -25,12 +27,42 @@ function parseIntArg(name, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function shouldIsolateUserData() {
+  if (process.argv.includes("--no-isolated-user-data")) {
+    return false;
+  }
+  return process.env.NEURAL_SMOKE_ISOLATE_USER_DATA !== "0";
+}
+
+function makeIsolatedUserDataDir() {
+  const token = crypto.randomBytes(6).toString("hex");
+  const dir = path.join(
+    os.tmpdir(),
+    "neuralshell-smoke-userdata",
+    `${Date.now()}-${process.pid}-${token}`
+  );
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function cleanupDir(dirPath) {
+  if (!dirPath) return;
+  try {
+    fs.rmSync(dirPath, { recursive: true, force: true });
+  } catch {
+    // ignore cleanup failures
+  }
+}
+
 async function smokeLaunch() {
   const strict = process.argv.includes("--strict-launch");
   const timeoutMs = parseIntArg("--timeout-ms", 25000);
   const skipLaunch = process.env.SMOKE_SKIP_LAUNCH === "1";
+  const keepUserData = process.env.NEURAL_SMOKE_KEEP_USER_DATA === "1";
+  const isolatedUserData = shouldIsolateUserData() ? makeIsolatedUserDataDir() : null;
   if (skipLaunch) {
     console.log("Packaged launch skipped (SMOKE_SKIP_LAUNCH=1).");
+    cleanupDir(isolatedUserData);
     return;
   }
 
@@ -49,7 +81,8 @@ async function smokeLaunch() {
       env: {
         ...process.env,
         NEURAL_SMOKE_MODE: "1",
-        NEURAL_SMOKE_REPORT: smokeReport
+        NEURAL_SMOKE_REPORT: smokeReport,
+        ...(isolatedUserData ? { NEURAL_USER_DATA_DIR: isolatedUserData } : {})
       }
     });
 
@@ -61,7 +94,14 @@ async function smokeLaunch() {
       } catch {
         // ignore
       }
-      reject(new Error(`Packaged smoke probe timed out after ${timeoutMs}ms.`));
+      if (!keepUserData) {
+        cleanupDir(isolatedUserData);
+      }
+      reject(
+        new Error(
+          `Packaged smoke probe timed out after ${timeoutMs}ms (userData=${isolatedUserData || "default"}).`
+        )
+      );
     }, timeoutMs);
 
     child.on("exit", (code) => {
@@ -70,6 +110,9 @@ async function smokeLaunch() {
       clearTimeout(timeout);
 
       if (!fs.existsSync(smokeReport)) {
+        if (!keepUserData) {
+          cleanupDir(isolatedUserData);
+        }
         reject(new Error(`Missing packaged smoke report: ${smokeReport} (exit=${code})`));
         return;
       }
@@ -78,6 +121,9 @@ async function smokeLaunch() {
       try {
         report = JSON.parse(fs.readFileSync(smokeReport, "utf8"));
       } catch (err) {
+        if (!keepUserData) {
+          cleanupDir(isolatedUserData);
+        }
         reject(new Error(`Unable to parse smoke report JSON: ${err.message || err}`));
         return;
       }
@@ -89,6 +135,9 @@ async function smokeLaunch() {
       const passed = Boolean(report && report.passed);
 
       if (!rendererLoad || !rendererDom || !ipcHandshake) {
+        if (!keepUserData) {
+          cleanupDir(isolatedUserData);
+        }
         reject(
           new Error(
             `Smoke probe failed checks: rendererLoad=${rendererLoad} rendererDom=${rendererDom} ipcHandshake=${ipcHandshake}`
@@ -98,6 +147,9 @@ async function smokeLaunch() {
       }
 
       if (strict && (!passed || Number(code) !== 0)) {
+        if (!keepUserData) {
+          cleanupDir(isolatedUserData);
+        }
         reject(
           new Error(
             `Strict smoke launch failed. exit=${code} passed=${passed} error=${report.error || "none"}`
@@ -109,6 +161,9 @@ async function smokeLaunch() {
       console.log(
         `Packaged smoke report validated. exit=${code} passed=${passed} uptimeMs=${Number(report.uptimeMs) || 0}`
       );
+      if (!keepUserData) {
+        cleanupDir(isolatedUserData);
+      }
       resolve();
     });
 
@@ -116,6 +171,9 @@ async function smokeLaunch() {
       if (finished) return;
       finished = true;
       clearTimeout(timeout);
+      if (!keepUserData) {
+        cleanupDir(isolatedUserData);
+      }
       reject(err);
     });
   });

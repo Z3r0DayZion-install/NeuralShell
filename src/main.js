@@ -49,6 +49,17 @@ let mainWindow = null;
 let bridgeHealthTimer = null;
 let smokeFinalized = false;
 
+if (process.env.NEURAL_USER_DATA_DIR) {
+  try {
+    const overrideDir = path.resolve(process.env.NEURAL_USER_DATA_DIR);
+    fs.mkdirSync(overrideDir, { recursive: true });
+    app.setPath("userData", overrideDir);
+    console.log(`[BOOT] Using overridden userData path: ${overrideDir}`);
+  } catch (err) {
+    console.warn(`[BOOT] Failed to apply NEURAL_USER_DATA_DIR override: ${err.message || err}`);
+  }
+}
+
 const SMOKE_MODE =
   process.argv.includes("--smoke-mode") ||
   process.env.NEURAL_SMOKE_MODE === "1";

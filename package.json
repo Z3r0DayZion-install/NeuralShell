@@ -14,7 +14,7 @@
     "hooks:install": "node scripts/install-hooks.js",
     "gate:prepush": "node scripts/prepush-gate.js",
     "determinism:test": "node scripts/determinism_test.js",
-    "smoke:packaged:strict": "node tear/smoke-packaged.js --strict-launch --timeout-ms=25000",
+    "smoke:packaged:strict": "node tear/smoke-packaged.js --strict-launch --isolated-user-data --timeout-ms=25000",
     "diagnose:packaged": "node tear/diagnose-packaged-launch.js --require-uptime-ms=4500",
     "release:worktree": "node scripts/verify-clean-worktree.js",
     "release:worktree:strict": "node scripts/verify-clean-worktree.js --strict",
@@ -42,7 +42,9 @@
     "verify:all": "npm test && npm run build",
     "icons:generate": "node tear/generate-icons.js",
     "build": "electron-builder",
-    "dist": "electron-builder --publish never"
+    "dist": "electron-builder --publish never",
+    "lint": "eslint src/ scripts/ tear/ tests/",
+    "lint:fix": "eslint src/ scripts/ tear/ tests/ --fix"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",
@@ -53,9 +55,12 @@
   "devDependencies": {
     "@babel/parser": "^7.29.0",
     "@babel/traverse": "^7.29.0",
+    "@eslint/js": "^9.39.3",
     "ajv": "^6.14.0",
     "electron": "^33.2.0",
     "electron-builder": "^26.7.0",
+    "eslint": "^9.39.3",
+    "eslint-plugin-security": "^4.0.0",
     "icon-gen": "^5.0.0",
     "pngjs": "^7.0.0"
   },

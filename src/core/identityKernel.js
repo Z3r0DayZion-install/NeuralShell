@@ -13,7 +13,9 @@ function getIdentityPath() {
     if (app && typeof app.getPath === "function") {
       return path.join(app.getPath("userData"), "identity.omega");
     }
-  } catch {}
+  } catch {
+    // Electron may be unavailable in tests and CLI scripts.
+  }
   return path.join(process.cwd(), "identity.omega");
 }
 

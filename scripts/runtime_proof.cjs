@@ -1191,6 +1191,7 @@ async function run() {
     }
   };
 
+  let postRunValidationError = null;
   try {
     console.log(`[runtime-proof] MIN_UPTIME_DELTA=${MIN_UPTIME_DELTA} (CI=${process.env.CI === 'true' ? 'true' : 'false'})`);
     console.log('[runtime-proof] normal-mode');
@@ -1234,15 +1235,19 @@ async function run() {
       entries: [{ label: 'production-server.js', path: SERVER_ENTRY }]
     });
     buildAndWriteManifest({ artifactDir, runTagBase });
-    if (durationMs > 30000) {
-      throw new Error(`Timing budget exceeded: ${durationMs}ms > 30000ms`);
+    if (durationMs > 30000 && !postRunValidationError) {
+      postRunValidationError = new Error(`Timing budget exceeded: ${durationMs}ms > 30000ms`);
     }
-    if (!fs.existsSync(STATE_DIR)) {
-      throw new Error('[runtime-proof] cold start validation failed: state dir missing after run');
+    if (!fs.existsSync(STATE_DIR) && !postRunValidationError) {
+      postRunValidationError = new Error('[runtime-proof] cold start validation failed: state dir missing after run');
     }
-    if (!fs.existsSync(path.join(STATE_DIR, 'proofs'))) {
-      throw new Error('[runtime-proof] cold start validation failed: state/proofs missing after run');
+    if (!fs.existsSync(path.join(STATE_DIR, 'proofs')) && !postRunValidationError) {
+      postRunValidationError = new Error('[runtime-proof] cold start validation failed: state/proofs missing after run');
     }
+  }
+
+  if (postRunValidationError) {
+    throw postRunValidationError;
   }
 
   if (summary.normal.ok && summary.dry.ok) {

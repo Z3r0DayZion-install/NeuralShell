@@ -23,7 +23,11 @@ async function exportProof() {
 
   // 2. Capture Git & Lockfile Context
   let commitHash = "unknown";
-  try { commitHash = execSync('git rev-parse HEAD').toString().trim(); } catch {}
+  try {
+    commitHash = execSync('git rev-parse HEAD').toString().trim();
+  } catch {
+    // Keep commitHash as "unknown" when git metadata is unavailable.
+  }
   
   const lockfileHash = crypto.createHash('sha256')
     .update(fs.readFileSync('package-lock.json'))
@@ -67,7 +71,11 @@ async function exportProof() {
   const latestDir = path.join(process.cwd(), 'artifacts', 'var_proof', 'latest');
   if (fs.existsSync(latestDir)) {
     // Windows symlink fallback
-    try { fs.rmSync(latestDir, { recursive: true, force: true }); } catch {}
+    try {
+      fs.rmSync(latestDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup issues; mkdir+write below will still refresh latest output.
+    }
   }
   fs.mkdirSync(latestDir, { recursive: true });
   fs.writeFileSync(path.join(latestDir, 'manifest.json'), JSON.stringify(manifest, null, 2));

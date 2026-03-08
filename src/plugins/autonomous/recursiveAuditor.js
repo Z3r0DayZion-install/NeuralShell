@@ -16,7 +16,6 @@ module.exports = {
     }
 
     async function loadTrustIndex() {
-      const appPath = await kernel.request(kernel.CAP_FS, "getAppPath");
       // Use relative path from AppPath to get to governance directory
       const ledgerPath = "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\governance\\THREAT_LEDGER.jsonl"; 
       
@@ -31,7 +30,9 @@ module.exports = {
           if (entry.type === "FILE_TRUST_INDEX") {
             trustMap.set(entry.file, entry.hash);
           }
-        } catch (err) { }
+        } catch (err) {
+          // Ignore malformed ledger lines and continue parsing.
+        }
       }
       return trustMap;
     }

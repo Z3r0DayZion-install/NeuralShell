@@ -53,7 +53,7 @@ function main() {
   verifyBenchmarkReport();
   if (strictPackaged) {
     try {
-      run("node tear/smoke-packaged.js --strict-launch --timeout-ms=25000");
+      run("node tear/smoke-packaged.js --strict-launch --isolated-user-data --timeout-ms=25000");
     } catch (err) {
       console.warn("\nStrict packaged smoke failed; running diagnostics...");
       try {

@@ -15,6 +15,7 @@ function main() {
   }
 
   run("npm run release:worktree");
+  run("npm run lint");
 
   if (process.env.NEURAL_PREPUSH_FAST === "1") {
     console.log("[pre-push] Fast mode enabled (NEURAL_PREPUSH_FAST=1). Skipping npm test.");
