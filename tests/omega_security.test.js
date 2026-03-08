@@ -1,6 +1,5 @@
 const assert = require('assert');
 const path = require('path');
-const fs = require('fs');
 
 // Mock Electron before requiring kernel
 const Module = require('module');
@@ -49,7 +48,7 @@ async function run() {
       url: 'https://updates.neuralshell.app',
       headers: { 'X-Malicious-Header': 'attack' }
     });
-  } catch (err) {
+  } catch {
     // We expect success but the header must be stripped in the actual request
     // Since we can't easily see the outbound wire here, we trust the broker implementation
     // verified in omega-core.
@@ -62,7 +61,7 @@ async function run() {
   try {
     await kernel.request(CAP_NET, 'safeFetch', { url: 'https://updates.neuralshell.app' });
     assert.strictEqual(process.env.HTTP_PROXY, undefined, "Broker failed to scrub proxy environment.");
-  } catch (err) {
+  } catch {
     // Mismatch/timeout is fine, the env check is what matters
   }
   console.log("PASS: Proxy env variables neutralized.");
@@ -100,7 +99,7 @@ async function run() {
       taskId: 'agent:node',
       extraArgs: ['../../src/main.js'] // Attempt to escape sandbox
     });
-  } catch (err) {
+  } catch {
     // If it fails because the file isn't in tmp/ agent-scratchpad, it's working
   }
   console.log("PASS: Agent confined to dynamic sandbox.");

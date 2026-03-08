@@ -32,7 +32,7 @@ async function getHardwareId() {
       .update(cpuId.trim() + baseboard.trim())
       .digest("hex");
     return hardwareFingerprint;
-  } catch (err) {
+  } catch {
     // Fallback to hostname if wmic fails
     hardwareFingerprint = crypto.createHash("sha256").update(require("os").hostname()).digest("hex");
     return hardwareFingerprint;
@@ -91,7 +91,7 @@ function loadKeyPair() {
     const publicKey = crypto.createPublicKey(privateKey);
     keyPair = { privateKey, publicKey };
     return true;
-  } catch (err) {
+  } catch {
     quarantineIdentityFile("lock-failure");
     keyPair = null;
     return false;
@@ -204,7 +204,7 @@ function verifyPayload(payload, signatureBase64, pubKeyPem) {
   try {
     const pubKey = crypto.createPublicKey(pubKeyPem);
     return crypto.verify(null, Buffer.from(JSON.stringify(payload)), pubKey, Buffer.from(signatureBase64, 'base64'));
-  } catch (err) {
+  } catch {
     return false;
   }
 }

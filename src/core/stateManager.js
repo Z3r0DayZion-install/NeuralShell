@@ -47,7 +47,7 @@ function decrypt(text) {
     let decrypted = decipher.update(encryptedText, "hex", "utf8");
     decrypted += decipher.final("utf8");
     return decrypted;
-  } catch (err) {
+  } catch {
     throw new Error("HARDWARE_LOCK_FAILURE: Failed to decrypt state. Is this the original hardware?");
   }
 }
@@ -133,7 +133,7 @@ function load() {
   try {
     const decrypted = decrypt(raw);
     parsed = JSON.parse(decrypted);
-  } catch (err) {
+  } catch {
     // Attempt migration of raw JSON state files (legacy v1/v2)
     try {
       parsed = JSON.parse(raw);
@@ -141,7 +141,7 @@ function load() {
         // Version 3+ MUST be encrypted. If it's not, it's a security breach or corruption.
         throw new Error("SECURE_LOAD_FAILURE: Version 3 state must be hardware-locked (encrypted).");
       }
-    } catch (jsonErr) {
+    } catch {
       quarantineStateFile("hardware-lock-failure");
       state = defaultState();
       save();

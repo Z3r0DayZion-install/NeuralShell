@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { execSync } = require('child_process');
 
 const { deterministicStringify } = require('./_omega_utils');
 

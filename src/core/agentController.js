@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const { kernel, CAP_FS, CAP_PROC } = require("../kernel");
+const { kernel, CAP_PROC } = require("../kernel");
 
 /**
  * NeuralShell Agent Controller — Senior Grade Engineering Lifecycle

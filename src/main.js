@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const intentFirewall = require("./security/intentFirewall");
-const { kernel, CAP_FS, CAP_NET, CAP_PROC, CAP_CRYPTO } = require("./kernel");
+const { kernel, CAP_NET } = require("./kernel");
 
 const { verifyIntegrity } = require("./main/integrity/verify");
 const { createRecoveryWindow } = require("./main/recovery/recoveryWindow");
@@ -43,7 +43,7 @@ let xpManager;
 let ritualManager;
 let historyLoader;
 let secretVault;
-let agentController;
+let _agentController;
 
 let mainWindow = null;
 let bridgeHealthTimer = null;
@@ -629,7 +629,7 @@ app.whenReady().then(async () => {
   historyLoader = require("./core/historyLoader");
   secretVault = require("./core/secretVault");
   const AgentController = require("./core/agentController");
-  agentController = new AgentController({ llmService, sessionManager });
+  _agentController = new AgentController({ llmService, sessionManager });
   auditChain = new AuditChain(
     path.join(app.getPath("userData"), "audit-chain.jsonl")
   );

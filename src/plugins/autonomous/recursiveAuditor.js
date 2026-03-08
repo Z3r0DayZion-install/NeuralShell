@@ -30,7 +30,7 @@ module.exports = {
           if (entry.type === "FILE_TRUST_INDEX") {
             trustMap.set(entry.file, entry.hash);
           }
-        } catch (err) {
+        } catch {
           // Ignore malformed ledger lines and continue parsing.
         }
       }

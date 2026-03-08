@@ -43,7 +43,7 @@
     "icons:generate": "node tear/generate-icons.js",
     "build": "electron-builder",
     "dist": "electron-builder --publish never",
-    "lint": "eslint src/ scripts/ tear/ tests/",
+    "lint": "eslint src/ scripts/ tear/ tests/ --max-warnings=0",
     "lint:fix": "eslint src/ scripts/ tear/ tests/ --fix"
   },
   "dependencies": {

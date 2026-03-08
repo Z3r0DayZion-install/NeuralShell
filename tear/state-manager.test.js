@@ -13,7 +13,7 @@ function withMockedElectron(userDataPath, fn) {
     if (request === "electron") {
       return {
         app: {
-          getPath(name) { return userDataPath; },
+          getPath(_name) { return userDataPath; },
           getAppPath() { return userDataPath; }
         },
         safeStorage: {

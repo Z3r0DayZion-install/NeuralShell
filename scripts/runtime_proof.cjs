@@ -66,7 +66,7 @@ function verifyPreviousManifestOrThrow() {
   }
 }
 
-function teeStdIO({ latestPath, stampedPath }) {
+function _teeStdIO({ latestPath, stampedPath }) {
   fs.mkdirSync(STATE_DIR, { recursive: true });
   fs.writeFileSync(latestPath, '', 'utf8');
   fs.writeFileSync(stampedPath, '', 'utf8');
@@ -175,7 +175,7 @@ function parseMetricValue(text, metricName) {
   return null;
 }
 
-function writeRuntimeProofConfig({ outDir, dryRun, upstreamPort, runTag, mode, preferredPort }) {
+function writeRuntimeProofConfig({ outDir, dryRun, upstreamPort, mode, preferredPort }) {
   ensureDir(outDir);
   const configPath = path.join(outDir, `config-${mode}-${dryRun ? 'dry' : 'normal'}.json`);
 
@@ -629,7 +629,7 @@ async function reserveCollisionPort() {
   };
 }
 
-function purgeStateDirIfStandalone({ runTagBase }) {
+function purgeStateDirIfStandalone({ runTagBase: _runTagBase }) {
   const deletedPaths = [];
   const targets = [];
   const errors = [];

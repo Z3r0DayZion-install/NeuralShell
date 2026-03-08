@@ -1,9 +1,5 @@
-const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
-const { hashContent, deterministicStringify, EXPECTED_ROOT_FP, EXPECTED_GOV_FP, getFingerprint } = require('./_omega_utils');
-const { computeBuildHash } = require('./compute_build_hash');
-const { generateSBOM } = require('./generate-sbom');
+const { EXPECTED_ROOT_FP, EXPECTED_GOV_FP, getFingerprint } = require('./_omega_utils');
 
 /**
  * OMEGA SINGLE ENTRY VERIFIER
