@@ -28,8 +28,11 @@ jobs:
       - name: Generate icons
         run: npm run icons:generate
 
-      - name: Run tests
-        run: npm test
+      - name: Run flaky test gate
+        run: npm run test:flaky
+
+      - name: Run coverage gate
+        run: npm run coverage:check
 
   build_windows:
     runs-on: windows-latest
@@ -56,8 +59,8 @@ jobs:
       - name: Build installer
         run: npm run build
 
-      - name: Packaged smoke test (strict)
-        run: npm run smoke:packaged:strict
+      - name: Run strict release gate
+        run: npm run release:gate:strict
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

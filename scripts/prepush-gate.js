@@ -16,13 +16,8 @@ function main() {
 
   run("npm run release:worktree");
   run("npm run lint");
-
-  if (process.env.NEURAL_PREPUSH_FAST === "1") {
-    console.log("[pre-push] Fast mode enabled (NEURAL_PREPUSH_FAST=1). Skipping npm test.");
-    return;
-  }
-
-  run("npm test");
+  run("npm run test:flaky");
+  run("npm run coverage:check");
   console.log("\n[pre-push] Gate passed.");
 }
 

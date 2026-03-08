@@ -17,6 +17,7 @@ state/
 *.log
 .snapshots/
 tmp/userData/
+coverage/
 
 # OS
 .DS_Store

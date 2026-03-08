@@ -31,5 +31,8 @@ jobs:
       - name: Run lint
         run: npm run lint
 
-      - name: Run full test suite
-        run: npm test
+      - name: Run flaky test gate
+        run: npm run test:flaky
+
+      - name: Run coverage gate
+        run: npm run coverage:check

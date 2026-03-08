@@ -56,18 +56,20 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
+      - name: Run flaky test gate
+        run: npm run test:flaky
+
+      - name: Run coverage gate
+        run: npm run coverage:check
 
       - name: Build installer
         run: npm run build
 
-      - name: Packaged smoke test (strict)
-        run: npm run smoke:packaged:strict
+      - name: Run strict release gate
+        run: npm run release:gate:strict
 
       - name: Generate release metadata
         run: |
-          npm run benchmark:autonomy
           npm run release:manifest
           npm run release:status
           npm run release:checksums
