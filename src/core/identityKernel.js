@@ -38,6 +38,12 @@ async function getHardwareId() {
 }
 
 function getHardwareEncryptionKey() {
+  if (!hardwareFingerprint) {
+    hardwareFingerprint = crypto
+      .createHash("sha256")
+      .update(require("os").hostname())
+      .digest("hex");
+  }
   return crypto.createHash("sha256").update(hardwareFingerprint).digest();
 }
 
@@ -167,6 +173,12 @@ function getPublicKeyPem() {
 }
 
 function getFingerprint() {
+  if (!hardwareFingerprint) {
+    hardwareFingerprint = crypto
+      .createHash("sha256")
+      .update(require("os").hostname())
+      .digest("hex");
+  }
   const keyFingerprint = fingerprintFromPem(publicKeyPem());
   // Hardware Binding: Node ID is a hash of the Cryptographic Key + the Physical Silicon ID
   return crypto.createHash("sha256")
