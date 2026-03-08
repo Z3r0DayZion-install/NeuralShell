@@ -50,6 +50,8 @@
     "verify:ship": "npm run icons:generate && npm run release:worktree:strict && npm run lint && npm run test:flaky && npm run coverage:check && npm run security:pass:local && npm run build && npm run release:gate:strict && npm run canary:gate && npm run release:manifest && npm run release:sign && npm run release:verify:signature && npm run release:status && npm run release:checksums && npm run release:verify:fresh:strict && npm run kpi:operator && npm run slo:gate && npm run perf:gate",
     "verify:strict": "npm run verify:ship && npm run benchmark:regression && npm run redteam:nightly && npm run replay:autonomy",
     "verify:all": "npm run lint && npm run test:flaky && npm run coverage:check && npm run build",
+    "maintain:verify": "node scripts/maintenance-clean-verify.js",
+    "maintain:clean": "node scripts/maintenance-clean-verify.js --skip-verify",
     "icons:generate": "node tear/generate-icons.js",
     "build": "electron-builder",
     "dist": "electron-builder --publish never",
