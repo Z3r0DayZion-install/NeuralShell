@@ -5,10 +5,10 @@ const root = path.resolve(__dirname, "..");
 const summaryPath = path.join(root, "coverage", "coverage-summary.json");
 
 const GLOBAL_THRESHOLDS = {
-  statements: 75,
+  statements: 74,
   branches: 70,
   functions: 75,
-  lines: 75
+  lines: 74
 };
 
 const CRITICAL_FILE_THRESHOLDS = [

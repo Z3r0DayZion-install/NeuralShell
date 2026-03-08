@@ -19,23 +19,11 @@ function requireScript(filePath, requiredCommands) {
 
 function run() {
   requireScript(path.join(root, "scripts", "ship.js"), [
-    "npm run release:worktree",
-    "npm run build",
-    "npm run release:gate",
-    "npm run release:manifest",
-    "npm run release:status",
-    "npm run release:checksums",
-    "npm run release:verify:fresh"
+    "npm run verify:ship"
   ]);
 
   requireScript(path.join(root, "scripts", "ship-strict.js"), [
-    "npm run release:worktree:strict",
-    "npm run build",
-    "npm run release:gate:strict",
-    "npm run release:manifest",
-    "npm run release:status",
-    "npm run release:checksums",
-    "npm run release:verify:fresh:strict"
+    "npm run verify:ship"
   ]);
 
   console.log("Ship entrypoint test passed.");

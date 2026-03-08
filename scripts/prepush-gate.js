@@ -18,6 +18,7 @@ function main() {
   run("npm run lint");
   run("npm run test:flaky");
   run("npm run coverage:check");
+  run("npm run security:pass:local");
   console.log("\n[pre-push] Gate passed.");
 }
 

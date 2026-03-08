@@ -53,27 +53,8 @@ jobs:
       - name: Generate icons
         run: npm run icons:generate
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Run flaky test gate
-        run: npm run test:flaky
-
-      - name: Run coverage gate
-        run: npm run coverage:check
-
-      - name: Build installer
-        run: npm run build
-
-      - name: Run strict release gate
-        run: npm run release:gate:strict
-
-      - name: Generate release metadata
-        run: |
-          npm run release:manifest
-          npm run release:status
-          npm run release:checksums
-          npm run release:verify:fresh:strict
+      - name: Verify ship readiness
+        run: npm run verify:ship
 
       - name: Compose release notes and changelog snapshot
         run: npm run release:notes -- --tag=${{ github.ref_name }}
@@ -87,10 +68,16 @@ jobs:
             dist/NeuralShell Setup *.exe.blockmap
             dist/OMEGA.yml
             release/manifest.json
+            release/manifest.sig
+            release/manifest.pub
+            release/signature-verification.json
             release/status.json
             release/provenance.json
             release/autonomy-benchmark.json
             release/packaged-smoke-report.json
+            release/security-pass.json
+            release/canary-gate.json
+            release/performance-gate.json
             release/checksums.txt
             release/checksums.json
             CHANGELOG.md

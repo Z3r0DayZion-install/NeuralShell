@@ -55,10 +55,27 @@ function resolveTargets(rootDir) {
     `${installer}.blockmap`,
     readUpdateMetadataPath(rootDir),
     "release/manifest.json",
+    "release/manifest.sig",
+    "release/manifest.pub",
+    "release/signature-verification.json",
     "release/status.json",
     "release/provenance.json",
     "release/autonomy-benchmark.json"
   ];
+
+  const optionalTargets = [
+    "release/security-pass.json",
+    "release/canary-gate.json",
+    "release/performance-gate.json",
+    "release/operator-kpi.json",
+    "release/slo-gate.json"
+  ];
+  for (const relPath of optionalTargets) {
+    const absPath = path.join(rootDir, relPath);
+    if (fs.existsSync(absPath) && fs.statSync(absPath).size > 0) {
+      targets.push(relPath);
+    }
+  }
 
   for (const relPath of targets) {
     const absPath = path.join(rootDir, relPath);

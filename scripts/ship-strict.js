@@ -10,13 +10,7 @@ function run(stage) {
 
 function main() {
   const stages = [
-    "npm run release:worktree:strict",
-    "npm run build",
-    "npm run release:gate:strict",
-    "npm run release:manifest",
-    "npm run release:status",
-    "npm run release:checksums",
-    "npm run release:verify:fresh:strict"
+    "npm run verify:ship"
   ];
 
   for (const stage of stages) {

@@ -85,6 +85,8 @@ jobs:
       - name: Build release metadata and verify freshness
         run: |
           npm run release:manifest
+          npm run release:sign
+          npm run release:verify:signature
           npm run release:status
           npm run release:checksums
           npm run release:verify:fresh

@@ -69,6 +69,7 @@ function collectProvenance() {
 function main() {
   const manifest = readJson("release/manifest.json");
   const benchmark = readJson("release/autonomy-benchmark.json");
+  const signatureVerification = readJson("release/signature-verification.json");
   const diagnose = readJson("release/packaged-launch-diagnostic.json");
   const installerPath = findInstallerExe();
 
@@ -76,7 +77,9 @@ function main() {
     installerExe: installerPath ? existsNonEmpty(installerPath) : false,
     unpackedExe: existsNonEmpty("dist/win-unpacked/NeuralShell.exe"),
     appAsar: existsNonEmpty("dist/win-unpacked/resources/app.asar"),
-    updateYml: existsNonEmpty("dist/win-unpacked/resources/app-update.yml")
+    updateYml: existsNonEmpty("dist/win-unpacked/resources/app-update.yml"),
+    manifestSig: existsNonEmpty("release/manifest.sig"),
+    manifestPub: existsNonEmpty("release/manifest.pub")
   };
 
   const profile = artifacts.installerExe ? "installer+unpacked" : "unpacked-only";
@@ -89,6 +92,9 @@ function main() {
       : null,
     benchmark: benchmark
       ? { percent: benchmark.percent, verdict: benchmark.verdict, generatedAt: benchmark.generatedAt }
+      : null,
+    signature: signatureVerification
+      ? { verified: Boolean(signatureVerification.verified), generatedAt: signatureVerification.generatedAt || null }
       : null,
     provenance: collectProvenance(),
     packagedDiagnostics: diagnose

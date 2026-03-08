@@ -15,6 +15,8 @@ function run() {
   const src = fs.readFileSync(target, "utf8");
   assert(src.includes("provenance.json"), "release-status.js missing provenance output.");
   assert(src.includes("Release provenance written"), "release-status.js missing provenance log output.");
+  assert(src.includes("manifestSig"), "release-status.js missing manifest signature artifact checks.");
+  assert(src.includes("signature-verification.json"), "release-status.js missing signature verification ingestion.");
   console.log("Release status contract test passed.");
 }
 

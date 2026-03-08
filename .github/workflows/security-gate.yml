@@ -79,3 +79,68 @@ jobs:
         uses: github/codeql-action/analyze@3b054500189c7b3ca9be7cd4f035ca58c00776cd # v3
         with:
           upload: false
+
+  security_local:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20.x"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --ignore-scripts
+
+      - name: Run local security pass
+        run: npm run security:pass:local
+
+  security_pass:
+    if: always()
+    needs:
+      - dependency_review
+      - npm_audit
+      - secret_scan
+      - codeql
+      - security_local
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consolidate security gate results
+        run: |
+          set -euo pipefail
+          dep_review="${{ needs.dependency_review.result }}"
+          npm_audit="${{ needs.npm_audit.result }}"
+          secret_scan="${{ needs.secret_scan.result }}"
+          codeql="${{ needs.codeql.result }}"
+          security_local="${{ needs.security_local.result }}"
+
+          echo "dependency_review=$dep_review"
+          echo "npm_audit=$npm_audit"
+          echo "secret_scan=$secret_scan"
+          echo "codeql=$codeql"
+          echo "security_local=$security_local"
+
+          failed=0
+          if [[ "$dep_review" != "success" && "$dep_review" != "skipped" ]]; then
+            echo "dependency_review must be success|skipped."
+            failed=1
+          fi
+          for job in npm_audit secret_scan codeql security_local; do
+            result="${!job}"
+            if [[ "$result" != "success" ]]; then
+              echo "$job must be success."
+              failed=1
+            fi
+          done
+
+          if [[ $failed -ne 0 ]]; then
+            echo "Security pass failed."
+            exit 1
+          fi
+
+          echo "Security pass consolidated status: PASS"
