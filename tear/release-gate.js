@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 const root = path.resolve(__dirname, "..");
+const releaseGateReportPath = path.join(root, "release", "release-gate.json");
 
 function run(cmd) {
   console.log(`\n> ${cmd}`);
@@ -45,16 +46,33 @@ function verifyOfflineFirstGuardrails() {
   assert(validatorJs.includes("allowRemoteBridge"), "Missing allowRemoteBridge validator enforcement.");
 }
 
+function writeGateReport(report) {
+  fs.mkdirSync(path.dirname(releaseGateReportPath), { recursive: true });
+  fs.writeFileSync(releaseGateReportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  console.log(`Release gate report written: ${releaseGateReportPath}`);
+}
+
 function main() {
   const strictPackaged = process.argv.includes("--strict-packaged");
   fs.mkdirSync(path.join(root, "release"), { recursive: true });
+  let strictPackagedPass = null;
+
   run("npm test");
   run("npm run benchmark:autonomy");
   verifyBenchmarkReport();
   if (strictPackaged) {
     try {
       run("node tear/smoke-packaged.js --strict-launch --isolated-user-data --timeout-ms=25000");
+      strictPackagedPass = true;
     } catch (err) {
+      strictPackagedPass = false;
+      writeGateReport({
+        generatedAt: new Date().toISOString(),
+        strictPackaged,
+        strictPackagedPass,
+        passed: false,
+        failureStage: "smoke-packaged:strict"
+      });
       console.warn("\nStrict packaged smoke failed; running diagnostics...");
       try {
         run("npm run diagnose:packaged");
@@ -68,6 +86,12 @@ function main() {
   }
   verifyArtifacts();
   verifyOfflineFirstGuardrails();
+  writeGateReport({
+    generatedAt: new Date().toISOString(),
+    strictPackaged,
+    strictPackagedPass,
+    passed: true
+  });
   console.log("\nRelease gate passed.");
 }
 

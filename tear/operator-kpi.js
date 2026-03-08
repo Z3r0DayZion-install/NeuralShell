@@ -5,6 +5,7 @@ const root = path.resolve(__dirname, "..");
 const releaseDir = path.join(root, "release");
 const statusPath = path.join(releaseDir, "status.json");
 const benchmarkPath = path.join(releaseDir, "autonomy-benchmark.json");
+const releaseGatePath = path.join(releaseDir, "release-gate.json");
 const outputPath = path.join(releaseDir, "operator-kpi.json");
 
 function assert(condition, message) {
@@ -23,9 +24,13 @@ function main() {
 
   const status = readJson(statusPath);
   const benchmark = readJson(benchmarkPath);
+  const releaseGate = fs.existsSync(releaseGatePath) ? readJson(releaseGatePath) : null;
 
   const autonomyPercent = Number(benchmark.percent);
-  const strictPackagedPass = Boolean(status.packagedDiagnostics && status.packagedDiagnostics.strictPass);
+  const strictPackagedPass = Boolean(
+    (status.packagedDiagnostics && status.packagedDiagnostics.strictPass) ||
+      (releaseGate && releaseGate.strictPackagedPass)
+  );
   const artifactChecks = status.artifacts || {};
   const artifactsHealthy = Object.values(artifactChecks).every(Boolean);
 
@@ -45,7 +50,8 @@ function main() {
     kpis: {
       autonomyPercent,
       strictPackagedPass,
-      artifactsHealthy
+      artifactsHealthy,
+      strictPackagedSource: status.packagedDiagnostics ? "packagedDiagnostics" : "releaseGate"
     },
     thresholds
   };
