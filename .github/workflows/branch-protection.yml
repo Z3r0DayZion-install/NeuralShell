@@ -1,0 +1,57 @@
+name: Branch Protection
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "verify | enforce | dry-run"
+        required: true
+        default: "verify"
+        type: choice
+        options:
+          - verify
+          - enforce
+          - dry-run
+      branch:
+        description: "Branch to target"
+        required: true
+        default: "master"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  branch_protection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20.x"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --ignore-scripts
+
+      - name: Execute branch protection action
+        env:
+          GH_ADMIN_TOKEN: ${{ secrets.BRANCH_PROTECTION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          mode="${{ github.event.inputs.mode }}"
+          branch="${{ github.event.inputs.branch }}"
+          if [ "$mode" = "verify" ]; then
+            node scripts/verify-branch-protection.js --branch="$branch"
+          elif [ "$mode" = "enforce" ]; then
+            node scripts/enforce-branch-protection.js --branch="$branch"
+          elif [ "$mode" = "dry-run" ]; then
+            node scripts/enforce-branch-protection.js --branch="$branch" --dry-run
+          else
+            echo "Unsupported mode: $mode"
+            exit 1
+          fi

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/security-abuse.test.js && node tear/cleanup-guard.test.js && node tear/release-manifest.test.js && node tear/release-checksums.test.js && node tear/ship-entrypoints.test.js && node tear/release-freshness.test.js && node tear/release-status-contract.test.js && node tear/worktree-cleanliness.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js",
+    "test": "node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/security-abuse.test.js && node tear/branch-protection-policy.test.js && node tear/cleanup-guard.test.js && node tear/release-manifest.test.js && node tear/release-checksums.test.js && node tear/ship-entrypoints.test.js && node tear/release-freshness.test.js && node tear/release-status-contract.test.js && node tear/worktree-cleanliness.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js",
     "hooks:install": "node scripts/install-hooks.js",
     "gate:prepush": "node scripts/prepush-gate.js",
     "determinism:test": "node scripts/determinism_test.js",
@@ -41,6 +41,9 @@
     "attest:release": "node scripts/generate-attestation.js",
     "security:pass": "node scripts/security-pass.js",
     "security:pass:local": "node scripts/security-pass.js --skip-audit",
+    "governance:branch:verify": "node scripts/verify-branch-protection.js",
+    "governance:branch:enforce": "node scripts/enforce-branch-protection.js",
+    "governance:branch:enforce:dry": "node scripts/enforce-branch-protection.js --dry-run",
     "perf:gate": "node scripts/performance-gate.js",
     "ship": "node scripts/ship.js",
     "ship:strict": "node scripts/ship-strict.js",

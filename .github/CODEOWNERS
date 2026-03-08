@@ -1,0 +1,7 @@
+* @Z3r0DayZion-install
+
+/.github/workflows/* @Z3r0DayZion-install
+/governance/* @Z3r0DayZion-install
+/scripts/* @Z3r0DayZion-install
+/src/security/* @Z3r0DayZion-install
+/src/kernel/* @Z3r0DayZion-install
