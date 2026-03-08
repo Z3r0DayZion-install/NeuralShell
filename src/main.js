@@ -43,6 +43,7 @@ let xpManager;
 let ritualManager;
 let historyLoader;
 let secretVault;
+let agentController;
 
 let mainWindow = null;
 let bridgeHealthTimer = null;
@@ -321,6 +322,55 @@ function countChatTokens(messages) {
     total += countWords(message && message.content);
   }
   return total;
+}
+
+function readKnowledgeEntries(limit = 200) {
+  const knowledgePath = path.join(process.cwd(), "tmp", "agent-knowledge.jsonl");
+  if (!fs.existsSync(knowledgePath)) {
+    return [];
+  }
+
+  const max = Math.max(1, Number(limit) || 200);
+  const lines = fs
+    .readFileSync(knowledgePath, "utf8")
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .slice(-max);
+
+  return lines
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function buildCapabilityGraph(entries) {
+  const buckets = new Map();
+  for (const row of entries) {
+    if (!row || row.type !== "CAPABILITY_ACCESS") {
+      continue;
+    }
+    const cap = String(row.cap || "UNKNOWN");
+    const target = String(row.target || "");
+    const current = buckets.get(cap) || { count: 0, targets: new Set() };
+    current.count += 1;
+    if (target) {
+      current.targets.add(target);
+    }
+    buckets.set(cap, current);
+  }
+
+  return Array.from(buckets.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([cap, info]) => ({
+      capability: cap,
+      count: info.count,
+      targets: Array.from(info.targets).slice(0, 50)
+    }));
 }
 
 function persistConversation(chat) {
@@ -1118,6 +1168,15 @@ ipcMain.handle("log:clear", async () => {
 
 ipcMain.handle("log:export", async () => {
   return logger.exportText();
+});
+
+ipcMain.handle("log:tailKnowledge", async (_event, lines) => {
+  return readKnowledgeEntries(lines);
+});
+
+ipcMain.handle("log:getCapabilityGraph", async () => {
+  const entries = readKnowledgeEntries(5000);
+  return buildCapabilityGraph(entries);
 });
 
 // ---------------- CHAT LOG IPC ----------------

@@ -9,6 +9,7 @@ const { execSync } = require("child_process");
  */
 
 const root = path.resolve(__dirname, "..");
+const manifestRelPath = "governance/source_manifest.json";
 
 function sha256File(filePath) {
   const fileBuffer = fs.readFileSync(filePath);
@@ -21,7 +22,15 @@ function run() {
   // Get tracked files from git to avoid node_modules, etc.
   const files = execSync("git ls-files", { cwd: root, encoding: "utf8" })
     .split("\n")
-    .filter(f => f && !f.startsWith("release/") && !f.startsWith("dist/") && !f.endsWith(".zip"));
+    .filter(
+      (f) =>
+        f &&
+        f !== manifestRelPath &&
+        !f.startsWith("release/") &&
+        !f.startsWith("dist/") &&
+        !f.endsWith(".zip")
+    )
+    .sort();
 
   const manifest = {
     generatedAt: new Date().toISOString(),
