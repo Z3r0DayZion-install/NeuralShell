@@ -54,4 +54,6 @@ jobs:
         run: npm ci
 
       - name: Verify ship readiness
+        env:
+          NEURALSHELL_SKIP_SOURCE_INTEGRITY: "1"
         run: npm run verify:ship

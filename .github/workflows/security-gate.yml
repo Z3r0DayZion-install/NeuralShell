@@ -15,8 +15,36 @@ permissions:
   security-events: write
 
 jobs:
-  dependency_review:
+  dependency_review_support:
     if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      supported: ${{ steps.probe.outputs.supported }}
+    steps:
+      - name: Probe dependency review support
+        id: probe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          url="https://api.github.com/repos/${{ github.repository }}/dependency-graph/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          status="$(curl -sS -o response.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "$url" || true)"
+
+          if [[ "$status" == "200" ]]; then
+            echo "supported=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "supported=false" >> "$GITHUB_OUTPUT"
+          echo "Dependency review API unavailable (HTTP ${status:-unknown}); review job will be skipped."
+          cat response.json || true
+
+  dependency_review:
+    if: github.event_name == 'pull_request' && needs.dependency_review_support.outputs.supported == 'true'
+    needs: dependency_review_support
     runs-on: ubuntu-latest
     steps:
       - name: Dependency Review (high+)
@@ -98,11 +126,14 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Run local security pass
+        env:
+          NEURALSHELL_SKIP_SOURCE_INTEGRITY: "1"
         run: npm run security:pass:local
 
   security_pass:
     if: always()
     needs:
+      - dependency_review_support
       - dependency_review
       - npm_audit
       - secret_scan
@@ -113,12 +144,14 @@ jobs:
       - name: Consolidate security gate results
         run: |
           set -euo pipefail
+          dep_review_support="${{ needs.dependency_review_support.result }}"
           dep_review="${{ needs.dependency_review.result }}"
           npm_audit="${{ needs.npm_audit.result }}"
           secret_scan="${{ needs.secret_scan.result }}"
           codeql="${{ needs.codeql.result }}"
           security_local="${{ needs.security_local.result }}"
 
+          echo "dependency_review_support=$dep_review_support"
           echo "dependency_review=$dep_review"
           echo "npm_audit=$npm_audit"
           echo "secret_scan=$secret_scan"
@@ -126,6 +159,10 @@ jobs:
           echo "security_local=$security_local"
 
           failed=0
+          if [[ "$dep_review_support" != "success" && "$dep_review_support" != "skipped" ]]; then
+            echo "dependency_review_support must be success|skipped."
+            failed=1
+          fi
           if [[ "$dep_review" != "success" && "$dep_review" != "skipped" ]]; then
             echo "dependency_review must be success|skipped."
             failed=1

@@ -38,7 +38,7 @@ function run() {
     required_linear_history: { enabled: true },
     allow_force_pushes: { enabled: false },
     allow_deletions: { enabled: false },
-    block_creations: { enabled: true }
+    block_creations: { enabled: Boolean(policy.block_creations) }
   };
 
   const passVerdict = evaluateProtection(mockActual, policy);
