@@ -1,45 +1,45 @@
 {
-  "ts": "2026-03-07T19:35:29.116Z",
+  "ts": "2026-03-07T21:21:22.719Z",
   "node": "v20.17.0",
   "platform": "win32",
-  "runTagBase": "2026-03-07T19-35-28-367Z",
+  "runTagBase": "2026-03-07T21-21-21-965Z",
   "algo": "sha256",
   "entries": [
     {
       "name": "runtime.server.log",
       "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\server.log",
       "exists": true,
-      "sha256": "bc1cdc0c0820be6cedcd9640b0333bb2aa2c37d13740e998a7173a2c287fd026"
+      "sha256": "c46e62e37654ca1874dbb7dde72f77f4900951154d3fe83e7ec6a0d541f90d20"
     },
     {
       "name": "runtime.stdout.log",
       "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\stdout.log",
       "exists": true,
-      "sha256": "8479e4879aef61dd47aea3c6c16ea4e89aaccbb5c6adfba15d708f5242fb686e"
+      "sha256": "8d676418b43047b554b404c69fe136ca0b1e0b9a26caa10c658f6528f29efa01"
     },
     {
       "name": "runtime.stderr.log",
       "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\stderr.log",
       "exists": true,
-      "sha256": "184e3616fb53c234ea6aaa62dd542a2fda4351a0553b293f13bfae0725b0ef42"
+      "sha256": "76a2c6ba7ca297df384eee48ea8e8312f41149abbe90143bd755e80a60b38dd8"
     },
     {
       "name": "runtime.metrics.txt",
       "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\metrics.txt",
       "exists": true,
-      "sha256": "349a22994a67e051a6dc410c268b1f8c02e3e8ba486ad3e0d6425da75f539874"
+      "sha256": "26a5fa163e218811ac19bfd2fe400a5b58828a57ca12c6f674b28fe21c76a513"
     },
     {
       "name": "runtime.config.json",
       "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\config.json",
       "exists": true,
-      "sha256": "70eb6f54ecf650e29f75646e1bb1486058057cf87a2baaafda2823e329a64016"
+      "sha256": "04462a347748134d8e1e19d481c94436d60575a25d666172288e8de14880127e"
     },
     {
       "name": "runtime.metadata.json",
       "path": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\proof\\latest\\runtime\\metadata.json",
       "exists": true,
-      "sha256": "856031ccd553672def48c1df8c3b4f322d0c5657ef3c1ae5b1d138157c07a2ed"
+      "sha256": "75f561b06c57528f63a739b6ebb1e848b760ba2b755fa697072d66fc138007dd"
     },
     {
       "name": "spawn.server.log",

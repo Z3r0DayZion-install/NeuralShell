@@ -33,6 +33,11 @@ async function run() {
   const signaturePath = path.join(__dirname, "../release/manifest.sig");
   const publicKeyPath = path.join(__dirname, "../release/manifest.pub");
 
+  const userDataDir = path.join(process.cwd(), "tmp", "userData");
+  if (!fs.existsSync(userDataDir)) {
+    fs.mkdirSync(userDataDir, { recursive: true });
+  }
+
   if (!fs.existsSync(manifestPath)) {
     throw new Error(`Manifest not found: ${manifestPath}`);
   }

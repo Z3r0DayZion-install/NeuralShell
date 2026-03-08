@@ -16,6 +16,7 @@ release/
 state/
 *.log
 .snapshots/
+tmp/userData/
 
 # OS
 .DS_Store
