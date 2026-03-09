@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T04:35:36.573Z",
-  "commit": "9b3488e6c170ef685bdf0be2041437f830a5e70d",
+  "generatedAt": "2026-03-09T04:47:10.217Z",
+  "commit": "cbcf3a08d170d1ffe74791e5a4fae365102e724d",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -386,10 +386,10 @@
     "src/plugins/autonomous/recursiveAuditor.js": "bad12ac70878769947ca3feb2de1389ea4c2e2ca1cc5a7d8bad584519f4a598d",
     "src/plugins/autonomous/sovereign-proxy.js": "ae031f9e3a0301630315efe0342901db7c0a1e3deac7ae2382d8e81aad9e3344",
     "src/plugins/autonomous/swarm-consensus.js": "60d898499a5930aeebcb3b15de78a7f61881cdba33f5f3fc1426a3f232009ba9",
-    "src/plugins/manifests/echo.json": "016116a336b72529942cd368df79b71145bbb24add803451448901648e9c81a5",
-    "src/plugins/manifests/recursiveAuditor.json": "6e6c8e7df36247461f126e3de412f02f54355c72876ca1c4c4fc499e06c628c3",
-    "src/plugins/manifests/sovereign-proxy.json": "c8430f9a78c98f44fc4af538aea07a8ccda8905c37f71518398f97fede800eb4",
-    "src/plugins/manifests/swarm-consensus.json": "b4a1f9f0e59b737b4e6c65494e9ec0eb1edbc8ef3c31b00e487fccd672fb338b",
+    "src/plugins/manifests/echo.json": "9e865cf9f32326bbd98c492eff13a9c56cd5fbc6fd87275066040caf34deabd5",
+    "src/plugins/manifests/recursiveAuditor.json": "cc5403eea87345746fb6dcb5d681db7e6d114289671d7a6d49f97ab80ac067d3",
+    "src/plugins/manifests/sovereign-proxy.json": "c1047bf534f4fcc406a017eaab082bffcf270e3f086071943b18867efa903b87",
+    "src/plugins/manifests/swarm-consensus.json": "16069b17dd912bd1de10eb83176f035ee9bbf2ff60fab6dc10d1b36da7623abc",
     "src/preload.js": "536e901825135e6d3a79a05fcd7ffb2a44669cc8b2fc164e874800c673a42645",
     "src/renderer.html": "9fbf2d50df5bdb190fdcde3d29e008a1ed759ed7db207e196d9cd5607ce939a7",
     "src/renderer.js": "99025b76798bd472d59169f27edcd4a4bc295b7bb8abb6e1f19ab7a008ed9b63",
