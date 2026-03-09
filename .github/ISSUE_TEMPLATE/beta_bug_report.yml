@@ -1,0 +1,99 @@
+name: Beta Bug Report
+description: Report a bug found while testing v1.2.1-OMEGA
+title: "[Beta Bug] <short title>"
+labels:
+  - beta
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for issues found during beta testing of `v1.2.1-OMEGA`.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: Pick the highest impact level.
+      options:
+        - P0 (critical: blocked install/launch, data loss, security compromise)
+        - P1 (high: major feature broken, no workaround)
+        - P2 (medium: partial break, workaround exists)
+        - P3 (low: minor friction or cosmetic)
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: Keep as v1.2.1-OMEGA unless testing another build.
+      value: v1.2.1-OMEGA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS version, device info, and AV/EDR if relevant.
+      placeholder: Windows 11 23H2, 32GB RAM, Defender
+    validations:
+      required: true
+  - type: input
+    id: checklist_step
+    attributes:
+      label: Checklist step number
+      description: Step from BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md
+      placeholder: "4"
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Short explanation of what failed and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: repro_steps
+    attributes:
+      label: Reproduction steps
+      description: Exact steps to reproduce.
+      placeholder: |
+        1. Open app
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected_result
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual_result
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: textarea
+    id: frequency
+    attributes:
+      label: Frequency
+      description: Repro rate and whether it is always/intermittent.
+      placeholder: 3/5 runs, intermittent
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshots, logs, error text, or recording links.
+    validations:
+      required: false
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: If any.
+    validations:
+      required: false
