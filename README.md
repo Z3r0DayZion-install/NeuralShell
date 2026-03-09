@@ -2,6 +2,13 @@
 
 NeuralShell is an Electron workstation with strict IPC validation, offline-first defaults, and release provenance gates.
 
+## Beta Program (Live)
+
+- Recruitment thread: [Call for Beta Testers](https://github.com/Z3r0DayZion-install/NeuralShell/issues/34)
+- Join via forms: [Issue Intake](https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose)
+- Tester checklist: [BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md](docs/pilots/BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md)
+- Control tower: [Beta Control Tower](https://github.com/Z3r0DayZion-install/NeuralShell/issues/32)
+
 ## Quick Start
 
 1. Install dependencies:
