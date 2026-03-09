@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T01:04:15.980Z",
-  "commit": "9c32566ed9783cd39638264dc5b4983bbffdc06d",
+  "generatedAt": "2026-03-09T01:11:13.933Z",
+  "commit": "844c544848dfc5a2d099787a17804f4482eaab2f",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -305,8 +305,8 @@
     "governance/OMEGA_RELEASE_LEDGER.md": "a70015f73d46069b12b5c2aceef105e147f73c181c82ac51789937c39a4a960d",
     "governance/THREAT_LEDGER.jsonl": "5ea48724895a4a30d6f2602c45983f35ae0672547f09afa0396910da2f008634",
     "governance/branch_protection_policy.json": "d7539f6305083a52324b839a366c1645ad98e48f25a4cededf30b8b3624e7ea5",
-    "package-lock.json": "57c4c7a80ef8a03c4dbc6fbecd130ec56e84be7b3fd9e7e38e4ad44ba41eaa30",
-    "package.json": "f20aa8dbb3c65e0a237379da0e74a3d32eb3b7d358a50c2bcbefa40eb5471236",
+    "package-lock.json": "7e1ae6319f9436d58d55d73eb0176c20d4d6761b5839b37ea13f59f0cc53aa6e",
+    "package.json": "26edb812b5dc2c4e3451e2569e18d8cf97e589cf7de224c6c58c899c446dfc61",
     "production-server.js": "3415d790f5cc37bfe04dfe94ac07e026cdc40496713ba538b76894197692ab1e",
     "proof/latest/proof-manifest.json": "366beca59d6c08d281ae059db5498db72ef906bdd9ec5b757806a166f75dbb54",
     "proof/latest/runtime/config.json": "04462a347748134d8e1e19d481c94436d60575a25d666172288e8de14880127e",
