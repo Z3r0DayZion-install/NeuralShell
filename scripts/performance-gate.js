@@ -22,9 +22,13 @@ function main() {
   const autonomyMin = Number(process.env.NEURAL_PERF_AUTONOMY_MIN || 80);
   const smokeUptimeMin = Number(process.env.NEURAL_PERF_SMOKE_UPTIME_MIN_MS || 750);
   const diagUptimeMin = Number(process.env.NEURAL_PERF_DIAG_UPTIME_MIN_MS || 4500);
+  const requireDiagnose = String(process.env.NEURAL_PERF_REQUIRE_DIAG || "1") !== "0";
 
   assert(fs.existsSync(benchmarkPath), `Missing benchmark report: ${benchmarkPath}`);
   assert(fs.existsSync(smokePath), `Missing packaged smoke report: ${smokePath}`);
+  if (requireDiagnose) {
+    assert(fs.existsSync(diagnosePath), `Missing packaged diagnostics report: ${diagnosePath}`);
+  }
 
   const benchmark = readJson(benchmarkPath);
   const smoke = readJson(smokePath);
@@ -41,7 +45,7 @@ function main() {
     smoke: smokePassed && Number.isFinite(smokeUptimeMs) && smokeUptimeMs >= smokeUptimeMin,
     diagnose: diagnose
       ? diagStrictPass && Number.isFinite(diagUptimeMs) && diagUptimeMs >= diagUptimeMin
-      : true
+      : !requireDiagnose
   };
 
   const passed = checks.autonomy && checks.smoke && checks.diagnose;
@@ -51,12 +55,14 @@ function main() {
     thresholds: {
       autonomyMin,
       smokeUptimeMin,
-      diagUptimeMin
+      diagUptimeMin,
+      requireDiagnose
     },
     metrics: {
       autonomyPercent,
       smokePassed,
       smokeUptimeMs,
+      diagnosePresent: Boolean(diagnose),
       diagStrictPass,
       diagUptimeMs
     },
