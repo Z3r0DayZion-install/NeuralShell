@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T20:06:22.309Z",
-  "commit": "50b4cfa69ff435490c0c31690920e5adb1debfd6",
+  "generatedAt": "2026-03-09T20:16:16.570Z",
+  "commit": "b155fbfe7b46d9edc3a25e70a87b9933230d10ee",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -393,10 +393,10 @@
     "src/plugins/manifests/sovereign-proxy.json": "c1047bf534f4fcc406a017eaab082bffcf270e3f086071943b18867efa903b87",
     "src/plugins/manifests/swarm-consensus.json": "16069b17dd912bd1de10eb83176f035ee9bbf2ff60fab6dc10d1b36da7623abc",
     "src/preload.js": "536e901825135e6d3a79a05fcd7ffb2a44669cc8b2fc164e874800c673a42645",
-    "src/renderer.html": "457f11fbf6b1e6ef4ef7dc5a722cc41ebd31b7c0e7f0c0ea30f255a57bb98ca8",
-    "src/renderer.js": "fb06c85a74743cbed827c2f7faabc09513b7871b7eb4863477ee2720bf4702ca",
+    "src/renderer.html": "d0c497121b7ddec560f8160f656429fbc65ab8dae929595375374d57551241ac",
+    "src/renderer.js": "5492a1181473d443987458676eb1f6560d671ec842a7ffed5919b39f9f014340",
     "src/security/intentFirewall.js": "dcfcbe82ebc41f73a7d4fc69854bf740c0fada3a597f68ef6861744e431ae348",
-    "src/style.css": "eba5f120ed4cd6a4be9c8df320a93ef8bc74d4d1000ce1f6efee32e898ee8175",
+    "src/style.css": "cc783c401b66e0ef4b7e73530768e935bb64af00e8832377258e22eaea5c4f64",
     "tear/audit-chain.test.js": "3a626d816fffc81ed1734b1269c98faffa4716b07a4203c16f92d791e710e01a",
     "tear/benchmark-autonomy.js": "e1fc5c39c114ea6d1176d8bc49368a5159b93dfa32728ffa80e525ec7f6958b0",
     "tear/branch-protection-policy.test.js": "2236d706df8c43eb6e0c65d45986a8b75cb2b0b4b59b1f25cf913afde43ccc6f",
