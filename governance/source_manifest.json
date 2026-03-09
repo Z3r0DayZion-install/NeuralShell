@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T06:22:22.606Z",
-  "commit": "931286d1de8ba2e432a937ac1db1a6c3f07313ac",
+  "generatedAt": "2026-03-09T06:49:02.051Z",
+  "commit": "4417772d55efa636bd3cb8e04ca0fe60ec3c917a",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -335,7 +335,7 @@
     "scripts/omega_verify.js": "f73ebeccb59dfb326b6f95924c4c0267e45bc5673adc057fc12840df01ad90d2",
     "scripts/performance-gate.js": "50573aad02f2fd5db468a9581aeaa818f8c8ef1a4e30fc89d3961ceeae0b61fa",
     "scripts/prepush-gate.js": "8fffe56e2ed7fc7b994e5c916b9c1fd313a02d87fe2d262f45c35cded329d733",
-    "scripts/release-checksums.js": "ddb3fd82951090c2f90baef66a9ebf8278b5a82d7e737d02ed35876659da3f33",
+    "scripts/release-checksums.js": "435976e0c31c4a83928a1b77f7507cd4967537541812d1bc619cef203c7b3324",
     "scripts/release-manifest.js": "f38a052b9f4f9d1c74609572bcef90c59bead8768a7e08a64d471df5db031d24",
     "scripts/release-notes.js": "d32ae49e7dfb555d080226edeb79efc060bbd9ca9c45bade641bb403aed6f445",
     "scripts/runtime_proof.cjs": "cba5cd2da28ba0f7194e677526cf41af9dfd5f83710ead4ca6b5c32f5d3035e4",
@@ -413,7 +413,7 @@
     "tear/policy-firewall.test.js": "c1ee1603a8316e92c0d14931ed64a7295141ff99ac2a1e64d95ccd5d83eadbb9",
     "tear/redteam-nightly.js": "6e00cd60a66de44aec4cc1671706ada994ecadada5d935b2047ba0debf7af9d2",
     "tear/regression-eval.js": "579a762dd5742c6b04cc4e4448988a3c2b07a2b2cf8a096ca673e642eab66659",
-    "tear/release-checksums.test.js": "98cb8da8d3dee0df1eb5bfe8ef62dd1ee44f027f1a8b391d5ae29cad2c20728e",
+    "tear/release-checksums.test.js": "f367ebece4b1a967f7c51840753d05fed2aa76aadda2713bd92dfafdd7886c7c",
     "tear/release-freshness.test.js": "4d07cb837e5e3a4d78cd924785aab15efd4be1e3a045b62d4a58f6d1f7b6abe7",
     "tear/release-gate.js": "73b7c6e97cefd7b92faa7484cfb57a6ad6fcbb177286c535d768fd066b1756a4",
     "tear/release-manifest.test.js": "17047e01f72414803f37171dc4e9243a0abc66e3e8f06209dd7ec1c506f33958",
