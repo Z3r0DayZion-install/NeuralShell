@@ -606,6 +606,10 @@ async function loadInitialState() {
   if (el.baseUrlInput) el.baseUrlInput.value = String(appState.settings.ollamaBaseUrl || "http://127.0.0.1:11434");
   if (el.timeoutInput) el.timeoutInput.value = String(appState.settings.timeoutMs || 15000);
   if (el.retryInput) el.retryInput.value = String(appState.settings.retryCount || 2);
+  if (el.tokenBudgetInput) el.tokenBudgetInput.value = String(appState.settings.tokenBudget || 1200);
+  if (el.autosaveNameInput) el.autosaveNameInput.value = String(appState.settings.autosaveName || "autosave-main");
+  if (el.autosaveIntervalInput) el.autosaveIntervalInput.value = String(appState.settings.autosaveIntervalMin || 10);
+  if (el.autosaveEnabledInput) el.autosaveEnabledInput.checked = Boolean(appState.settings.autosaveEnabled);
   if (el.themeSelect && el.themeSelect.options.length === 0) {
     for (const theme of ["dark", "light"]) {
       const option = document.createElement("option");
