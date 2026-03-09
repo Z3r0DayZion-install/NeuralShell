@@ -8,6 +8,11 @@ Use this as the single source of truth for the beta round.
 - Completed checklist: 5 testers
 - P0/P1 blockers before public push: 0
 
+## Operating Links
+- Issue forms: `https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose`
+- Triage playbook: `docs/pilots/BETA_TRIAGE_PLAYBOOK_v1.2.1-OMEGA.md`
+- Immutable ledger: `governance/BETA_PILOT_LEDGER_v1.2.1-OMEGA.jsonl`
+
 ## Tester Tracker
 | Tester | Invite Sent | Started | Completed | Result (`Passed X/9`) | Highest Bug Severity | Notes |
 |---|---|---|---|---|---|---|

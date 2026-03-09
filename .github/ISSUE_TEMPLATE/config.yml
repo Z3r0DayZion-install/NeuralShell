@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Beta Tester Checklist
+    url: https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/docs/pilots/BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md
+    about: Use this one-page checklist before filing results.
+  - name: Beta Invite Packet
+    url: https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/docs/pilots/BETA_INVITE_MESSAGE_v1.2.1-OMEGA.md
+    about: Reuse this to onboard testers quickly.
