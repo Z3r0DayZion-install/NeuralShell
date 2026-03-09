@@ -18,6 +18,8 @@ state/
 .snapshots/
 tmp/userData/
 coverage/
+test-results/
+playwright-report/
 
 # OS
 .DS_Store

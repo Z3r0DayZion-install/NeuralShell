@@ -72,6 +72,9 @@ function defaultSettings() {
     clockEnabled: true,
     personalityProfile: "balanced",
     safetyPolicy: "balanced",
+    onboardingCompleted: false,
+    onboardingSeenAt: "",
+    onboardingVersion: "",
     allowRemoteBridge: false,
     activeProfileId: "local-default",
     connectOnStartup: true

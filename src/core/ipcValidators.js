@@ -176,6 +176,18 @@ function validateSettings(input) {
       input.autosaveName == null
         ? "autosave-main"
         : toTrimmedString(input.autosaveName, "autosaveName"),
+    onboardingCompleted:
+      input.onboardingCompleted == null
+        ? false
+        : Boolean(input.onboardingCompleted),
+    onboardingSeenAt:
+      input.onboardingSeenAt == null
+        ? ""
+        : String(input.onboardingSeenAt),
+    onboardingVersion:
+      input.onboardingVersion == null
+        ? ""
+        : String(input.onboardingVersion),
     allowRemoteBridge: Boolean(input.allowRemoteBridge),
     connectionProfiles: Array.isArray(input.connectionProfiles)
       ? input.connectionProfiles.map(normalizeConnectionProfile)
