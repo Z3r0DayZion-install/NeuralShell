@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T06:55:38.096Z",
-  "commit": "759aa148abc3ab2a6d4e39ce70faca49607f9c56",
+  "generatedAt": "2026-03-09T06:59:47.960Z",
+  "commit": "37a0cbe57641cdb2e65d8fff8c23658a145496b9",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -335,7 +335,7 @@
     "scripts/omega_verify.js": "f73ebeccb59dfb326b6f95924c4c0267e45bc5673adc057fc12840df01ad90d2",
     "scripts/performance-gate.js": "50573aad02f2fd5db468a9581aeaa818f8c8ef1a4e30fc89d3961ceeae0b61fa",
     "scripts/prepush-gate.js": "8fffe56e2ed7fc7b994e5c916b9c1fd313a02d87fe2d262f45c35cded329d733",
-    "scripts/release-checksums.js": "638c4f348dc925b098b99018c6df849c9b0b38a624888eeb84836b37d5dd990d",
+    "scripts/release-checksums.js": "6906a80f9fddd48210ed65491829600c83bae23dfc94a93e25c4478be7827dd4",
     "scripts/release-manifest.js": "f38a052b9f4f9d1c74609572bcef90c59bead8768a7e08a64d471df5db031d24",
     "scripts/release-notes.js": "1dffd865915c0b0e82ae63ddead6d04a9b7cbb72d1c9668ce102e1f7c1f96cb3",
     "scripts/release-upgrade-validation.js": "74a84f407c67b3f13f37c0b052b9f4b301088128d7673093b9a48cee828bc43c",
@@ -414,7 +414,7 @@
     "tear/policy-firewall.test.js": "c1ee1603a8316e92c0d14931ed64a7295141ff99ac2a1e64d95ccd5d83eadbb9",
     "tear/redteam-nightly.js": "6e00cd60a66de44aec4cc1671706ada994ecadada5d935b2047ba0debf7af9d2",
     "tear/regression-eval.js": "579a762dd5742c6b04cc4e4448988a3c2b07a2b2cf8a096ca673e642eab66659",
-    "tear/release-checksums.test.js": "4e4a07a5c73f82c4290bd00dd8a07b88f5fe517fd81588d664b476af858625d2",
+    "tear/release-checksums.test.js": "1b4f52457db37dd489bdf9b6c1f25ef643ad802aed20e1287f30bae67dc117be",
     "tear/release-freshness.test.js": "d12d3772afe9a702c6de1972ce7ea306ae1dc54a79bbac1648a78c96e0c4a991",
     "tear/release-gate.js": "73b7c6e97cefd7b92faa7484cfb57a6ad6fcbb177286c535d768fd066b1756a4",
     "tear/release-manifest.test.js": "17047e01f72414803f37171dc4e9243a0abc66e3e8f06209dd7ec1c506f33958",
