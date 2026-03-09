@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T23:01:04.280Z",
-  "commit": "29abe685871fab698225c592474f825658578666",
+  "generatedAt": "2026-03-09T23:28:31.997Z",
+  "commit": "e3a5b36533e45f0f9d36c61e9903f5fe6864cd01",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -297,7 +297,7 @@
     "docs/audit/THREAT_MODEL.md": "1ab05eb6543be1836ec65a87db2a3269bbd4a6b4189b7b9af88ac65dfa832433",
     "docs/pilots/BETA_BUG_REPORT_TEMPLATE.md": "a64e8acd53f7711959866b36679c21fc6273de717d01369e006469a6fba0c229",
     "docs/pilots/BETA_INVITE_MESSAGE_v1.2.1-OMEGA.md": "bb684c73774ea7688ac9379068447e7e110b15945e8a6df6c283a63af119cdb1",
-    "docs/pilots/BETA_RUNBOARD_v1.2.1-OMEGA.md": "d57cee731800374b5763691bf2ecea9e458ca8ded3e5621fe0ce8f69364e6af3",
+    "docs/pilots/BETA_RUNBOARD_v1.2.1-OMEGA.md": "10e405728fff90a43b36db64a5f8aa4b2c2f7678b67616134cdd17d95b3abf18",
     "docs/pilots/BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md": "6d7871e8f3d3eb5e8b0e494bdcbbab9ddce6f7a977e842dba3f4d234a6e74517",
     "docs/pilots/BETA_TRIAGE_PLAYBOOK_v1.2.1-OMEGA.md": "e2de3b746524d57b4c1f3dceb57189e6ffdda0edfca1d8639b95ceb633063b70",
     "docs/pilots/PILOT_FEEDBACK_FORM.md": "98b5996152058ff938b8266c6ad3d70057aa2f11965da2ff2c496f931258c5c4",
