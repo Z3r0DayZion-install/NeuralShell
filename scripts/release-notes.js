@@ -120,7 +120,11 @@ function main() {
   const outFile = normalizePath(parseArg("out"), path.join(root, "release", "RELEASE_NOTES.md"));
   const checksumsPath = normalizePath(parseArg("checksums"), path.join(root, "release", "checksums.txt"));
   const changelogPath = normalizePath(parseArg("changelog"), path.join(root, "CHANGELOG.md"));
-  const writeChangelog = !process.argv.includes("--skip-changelog");
+  const skipChangelog =
+    process.argv.includes("--skip-changelog") ||
+    process.env.RELEASE_NOTES_SKIP_CHANGELOG === "1" ||
+    process.env.npm_config_skip_changelog === "true";
+  const writeChangelog = !skipChangelog;
 
   if (!tag) {
     throw new Error("Release tag is required (--tag=... or GITHUB_REF_NAME).\n");

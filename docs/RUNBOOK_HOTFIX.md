@@ -19,6 +19,12 @@ npm run ship:strict
 
 3. Merge into `master` after `CI`, `Merge Gate`, `Release Contract`, and `Security Gate` pass.
 
+If emergency policy bypass is required for a critical hotfix, use the audited controlled merge window script (it restores canonical branch protection automatically):
+
+```powershell
+node scripts/controlled-merge-window.js --pr=<PR_NUMBER> --repo=<OWNER/REPO> --method=squash
+```
+
 4. Tag hotfix release:
 
 ```powershell
