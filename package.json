@@ -44,6 +44,8 @@
     "governance:branch:verify": "node scripts/verify-branch-protection.js",
     "governance:branch:enforce": "node scripts/enforce-branch-protection.js",
     "governance:branch:enforce:dry": "node scripts/enforce-branch-protection.js --dry-run",
+    "governance:merge:controlled": "node scripts/controlled-merge-window.js",
+    "governance:merge:controlled:dry": "node scripts/controlled-merge-window.js --dry-run",
     "perf:gate": "node scripts/performance-gate.js",
     "ship": "node scripts/ship.js",
     "ship:strict": "node scripts/ship-strict.js",
