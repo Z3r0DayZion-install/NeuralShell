@@ -118,3 +118,75 @@ test("SessionManager detects envelope checksum tampering", () => {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("SessionManager search returns all metadata and filtered matches", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-session-search-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const manager = require("../src/core/sessionManager");
+      manager.saveSession("alpha", { model: "llama3", chat: [{ role: "user", content: "one two" }] }, "pw");
+      manager.saveSession("beta", { model: "mistral", chat: [{ role: "user", content: "three" }] }, "pw");
+
+      const all = manager.search("");
+      assert.equal(all.length, 2);
+      assert.ok(all.every((row) => row && row.name));
+
+      const filtered = manager.search("alp");
+      assert.equal(filtered.length, 1);
+      assert.equal(filtered[0].name, "alpha");
+      assert.equal(filtered[0].model, "llama3");
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("SessionManager repairIndex rebuilds missing in-memory index entries", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-session-repair-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const manager = require("../src/core/sessionManager");
+      manager.saveSession("repairme", { chat: [{ role: "user", content: "hello" }] }, "pw");
+      delete manager.index.repairme;
+
+      const report = manager.repairIndex();
+      assert.equal(report.repaired, true);
+      assert.equal(report.count, 1);
+      assert.ok(manager.index.repairme);
+      assert.equal(manager.index.repairme.model, "unknown");
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("SessionManager handles missing sessions and rename collisions", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-session-guards-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const manager = require("../src/core/sessionManager");
+      manager.saveSession("from", { chat: [{ role: "user", content: "x" }] }, "pw");
+      manager.saveSession("to", { chat: [{ role: "user", content: "y" }] }, "pw");
+
+      assert.throws(() => manager.loadSession("missing", "pw"), /Session not found/i);
+      assert.throws(() => manager.renameSession("from", "to"), /already exists/i);
+      assert.throws(() => manager.renameSession("missing", "new"), /not found/i);
+
+      assert.equal(manager.deleteSession("missing"), true);
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("SessionManager exportToPeer is blocked in local test mode", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-session-export-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const manager = require("../src/core/sessionManager");
+      assert.throws(() => manager.exportToPeer(), /not available in local test mode/i);
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});

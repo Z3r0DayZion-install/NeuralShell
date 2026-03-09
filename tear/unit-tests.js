@@ -106,6 +106,55 @@ function createJsonResponse(status, body) {
   };
 }
 
+function createReaderResponse(status, chunks) {
+  const queue = Array.isArray(chunks) ? chunks.slice() : [];
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async json() {
+      return {};
+    },
+    body: {
+      getReader() {
+        return {
+          async read() {
+            if (!queue.length) {
+              return { done: true, value: null };
+            }
+            return { done: false, value: queue.shift() };
+          }
+        };
+      }
+    }
+  };
+}
+
+function createAsyncIterableResponse(status, chunks) {
+  const queue = Array.isArray(chunks) ? chunks.slice() : [];
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async json() {
+      return {};
+    },
+    body: {
+      async *[Symbol.asyncIterator]() {
+        while (queue.length) {
+          yield queue.shift();
+        }
+      }
+    }
+  };
+}
+
+async function collectAsync(iterable) {
+  const output = [];
+  for await (const item of iterable) {
+    output.push(item);
+  }
+  return output;
+}
+
 async function testLlmServiceRetry() {
   let calls = 0;
   const service = new LLMService({
@@ -175,11 +224,180 @@ async function testLlmServiceCancel() {
   ok("llmService cancel");
 }
 
+async function testLlmServicePersonaAndConfigure() {
+  let payload = null;
+  const service = new LLMService({
+    fetchImpl: async (_url, init) => {
+      payload = JSON.parse(String(init.body || "{}"));
+      return createJsonResponse(200, { message: { content: "ok" } });
+    },
+    maxRetries: 0,
+    requestTimeoutMs: 1000
+  });
+
+  assert.throws(() => service.setPersona("invalid"), /Unsupported persona/i);
+  service.configure({
+    baseUrl: "http://127.0.0.1:22434",
+    maxRetries: 3,
+    requestTimeoutMs: 2500,
+    retryBaseDelayMs: 1,
+    persona: "founder"
+  });
+  assert.equal(service.baseUrl, "http://127.0.0.1:22434");
+  assert.equal(service.maxRetries, 3);
+  assert.equal(service.requestTimeoutMs, 2500);
+  assert.equal(service.retryBaseDelayMs, 1);
+  assert.equal(service.persona, "founder");
+
+  service.setModel("llama3.2");
+  const response = await service.chat([{ role: "user", content: "hello" }], false);
+  assert.equal(response.message.content, "ok");
+  assert.equal(payload.model, "llama3.2");
+  assert.equal(payload.messages[0].role, "system");
+  assert.match(payload.messages[0].content, /founder mode/i);
+
+  const withSystem = service._applyPersona([
+    { role: "system", content: "keep-this-system-prompt" },
+    { role: "user", content: "x" }
+  ]);
+  assert.equal(withSystem[0].content, "keep-this-system-prompt");
+  ok("llmService persona/config");
+}
+
+async function testLlmServiceAutoDetect() {
+  const service = new LLMService({
+    fetchImpl: async (url) => {
+      if (url.endsWith("/api/version")) {
+        return createJsonResponse(200, { version: "1.0.0" });
+      }
+      if (url.endsWith("/api/tags")) {
+        return createJsonResponse(200, {
+          models: [{ name: "llama3" }, { name: "mistral" }]
+        });
+      }
+      throw new Error(`unexpected endpoint: ${url}`);
+    },
+    maxRetries: 0
+  });
+
+  const detected = await service.autoDetectLocalLLM();
+  assert.equal(detected.ok, true);
+  assert.equal(detected.detected, true);
+  assert.equal(detected.modelCount, 2);
+  assert.deepEqual(detected.models, ["llama3", "mistral"]);
+
+  const offline = new LLMService({
+    fetchImpl: async () => {
+      throw new Error("bridge offline");
+    },
+    maxRetries: 0
+  });
+  const missing = await offline.autoDetectLocalLLM();
+  assert.equal(missing.ok, false);
+  assert.equal(missing.detected, false);
+  assert.match(missing.reason, /bridge offline/i);
+  ok("llmService autodetect");
+}
+
+async function testLlmServiceStreamingParsers() {
+  const streamService = new LLMService({
+    fetchImpl: async () =>
+      createAsyncIterableResponse(200, [
+        '{"delta":"a"}\nnot-json\n',
+        '{"delta":"b"}\n{"done":true}\n'
+      ]),
+    maxRetries: 0
+  });
+  const stream = await streamService.chat(
+    [{ role: "user", content: "stream please" }],
+    true
+  );
+  const streamRows = await collectAsync(stream);
+  assert.equal(streamRows.length, 3);
+  assert.equal(streamRows[0].delta, "a");
+  assert.equal(streamRows[2].done, true);
+
+  const readerService = new LLMService({
+    fetchImpl: async () =>
+      createReaderResponse(200, [
+        Buffer.from('{"chunk":1}\n{"chunk":2}\n'),
+        Buffer.from('{"chunk":3}\n')
+      ]),
+    maxRetries: 0
+  });
+  const readerRows = await collectAsync(
+    readerService._streamJsonLines(
+      createReaderResponse(200, [Buffer.from('{"n":1}\n{"n":2}\n')])
+    )
+  );
+  assert.equal(readerRows.length, 2);
+  assert.equal(readerRows[1].n, 2);
+
+  const typed = readerService._toUint8Array("abc");
+  assert.ok(typed instanceof Uint8Array);
+  assert.equal(typed.length, 3);
+  ok("llmService stream");
+}
+
+async function testLlmServiceFailureModes() {
+  const statusService = new LLMService({
+    fetchImpl: async () => createJsonResponse(500, { error: "bad" }),
+    maxRetries: 0
+  });
+  await assert.rejects(
+    () => statusService.chat([{ role: "user", content: "x" }], false),
+    /status 500/i
+  );
+
+  const malformedService = new LLMService({
+    fetchImpl: async () => ({}),
+    maxRetries: 0
+  });
+  await assert.rejects(
+    () => malformedService.chat([{ role: "user", content: "x" }], false),
+    /failed to fetch/i
+  );
+
+  const timeoutService = new LLMService({
+    fetchImpl: async (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init.signal.addEventListener("abort", () => reject(new Error("aborted")));
+      }),
+    maxRetries: 0,
+    requestTimeoutMs: 10
+  });
+  await assert.rejects(
+    () => timeoutService.chat([{ role: "user", content: "timeout" }], false),
+    /timed out/i
+  );
+
+  const noFetchService = new LLMService({ fetchImpl: "not-a-function", maxRetries: 0 });
+  await assert.rejects(
+    () => noFetchService._fetchResponse("/api/tags", { method: "GET" }),
+    /No fetch implementation available/i
+  );
+
+  let seen = 0;
+  const unsubscribe = statusService.onStatusChange(() => {
+    seen += 1;
+  });
+  statusService._emitStatus("online");
+  unsubscribe();
+  statusService._emitStatus("online");
+  assert.equal(seen, 1);
+  assert.equal(statusService.cancelStream(), false);
+  ok("llmService failure modes");
+}
+
 async function run() {
   await testIpcValidators();
   await testLlmServiceRetry();
   await testLlmServiceOffline();
   await testLlmServiceCancel();
+  await testLlmServicePersonaAndConfigure();
+  await testLlmServiceAutoDetect();
+  await testLlmServiceStreamingParsers();
+  await testLlmServiceFailureModes();
   console.log("All unit tests passed.");
 }
 
