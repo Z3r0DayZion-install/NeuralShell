@@ -151,6 +151,41 @@
             <h2>Settings</h2>
           </div>
 
+          <div class="panel-head">
+            <h2>Connection Profiles</h2>
+            <button id="onboardingResetBtn">Re-run Onboarding</button>
+          </div>
+
+          <div class="form-grid">
+            <label class="field-block" for="profileSelect">
+              <span>Profile</span>
+              <select id="profileSelect"></select>
+            </label>
+            <label class="field-block" for="profileNameInput">
+              <span>Profile Name</span>
+              <input id="profileNameInput" placeholder="Local Ollama" />
+            </label>
+            <label class="field-block" for="profileBaseUrlInput">
+              <span>Profile Base URL</span>
+              <input id="profileBaseUrlInput" placeholder="http://127.0.0.1:11434" />
+            </label>
+            <label class="field-block" for="profileTimeoutInput">
+              <span>Profile Timeout (ms)</span>
+              <input id="profileTimeoutInput" type="number" min="1000" />
+            </label>
+            <label class="field-block" for="profileRetryInput">
+              <span>Profile Retry Count</span>
+              <input id="profileRetryInput" type="number" min="0" />
+            </label>
+          </div>
+
+          <div class="row row-wrap">
+            <button id="profileNewBtn">New Profile</button>
+            <button id="profileSaveBtn">Save Profile</button>
+            <button id="profileDeleteBtn">Delete Profile</button>
+            <button id="profileUseBtn">Use Profile</button>
+          </div>
+
           <div class="form-grid">
             <label class="field-block" for="baseUrlInput">
               <span>Base URL</span>
@@ -256,6 +291,10 @@
             <label class="field-inline checkbox-field" for="onboardingAutoScrollInput">
               <input id="onboardingAutoScrollInput" type="checkbox" checked />
               <span>Enable Auto Scroll</span>
+            </label>
+            <label class="field-inline checkbox-field" for="onboardingRememberInput">
+              <input id="onboardingRememberInput" type="checkbox" checked />
+              <span>Remember completion</span>
             </label>
           </div>
           <div class="row row-wrap">
