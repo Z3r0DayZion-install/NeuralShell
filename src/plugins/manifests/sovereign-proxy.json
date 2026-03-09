@@ -1,9 +1,9 @@
-﻿{
-    "permissions":  [
-                        "net"
-                    ],
-    "name":  "sovereign-proxy",
-    "file":  "sovereign-proxy.js",
-    "hash":  "AA980556B1B709CC5AE7D9A80CFE41D2A916691E8DB92020466D60DFAC234F17",
-    "version":  "1.0.0"
+{
+  "permissions": [
+    "net"
+  ],
+  "name": "sovereign-proxy",
+  "file": "sovereign-proxy.js",
+  "hash": "AE031F9E3A0301630315EFE0342901DB7C0A1E3DEAC7AE2382D8E81AAD9E3344",
+  "version": "1.0.0"
 }

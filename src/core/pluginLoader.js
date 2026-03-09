@@ -16,6 +16,11 @@ function calculateHash(filePath) {
   return crypto.createHash("sha256").update(fileBuffer).digest("hex").toUpperCase();
 }
 
+function parseManifest(manifestPath) {
+  const raw = fs.readFileSync(manifestPath, "utf8");
+  return JSON.parse(raw.replace(/^\uFEFF/, ""));
+}
+
 /**
  * Creates a scoped kernel for a plugin, enforcing permission boundaries.
  */
@@ -62,7 +67,7 @@ async function onLoad() {
         continue;
       }
 
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      const manifest = parseManifest(manifestPath);
       const actualHash = calculateHash(pluginPath);
       
       if (actualHash !== manifest.hash.toUpperCase()) {

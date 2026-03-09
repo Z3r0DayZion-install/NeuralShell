@@ -1,9 +1,7 @@
-﻿{
-    "permissions":  [
-
-                    ],
-    "name":  "echo-plugin",
-    "file":  "echo.js",
-    "hash":  "AB0F9B0A9E3F7EE0F75426FCA68AF007F03969B00167160504939770DEEED904",
-    "version":  "1.0.0"
+{
+  "permissions": [],
+  "name": "echo-plugin",
+  "file": "echo.js",
+  "hash": "3F4DFAE4D55924CF1E1BCC3A7E0A703A1F98D50134AD2BA2302F886E83B4CF80",
+  "version": "1.0.0"
 }
