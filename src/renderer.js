@@ -13,6 +13,8 @@ const IDS = [
   "runSelfTestBtn", "runButtonAuditBtn", "buttonAuditOutput",
   "snippetSelect", "insertSnippetBtn",
   "shortcutHelpBtn", "shortcutOverlay", "shortcutCloseBtn", "undoBtn", "commandHelpBtn",
+  "commandPaletteOpenBtn", "commandPaletteOverlay", "commandPaletteCloseBtn", "commandPaletteInput", "commandPaletteList",
+  "onboardingOverlay", "onboardingModelSelect", "onboardingAutoScrollInput", "onboardingStartBtn", "onboardingSkipBtn",
   "exportChatBtn", "exportMarkdownBtn", "copyMarkdownBtn", "copyLastAssistantBtn", "importChatBtn", "importChatFile",
   "exportStateBtn", "importStateBtn", "importStateFile",
   "loadLogsBtn", "clearLogsBtn", "exportLogsBtn", "logsOutput",
@@ -38,7 +40,8 @@ const appState = {
   streamText: "",
   statsTimer: null,
   clockTimer: null,
-  autonomous: false
+  autonomous: false,
+  commandPaletteOpen: false
 };
 
 const LOCAL_COMMANDS = [
@@ -74,6 +77,12 @@ function showBanner(message, tone = "ok") {
   if (el.statusLabel) {
     el.statusLabel.textContent = `[${tone}] ${message}`;
   }
+}
+
+function clampNumber(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 function countTokens(messages) {
@@ -300,6 +309,120 @@ async function refreshCommands() {
   const commands = await window.api.command.list();
   appState.commands = mergeCommandCatalog(commands);
   renderCommandList(appState.commands);
+  renderCommandPaletteList();
+}
+
+function getCommandPaletteActions() {
+  const localActions = [
+    {
+      label: "Send Prompt",
+      detail: "Send current prompt input to model",
+      run: async () => { await sendPrompt(); }
+    },
+    {
+      label: "Refresh Models",
+      detail: "Reload available model list",
+      run: async () => { await refreshModels(); }
+    },
+    {
+      label: "Refresh Sessions",
+      detail: "Reload session index and metadata",
+      run: async () => { await refreshSessions(); }
+    },
+    {
+      label: "Refresh Commands",
+      detail: "Reload slash command catalog",
+      run: async () => { await refreshCommands(); }
+    },
+    {
+      label: "LLM Health Check",
+      detail: "Run /health command",
+      run: async () => { await sendPromptFromText("/health", null, false); }
+    },
+    {
+      label: "Auto Detect Bridge",
+      detail: "Run /autodetect command",
+      run: async () => { await sendPromptFromText("/autodetect", null, false); }
+    },
+    {
+      label: "Open Onboarding",
+      detail: "Show first-run quick setup overlay",
+      run: async () => { setOnboardingOpen(true); }
+    },
+    {
+      label: "Toggle Theme",
+      detail: "Switch between dark and light theme",
+      run: async () => {
+        const nextTheme = String((appState.settings && appState.settings.theme) || "dark") === "dark" ? "light" : "dark";
+        await applySettingsPatch({ theme: nextTheme });
+        if (el.themeSelect) el.themeSelect.value = nextTheme;
+      }
+    }
+  ];
+
+  const slashActions = (appState.commands || []).map((cmd) => {
+    const name = String(cmd && cmd.name || "").trim();
+    const args = Array.isArray(cmd && cmd.args) && cmd.args.length ? ` ${(cmd.args || []).join(" ")}` : "";
+    return {
+      label: `/${name}${args}`,
+      detail: String(cmd && cmd.description || "Execute slash command"),
+      run: async () => { await sendPromptFromText(`/${name}`, null, false); }
+    };
+  });
+
+  return [...localActions, ...slashActions];
+}
+
+function renderCommandPaletteList() {
+  if (!el.commandPaletteList) return;
+  const q = String((el.commandPaletteInput && el.commandPaletteInput.value) || "").trim().toLowerCase();
+  const actions = getCommandPaletteActions()
+    .filter((item) => {
+      if (!q) return true;
+      return `${item.label} ${item.detail}`.toLowerCase().includes(q);
+    })
+    .slice(0, 40);
+
+  el.commandPaletteList.innerHTML = "";
+  for (const action of actions) {
+    const li = document.createElement("li");
+    const title = document.createElement("strong");
+    title.textContent = action.label;
+    const detail = document.createElement("div");
+    detail.textContent = action.detail;
+    detail.className = "chat-empty";
+    li.appendChild(title);
+    li.appendChild(detail);
+    li.onclick = () => {
+      Promise.resolve(action.run())
+        .then(() => {
+          setCommandPaletteOpen(false);
+          showBanner(`Palette action: ${action.label}`, "ok");
+        })
+        .catch((err) => showBanner(`Palette action failed: ${err.message || String(err)}`, "bad"));
+    };
+    el.commandPaletteList.appendChild(li);
+  }
+  if (!actions.length) {
+    const li = document.createElement("li");
+    li.textContent = "No matching actions.";
+    el.commandPaletteList.appendChild(li);
+  }
+}
+
+function setCommandPaletteOpen(open) {
+  const next = Boolean(open);
+  appState.commandPaletteOpen = next;
+  if (el.commandPaletteOverlay) {
+    el.commandPaletteOverlay.classList.toggle("hidden", !next);
+    el.commandPaletteOverlay.setAttribute("aria-hidden", String(!next));
+  }
+  if (!next) return;
+  renderCommandPaletteList();
+  if (el.commandPaletteInput) {
+    el.commandPaletteInput.value = "";
+    setTimeout(() => el.commandPaletteInput && el.commandPaletteInput.focus(), 0);
+  }
 }
 
 function parseCommandTokens(input) {
@@ -596,13 +719,7 @@ async function runMultiAgentStep(options = {}) {
   }
 }
 
-async function loadInitialState() {
-  if (!window.api || !window.api.state) return;
-  const state = await window.api.state.get();
-  appState.model = String((state && state.model) || "llama3");
-  appState.chat = Array.isArray(state && state.chat) ? state.chat.slice() : (Array.isArray(state && state.chatHistory) ? state.chatHistory.slice() : []);
-  appState.settings = state && typeof state.settings === "object" ? state.settings : {};
-  renderChat(appState.chat);
+function syncSettingsInputsFromState() {
   if (el.baseUrlInput) el.baseUrlInput.value = String(appState.settings.ollamaBaseUrl || "http://127.0.0.1:11434");
   if (el.timeoutInput) el.timeoutInput.value = String(appState.settings.timeoutMs || 15000);
   if (el.retryInput) el.retryInput.value = String(appState.settings.retryCount || 2);
@@ -610,6 +727,7 @@ async function loadInitialState() {
   if (el.autosaveNameInput) el.autosaveNameInput.value = String(appState.settings.autosaveName || "autosave-main");
   if (el.autosaveIntervalInput) el.autosaveIntervalInput.value = String(appState.settings.autosaveIntervalMin || 10);
   if (el.autosaveEnabledInput) el.autosaveEnabledInput.checked = Boolean(appState.settings.autosaveEnabled);
+
   if (el.themeSelect && el.themeSelect.options.length === 0) {
     for (const theme of ["dark", "light"]) {
       const option = document.createElement("option");
@@ -620,6 +738,82 @@ async function loadInitialState() {
   }
   if (el.themeSelect) el.themeSelect.value = String(appState.settings.theme || "dark");
   document.documentElement.setAttribute("data-theme", String(appState.settings.theme || "dark"));
+}
+
+async function applySettingsPatch(patch) {
+  if (!window.api || !window.api.settings) return appState.settings;
+  const current = appState.settings && typeof appState.settings === "object" ? appState.settings : {};
+  const next = {
+    ...current,
+    ...patch
+  };
+  appState.settings = await window.api.settings.update(next);
+  syncSettingsInputsFromState();
+  return appState.settings;
+}
+
+function populateOnboardingModelSelect() {
+  if (!el.onboardingModelSelect || !el.modelSelect) return;
+  const candidates = [];
+  for (const option of Array.from(el.modelSelect.options || [])) {
+    candidates.push(String(option.value || ""));
+  }
+  const unique = Array.from(new Set(candidates.filter(Boolean)));
+  el.onboardingModelSelect.innerHTML = "";
+  for (const model of unique) {
+    const option = document.createElement("option");
+    option.value = model;
+    option.textContent = model;
+    el.onboardingModelSelect.appendChild(option);
+  }
+  if (unique.length > 0) {
+    const preferred = unique.includes(appState.model) ? appState.model : unique[0];
+    el.onboardingModelSelect.value = preferred;
+  }
+  if (el.onboardingAutoScrollInput) {
+    el.onboardingAutoScrollInput.checked = !el.autoScrollInput || el.autoScrollInput.checked;
+  }
+}
+
+function setOnboardingOpen(open) {
+  const next = Boolean(open);
+  if (el.onboardingOverlay) {
+    el.onboardingOverlay.classList.toggle("hidden", !next);
+    el.onboardingOverlay.setAttribute("aria-hidden", String(!next));
+  }
+  if (!next) return;
+  populateOnboardingModelSelect();
+}
+
+async function completeOnboarding(skip) {
+  const shouldSkip = Boolean(skip);
+  if (!shouldSkip && el.onboardingModelSelect) {
+    const selected = String(el.onboardingModelSelect.value || "").trim();
+    if (selected) {
+      appState.model = selected;
+      if (el.modelSelect) el.modelSelect.value = selected;
+      if (window.api && window.api.llm) {
+        await window.api.llm.setModel(selected);
+      }
+      await persistChatState();
+    }
+  }
+  if (el.autoScrollInput && el.onboardingAutoScrollInput) {
+    el.autoScrollInput.checked = Boolean(el.onboardingAutoScrollInput.checked);
+  }
+  await applySettingsPatch({ onboardingCompleted: true });
+  setOnboardingOpen(false);
+  showBanner(shouldSkip ? "Onboarding skipped." : "Onboarding complete.", "ok");
+}
+
+async function loadInitialState() {
+  if (!window.api || !window.api.state) return;
+  const state = await window.api.state.get();
+  appState.model = String((state && state.model) || "llama3");
+  appState.chat = Array.isArray(state && state.chat) ? state.chat.slice() : (Array.isArray(state && state.chatHistory) ? state.chatHistory.slice() : []);
+  appState.settings = state && typeof state.settings === "object" ? state.settings : {};
+  renderChat(appState.chat);
+  syncSettingsInputsFromState();
 }
 
 async function updateStats() {
@@ -649,6 +843,11 @@ function bindEvents() {
     el.promptInput.addEventListener("input", updatePromptMetrics);
     el.promptInput.addEventListener("input", updateCommandHint);
     el.promptInput.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && String(event.key || "").toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandPaletteOpen(true);
+        return;
+      }
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         event.preventDefault();
         sendPrompt().catch(() => {});
@@ -660,6 +859,24 @@ function bindEvents() {
       }
     });
   }
+
+  window.addEventListener("keydown", (event) => {
+    const key = String(event.key || "").toLowerCase();
+    if ((event.ctrlKey || event.metaKey) && key === "k") {
+      event.preventDefault();
+      setCommandPaletteOpen(true);
+      return;
+    }
+    if (key === "escape" && appState.commandPaletteOpen) {
+      event.preventDefault();
+      setCommandPaletteOpen(false);
+      return;
+    }
+    if (key === "escape" && el.onboardingOverlay && !el.onboardingOverlay.classList.contains("hidden")) {
+      event.preventDefault();
+      completeOnboarding(true).catch((err) => showBanner(err.message || String(err), "bad"));
+    }
+  });
 
   if (el.sendBtn) el.sendBtn.onclick = () => sendPrompt().catch((err) => showBanner(err.message || String(err), "bad"));
   if (el.stopBtn) el.stopBtn.onclick = async () => {
@@ -822,22 +1039,28 @@ function bindEvents() {
 
   if (el.applySettingsBtn) el.applySettingsBtn.onclick = async () => {
     const current = appState.settings && typeof appState.settings === "object" ? appState.settings : {};
+    const timeoutMs = clampNumber((el.timeoutInput && el.timeoutInput.value) || current.timeoutMs || 15000, 1000, 120000, 15000);
+    const retryCount = clampNumber((el.retryInput && el.retryInput.value) || current.retryCount || 2, 0, 10, 2);
+    const tokenBudget = clampNumber((el.tokenBudgetInput && el.tokenBudgetInput.value) || current.tokenBudget || 1200, 128, 200000, 1200);
+    const autosaveIntervalMin = clampNumber((el.autosaveIntervalInput && el.autosaveIntervalInput.value) || current.autosaveIntervalMin || 10, 1, 1440, 10);
+    const normalizedBaseUrl = String((el.baseUrlInput && el.baseUrlInput.value) || current.ollamaBaseUrl || "http://127.0.0.1:11434").trim();
+
     const next = {
       ...current,
-      ollamaBaseUrl: String((el.baseUrlInput && el.baseUrlInput.value) || current.ollamaBaseUrl || "http://127.0.0.1:11434").trim(),
-      timeoutMs: Number((el.timeoutInput && el.timeoutInput.value) || current.timeoutMs || 15000),
-      retryCount: Number((el.retryInput && el.retryInput.value) || current.retryCount || 2),
+      ollamaBaseUrl: normalizedBaseUrl,
+      timeoutMs,
+      retryCount,
       theme: String((el.themeSelect && el.themeSelect.value) || current.theme || "dark"),
-      tokenBudget: Number((el.tokenBudgetInput && el.tokenBudgetInput.value) || current.tokenBudget || 1200),
+      tokenBudget,
       autosaveName: String((el.autosaveNameInput && el.autosaveNameInput.value) || current.autosaveName || "autosave-main"),
-      autosaveIntervalMin: Number((el.autosaveIntervalInput && el.autosaveIntervalInput.value) || current.autosaveIntervalMin || 10),
+      autosaveIntervalMin,
       autosaveEnabled: Boolean(el.autosaveEnabledInput && el.autosaveEnabledInput.checked),
       connectionProfiles: Array.isArray(current.connectionProfiles) && current.connectionProfiles.length > 0 ? current.connectionProfiles : [{
         id: "local-default",
         name: "Local Ollama",
-        baseUrl: String((el.baseUrlInput && el.baseUrlInput.value) || "http://127.0.0.1:11434"),
-        timeoutMs: Number((el.timeoutInput && el.timeoutInput.value) || 15000),
-        retryCount: Number((el.retryInput && el.retryInput.value) || 2),
+        baseUrl: normalizedBaseUrl,
+        timeoutMs,
+        retryCount,
         defaultModel: appState.model
       }],
       activeProfileId: String(current.activeProfileId || "local-default"),
@@ -861,8 +1084,14 @@ function bindEvents() {
       retryCount: next.retryCount,
       defaultModel: appState.model
     };
-    appState.settings = await window.api.settings.update(next);
-    document.documentElement.setAttribute("data-theme", String(appState.settings.theme || "dark"));
+    appState.settings = await applySettingsPatch(next);
+    if (el.timeoutInput) el.timeoutInput.value = String(timeoutMs);
+    if (el.retryInput) el.retryInput.value = String(retryCount);
+    if (el.tokenBudgetInput) el.tokenBudgetInput.value = String(tokenBudget);
+    if (el.autosaveIntervalInput) el.autosaveIntervalInput.value = String(autosaveIntervalMin);
+    if (el.statusMeta) {
+      el.statusMeta.textContent = `Settings normalized: timeout=${timeoutMs} retry=${retryCount} tokenBudget=${tokenBudget} autosave=${autosaveIntervalMin}m`;
+    }
     showBanner("Settings applied.", "ok");
   };
 
@@ -875,16 +1104,44 @@ function bindEvents() {
       el.promptInput.focus();
     }
   };
+  if (el.commandPaletteOpenBtn) el.commandPaletteOpenBtn.onclick = () => {
+    setCommandPaletteOpen(true);
+  };
+  if (el.commandPaletteCloseBtn) el.commandPaletteCloseBtn.onclick = () => {
+    setCommandPaletteOpen(false);
+  };
+  if (el.commandPaletteInput) {
+    el.commandPaletteInput.oninput = () => renderCommandPaletteList();
+    el.commandPaletteInput.onkeydown = (event) => {
+      const key = String(event.key || "").toLowerCase();
+      if (key === "escape") {
+        event.preventDefault();
+        setCommandPaletteOpen(false);
+        return;
+      }
+      if (key === "enter") {
+        event.preventDefault();
+        const first = el.commandPaletteList ? el.commandPaletteList.querySelector("li") : null;
+        if (first) first.click();
+      }
+    };
+  }
   if (el.undoBtn) el.undoBtn.onclick = () => {
     if (el.deleteLastExchangeBtn && typeof el.deleteLastExchangeBtn.onclick === "function") {
       el.deleteLastExchangeBtn.onclick();
     }
   };
   if (el.shortcutHelpBtn) el.shortcutHelpBtn.onclick = () => {
-    if (el.shortcutOverlay) el.shortcutOverlay.textContent = "Enter send | Shift+Enter newline | /help commands | Ctrl+Enter send";
+    if (el.shortcutOverlay) el.shortcutOverlay.textContent = "Enter send | Shift+Enter newline | Ctrl+Enter send | Ctrl/Cmd+K command palette | /help commands";
   };
   if (el.shortcutCloseBtn) el.shortcutCloseBtn.onclick = () => {
     if (el.shortcutOverlay) el.shortcutOverlay.textContent = "";
+  };
+  if (el.onboardingStartBtn) el.onboardingStartBtn.onclick = () => {
+    completeOnboarding(false).catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+  if (el.onboardingSkipBtn) el.onboardingSkipBtn.onclick = () => {
+    completeOnboarding(true).catch((err) => showBanner(err.message || String(err), "bad"));
   };
   if (el.exportChatBtn) el.exportChatBtn.onclick = () => download("neuralshell-chat.json", JSON.stringify(appState.chat, null, 2), "application/json;charset=utf-8");
   if (el.exportMarkdownBtn) el.exportMarkdownBtn.onclick = () => download("neuralshell-chat.md", markdown(appState.chat), "text/markdown;charset=utf-8");
@@ -953,6 +1210,13 @@ async function bootstrap() {
   initializePromptSnippets();
   await loadInitialState();
   await Promise.all([refreshModels(), refreshSessions(), refreshCommands(), updateStats()]);
+  populateOnboardingModelSelect();
+  setCommandPaletteOpen(false);
+  if (appState.settings.onboardingCompleted !== true) {
+    setOnboardingOpen(true);
+  } else {
+    setOnboardingOpen(false);
+  }
   if (appState.statsTimer) clearInterval(appState.statsTimer);
   appState.statsTimer = setInterval(() => {
     updateStats().catch(() => {});

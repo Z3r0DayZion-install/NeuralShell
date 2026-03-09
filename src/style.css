@@ -416,7 +416,8 @@ button:active {
 }
 
 #sessionList,
-#commandList {
+#commandList,
+#commandPaletteList {
   margin: 0 0 10px;
   padding: 8px;
   list-style: none;
@@ -429,20 +430,56 @@ button:active {
 }
 
 #sessionList li,
-#commandList li {
+#commandList li,
+#commandPaletteList li {
   padding: 7px 6px;
   border-bottom: 1px dashed rgba(144, 167, 197, 0.28);
   cursor: pointer;
 }
 
 #sessionList li:last-child,
-#commandList li:last-child {
+#commandList li:last-child,
+#commandPaletteList li:last-child {
   border-bottom: 0;
 }
 
 #sessionList li:hover,
-#commandList li:hover {
+#commandList li:hover,
+#commandPaletteList li:hover {
   background: rgba(46, 196, 182, 0.08);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 7, 14, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.overlay-card {
+  width: min(760px, 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(168deg, rgba(14, 25, 39, 0.98), rgba(21, 35, 53, 0.98));
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#commandPaletteList {
+  min-height: 180px;
+  max-height: 360px;
+}
+
+#commandPaletteList li strong {
+  color: var(--brand);
 }
 
 #logsOutput,
