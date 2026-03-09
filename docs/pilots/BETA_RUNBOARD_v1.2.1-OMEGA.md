@@ -12,6 +12,7 @@ Use this as the single source of truth for the beta round.
 - Issue forms: `https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose`
 - Triage playbook: `docs/pilots/BETA_TRIAGE_PLAYBOOK_v1.2.1-OMEGA.md`
 - Immutable ledger: `governance/BETA_PILOT_LEDGER_v1.2.1-OMEGA.jsonl`
+- Targeted outreach batch: `docs/pilots/BETA_TARGETED_OUTREACH_EMAIL_BATCH_v1.2.1-OMEGA.md`
 
 ## Tester Tracker
 | Tester | Invite Sent | Started | Completed | Result (`Passed X/9`) | Highest Bug Severity | Notes |
