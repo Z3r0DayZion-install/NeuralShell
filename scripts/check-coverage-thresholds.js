@@ -5,10 +5,10 @@ const root = path.resolve(__dirname, "..");
 const summaryPath = path.join(root, "coverage", "coverage-summary.json");
 
 const GLOBAL_THRESHOLDS = {
-  statements: 74,
-  branches: 70,
-  functions: 75,
-  lines: 74
+  statements: 80,
+  branches: 74,
+  functions: 84,
+  lines: 80
 };
 
 const CRITICAL_FILE_THRESHOLDS = [
@@ -19,6 +19,18 @@ const CRITICAL_FILE_THRESHOLDS = [
   {
     fileSuffix: path.join("src", "core", "policyFirewall.js"),
     thresholds: { statements: 95, branches: 70, functions: 95, lines: 95 }
+  },
+  {
+    fileSuffix: path.join("src", "core", "llmService.js"),
+    thresholds: { statements: 92, branches: 75, functions: 95, lines: 92 }
+  },
+  {
+    fileSuffix: path.join("src", "core", "stateManager.js"),
+    thresholds: { statements: 88, branches: 68, functions: 95, lines: 88 }
+  },
+  {
+    fileSuffix: path.join("src", "core", "sessionManager.js"),
+    thresholds: { statements: 90, branches: 70, functions: 95, lines: 90 }
   }
 ];
 
