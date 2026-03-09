@@ -64,6 +64,7 @@ function resolveTargets(rootDir) {
   ];
 
   const optionalTargets = [
+    "release/installer-smoke-report.json",
     "release/security-pass.json",
     "release/canary-gate.json",
     "release/performance-gate.json",
