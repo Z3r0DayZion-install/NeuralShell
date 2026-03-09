@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T06:59:47.960Z",
-  "commit": "37a0cbe57641cdb2e65d8fff8c23658a145496b9",
+  "generatedAt": "2026-03-09T07:05:50.574Z",
+  "commit": "ac1b4f961d7e1dc5a4949f03ca4201246dd5f2d0",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -306,8 +306,8 @@
     "governance/OMEGA_RELEASE_LEDGER.md": "a70015f73d46069b12b5c2aceef105e147f73c181c82ac51789937c39a4a960d",
     "governance/THREAT_LEDGER.jsonl": "5ea48724895a4a30d6f2602c45983f35ae0672547f09afa0396910da2f008634",
     "governance/branch_protection_policy.json": "d7539f6305083a52324b839a366c1645ad98e48f25a4cededf30b8b3624e7ea5",
-    "package-lock.json": "4f189c349ea2e88a591bb4cbb643259256df1dffdd1ee7da7d256587c18fdce1",
-    "package.json": "01f55b8101517005a2e8182efda98d39625e9eed2b82a740b0883922d4b411fd",
+    "package-lock.json": "2a69aece2458b1e79a27dc046b911a84068d57b020c78c2e76fe965f462ea264",
+    "package.json": "8f303f5e502f7dbb88fdfc6ab2979fb229b3d4ed4b84a02f54bbfb515220d2bf",
     "production-server.js": "3415d790f5cc37bfe04dfe94ac07e026cdc40496713ba538b76894197692ab1e",
     "proof/latest/proof-manifest.json": "366beca59d6c08d281ae059db5498db72ef906bdd9ec5b757806a166f75dbb54",
     "proof/latest/runtime/config.json": "04462a347748134d8e1e19d481c94436d60575a25d666172288e8de14880127e",
@@ -418,7 +418,7 @@
     "tear/release-freshness.test.js": "d12d3772afe9a702c6de1972ce7ea306ae1dc54a79bbac1648a78c96e0c4a991",
     "tear/release-gate.js": "73b7c6e97cefd7b92faa7484cfb57a6ad6fcbb177286c535d768fd066b1756a4",
     "tear/release-manifest.test.js": "17047e01f72414803f37171dc4e9243a0abc66e3e8f06209dd7ec1c506f33958",
-    "tear/release-status-contract.test.js": "58f55daf0a2918d839471de974583ffd0afc10526813aa3160ff653608fd1e1f",
+    "tear/release-status-contract.test.js": "9dbee252aa03fd572c1450e5264d09609f59049fd301ea5f6630eceed5d5adc1",
     "tear/release-status.js": "e3ff2e60c744bbaf3896e0de84b26652e714e08d6362545676763b43cec5507f",
     "tear/release-upgrade-validation.test.js": "3c408a08ac800e2443262653534a5f6e9f96c3379ceb882626c4cf2d5fe3677a",
     "tear/release-workflows-contract.test.js": "4b1193c0bccc2dd1534c7848cadbe0526c30ad579237121c2416a206cc052981",
