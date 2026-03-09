@@ -95,16 +95,16 @@ jobs:
           fetch-depth: 0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@3b054500189c7b3ca9be7cd4f035ca58c00776cd # v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript
           queries: security-extended
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@3b054500189c7b3ca9be7cd4f035ca58c00776cd # v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Analyze
-        uses: github/codeql-action/analyze@3b054500189c7b3ca9be7cd4f035ca58c00776cd # v3
+        uses: github/codeql-action/analyze@v4
         with:
           upload: false
 
@@ -181,4 +181,3 @@ jobs:
           fi
 
           echo "Security pass consolidated status: PASS"
-
