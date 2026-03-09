@@ -8,83 +8,238 @@
   </head>
   <body>
     <main class="app">
-      <section class="grid">
-        <select id="modelSelect"></select>
-        <button id="refreshModelsBtn">Refresh Models</button>
-        <div id="statusLabel"></div>
-        <div id="statusMeta"></div>
-        <ul id="sessionList"></ul>
-        <button id="runSelfTestBtn">Self Test</button>
-        <button id="runButtonAuditBtn">Button Audit</button>
-        <input id="sessionSearchInput" />
-        <select id="sessionSortSelect"></select>
-        <input id="sessionName" />
-        <input id="sessionPass" type="password" />
-        <pre id="sessionMetadataOutput"></pre>
-        <button id="saveSessionBtn">Save Session</button>
-        <button id="loadSessionBtn">Load Session</button>
-        <button id="renameSessionBtn">Rename Session</button>
-        <button id="deleteSessionBtn">Delete Session</button>
-        <button id="duplicateSessionBtn">Duplicate Session</button>
-        <div id="chatHistory"></div>
-        <div id="typingIndicator"></div>
-        <input id="chatSearchInput" />
-        <button id="chatSearchBtn">Search Chat</button>
-        <button id="chatSearchClearBtn">Clear Search</button>
-        <button id="newChatBtn">New Chat</button>
-        <button id="deleteLastExchangeBtn">Delete Last</button>
-        <textarea id="promptInput"></textarea>
-        <div id="promptMetrics"></div>
-        <input id="autoScrollInput" type="checkbox" />
-        <button id="sendBtn">Send</button>
-        <button id="stopBtn">Stop</button>
-        <button id="retryBtn">Retry</button>
-        <button id="editLastBtn">Edit Last</button>
-        <select id="snippetSelect"></select>
-        <button id="insertSnippetBtn">Insert Snippet</button>
-        <button id="regenerateBtn">Regenerate</button>
-        <button id="exportChatBtn">Export Chat</button>
-        <button id="exportMarkdownBtn">Export Markdown</button>
-        <button id="copyMarkdownBtn">Copy Markdown</button>
-        <button id="copyLastAssistantBtn">Copy Last Assistant</button>
-        <button id="shortcutHelpBtn">Shortcuts</button>
-        <button id="importChatBtn">Import Chat</button>
-        <input id="importChatFile" type="file" />
-        <button id="refreshCommandsBtn">Refresh Commands</button>
-        <ul id="commandList"></ul>
-        <input id="baseUrlInput" />
-        <input id="timeoutInput" type="number" />
-        <input id="retryInput" type="number" />
-        <select id="themeSelect"></select>
-        <input id="tokenBudgetInput" type="number" />
-        <input id="autosaveNameInput" />
-        <input id="autosaveIntervalInput" type="number" />
-        <input id="autosaveEnabledInput" type="checkbox" />
-        <button id="applySettingsBtn">Apply Settings</button>
-        <button id="repairIndexBtn">Repair Index</button>
-        <button id="exportStateBtn">Export State</button>
-        <button id="importStateBtn">Import State</button>
-        <input id="importStateFile" type="file" />
-        <div id="cpuUsage"></div>
-        <div id="memoryUsage"></div>
-        <div id="tokensUsed"></div>
-        <div id="platformInfo"></div>
-        <div id="clockTime"></div>
-        <button id="loadLogsBtn">Load Logs</button>
-        <button id="clearLogsBtn">Clear Logs</button>
-        <button id="exportLogsBtn">Export Logs</button>
-        <pre id="logsOutput"></pre>
-        <button id="loadChatLogsBtn">Load Chat Logs</button>
-        <button id="clearChatLogsBtn">Clear Chat Logs</button>
-        <button id="exportChatLogsBtn">Export Chat Logs</button>
-        <pre id="chatLogsOutput"></pre>
-        <pre id="buttonAuditOutput"></pre>
-        <div id="knowledgeFeed" style="border: 1px solid #ccc; padding: 10px; margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
-        <div id="capabilityGraph" style="border: 1px solid #ccc; padding: 10px; margin-top: 10px; height: 300px; overflow: hidden; background: #1a1a1a; color: #0f0; font-family: monospace;"></div>
-        <div id="shortcutOverlay"></div>
-        <button id="shortcutCloseBtn">Close Shortcuts</button>
-        <button id="undoBtn">Undo</button>
-        <button id="commandHelpBtn">Command Help</button>
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="kicker">Operator Console</p>
+          <h1>NeuralShell</h1>
+          <p class="subtitle">Model orchestration, session control, and runtime observability.</p>
+        </div>
+        <div class="hero-status">
+          <div id="statusLabel"></div>
+          <div id="statusMeta"></div>
+          <div id="typingIndicator"></div>
+        </div>
+      </header>
+
+      <section class="layout">
+        <section class="panel panel-chat">
+          <div class="panel-head">
+            <h2>Chat Ops</h2>
+            <div class="row row-tight">
+              <label class="field-inline" for="modelSelect">
+                <span>Model</span>
+                <select id="modelSelect"></select>
+              </label>
+              <button id="refreshModelsBtn">Refresh Models</button>
+            </div>
+          </div>
+
+          <div id="chatHistory"></div>
+
+          <div class="row row-wrap">
+            <label class="field-inline checkbox-field" for="autoScrollInput">
+              <input id="autoScrollInput" type="checkbox" checked />
+              <span>Auto Scroll</span>
+            </label>
+            <div id="promptMetrics"></div>
+            <div id="tokensUsed"></div>
+          </div>
+
+          <label class="field-block" for="promptInput">
+            <span>Prompt</span>
+            <textarea id="promptInput" placeholder="Type a prompt, or use slash commands like /help"></textarea>
+          </label>
+
+          <div class="row row-wrap">
+            <button id="sendBtn">Send</button>
+            <button id="stopBtn">Stop</button>
+            <button id="retryBtn">Retry</button>
+            <button id="editLastBtn">Edit Last</button>
+            <button id="regenerateBtn">Regenerate</button>
+            <button id="newChatBtn">New Chat</button>
+            <button id="deleteLastExchangeBtn">Delete Last</button>
+            <button id="undoBtn">Undo</button>
+          </div>
+
+          <div class="row row-wrap">
+            <label class="field-inline" for="snippetSelect">
+              <span>Snippet</span>
+              <select id="snippetSelect"></select>
+            </label>
+            <button id="insertSnippetBtn">Insert Snippet</button>
+            <button id="commandHelpBtn">Command Help</button>
+            <button id="shortcutHelpBtn">Shortcuts</button>
+            <button id="shortcutCloseBtn">Close Shortcuts</button>
+          </div>
+
+          <div class="row row-wrap">
+            <label class="field-inline grow" for="chatSearchInput">
+              <span>Chat Search</span>
+              <input id="chatSearchInput" placeholder="Search messages" />
+            </label>
+            <button id="chatSearchBtn">Search Chat</button>
+            <button id="chatSearchClearBtn">Clear Search</button>
+          </div>
+
+          <div class="row row-wrap">
+            <button id="exportChatBtn">Export Chat</button>
+            <button id="exportMarkdownBtn">Export Markdown</button>
+            <button id="copyMarkdownBtn">Copy Markdown</button>
+            <button id="copyLastAssistantBtn">Copy Last Assistant</button>
+          </div>
+
+          <div class="row row-wrap">
+            <input id="importChatFile" type="file" />
+            <button id="importChatBtn">Import Chat</button>
+          </div>
+
+          <div id="shortcutOverlay"></div>
+        </section>
+
+        <section class="panel panel-sessions">
+          <div class="panel-head">
+            <h2>Sessions</h2>
+          </div>
+          <div class="row row-wrap">
+            <label class="field-inline" for="sessionName">
+              <span>Session Name</span>
+              <input id="sessionName" placeholder="main-session" />
+            </label>
+            <label class="field-inline" for="sessionPass">
+              <span>Passphrase</span>
+              <input id="sessionPass" type="password" placeholder="Required for save/load" />
+            </label>
+          </div>
+
+          <div class="row row-wrap">
+            <label class="field-inline grow" for="sessionSearchInput">
+              <span>Search</span>
+              <input id="sessionSearchInput" placeholder="Filter sessions" />
+            </label>
+            <label class="field-inline" for="sessionSortSelect">
+              <span>Sort</span>
+              <select id="sessionSortSelect"></select>
+            </label>
+          </div>
+
+          <div class="row row-wrap">
+            <button id="saveSessionBtn">Save Session</button>
+            <button id="loadSessionBtn">Load Session</button>
+            <button id="renameSessionBtn">Rename Session</button>
+            <button id="deleteSessionBtn">Delete Session</button>
+            <button id="duplicateSessionBtn">Duplicate Session</button>
+            <button id="repairIndexBtn">Repair Index</button>
+          </div>
+
+          <ul id="sessionList"></ul>
+          <pre id="sessionMetadataOutput"></pre>
+        </section>
+
+        <section class="panel panel-commands">
+          <div class="panel-head">
+            <h2>Command Bus</h2>
+          </div>
+          <div class="row row-wrap">
+            <button id="refreshCommandsBtn">Refresh Commands</button>
+          </div>
+          <ul id="commandList"></ul>
+        </section>
+
+        <section class="panel panel-settings">
+          <div class="panel-head">
+            <h2>Settings</h2>
+          </div>
+
+          <div class="form-grid">
+            <label class="field-block" for="baseUrlInput">
+              <span>Base URL</span>
+              <input id="baseUrlInput" placeholder="http://127.0.0.1:11434" />
+            </label>
+            <label class="field-block" for="timeoutInput">
+              <span>Timeout (ms)</span>
+              <input id="timeoutInput" type="number" min="1" />
+            </label>
+            <label class="field-block" for="retryInput">
+              <span>Retry Count</span>
+              <input id="retryInput" type="number" min="0" />
+            </label>
+            <label class="field-block" for="themeSelect">
+              <span>Theme</span>
+              <select id="themeSelect"></select>
+            </label>
+            <label class="field-block" for="tokenBudgetInput">
+              <span>Token Budget</span>
+              <input id="tokenBudgetInput" type="number" min="1" />
+            </label>
+            <label class="field-block" for="autosaveNameInput">
+              <span>Autosave Name</span>
+              <input id="autosaveNameInput" />
+            </label>
+            <label class="field-block" for="autosaveIntervalInput">
+              <span>Autosave Interval (min)</span>
+              <input id="autosaveIntervalInput" type="number" min="1" />
+            </label>
+            <label class="field-inline checkbox-field" for="autosaveEnabledInput">
+              <input id="autosaveEnabledInput" type="checkbox" />
+              <span>Autosave Enabled</span>
+            </label>
+          </div>
+
+          <div class="row row-wrap">
+            <button id="applySettingsBtn">Apply Settings</button>
+            <button id="exportStateBtn">Export State</button>
+            <input id="importStateFile" type="file" />
+            <button id="importStateBtn">Import State</button>
+          </div>
+        </section>
+
+        <section class="panel panel-runtime">
+          <div class="panel-head">
+            <h2>Runtime</h2>
+          </div>
+
+          <div class="stats-grid">
+            <div>
+              <span class="stat-label">CPU</span>
+              <div id="cpuUsage"></div>
+            </div>
+            <div>
+              <span class="stat-label">Memory</span>
+              <div id="memoryUsage"></div>
+            </div>
+            <div>
+              <span class="stat-label">Platform</span>
+              <div id="platformInfo"></div>
+            </div>
+            <div>
+              <span class="stat-label">Clock</span>
+              <div id="clockTime"></div>
+            </div>
+          </div>
+
+          <div class="row row-wrap">
+            <button id="runSelfTestBtn">Self Test</button>
+            <button id="runButtonAuditBtn">Button Audit</button>
+            <button id="loadLogsBtn">Load Logs</button>
+            <button id="clearLogsBtn">Clear Logs</button>
+            <button id="exportLogsBtn">Export Logs</button>
+            <button id="loadChatLogsBtn">Load Chat Logs</button>
+            <button id="clearChatLogsBtn">Clear Chat Logs</button>
+            <button id="exportChatLogsBtn">Export Chat Logs</button>
+          </div>
+
+          <pre id="buttonAuditOutput"></pre>
+          <pre id="logsOutput"></pre>
+          <pre id="chatLogsOutput"></pre>
+        </section>
+
+        <section class="panel panel-intel">
+          <div class="panel-head">
+            <h2>Intel</h2>
+          </div>
+          <div id="knowledgeFeed"></div>
+          <div id="capabilityGraph"></div>
+        </section>
       </section>
     </main>
     <script src="renderer.js"></script>
