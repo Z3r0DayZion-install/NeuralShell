@@ -17,6 +17,8 @@ function run() {
   assert(src.includes("Release provenance written"), "release-status.js missing provenance log output.");
   assert(src.includes("manifestSig"), "release-status.js missing manifest signature artifact checks.");
   assert(src.includes("signature-verification.json"), "release-status.js missing signature verification ingestion.");
+  assert(src.includes("installer-smoke-report.json"), "release-status.js missing installer smoke ingestion.");
+  assert(src.includes("upgrade-validation.json"), "release-status.js missing upgrade validation ingestion.");
   console.log("Release status contract test passed.");
 }
 

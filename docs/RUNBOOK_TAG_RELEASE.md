@@ -40,6 +40,8 @@ git push origin v1.1.0-OMEGA
 - `release/manifest.json`
 - `release/status.json`
 - `release/provenance.json`
+- `release/installer-smoke-report.json`
+- `release/upgrade-validation.json`
 - `release/checksums.txt`
 - `release/checksums.json`
 - `CHANGELOG.md`
@@ -49,4 +51,4 @@ git push origin v1.1.0-OMEGA
 - Verify checksums from `release/checksums.txt`.
 - Verify update metadata references the new installer.
 - Validate a clean install + update path on Windows VM.
-- Capture and archive `release/installer-smoke-report.json`.
+- Capture and archive `release/installer-smoke-report.json` and `release/upgrade-validation.json`.

@@ -71,6 +71,8 @@ function main() {
   const benchmark = readJson("release/autonomy-benchmark.json");
   const signatureVerification = readJson("release/signature-verification.json");
   const diagnose = readJson("release/packaged-launch-diagnostic.json");
+  const installerSmoke = readJson("release/installer-smoke-report.json");
+  const upgradeValidation = readJson("release/upgrade-validation.json");
   const installerPath = findInstallerExe();
 
   const artifacts = {
@@ -103,6 +105,20 @@ function main() {
         uptimeMs: diagnose.uptimeMs,
         exitCode: diagnose.exitCode,
         generatedAt: diagnose.generatedAt
+      }
+      : null,
+    installerSmoke: installerSmoke
+      ? {
+        passed: Boolean(installerSmoke.passed),
+        strictInstall: Boolean(installerSmoke.strictInstall),
+        generatedAt: installerSmoke.generatedAt || null
+      }
+      : null,
+    upgradeValidation: upgradeValidation
+      ? {
+        passed: Boolean(upgradeValidation.passed),
+        strict: Boolean(upgradeValidation.strict),
+        generatedAt: upgradeValidation.generatedAt || null
       }
       : null
   };

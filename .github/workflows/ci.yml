@@ -67,10 +67,13 @@ jobs:
             release/manifest.sig
             release/manifest.pub
             release/signature-verification.json
+            release/release-gate.json
             release/packaged-smoke-report.json
+            release/packaged-launch-diagnostic.json
+            release/installer-smoke-report.json
+            release/upgrade-validation.json
             release/security-pass.json
             release/canary-gate.json
             release/performance-gate.json
             release/operator-kpi.json
             release/slo-gate.json
-

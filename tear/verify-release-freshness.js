@@ -5,6 +5,8 @@ const root = path.resolve(__dirname, "..");
 const statusFile = path.join(root, "release", "status.json");
 const manifestFile = path.join(root, "release", "manifest.json");
 const benchmarkFile = path.join(root, "release", "autonomy-benchmark.json");
+const installerSmokeFile = path.join(root, "release", "installer-smoke-report.json");
+const upgradeValidationFile = path.join(root, "release", "upgrade-validation.json");
 const checksumsFile = path.join(root, "release", "checksums.txt");
 const checksumsJsonFile = path.join(root, "release", "checksums.json");
 
@@ -34,13 +36,16 @@ function main() {
   assert(fs.existsSync(statusFile), `Missing release status file: ${statusFile}`);
   assert(fs.existsSync(manifestFile), `Missing release manifest file: ${manifestFile}`);
   assert(fs.existsSync(benchmarkFile), `Missing autonomy benchmark file: ${benchmarkFile}`);
+  assert(fs.existsSync(upgradeValidationFile), `Missing upgrade validation file: ${upgradeValidationFile}`);
   assert(fs.existsSync(checksumsFile), `Missing release checksums file: ${checksumsFile}`);
   assert(fs.existsSync(checksumsJsonFile), `Missing release checksums metadata file: ${checksumsJsonFile}`);
+  assert(fs.statSync(upgradeValidationFile).size > 0, `Upgrade validation file is empty: ${upgradeValidationFile}`);
   assert(fs.statSync(checksumsFile).size > 0, `Release checksums file is empty: ${checksumsFile}`);
 
   const status = readJson(statusFile);
   const manifest = readJson(manifestFile);
   const benchmark = readJson(benchmarkFile);
+  const upgradeValidation = readJson(upgradeValidationFile);
   const checksums = readJson(checksumsJsonFile);
 
   assertArtifact(status, "unpackedExe");
@@ -50,10 +55,13 @@ function main() {
   assertArtifact(status, "manifestPub");
   if (strictInstaller) {
     assertArtifact(status, "installerExe");
+    assert(fs.existsSync(installerSmokeFile), `Missing installer smoke report in strict mode: ${installerSmokeFile}`);
+    assert(fs.statSync(installerSmokeFile).size > 0, `Installer smoke report is empty: ${installerSmokeFile}`);
   }
 
   assert(Number(manifest.fileCount) >= 20, "manifest fileCount unexpectedly low.");
   assert(Number(benchmark.percent) >= 80, "benchmark percent below required floor.");
+  assert(Boolean(upgradeValidation.passed), "upgrade validation report indicates failure.");
   assert(Array.isArray(checksums.entries), "checksums metadata entries must be an array.");
   assert(checksums.entries.length >= 10, "checksums metadata unexpectedly short.");
 
@@ -64,7 +72,8 @@ function main() {
     "release/signature-verification.json",
     "release/status.json",
     "release/provenance.json",
-    "release/autonomy-benchmark.json"
+    "release/autonomy-benchmark.json",
+    "release/upgrade-validation.json"
   ]);
   const checksumPaths = new Set(checksums.entries.map((entry) => String(entry.path || "")));
   for (const relPath of requiredChecksumPaths) {
@@ -74,12 +83,17 @@ function main() {
   const statusAge = ageMinutes(status.generatedAt);
   const manifestAge = ageMinutes(manifest.generatedAt);
   const benchmarkAge = ageMinutes(benchmark.generatedAt);
+  const upgradeValidationAge = ageMinutes(upgradeValidation.generatedAt);
   const checksumsAge = ageMinutes(checksums.generatedAt);
   const maxAgeMin = 120;
 
   assert(statusAge <= maxAgeMin, `release status is stale (${statusAge.toFixed(1)} min old).`);
   assert(manifestAge <= maxAgeMin, `release manifest is stale (${manifestAge.toFixed(1)} min old).`);
   assert(benchmarkAge <= maxAgeMin, `benchmark report is stale (${benchmarkAge.toFixed(1)} min old).`);
+  assert(
+    upgradeValidationAge <= maxAgeMin,
+    `upgrade validation report is stale (${upgradeValidationAge.toFixed(1)} min old).`
+  );
   assert(checksumsAge <= maxAgeMin, `release checksums are stale (${checksumsAge.toFixed(1)} min old).`);
 
   const expectedProfile = strictInstaller ? "installer+unpacked" : "unpacked-only";
@@ -105,7 +119,7 @@ function main() {
 
   console.log("Release freshness verification passed.");
   console.log(
-    `Mode=${strictInstaller ? "strict-installer" : "default"} Ages(min): status=${statusAge.toFixed(1)} manifest=${manifestAge.toFixed(1)} benchmark=${benchmarkAge.toFixed(1)} checksums=${checksumsAge.toFixed(1)}`
+    `Mode=${strictInstaller ? "strict-installer" : "default"} Ages(min): status=${statusAge.toFixed(1)} manifest=${manifestAge.toFixed(1)} benchmark=${benchmarkAge.toFixed(1)} upgrade=${upgradeValidationAge.toFixed(1)} checksums=${checksumsAge.toFixed(1)}`
   );
 }
 

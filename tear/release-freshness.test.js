@@ -14,6 +14,7 @@ function run() {
     !src.includes("manifest.json") ||
     !src.includes("provenance.json") ||
     !src.includes("autonomy-benchmark.json") ||
+    !src.includes("upgrade-validation.json") ||
     !src.includes("checksums.txt") ||
     !src.includes("checksums.json")
   ) {
