@@ -33,6 +33,7 @@ async function run() {
     writeFile(fixtureRoot, "release/status.json", '{"ok":true}');
     writeFile(fixtureRoot, "release/provenance.json", '{"ok":true}');
     writeFile(fixtureRoot, "release/autonomy-benchmark.json", '{"percent":100}');
+    writeFile(fixtureRoot, "release/upgrade-validation.json", '{"passed":true}');
 
     const fixedNow = "2026-03-03T00:00:00.000Z";
     const first = await generateReleaseChecksums({ rootDir: fixtureRoot, now: () => fixedNow });
@@ -42,7 +43,7 @@ async function run() {
     assert(fs.existsSync(first.outJson), "checksums.json not created.");
 
     const text = fs.readFileSync(first.outTxt, "utf8").trim().split(/\r?\n/).filter(Boolean);
-    assert(text.length === 10, `Expected 10 checksum entries, got ${text.length}.`);
+    assert(text.length === 11, `Expected 11 checksum entries, got ${text.length}.`);
     for (const line of text) {
       assert(/^[a-f0-9]{64}\s\s.+$/i.test(line), `Invalid checksum line format: ${line}`);
     }
@@ -50,7 +51,7 @@ async function run() {
     const parsed = JSON.parse(fs.readFileSync(first.outJson, "utf8"));
     assert(parsed.generatedAt === fixedNow, "checksums.json generatedAt mismatch.");
     assert(Array.isArray(parsed.entries), "checksums.json entries must be array.");
-    assert(parsed.entries.length === 10, "checksums.json entries length mismatch.");
+    assert(parsed.entries.length === 11, "checksums.json entries length mismatch.");
 
     const manifestEntry = parsed.entries.find((entry) => entry.path === "release/manifest.json");
     assert(Boolean(manifestEntry), "Missing release/manifest.json checksum entry.");
@@ -61,6 +62,8 @@ async function run() {
     assert(Boolean(signatureEntry), "Missing release/manifest.sig checksum entry.");
     const verificationEntry = parsed.entries.find((entry) => entry.path === "release/signature-verification.json");
     assert(Boolean(verificationEntry), "Missing release/signature-verification.json checksum entry.");
+    const upgradeValidationEntry = parsed.entries.find((entry) => entry.path === "release/upgrade-validation.json");
+    assert(Boolean(upgradeValidationEntry), "Missing release/upgrade-validation.json checksum entry.");
 
     assert(
       JSON.stringify(first.entries) === JSON.stringify(second.entries),

@@ -57,7 +57,9 @@ jobs:
         run: npm run verify:ship
 
       - name: Compose release notes and changelog snapshot
-        run: npm run release:notes -- --tag=${{ github.ref_name }}
+        env:
+          RELEASE_NOTES_TAG: ${{ github.ref_name }}
+        run: npm run release:notes
 
       - name: Publish release assets
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
@@ -74,10 +76,16 @@ jobs:
             release/status.json
             release/provenance.json
             release/autonomy-benchmark.json
+            release/release-gate.json
             release/packaged-smoke-report.json
+            release/packaged-launch-diagnostic.json
+            release/installer-smoke-report.json
+            release/upgrade-validation.json
             release/security-pass.json
             release/canary-gate.json
             release/performance-gate.json
+            release/operator-kpi.json
+            release/slo-gate.json
             release/checksums.txt
             release/checksums.json
             CHANGELOG.md
@@ -122,4 +130,3 @@ jobs:
 
             Invoke-RestMethod -Method PATCH -Headers $headers -Uri "https://api.github.com/repos/$repo/releases/$($release.id)" -Body $payload -ContentType "application/json"
           }
-

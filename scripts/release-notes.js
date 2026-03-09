@@ -116,7 +116,10 @@ function updateChangelog(changelogPath, tag, commits, dateStamp) {
 }
 
 function main() {
-  const tag = parseArg("tag", process.env.GITHUB_REF_NAME || run("git describe --tags --exact-match"));
+  const tag = parseArg(
+    "tag",
+    process.env.RELEASE_NOTES_TAG || process.env.GITHUB_REF_NAME || run("git describe --tags --exact-match")
+  );
   const outFile = normalizePath(parseArg("out"), path.join(root, "release", "RELEASE_NOTES.md"));
   const checksumsPath = normalizePath(parseArg("checksums"), path.join(root, "release", "checksums.txt"));
   const changelogPath = normalizePath(parseArg("changelog"), path.join(root, "CHANGELOG.md"));
