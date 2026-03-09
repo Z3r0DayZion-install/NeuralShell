@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T06:11:07.428Z",
-  "commit": "08747f4a481854f1d55719e13d4b39a312e939bd",
+  "generatedAt": "2026-03-09T06:22:22.606Z",
+  "commit": "931286d1de8ba2e432a937ac1db1a6c3f07313ac",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -306,8 +306,8 @@
     "governance/OMEGA_RELEASE_LEDGER.md": "a70015f73d46069b12b5c2aceef105e147f73c181c82ac51789937c39a4a960d",
     "governance/THREAT_LEDGER.jsonl": "5ea48724895a4a30d6f2602c45983f35ae0672547f09afa0396910da2f008634",
     "governance/branch_protection_policy.json": "d7539f6305083a52324b839a366c1645ad98e48f25a4cededf30b8b3624e7ea5",
-    "package-lock.json": "e830ef16725b445f2019a5298ec2674bc76a283f19d20e3feac28a54ca1326a2",
-    "package.json": "8862d549bda46e21c01d2a459fe507db452ad31b30671a3e22acf10f0545bf96",
+    "package-lock.json": "4f189c349ea2e88a591bb4cbb643259256df1dffdd1ee7da7d256587c18fdce1",
+    "package.json": "ba5c57f9b9cbef0f4b62af41aaeacb2146f7235d3f772cb46432a6c75233563c",
     "production-server.js": "3415d790f5cc37bfe04dfe94ac07e026cdc40496713ba538b76894197692ab1e",
     "proof/latest/proof-manifest.json": "366beca59d6c08d281ae059db5498db72ef906bdd9ec5b757806a166f75dbb54",
     "proof/latest/runtime/config.json": "04462a347748134d8e1e19d481c94436d60575a25d666172288e8de14880127e",
@@ -427,6 +427,7 @@
     "tear/session-manager.test.js": "b8b94e8bc4ad7671b54f136a7626a443b0c12d36a98f7c23bb5f759ec1a0461b",
     "tear/ship-entrypoints.test.js": "12de6142447fe8945bce3f81662c2d5d580b2adc23c7afc9ed904bf2ff7bfbd7",
     "tear/slo-gate.js": "48ed8ce7daa845fba419c4b2a06473d89245206d17c1ca2ad9da8a53c721393e",
+    "tear/smoke-installer.js": "7fa767b2f5ecd0da5b49863f5eee17ee1e9567a3608b83a81f2ad6b030d3a91b",
     "tear/smoke-packaged.js": "dc9df5494afa03c6e7be847c63503d643520b84fc8b51e62e30332a3f75d16c2",
     "tear/smoke-test.js": "9f7dbbc7f5264abd13e35dae0a010707d689ad5af0b071b4580afd7d1772ee40",
     "tear/state-manager.test.js": "b196bc863ef9e3dcd1728f292c59850d371e2acf1f3eec8c2ecf7922f19aeaab",
