@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 const {
   evaluateProtection,
   parseRepo,
@@ -14,6 +15,56 @@ function getArg(name, fallback = "") {
   const raw = process.argv.find((arg) => String(arg || "").startsWith(prefix));
   if (!raw) return fallback;
   return String(raw).slice(prefix.length).trim();
+}
+
+function safeExec(command) {
+  try {
+    return execSync(command, {
+      cwd: root,
+      stdio: ["ignore", "pipe", "ignore"]
+    })
+      .toString("utf8")
+      .trim();
+  } catch {
+    return "";
+  }
+}
+
+function parseRepoFromRemote(remoteUrl) {
+  const raw = String(remoteUrl || "").trim();
+  if (!raw) return "";
+
+  const httpsMatch = raw.match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i);
+  if (httpsMatch) {
+    return `${httpsMatch[1]}/${httpsMatch[2]}`;
+  }
+
+  const sshMatch = raw.match(/^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/i);
+  if (sshMatch) {
+    return `${sshMatch[1]}/${sshMatch[2]}`;
+  }
+
+  return "";
+}
+
+function resolveToken() {
+  const envToken = String(process.env.GH_ADMIN_TOKEN || process.env.GITHUB_TOKEN || "").trim();
+  if (envToken) return envToken;
+  return safeExec("gh auth token");
+}
+
+function resolveRepo(explicitRepo) {
+  const direct = String(explicitRepo || "").trim();
+  if (direct) return direct;
+
+  const ghRepo = safeExec("gh repo view --json nameWithOwner -q .nameWithOwner");
+  if (ghRepo) return ghRepo;
+
+  const remoteUrl = safeExec("git config --get remote.origin.url");
+  const parsed = parseRepoFromRemote(remoteUrl);
+  if (parsed) return parsed;
+
+  return "";
 }
 
 async function requestJson(url, token) {
@@ -39,14 +90,14 @@ async function requestJson(url, token) {
 }
 
 async function main() {
-  const token = process.env.GH_ADMIN_TOKEN || process.env.GITHUB_TOKEN;
-  const repoInput = getArg("repo", process.env.GITHUB_REPOSITORY);
+  const token = resolveToken();
+  const repoInput = resolveRepo(getArg("repo", process.env.GITHUB_REPOSITORY));
   const policyPath = getArg("policy", "");
   if (!token) {
-    throw new Error("GH_ADMIN_TOKEN or GITHUB_TOKEN is required.");
+    throw new Error("Missing GitHub token. Set GH_ADMIN_TOKEN/GITHUB_TOKEN or authenticate gh CLI.");
   }
   if (!repoInput) {
-    throw new Error("Missing repo. Provide --repo=owner/name or set GITHUB_REPOSITORY.");
+    throw new Error("Missing repo. Provide --repo=owner/name, set GITHUB_REPOSITORY, or set an origin GitHub remote.");
   }
 
   const repo = parseRepo(repoInput);
