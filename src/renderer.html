@@ -68,6 +68,7 @@
             </label>
             <button id="insertSnippetBtn">Insert Snippet</button>
             <button id="commandHelpBtn">Command Help</button>
+            <button id="commandPaletteOpenBtn">Command Palette</button>
             <button id="shortcutHelpBtn">Shortcuts</button>
             <button id="shortcutCloseBtn">Close Shortcuts</button>
           </div>
@@ -240,6 +241,42 @@
           <div id="knowledgeFeed"></div>
           <div id="capabilityGraph"></div>
         </section>
+      </section>
+
+      <section id="onboardingOverlay" class="overlay hidden" aria-hidden="true">
+        <div class="overlay-card">
+          <p class="kicker">v1.2.0 Foundation</p>
+          <h2>Welcome to NeuralShell</h2>
+          <p class="subtitle">Quick setup to get your first reliable session running.</p>
+          <div class="form-grid">
+            <label class="field-block" for="onboardingModelSelect">
+              <span>Default Model</span>
+              <select id="onboardingModelSelect"></select>
+            </label>
+            <label class="field-inline checkbox-field" for="onboardingAutoScrollInput">
+              <input id="onboardingAutoScrollInput" type="checkbox" checked />
+              <span>Enable Auto Scroll</span>
+            </label>
+          </div>
+          <div class="row row-wrap">
+            <button id="onboardingStartBtn">Start Console</button>
+            <button id="onboardingSkipBtn">Skip Setup</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="commandPaletteOverlay" class="overlay hidden" aria-hidden="true">
+        <div class="overlay-card">
+          <div class="panel-head">
+            <h2>Command Palette</h2>
+            <button id="commandPaletteCloseBtn">Close</button>
+          </div>
+          <label class="field-block" for="commandPaletteInput">
+            <span>Search</span>
+            <input id="commandPaletteInput" placeholder="Type a command or action" />
+          </label>
+          <ul id="commandPaletteList"></ul>
+        </div>
       </section>
     </main>
     <script src="renderer.js"></script>
