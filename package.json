@@ -16,6 +16,7 @@
     "determinism:test": "node scripts/determinism_test.js",
     "smoke:packaged:strict": "node tear/smoke-packaged.js --strict-launch --isolated-user-data --timeout-ms=25000",
     "diagnose:packaged": "node tear/diagnose-packaged-launch.js --require-uptime-ms=4500",
+    "smoke:installer": "node tear/smoke-installer.js --strict-install --timeout-ms=45000",
     "release:worktree": "node scripts/verify-clean-worktree.js",
     "release:worktree:strict": "node scripts/verify-clean-worktree.js --strict",
     "release:gate": "node tear/release-gate.js",
@@ -91,6 +92,7 @@
       "!dist_fresh/**",
       "!release/**",
       "!tmp/**",
+      "!**/*.zip",
       "!**/*.log",
       "!bin/**"
     ],

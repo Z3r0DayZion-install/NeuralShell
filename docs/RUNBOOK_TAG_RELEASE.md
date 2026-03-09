@@ -49,3 +49,4 @@ git push origin v1.1.0-OMEGA
 - Verify checksums from `release/checksums.txt`.
 - Verify update metadata references the new installer.
 - Validate a clean install + update path on Windows VM.
+- Capture and archive `release/installer-smoke-report.json`.

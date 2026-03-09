@@ -20,6 +20,20 @@ function existsNonEmpty(filePath) {
   return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
 }
 
+function findInstallerExePath() {
+  const distDir = path.join(root, "dist");
+  if (!fs.existsSync(distDir)) return null;
+  const installers = fs
+    .readdirSync(distDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => /^NeuralShell Setup .+\.exe$/i.test(name))
+    .filter((name) => !/__uninstaller/i.test(name))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  if (installers.length === 0) return null;
+  return path.join(distDir, installers[installers.length - 1]);
+}
+
 function verifyBenchmarkReport() {
   const reportPath = path.join(root, "release", "autonomy-benchmark.json");
   assert(existsNonEmpty(reportPath), `Missing autonomy benchmark report: ${reportPath}`);
@@ -28,9 +42,11 @@ function verifyBenchmarkReport() {
 }
 
 function verifyArtifacts() {
+  const installerExe = findInstallerExePath();
   const exePath = path.join(root, "dist", "win-unpacked", "NeuralShell.exe");
   const appAsar = path.join(root, "dist", "win-unpacked", "resources", "app.asar");
   const updateYml = path.join(root, "dist", "win-unpacked", "resources", "app-update.yml");
+  assert(installerExe && existsNonEmpty(installerExe), "Missing installer executable under dist/.");
   assert(existsNonEmpty(exePath), `Missing packaged executable: ${exePath}`);
   assert(existsNonEmpty(appAsar), `Missing packaged app.asar: ${appAsar}`);
   assert(existsNonEmpty(updateYml), `Missing packaged app-update.yml: ${updateYml}`);
@@ -56,6 +72,7 @@ function main() {
   const strictPackaged = process.argv.includes("--strict-packaged");
   fs.mkdirSync(path.join(root, "release"), { recursive: true });
   let strictPackagedPass = null;
+  let strictInstallerPass = null;
 
   run("npm test");
   run("npm run benchmark:autonomy");
@@ -81,6 +98,21 @@ function main() {
       }
       throw err;
     }
+    try {
+      run("node tear/smoke-installer.js --strict-install --timeout-ms=45000 --smoke-timeout-ms=30000");
+      strictInstallerPass = true;
+    } catch (err) {
+      strictInstallerPass = false;
+      writeGateReport({
+        generatedAt: new Date().toISOString(),
+        strictPackaged,
+        strictPackagedPass,
+        strictInstallerPass,
+        passed: false,
+        failureStage: "smoke-installer:strict"
+      });
+      throw err;
+    }
   } else {
     run("node tear/smoke-packaged.js");
   }
@@ -90,6 +122,7 @@ function main() {
     generatedAt: new Date().toISOString(),
     strictPackaged,
     strictPackagedPass,
+    strictInstallerPass,
     passed: true
   });
   console.log("\nRelease gate passed.");
