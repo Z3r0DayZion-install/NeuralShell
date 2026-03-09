@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-09T00:50:50.839Z",
-  "commit": "57186fecbb3d37da3385eeb73d86fe43bcd95413",
+  "generatedAt": "2026-03-09T01:04:15.980Z",
+  "commit": "9c32566ed9783cd39638264dc5b4983bbffdc06d",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -305,8 +305,8 @@
     "governance/OMEGA_RELEASE_LEDGER.md": "a70015f73d46069b12b5c2aceef105e147f73c181c82ac51789937c39a4a960d",
     "governance/THREAT_LEDGER.jsonl": "5ea48724895a4a30d6f2602c45983f35ae0672547f09afa0396910da2f008634",
     "governance/branch_protection_policy.json": "d7539f6305083a52324b839a366c1645ad98e48f25a4cededf30b8b3624e7ea5",
-    "package-lock.json": "8863a621a826ae874ba3ea39a4bccec39c3df57446354b4715ca2e0ecc942f9c",
-    "package.json": "958e71a790f5a6ed16057bf15a08ba1ae8a19f7cb91a142b000c6a13b83897d0",
+    "package-lock.json": "57c4c7a80ef8a03c4dbc6fbecd130ec56e84be7b3fd9e7e38e4ad44ba41eaa30",
+    "package.json": "f20aa8dbb3c65e0a237379da0e74a3d32eb3b7d358a50c2bcbefa40eb5471236",
     "production-server.js": "3415d790f5cc37bfe04dfe94ac07e026cdc40496713ba538b76894197692ab1e",
     "proof/latest/proof-manifest.json": "366beca59d6c08d281ae059db5498db72ef906bdd9ec5b757806a166f75dbb54",
     "proof/latest/runtime/config.json": "04462a347748134d8e1e19d481c94436d60575a25d666172288e8de14880127e",
@@ -407,6 +407,7 @@
     "tear/llmService.test.js": "9480e3b3b5d84a5459861cb1fd92322eaf36ea22cd621807880b723500cb60b9",
     "tear/loc-count.js": "d3ea69cf46f7aee7556bebd4f9ead73cef35775d3a134fd303b15c1b8f05a6d5",
     "tear/operator-kpi.js": "c6459c32c0cc6de55c2722f0c4061eca585e25449ce55da5cbc94675af9a73c2",
+    "tear/performance-gate-contract.test.js": "918108e73b2b276c47c3d3de415c6efbfb1ab81482527b6b66c14ce8f1f19c37",
     "tear/policy-firewall.test.js": "c1ee1603a8316e92c0d14931ed64a7295141ff99ac2a1e64d95ccd5d83eadbb9",
     "tear/redteam-nightly.js": "6e00cd60a66de44aec4cc1671706ada994ecadada5d935b2047ba0debf7af9d2",
     "tear/regression-eval.js": "579a762dd5742c6b04cc4e4448988a3c2b07a2b2cf8a096ca673e642eab66659",
