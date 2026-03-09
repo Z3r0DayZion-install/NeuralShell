@@ -23,8 +23,16 @@ async function verifyAll() {
 
     // 1. Node Version Check
     const nodeVer = process.version;
-    if (!nodeVer.startsWith('v20.')) {
-        throw new Error(`FAIL: Unsupported Node version ${nodeVer}. OMEGA requires v20.x.`);
+    const [majorRaw, minorRaw] = String(nodeVer).replace(/^v/, "").split(".");
+    const major = Number(majorRaw);
+    const minor = Number(minorRaw);
+    const supported =
+        Number.isFinite(major) &&
+        Number.isFinite(minor) &&
+        major === 22 &&
+        minor >= 12;
+    if (!supported) {
+        throw new Error(`FAIL: Unsupported Node version ${nodeVer}. OMEGA requires >=22.12.0 <23.`);
     }
     console.log(`PASS: Node Version ${nodeVer}`);
 

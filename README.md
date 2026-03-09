@@ -7,6 +7,7 @@ NeuralShell is an Electron workstation with strict IPC validation, offline-first
 1. Install dependencies:
 
 ```powershell
+nvm use 22.12.0
 npm ci
 ```
 
