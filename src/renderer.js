@@ -14,7 +14,10 @@ const IDS = [
   "snippetSelect", "insertSnippetBtn",
   "shortcutHelpBtn", "shortcutOverlay", "shortcutCloseBtn", "undoBtn", "commandHelpBtn",
   "commandPaletteOpenBtn", "commandPaletteOverlay", "commandPaletteCloseBtn", "commandPaletteInput", "commandPaletteList",
-  "onboardingOverlay", "onboardingModelSelect", "onboardingAutoScrollInput", "onboardingStartBtn", "onboardingSkipBtn",
+  "onboardingOverlay", "onboardingModelSelect", "onboardingAutoScrollInput", "onboardingRememberInput", "onboardingStartBtn", "onboardingSkipBtn",
+  "onboardingResetBtn",
+  "profileSelect", "profileNameInput", "profileBaseUrlInput", "profileTimeoutInput", "profileRetryInput",
+  "profileNewBtn", "profileSaveBtn", "profileDeleteBtn", "profileUseBtn",
   "exportChatBtn", "exportMarkdownBtn", "copyMarkdownBtn", "copyLastAssistantBtn", "importChatBtn", "importChatFile",
   "exportStateBtn", "importStateBtn", "importStateFile",
   "loadLogsBtn", "clearLogsBtn", "exportLogsBtn", "logsOutput",
@@ -41,7 +44,9 @@ const appState = {
   statsTimer: null,
   clockTimer: null,
   autonomous: false,
-  commandPaletteOpen: false
+  commandPaletteOpen: false,
+  commandPaletteItems: [],
+  commandPaletteIndex: 0
 };
 
 const LOCAL_COMMANDS = [
@@ -376,16 +381,19 @@ function getCommandPaletteActions() {
 function renderCommandPaletteList() {
   if (!el.commandPaletteList) return;
   const q = String((el.commandPaletteInput && el.commandPaletteInput.value) || "").trim().toLowerCase();
-  const actions = getCommandPaletteActions()
+  appState.commandPaletteItems = getCommandPaletteActions()
     .filter((item) => {
       if (!q) return true;
       return `${item.label} ${item.detail}`.toLowerCase().includes(q);
     })
     .slice(0, 40);
+  appState.commandPaletteIndex = clampNumber(appState.commandPaletteIndex || 0, 0, Math.max(0, appState.commandPaletteItems.length - 1), 0);
 
   el.commandPaletteList.innerHTML = "";
-  for (const action of actions) {
+  for (let i = 0; i < appState.commandPaletteItems.length; i += 1) {
+    const action = appState.commandPaletteItems[i];
     const li = document.createElement("li");
+    li.classList.toggle("is-active", i === appState.commandPaletteIndex);
     const title = document.createElement("strong");
     title.textContent = action.label;
     const detail = document.createElement("div");
@@ -394,20 +402,40 @@ function renderCommandPaletteList() {
     li.appendChild(title);
     li.appendChild(detail);
     li.onclick = () => {
-      Promise.resolve(action.run())
-        .then(() => {
-          setCommandPaletteOpen(false);
-          showBanner(`Palette action: ${action.label}`, "ok");
-        })
-        .catch((err) => showBanner(`Palette action failed: ${err.message || String(err)}`, "bad"));
+      appState.commandPaletteIndex = i;
+      executeCommandPaletteAction(i);
     };
     el.commandPaletteList.appendChild(li);
   }
-  if (!actions.length) {
+  if (!appState.commandPaletteItems.length) {
     const li = document.createElement("li");
     li.textContent = "No matching actions.";
     el.commandPaletteList.appendChild(li);
   }
+}
+
+function moveCommandPaletteSelection(delta) {
+  if (!appState.commandPaletteItems.length) return;
+  const next = (appState.commandPaletteIndex + Number(delta || 0) + appState.commandPaletteItems.length) % appState.commandPaletteItems.length;
+  appState.commandPaletteIndex = next;
+  renderCommandPaletteList();
+  if (!el.commandPaletteList) return;
+  const active = el.commandPaletteList.children[next];
+  if (active && typeof active.scrollIntoView === "function") {
+    active.scrollIntoView({ block: "nearest" });
+  }
+}
+
+function executeCommandPaletteAction(index) {
+  const i = clampNumber(index, 0, Math.max(0, appState.commandPaletteItems.length - 1), 0);
+  const action = appState.commandPaletteItems[i];
+  if (!action) return;
+  Promise.resolve(action.run())
+    .then(() => {
+      setCommandPaletteOpen(false);
+      showBanner(`Palette action: ${action.label}`, "ok");
+    })
+    .catch((err) => showBanner(`Palette action failed: ${err.message || String(err)}`, "bad"));
 }
 
 function setCommandPaletteOpen(open) {
@@ -418,11 +446,16 @@ function setCommandPaletteOpen(open) {
     el.commandPaletteOverlay.setAttribute("aria-hidden", String(!next));
   }
   if (!next) return;
-  renderCommandPaletteList();
+  appState.commandPaletteIndex = 0;
   if (el.commandPaletteInput) {
     el.commandPaletteInput.value = "";
-    setTimeout(() => el.commandPaletteInput && el.commandPaletteInput.focus(), 0);
+    setTimeout(() => {
+      renderCommandPaletteList();
+      el.commandPaletteInput && el.commandPaletteInput.focus();
+    }, 0);
+    return;
   }
+  renderCommandPaletteList();
 }
 
 function parseCommandTokens(input) {
@@ -738,15 +771,141 @@ function syncSettingsInputsFromState() {
   }
   if (el.themeSelect) el.themeSelect.value = String(appState.settings.theme || "dark");
   document.documentElement.setAttribute("data-theme", String(appState.settings.theme || "dark"));
+  populateProfileEditor();
+}
+
+function profileIdFromName(name) {
+  const base = String(name || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return base || "profile";
+}
+
+function normalizeProfile(rawProfile, fallbackModel, fallbackId) {
+  const profile = rawProfile && typeof rawProfile === "object" ? rawProfile : {};
+  const profileName = String(profile.name || "Local Ollama").trim() || "Local Ollama";
+  return {
+    id: String(profile.id || fallbackId || profileIdFromName(profileName)).trim() || "profile",
+    name: profileName,
+    baseUrl: String(profile.baseUrl || "http://127.0.0.1:11434").trim() || "http://127.0.0.1:11434",
+    timeoutMs: clampNumber(profile.timeoutMs, 1000, 120000, 15000),
+    retryCount: clampNumber(profile.retryCount, 0, 10, 2),
+    defaultModel: String(profile.defaultModel || fallbackModel || "llama3").trim() || "llama3"
+  };
+}
+
+function getNormalizedProfiles(settings) {
+  const current = settings && typeof settings === "object" ? settings : {};
+  const fallbackModel = String(appState.model || "llama3");
+  let profiles = Array.isArray(current.connectionProfiles) ? current.connectionProfiles.slice() : [];
+  if (!profiles.length) {
+    profiles = [{
+      id: "local-default",
+      name: "Local Ollama",
+      baseUrl: String(current.ollamaBaseUrl || "http://127.0.0.1:11434"),
+      timeoutMs: clampNumber(current.timeoutMs, 1000, 120000, 15000),
+      retryCount: clampNumber(current.retryCount, 0, 10, 2),
+      defaultModel: fallbackModel
+    }];
+  }
+
+  const seen = new Set();
+  const normalized = [];
+  for (const row of profiles) {
+    let profile = normalizeProfile(row, fallbackModel);
+    let id = profile.id;
+    let suffix = 1;
+    while (seen.has(id)) {
+      id = `${profile.id}-${suffix}`;
+      suffix += 1;
+    }
+    seen.add(id);
+    profile = { ...profile, id };
+    normalized.push(profile);
+  }
+  return normalized;
+}
+
+function resolveActiveProfileId(settings, profiles) {
+  const requested = String((settings && settings.activeProfileId) || "").trim();
+  if (requested && profiles.some((row) => row.id === requested)) return requested;
+  return profiles[0] ? profiles[0].id : "local-default";
+}
+
+function findProfileById(profiles, id) {
+  return profiles.find((row) => String(row.id) === String(id)) || null;
+}
+
+function populateProfileEditor() {
+  if (!el.profileSelect) return;
+  const profiles = getNormalizedProfiles(appState.settings);
+  const activeId = resolveActiveProfileId(appState.settings, profiles);
+  appState.settings.connectionProfiles = profiles;
+  appState.settings.activeProfileId = activeId;
+
+  el.profileSelect.innerHTML = "";
+  for (const profile of profiles) {
+    const option = document.createElement("option");
+    option.value = profile.id;
+    option.textContent = `${profile.name} (${profile.baseUrl})`;
+    el.profileSelect.appendChild(option);
+  }
+  el.profileSelect.value = activeId;
+
+  const active = findProfileById(profiles, activeId) || profiles[0];
+  if (!active) return;
+  if (el.profileNameInput) el.profileNameInput.value = active.name;
+  if (el.profileBaseUrlInput) el.profileBaseUrlInput.value = active.baseUrl;
+  if (el.profileTimeoutInput) el.profileTimeoutInput.value = String(active.timeoutMs);
+  if (el.profileRetryInput) el.profileRetryInput.value = String(active.retryCount);
+}
+
+function readProfileDraftFromForm() {
+  const selectedId = String((el.profileSelect && el.profileSelect.value) || "").trim();
+  const name = String((el.profileNameInput && el.profileNameInput.value) || "").trim() || "Local Ollama";
+  const profile = normalizeProfile({
+    id: selectedId || profileIdFromName(name),
+    name,
+    baseUrl: String((el.profileBaseUrlInput && el.profileBaseUrlInput.value) || "http://127.0.0.1:11434").trim(),
+    timeoutMs: (el.profileTimeoutInput && el.profileTimeoutInput.value) || 15000,
+    retryCount: (el.profileRetryInput && el.profileRetryInput.value) || 2,
+    defaultModel: appState.model
+  }, appState.model, selectedId || profileIdFromName(name));
+  return profile;
+}
+
+function updateProfileFormFromSelected() {
+  const profiles = getNormalizedProfiles(appState.settings);
+  const activeId = String((el.profileSelect && el.profileSelect.value) || resolveActiveProfileId(appState.settings, profiles));
+  const active = findProfileById(profiles, activeId);
+  if (!active) return;
+  if (el.profileNameInput) el.profileNameInput.value = active.name;
+  if (el.profileBaseUrlInput) el.profileBaseUrlInput.value = active.baseUrl;
+  if (el.profileTimeoutInput) el.profileTimeoutInput.value = String(active.timeoutMs);
+  if (el.profileRetryInput) el.profileRetryInput.value = String(active.retryCount);
 }
 
 async function applySettingsPatch(patch) {
   if (!window.api || !window.api.settings) return appState.settings;
   const current = appState.settings && typeof appState.settings === "object" ? appState.settings : {};
-  const next = {
+  const merged = {
     ...current,
     ...patch
   };
+  const connectionProfiles = getNormalizedProfiles(merged);
+  const activeProfileId = resolveActiveProfileId(merged, connectionProfiles);
+  const active = findProfileById(connectionProfiles, activeProfileId) || connectionProfiles[0];
+  const next = {
+    ...merged,
+    connectionProfiles,
+    activeProfileId
+  };
+  if (active) {
+    next.ollamaBaseUrl = active.baseUrl;
+    next.timeoutMs = active.timeoutMs;
+    next.retryCount = active.retryCount;
+  }
   appState.settings = await window.api.settings.update(next);
   syncSettingsInputsFromState();
   return appState.settings;
@@ -773,6 +932,9 @@ function populateOnboardingModelSelect() {
   if (el.onboardingAutoScrollInput) {
     el.onboardingAutoScrollInput.checked = !el.autoScrollInput || el.autoScrollInput.checked;
   }
+  if (el.onboardingRememberInput) {
+    el.onboardingRememberInput.checked = true;
+  }
 }
 
 function setOnboardingOpen(open) {
@@ -787,6 +949,7 @@ function setOnboardingOpen(open) {
 
 async function completeOnboarding(skip) {
   const shouldSkip = Boolean(skip);
+  const remember = !el.onboardingRememberInput || el.onboardingRememberInput.checked;
   if (!shouldSkip && el.onboardingModelSelect) {
     const selected = String(el.onboardingModelSelect.value || "").trim();
     if (selected) {
@@ -801,8 +964,17 @@ async function completeOnboarding(skip) {
   if (el.autoScrollInput && el.onboardingAutoScrollInput) {
     el.autoScrollInput.checked = Boolean(el.onboardingAutoScrollInput.checked);
   }
-  await applySettingsPatch({ onboardingCompleted: true });
+  await applySettingsPatch({
+    onboardingCompleted: remember,
+    onboardingSeenAt: new Date().toISOString(),
+    onboardingVersion: "v1.2.0-pack2"
+  });
   setOnboardingOpen(false);
+  if (el.statusMeta) {
+    el.statusMeta.textContent = remember
+      ? `Onboarding remembered (${new Date().toISOString().slice(0, 19).replace("T", " ")})`
+      : "Onboarding will be shown again on next launch.";
+  }
   showBanner(shouldSkip ? "Onboarding skipped." : "Onboarding complete.", "ok");
 }
 
@@ -1044,26 +1216,34 @@ function bindEvents() {
     const tokenBudget = clampNumber((el.tokenBudgetInput && el.tokenBudgetInput.value) || current.tokenBudget || 1200, 128, 200000, 1200);
     const autosaveIntervalMin = clampNumber((el.autosaveIntervalInput && el.autosaveIntervalInput.value) || current.autosaveIntervalMin || 10, 1, 1440, 10);
     const normalizedBaseUrl = String((el.baseUrlInput && el.baseUrlInput.value) || current.ollamaBaseUrl || "http://127.0.0.1:11434").trim();
+    const existingProfiles = getNormalizedProfiles(current);
+    const selectedProfileId = String((el.profileSelect && el.profileSelect.value) || resolveActiveProfileId(current, existingProfiles));
+    const fallbackProfile = findProfileById(existingProfiles, selectedProfileId) || existingProfiles[0];
+    const editedProfile = normalizeProfile({
+      id: selectedProfileId || (fallbackProfile && fallbackProfile.id) || "local-default",
+      name: String((el.profileNameInput && el.profileNameInput.value) || (fallbackProfile && fallbackProfile.name) || "Local Ollama").trim(),
+      baseUrl: String((el.profileBaseUrlInput && el.profileBaseUrlInput.value) || normalizedBaseUrl).trim(),
+      timeoutMs: (el.profileTimeoutInput && el.profileTimeoutInput.value) || timeoutMs,
+      retryCount: (el.profileRetryInput && el.profileRetryInput.value) || retryCount,
+      defaultModel: appState.model
+    }, appState.model, selectedProfileId || "local-default");
+    const connectionProfiles = existingProfiles.map((row) => ({ ...row }));
+    const profileIndex = connectionProfiles.findIndex((row) => row.id === editedProfile.id);
+    if (profileIndex >= 0) connectionProfiles[profileIndex] = editedProfile;
+    else connectionProfiles.push(editedProfile);
 
     const next = {
       ...current,
-      ollamaBaseUrl: normalizedBaseUrl,
-      timeoutMs,
-      retryCount,
+      ollamaBaseUrl: editedProfile.baseUrl,
+      timeoutMs: editedProfile.timeoutMs,
+      retryCount: editedProfile.retryCount,
       theme: String((el.themeSelect && el.themeSelect.value) || current.theme || "dark"),
       tokenBudget,
       autosaveName: String((el.autosaveNameInput && el.autosaveNameInput.value) || current.autosaveName || "autosave-main"),
       autosaveIntervalMin,
       autosaveEnabled: Boolean(el.autosaveEnabledInput && el.autosaveEnabledInput.checked),
-      connectionProfiles: Array.isArray(current.connectionProfiles) && current.connectionProfiles.length > 0 ? current.connectionProfiles : [{
-        id: "local-default",
-        name: "Local Ollama",
-        baseUrl: normalizedBaseUrl,
-        timeoutMs,
-        retryCount,
-        defaultModel: appState.model
-      }],
-      activeProfileId: String(current.activeProfileId || "local-default"),
+      connectionProfiles,
+      activeProfileId: editedProfile.id,
       connectOnStartup: current.connectOnStartup !== false,
       allowRemoteBridge: Boolean(current.allowRemoteBridge),
       personalityProfile: String(current.personalityProfile || "balanced"),
@@ -1077,20 +1257,13 @@ function bindEvents() {
       rgbPort: Number(current.rgbPort || 6742),
       rgbTargets: Array.isArray(current.rgbTargets) ? current.rgbTargets : ["keyboard"]
     };
-    next.connectionProfiles[0] = {
-      ...next.connectionProfiles[0],
-      baseUrl: next.ollamaBaseUrl,
-      timeoutMs: next.timeoutMs,
-      retryCount: next.retryCount,
-      defaultModel: appState.model
-    };
     appState.settings = await applySettingsPatch(next);
-    if (el.timeoutInput) el.timeoutInput.value = String(timeoutMs);
-    if (el.retryInput) el.retryInput.value = String(retryCount);
+    if (el.timeoutInput) el.timeoutInput.value = String(editedProfile.timeoutMs);
+    if (el.retryInput) el.retryInput.value = String(editedProfile.retryCount);
     if (el.tokenBudgetInput) el.tokenBudgetInput.value = String(tokenBudget);
     if (el.autosaveIntervalInput) el.autosaveIntervalInput.value = String(autosaveIntervalMin);
     if (el.statusMeta) {
-      el.statusMeta.textContent = `Settings normalized: timeout=${timeoutMs} retry=${retryCount} tokenBudget=${tokenBudget} autosave=${autosaveIntervalMin}m`;
+      el.statusMeta.textContent = `Settings normalized: profile=${editedProfile.name} timeout=${editedProfile.timeoutMs} retry=${editedProfile.retryCount} tokenBudget=${tokenBudget} autosave=${autosaveIntervalMin}m`;
     }
     showBanner("Settings applied.", "ok");
   };
@@ -1111,7 +1284,10 @@ function bindEvents() {
     setCommandPaletteOpen(false);
   };
   if (el.commandPaletteInput) {
-    el.commandPaletteInput.oninput = () => renderCommandPaletteList();
+    el.commandPaletteInput.oninput = () => {
+      appState.commandPaletteIndex = 0;
+      renderCommandPaletteList();
+    };
     el.commandPaletteInput.onkeydown = (event) => {
       const key = String(event.key || "").toLowerCase();
       if (key === "escape") {
@@ -1119,13 +1295,95 @@ function bindEvents() {
         setCommandPaletteOpen(false);
         return;
       }
+      if (key === "arrowdown") {
+        event.preventDefault();
+        moveCommandPaletteSelection(1);
+        return;
+      }
+      if (key === "arrowup") {
+        event.preventDefault();
+        moveCommandPaletteSelection(-1);
+        return;
+      }
       if (key === "enter") {
         event.preventDefault();
-        const first = el.commandPaletteList ? el.commandPaletteList.querySelector("li") : null;
-        if (first) first.click();
+        executeCommandPaletteAction(appState.commandPaletteIndex || 0);
       }
     };
   }
+  if (el.profileSelect) {
+    el.profileSelect.onchange = () => updateProfileFormFromSelected();
+  }
+  if (el.profileNewBtn) el.profileNewBtn.onclick = async () => {
+    const currentProfiles = getNormalizedProfiles(appState.settings);
+    const seedName = `Profile ${currentProfiles.length + 1}`;
+    const seedIdBase = profileIdFromName(seedName);
+    let seedId = seedIdBase;
+    let suffix = 1;
+    while (currentProfiles.some((row) => row.id === seedId)) {
+      seedId = `${seedIdBase}-${suffix}`;
+      suffix += 1;
+    }
+    const nextProfile = normalizeProfile({
+      id: seedId,
+      name: seedName,
+      baseUrl: String((el.baseUrlInput && el.baseUrlInput.value) || appState.settings.ollamaBaseUrl || "http://127.0.0.1:11434"),
+      timeoutMs: (el.timeoutInput && el.timeoutInput.value) || appState.settings.timeoutMs || 15000,
+      retryCount: (el.retryInput && el.retryInput.value) || appState.settings.retryCount || 2,
+      defaultModel: appState.model
+    }, appState.model, seedId);
+    await applySettingsPatch({
+      connectionProfiles: [...currentProfiles, nextProfile],
+      activeProfileId: nextProfile.id
+    });
+    showBanner(`Profile created: ${nextProfile.name}`, "ok");
+  };
+  if (el.profileSaveBtn) el.profileSaveBtn.onclick = async () => {
+    const draft = readProfileDraftFromForm();
+    const profiles = getNormalizedProfiles(appState.settings).map((row) => ({ ...row }));
+    const ix = profiles.findIndex((row) => row.id === draft.id);
+    if (ix >= 0) profiles[ix] = draft;
+    else profiles.push(draft);
+    await applySettingsPatch({
+      connectionProfiles: profiles,
+      activeProfileId: draft.id
+    });
+    showBanner(`Profile saved: ${draft.name}`, "ok");
+  };
+  if (el.profileDeleteBtn) el.profileDeleteBtn.onclick = async () => {
+    const profiles = getNormalizedProfiles(appState.settings);
+    if (profiles.length <= 1) {
+      showBanner("At least one profile must remain.", "bad");
+      return;
+    }
+    const activeId = String((el.profileSelect && el.profileSelect.value) || resolveActiveProfileId(appState.settings, profiles));
+    const nextProfiles = profiles.filter((row) => row.id !== activeId);
+    const fallback = nextProfiles[0];
+    await applySettingsPatch({
+      connectionProfiles: nextProfiles,
+      activeProfileId: fallback ? fallback.id : "local-default"
+    });
+    showBanner("Profile deleted.", "ok");
+  };
+  if (el.profileUseBtn) el.profileUseBtn.onclick = async () => {
+    const profiles = getNormalizedProfiles(appState.settings);
+    const activeId = String((el.profileSelect && el.profileSelect.value) || resolveActiveProfileId(appState.settings, profiles));
+    const profile = findProfileById(profiles, activeId);
+    if (!profile) {
+      showBanner("Select a profile first.", "bad");
+      return;
+    }
+    if (el.baseUrlInput) el.baseUrlInput.value = profile.baseUrl;
+    if (el.timeoutInput) el.timeoutInput.value = String(profile.timeoutMs);
+    if (el.retryInput) el.retryInput.value = String(profile.retryCount);
+    await applySettingsPatch({
+      activeProfileId: profile.id,
+      ollamaBaseUrl: profile.baseUrl,
+      timeoutMs: profile.timeoutMs,
+      retryCount: profile.retryCount
+    });
+    showBanner(`Profile active: ${profile.name}`, "ok");
+  };
   if (el.undoBtn) el.undoBtn.onclick = () => {
     if (el.deleteLastExchangeBtn && typeof el.deleteLastExchangeBtn.onclick === "function") {
       el.deleteLastExchangeBtn.onclick();
@@ -1142,6 +1400,11 @@ function bindEvents() {
   };
   if (el.onboardingSkipBtn) el.onboardingSkipBtn.onclick = () => {
     completeOnboarding(true).catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+  if (el.onboardingResetBtn) el.onboardingResetBtn.onclick = async () => {
+    await applySettingsPatch({ onboardingCompleted: false });
+    setOnboardingOpen(true);
+    showBanner("Onboarding reset.", "ok");
   };
   if (el.exportChatBtn) el.exportChatBtn.onclick = () => download("neuralshell-chat.json", JSON.stringify(appState.chat, null, 2), "application/json;charset=utf-8");
   if (el.exportMarkdownBtn) el.exportMarkdownBtn.onclick = () => download("neuralshell-chat.md", markdown(appState.chat), "text/markdown;charset=utf-8");

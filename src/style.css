@@ -482,6 +482,11 @@ button:active {
   color: var(--brand);
 }
 
+#commandPaletteList li.is-active {
+  border-left: 3px solid var(--brand);
+  background: rgba(46, 196, 182, 0.16);
+}
+
 #logsOutput,
 #chatLogsOutput,
 #sessionMetadataOutput,
