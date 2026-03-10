@@ -64,7 +64,10 @@
     "coverage:test": "c8 --clean --reporter=text-summary --reporter=json-summary npm test",
     "coverage:check": "npm run coverage:test && node scripts/check-coverage-thresholds.js",
     "lint": "eslint src/ scripts/ tear/ tests/ --max-warnings=0",
-    "lint:fix": "eslint src/ scripts/ tear/ tests/ --fix"
+    "lint:fix": "eslint src/ scripts/ tear/ tests/ --fix",
+    "outreach:send": "python scripts/send_beta_outreach_emails.py",
+    "outreach:followup": "python scripts/send_beta_followup_emails.py --min-age-hours 72 --limit 20",
+    "outreach:followup:dry": "python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",
