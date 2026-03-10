@@ -119,6 +119,8 @@ STATE_RULES = {
     },
 }
 
+SUBJECT_PREFIX_RE = re.compile(r"^(re|fw|fwd)\s*:\s*", re.IGNORECASE)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -152,6 +154,16 @@ def parse_iso(raw: str) -> datetime | None:
 
 def normalize_email(raw: str) -> str:
     return (raw or "").strip().lower()
+
+
+def normalize_subject(raw: str) -> str:
+    subject = (raw or "").strip().lower()
+    while True:
+        updated = SUBJECT_PREFIX_RE.sub("", subject).strip()
+        if updated == subject:
+            break
+        subject = updated
+    return re.sub(r"\s+", " ", subject)
 
 
 def read_csv_rows(path: Path) -> List[Dict[str, str]]:
@@ -271,14 +283,16 @@ def build_queue_markdown(actions: List[Dict[str, str]], unmatched: List[Dict[str
         "Generated from inbound triage run.",
         "",
         "## Matched Replies",
-        "| Contact | State | Confidence | Recommended Template | Next Action | Excerpt |",
-        "|---|---|---|---|---|---|",
+        "| Contact | Reply To | Match Mode | State | Confidence | Recommended Template | Next Action | Excerpt |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     if actions:
         for item in actions:
             lines.append(
-                "| {email} | {state} | {confidence} | {template} | {next_action} | {excerpt} |".format(
-                    email=item.get("email", ""),
+                "| {contact_email} | {reply_to} | {match_mode} | {state} | {confidence} | {template} | {next_action} | {excerpt} |".format(
+                    contact_email=item.get("contact_email", ""),
+                    reply_to=item.get("reply_to", ""),
+                    match_mode=item.get("match_mode", ""),
                     state=item.get("state", ""),
                     confidence=item.get("confidence", ""),
                     template=item.get("template", ""),
@@ -287,7 +301,7 @@ def build_queue_markdown(actions: List[Dict[str, str]], unmatched: List[Dict[str
                 )
             )
     else:
-        lines.append("| (none) |  |  |  |  |  |")
+        lines.append("| (none) |  |  |  |  |  |  |  |")
 
     lines.extend(
         [
@@ -331,6 +345,11 @@ def main() -> int:
 
     tracker_rows, tracker_fields = load_tracker(tracker_path)
     tracker_by_email = {normalize_email(row.get("email", "")): row for row in tracker_rows}
+    tracker_by_subject: Dict[str, List[Dict[str, str]]] = {}
+    for row in tracker_rows:
+        key = normalize_subject(row.get("subject", ""))
+        if key:
+            tracker_by_subject.setdefault(key, []).append(row)
 
     action_items: List[Dict[str, str]] = []
     unmatched: List[Dict[str, str]] = []
@@ -346,6 +365,13 @@ def main() -> int:
             continue
 
         row = tracker_by_email.get(email)
+        match_mode = "email"
+        if not row:
+            subject_key = normalize_subject(subject)
+            subject_candidates = tracker_by_subject.get(subject_key, [])
+            if len(subject_candidates) == 1:
+                row = subject_candidates[0]
+                match_mode = "subject"
         if not row:
             unmatched.append({"email": email, "subject": subject, "body": body})
             continue
@@ -376,11 +402,16 @@ def main() -> int:
                     matched=classification["matched"] or "none",
                 ),
             )
+            if email and email != normalize_email(row.get("email", "")):
+                append_note(row, f"INBOUND_SOURCE:{iso_utc(now_utc())}:{email}")
 
         action_items.append(
             {
                 "index": str(idx),
                 "email": email,
+                "contact_email": normalize_email(row.get("email", "")),
+                "reply_to": email,
+                "match_mode": match_mode,
                 "state": state,
                 "confidence": classification["confidence"],
                 "matched": classification["matched"],
