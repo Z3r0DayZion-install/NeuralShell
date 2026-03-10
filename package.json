@@ -68,9 +68,15 @@
     "outreach:send": "python scripts/send_beta_outreach_emails.py",
     "outreach:followup": "python scripts/send_beta_followup_emails.py --min-age-hours 72 --limit 20",
     "outreach:followup:dry": "python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20",
+    "outreach:inbox:fetch": "python scripts/fetch_gmail_inbound_replies.py --output release/inbound_replies.csv --merge-existing",
     "outreach:triage": "python scripts/triage_beta_inbound_replies.py --input release/inbound_replies.csv",
     "outreach:triage:apply": "python scripts/triage_beta_inbound_replies.py --input release/inbound_replies.csv --apply",
-    "outreach:status": "python scripts/beta_outreach_status_report.py"
+    "outreach:status": "python scripts/beta_outreach_status_report.py",
+    "outreach:drafts": "python scripts/generate_beta_reply_drafts.py",
+    "outreach:reply:send": "python scripts/send_beta_reply_outbox.py",
+    "outreach:reply:send:dry": "python scripts/send_beta_reply_outbox.py --dry-run",
+    "outreach:autopilot": "python scripts/run_beta_inbound_autopilot.py --skip-fetch",
+    "outreach:autopilot:full": "python scripts/run_beta_inbound_autopilot.py"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",

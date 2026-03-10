@@ -21,9 +21,14 @@ Use this as the single source of truth for the beta round.
 - Follow-up script: `scripts/send_beta_followup_emails.py`
 - Inbound triage script: `scripts/triage_beta_inbound_replies.py`
 - Status dashboard script: `scripts/beta_outreach_status_report.py`
+- Gmail inbox fetch script: `scripts/fetch_gmail_inbound_replies.py`
+- Draft generator script: `scripts/generate_beta_reply_drafts.py`
+- Reply outbox sender script: `scripts/send_beta_reply_outbox.py`
+- One-command autopilot: `scripts/run_beta_inbound_autopilot.py`
 - Follow-up cadence: one bump at +72h for `sent` / `no_response`
 - Inbound import template: `docs/pilots/BETA_INBOUND_REPLY_IMPORT_TEMPLATE.csv`
 - Inbound triage runbook: `docs/pilots/BETA_INBOUND_TRIAGE_RUNBOOK_v1.2.1-OMEGA.md`
+- Gmail autopilot setup: `docs/pilots/BETA_GMAIL_AUTOPILOT_SETUP_v1.2.1-OMEGA.md`
 - Follow-up dry run command:
   `python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20`
 - Follow-up live command:
@@ -34,6 +39,14 @@ Use this as the single source of truth for the beta round.
   `python scripts/triage_beta_inbound_replies.py --input release/inbound_replies.csv --apply`
 - Status snapshot:
   `python scripts/beta_outreach_status_report.py`
+- Generate reply drafts:
+  `python scripts/generate_beta_reply_drafts.py`
+- Send reply drafts (dry run):
+  `python scripts/send_beta_reply_outbox.py --dry-run`
+- Send reply drafts (live):
+  `python scripts/send_beta_reply_outbox.py`
+- Full inbound autopilot (fetch + triage + status + drafts):
+  `python scripts/run_beta_inbound_autopilot.py`
 
 ## Tester Tracker
 | Tester | Invite Sent | Started | Completed | Result (`Passed X/9`) | Highest Bug Severity | Notes |
