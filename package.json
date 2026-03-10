@@ -67,7 +67,10 @@
     "lint:fix": "eslint src/ scripts/ tear/ tests/ --fix",
     "outreach:send": "python scripts/send_beta_outreach_emails.py",
     "outreach:followup": "python scripts/send_beta_followup_emails.py --min-age-hours 72 --limit 20",
-    "outreach:followup:dry": "python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20"
+    "outreach:followup:dry": "python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20",
+    "outreach:triage": "python scripts/triage_beta_inbound_replies.py --input release/inbound_replies.csv",
+    "outreach:triage:apply": "python scripts/triage_beta_inbound_replies.py --input release/inbound_replies.csv --apply",
+    "outreach:status": "python scripts/beta_outreach_status_report.py"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",
