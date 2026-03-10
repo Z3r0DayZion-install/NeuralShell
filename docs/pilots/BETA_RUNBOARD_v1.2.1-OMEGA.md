@@ -13,6 +13,17 @@ Use this as the single source of truth for the beta round.
 - Triage playbook: `docs/pilots/BETA_TRIAGE_PLAYBOOK_v1.2.1-OMEGA.md`
 - Immutable ledger: `governance/BETA_PILOT_LEDGER_v1.2.1-OMEGA.jsonl`
 - Targeted outreach batch: `docs/pilots/BETA_TARGETED_OUTREACH_EMAIL_BATCH_v1.2.1-OMEGA.md`
+- Reply templates: `docs/pilots/BETA_REPLY_TEMPLATES_v1.2.1-OMEGA.md`
+- Outreach tracker: `docs/pilots/BETA_OUTREACH_TRACKER_v1.2.1-OMEGA.csv`
+
+## Outreach Ops
+- Sender script: `scripts/send_beta_outreach_emails.py`
+- Follow-up script: `scripts/send_beta_followup_emails.py`
+- Follow-up cadence: one bump at +72h for `sent` / `no_response`
+- Follow-up dry run command:
+  `python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20`
+- Follow-up live command:
+  `python scripts/send_beta_followup_emails.py --min-age-hours 72 --limit 20`
 
 ## Tester Tracker
 | Tester | Invite Sent | Started | Completed | Result (`Passed X/9`) | Highest Bug Severity | Notes |
