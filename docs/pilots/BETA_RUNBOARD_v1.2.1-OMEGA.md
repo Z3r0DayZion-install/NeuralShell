@@ -19,11 +19,21 @@ Use this as the single source of truth for the beta round.
 ## Outreach Ops
 - Sender script: `scripts/send_beta_outreach_emails.py`
 - Follow-up script: `scripts/send_beta_followup_emails.py`
+- Inbound triage script: `scripts/triage_beta_inbound_replies.py`
+- Status dashboard script: `scripts/beta_outreach_status_report.py`
 - Follow-up cadence: one bump at +72h for `sent` / `no_response`
+- Inbound import template: `docs/pilots/BETA_INBOUND_REPLY_IMPORT_TEMPLATE.csv`
+- Inbound triage runbook: `docs/pilots/BETA_INBOUND_TRIAGE_RUNBOOK_v1.2.1-OMEGA.md`
 - Follow-up dry run command:
   `python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20`
 - Follow-up live command:
   `python scripts/send_beta_followup_emails.py --min-age-hours 72 --limit 20`
+- Inbound triage dry run:
+  `python scripts/triage_beta_inbound_replies.py --input release/inbound_replies.csv`
+- Inbound triage apply:
+  `python scripts/triage_beta_inbound_replies.py --input release/inbound_replies.csv --apply`
+- Status snapshot:
+  `python scripts/beta_outreach_status_report.py`
 
 ## Tester Tracker
 | Tester | Invite Sent | Started | Completed | Result (`Passed X/9`) | Highest Bug Severity | Notes |
