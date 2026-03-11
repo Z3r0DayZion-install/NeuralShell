@@ -88,6 +88,15 @@ function defaultState() {
     model: "llama3",
     chat: [],
     tokens: 0,
+    workflowId: "release_audit",
+    outputMode: "checklist",
+    workspaceAttachment: null,
+    lastArtifact: null,
+    releasePacketHistory: [],
+    patchPlan: null,
+    promotedPaletteActions: [],
+    commandPaletteShortcutScope: "workflow",
+    verificationRunPlan: null,
     settings: defaultSettings()
   };
 }
@@ -185,7 +194,14 @@ function load() {
     return state;
   }
 
-  state = parsed;
+  state = {
+    ...defaultState(),
+    ...parsed,
+    settings: {
+      ...defaultSettings(),
+      ...(parsed && parsed.settings ? parsed.settings : {})
+    }
+  };
   return state;
 }
 

@@ -9,6 +9,13 @@ NeuralShell is an Electron workstation with strict IPC validation, offline-first
 - Tester checklist: [BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md](docs/pilots/BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md)
 - Control tower: [Beta Control Tower](https://github.com/Z3r0DayZion-install/NeuralShell/issues/32)
 
+## Launch Surface
+
+- Public launch page source: [docs/index.html](docs/index.html)
+- Public site asset bundle: [docs/site-assets/asset-manifest.json](docs/site-assets/asset-manifest.json)
+- Press kit: [PRESS_KIT_v1.2.1-OMEGA.md](docs/pilots/PRESS_KIT_v1.2.1-OMEGA.md)
+- Channel submission playbook: [CHANNEL_SUBMISSION_PLAYBOOK_v1.2.1-OMEGA.md](docs/pilots/CHANNEL_SUBMISSION_PLAYBOOK_v1.2.1-OMEGA.md)
+
 ## Quick Start
 
 1. Install dependencies:
@@ -43,6 +50,12 @@ Generate icons first, then package:
 ```powershell
 npm run icons:generate
 npm run build
+```
+
+Prepare public site assets and social card:
+
+```powershell
+npm run channel:site:prepare
 ```
 
 ## Release Flow
@@ -117,6 +130,10 @@ git push
 - `npm audit --audit-level=high` in CI.
 - Secret scan via Gitleaks.
 - CodeQL analysis on `master` and PRs.
+
+## Privacy
+
+- Privacy policy: [PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md)
 
 ## License
 

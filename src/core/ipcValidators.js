@@ -1,3 +1,11 @@
+const path = require("path");
+const workflowCatalog = require("../workflowCatalog");
+const verificationCatalog = require("../verificationCatalog");
+const {
+  VALID_WORKSPACE_ACTION_KINDS,
+  normalizeFilename
+} = require("./workspaceActionPlanner");
+
 const BLOCKED_STATE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const VALID_ROLES = new Set(["system", "user", "assistant"]);
 const VALID_THEMES = new Set(["dark", "light"]);
@@ -280,8 +288,341 @@ function validateImportedState(payload) {
   if (payload.settings != null) {
     out.settings = validateSettings(payload.settings);
   }
+  if (payload.workflowId != null) {
+    const workflowId = String(payload.workflowId).trim();
+    assert(workflowCatalog.isWorkflowId(workflowId), "invalid workflowId in imported state.");
+    out.workflowId = workflowId;
+  }
+  if (payload.outputMode != null) {
+    const outputMode = String(payload.outputMode).trim();
+    assert(workflowCatalog.isOutputModeId(outputMode), "invalid outputMode in imported state.");
+    out.outputMode = outputMode;
+  }
+  if (payload.workspaceAttachment != null) {
+    out.workspaceAttachment = validateWorkspaceAttachment(payload.workspaceAttachment);
+  }
+  if (payload.lastArtifact != null) {
+    out.lastArtifact = validateArtifact(payload.lastArtifact);
+  }
+  if (payload.releasePacketHistory != null) {
+    out.releasePacketHistory = validateReleasePacketHistory(payload.releasePacketHistory);
+  }
+  if (payload.patchPlan != null) {
+    out.patchPlan = validatePatchPlan(payload.patchPlan);
+  }
+  if (payload.promotedPaletteActions != null) {
+    out.promotedPaletteActions = validatePromotedPaletteActions(payload.promotedPaletteActions);
+  }
+  if (payload.commandPaletteShortcutScope != null) {
+    const scope = String(payload.commandPaletteShortcutScope).trim().toLowerCase();
+    assert(scope === "workflow" || scope === "all", "invalid commandPaletteShortcutScope in imported state.");
+    out.commandPaletteShortcutScope = scope;
+  }
+  if (payload.verificationRunPlan != null) {
+    out.verificationRunPlan = validateVerificationRunPlan(payload.verificationRunPlan);
+  }
 
   return out;
+}
+
+function validateWorkspaceAttachment(value) {
+  assert(value && typeof value === "object" && !Array.isArray(value), "workspaceAttachment must be an object.");
+  const rootPath = toTrimmedString(value.rootPath, "workspaceAttachment.rootPath");
+  const label = toTrimmedString(value.label || rootPath, "workspaceAttachment.label");
+  const attachedAt = value.attachedAt == null ? "" : String(value.attachedAt);
+  const signals = Array.isArray(value.signals) ? value.signals.map((signal) => String(signal).trim()).filter(Boolean) : [];
+  return {
+    rootPath,
+    label,
+    attachedAt,
+    signals
+  };
+}
+
+function validateArtifact(value) {
+  assert(value && typeof value === "object" && !Array.isArray(value), "lastArtifact must be an object.");
+  const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
+  const outputMode = value.outputMode == null ? "" : String(value.outputMode).trim();
+  if (workflowId) {
+    assert(workflowCatalog.isWorkflowId(workflowId), "invalid lastArtifact.workflowId.");
+  }
+  if (outputMode) {
+    assert(workflowCatalog.isOutputModeId(outputMode), "invalid lastArtifact.outputMode.");
+  }
+  return {
+    title: String(value.title || "").trim(),
+    workflowId,
+    outputMode,
+    content: String(value.content || ""),
+    generatedAt: value.generatedAt == null ? "" : String(value.generatedAt)
+  };
+}
+
+function validateReleasePacketHistory(value) {
+  assert(Array.isArray(value), "releasePacketHistory must be an array.");
+  return value
+    .map((entry, index) => {
+      const artifact = validateArtifact(entry);
+      assert(
+        artifact.outputMode === "release_packet",
+        `releasePacketHistory[${index}] must use release_packet outputMode.`
+      );
+      assert(
+        String(artifact.content || "").trim().length > 0,
+        `releasePacketHistory[${index}] must include content.`
+      );
+      return {
+        ...artifact,
+        title: artifact.title || "Release Packet",
+        outputMode: "release_packet"
+      };
+    })
+    .slice(0, 8);
+}
+
+function validatePatchPlanFilePath(value) {
+  const normalized = String(value == null ? "" : value).trim().replace(/\\/g, "/");
+  assert(normalized.length > 0, "patchPlan.files[].path is required.");
+  assert(
+    !normalized.startsWith("/") && !/^[a-zA-Z]:/.test(normalized),
+    "patchPlan file path must stay inside the workspace."
+  );
+  const next = path.posix.normalize(normalized);
+  assert(
+    next !== "." &&
+      next !== ".." &&
+      !next.startsWith("../") &&
+      !next.includes("/../"),
+    "patchPlan file path is invalid."
+  );
+  return next;
+}
+
+function validatePatchPlan(value) {
+  assert(value && typeof value === "object" && !Array.isArray(value), "patchPlan must be an object.");
+  const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
+  if (workflowId) {
+    assert(workflowCatalog.isWorkflowId(workflowId), "invalid patchPlan.workflowId.");
+  }
+  const outputMode = value.outputMode == null ? "patch_plan" : String(value.outputMode).trim();
+  assert(outputMode === "patch_plan", "patchPlan.outputMode must be patch_plan.");
+  const rootPath = value.rootPath == null || String(value.rootPath).trim() === ""
+    ? ""
+    : path.resolve(toTrimmedString(value.rootPath, "patchPlan.rootPath"));
+  const files = Array.isArray(value.files) ? value.files : [];
+  assert(files.length > 0, "patchPlan must include at least one file.");
+
+  return {
+    id: String(value.id || "").trim(),
+    workflowId: workflowId || "release_audit",
+    outputMode,
+    title: String(value.title || "").trim(),
+    summary: String(value.summary || ""),
+    generatedAt: value.generatedAt == null ? "" : String(value.generatedAt),
+    rootPath,
+    verification: Array.isArray(value.verification)
+      ? value.verification.map((item) => String(item || "").trim()).filter(Boolean)
+      : [],
+    totalFiles: Number.isFinite(Number(value.totalFiles)) ? Number(value.totalFiles) : 0,
+    newFiles: Number.isFinite(Number(value.newFiles)) ? Number(value.newFiles) : 0,
+    modifiedFiles: Number.isFinite(Number(value.modifiedFiles)) ? Number(value.modifiedFiles) : 0,
+    totalBytes: Number.isFinite(Number(value.totalBytes)) ? Number(value.totalBytes) : 0,
+    totalLines: Number.isFinite(Number(value.totalLines)) ? Number(value.totalLines) : 0,
+    selectedFileIds: Array.isArray(value.selectedFileIds)
+      ? value.selectedFileIds.map((item) => String(item || "").trim()).filter(Boolean)
+      : [],
+    files: files.map((file, index) => {
+      assert(file && typeof file === "object" && !Array.isArray(file), "patchPlan file entry is invalid.");
+      const status = file.status == null ? "" : String(file.status).trim();
+      if (status) {
+        assert(status === "new" || status === "modify", "patchPlan file status must be new or modify.");
+      }
+      return {
+        fileId: String(file.fileId || `file-${index + 1}`).trim() || `file-${index + 1}`,
+        path: validatePatchPlanFilePath(file.path),
+        status,
+        rationale: String(file.rationale || ""),
+        content: String(file.content || ""),
+        diffText: String(file.diffText || ""),
+        bytes: Number.isFinite(Number(file.bytes)) ? Number(file.bytes) : 0,
+        lines: Number.isFinite(Number(file.lines)) ? Number(file.lines) : 0,
+        selected: file.selected !== false,
+        appliedAt: file.appliedAt == null ? "" : String(file.appliedAt),
+        absolutePath: file.absolutePath == null ? "" : String(file.absolutePath)
+      };
+    })
+  };
+}
+
+function validatePromotedPaletteAction(value, index) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "promoted palette action must be an object."
+  );
+  const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
+  if (workflowId) {
+    assert(workflowCatalog.isWorkflowId(workflowId), "invalid promotedPaletteActions[].workflowId.");
+  }
+  const groupId = toTrimmedString(
+    value.groupId || `group-${index + 1}`,
+    "promotedPaletteActions[].groupId"
+  );
+  const filePaths = Array.isArray(value.filePaths)
+    ? value.filePaths.map((item) => validatePatchPlanFilePath(item))
+    : [];
+  return {
+    id: String(value.id || `${workflowId || "release_audit"}:${groupId}`).trim() || `${workflowId || "release_audit"}:${groupId}`,
+    workflowId: workflowId || "release_audit",
+    groupId,
+    groupTitle: String(value.groupTitle || "").trim(),
+    label: toTrimmedString(
+      value.label || `Verify ${String(value.groupTitle || groupId).trim() || groupId}`,
+      "promotedPaletteActions[].label"
+    ),
+    detail: String(value.detail || "").trim(),
+    promptLead: String(value.promptLead || "").trim(),
+    checks: Array.isArray(value.checks)
+      ? value.checks.map((item) => String(item || "").trim()).filter(Boolean)
+      : [],
+    filePaths,
+    promotedAt: value.promotedAt == null ? "" : String(value.promotedAt)
+  };
+}
+
+function validatePromotedPaletteActions(value) {
+  assert(Array.isArray(value), "promotedPaletteActions must be an array.");
+  return value.map((item, index) => validatePromotedPaletteAction(item, index));
+}
+
+function validateVerificationRunCheck(value, index) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "verificationRunPlan check entry is invalid."
+  );
+  const id = toTrimmedString(
+    value.id || `check-${index + 1}`,
+    "verificationRunPlan.checks[].id"
+  );
+  assert(verificationCatalog.isCheckId(id), "invalid verificationRunPlan.checks[].id.");
+  const status = String(value.status == null ? "pending" : value.status).trim().toLowerCase();
+  assert(
+    status === "pending" || status === "running" || status === "passed" || status === "failed",
+    "invalid verificationRunPlan.checks[].status."
+  );
+  return {
+    id,
+    label: String(value.label || "").trim(),
+    description: String(value.description || "").trim(),
+    commandLabel: String(value.commandLabel || "").trim(),
+    selected: value.selected !== false,
+    status,
+    lastRunAt: value.lastRunAt == null ? "" : String(value.lastRunAt),
+    exitCode: value.exitCode == null ? null : Number(value.exitCode),
+    durationMs: Number.isFinite(Number(value.durationMs)) ? Number(value.durationMs) : 0,
+    stdout: String(value.stdout || ""),
+    stderr: String(value.stderr || "")
+  };
+}
+
+function validateVerificationRunPlan(value) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "verificationRunPlan must be an object."
+  );
+  const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
+  if (workflowId) {
+    assert(workflowCatalog.isWorkflowId(workflowId), "invalid verificationRunPlan.workflowId.");
+  }
+  const rootPath = path.resolve(toTrimmedString(value.rootPath, "verificationRunPlan.rootPath"));
+  const checks = Array.isArray(value.checks) ? value.checks.map((check, index) => validateVerificationRunCheck(check, index)) : [];
+  return {
+    id: String(value.id || "").trim(),
+    groupId: String(value.groupId || "").trim(),
+    groupTitle: String(value.groupTitle || "").trim(),
+    workflowId: workflowId || "release_audit",
+    rootPath,
+    rootLabel: String(value.rootLabel || "").trim(),
+    preparedAt: value.preparedAt == null ? "" : String(value.preparedAt),
+    lastRunAt: value.lastRunAt == null ? "" : String(value.lastRunAt),
+    checks
+  };
+}
+
+function validateWorkspaceActionRequest(value) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "workspace action payload must be an object."
+  );
+
+  const kind = toTrimmedString(value.kind, "workspace action kind");
+  assert(
+    VALID_WORKSPACE_ACTION_KINDS.has(kind),
+    `unsupported workspace action kind: ${kind}`
+  );
+
+  const rootPath = path.resolve(toTrimmedString(value.rootPath, "workspace action rootPath"));
+  const directory = String(value.directory || "").trim().replace(/\\/g, "/");
+  const filename = normalizeFilename(value.filename);
+  const content = String(value.content == null ? "" : value.content);
+
+  const normalizedDirectory = directory.length === 0 ? "." : path.posix.normalize(directory);
+  if (normalizedDirectory !== ".") {
+    assert(
+      normalizedDirectory !== ".." &&
+        !normalizedDirectory.startsWith("../") &&
+        !normalizedDirectory.includes("/../") &&
+        !normalizedDirectory.startsWith("/"),
+      "workspace action directory is invalid."
+    );
+  }
+  assert(content.trim().length > 0, "workspace action content is required.");
+
+  return {
+    proposalId: value.proposalId == null ? kind : String(value.proposalId).trim() || kind,
+    kind,
+    title: String(value.title || "").trim(),
+    description: String(value.description || "").trim(),
+    rootPath,
+    directory: normalizedDirectory,
+    filename,
+    content
+  };
+}
+
+function validatePatchPlanRequest(value) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "patch plan payload must be an object."
+  );
+  const rootPath = path.resolve(toTrimmedString(value.rootPath, "patch plan rootPath"));
+  const plan = validatePatchPlan(value.plan);
+  const selectedFileIds = Array.isArray(value.selectedFileIds)
+    ? value.selectedFileIds.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  return {
+    rootPath,
+    plan,
+    selectedFileIds
+  };
+}
+
+function validateVerificationRunRequest(value) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "verification run payload must be an object."
+  );
+  const rootPath = path.resolve(toTrimmedString(value.rootPath, "verification run rootPath"));
+  const checkIds = Array.isArray(value.checkIds)
+    ? value.checkIds.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  assert(checkIds.length > 0, "verification run must include at least one check.");
+  for (const id of checkIds) {
+    assert(verificationCatalog.isCheckId(id), `unsupported verification check: ${id}`);
+  }
+  return {
+    rootPath,
+    checkIds
+  };
 }
 
 module.exports = {
@@ -292,8 +633,11 @@ module.exports = {
   validateMessages,
   validateModel,
   validatePassphrase,
+  validatePatchPlanRequest,
+  validateVerificationRunRequest,
   validateSettings,
   validateSessionName,
+  validateWorkspaceActionRequest,
   validateStateKey,
   validateStateUpdates
 };

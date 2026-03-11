@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NeuralShell | Local-first AI workstation</title>
+    <meta
+      name="description"
+      content="NeuralShell is a desktop workstation for local AI and developer workflows with strict IPC validation, offline-first defaults, and release provenance gates."
+    />
+    <meta property="og:title" content="NeuralShell" />
+    <meta
+      property="og:description"
+      content="Controlled local AI workflows with strict IPC validation, offline-first defaults, and release provenance gates."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="site-assets/og-card.png" />
+    <meta name="theme-color" content="#081723" />
+    <link rel="icon" href="site-assets/icon-512.png" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <div class="brand">
+            <span class="brand-mark"></span>
+            <span class="brand-copy">NeuralShell</span>
+          </div>
+          <div class="topbar-links">
+            <a href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v1.2.1-OMEGA">Download Beta</a>
+            <a href="https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose">Feedback</a>
+          </div>
+        </nav>
+
+        <section class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Public beta // v1.2.1-OMEGA</p>
+            <h1>Controlled local AI workflows, without the fuzzy edges.</h1>
+            <p class="lede">
+              NeuralShell is a desktop workstation for developer and operator workflows built around strict IPC
+              validation, offline-first defaults, and verifiable release artifacts.
+            </p>
+            <div class="cta-row">
+              <a class="cta primary" href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v1.2.1-OMEGA">
+                Install the beta
+              </a>
+              <a class="cta secondary" href="https://github.com/microsoft/winget-pkgs/pull/346920">
+                Review WinGet PR
+              </a>
+              <a class="cta secondary" href="https://github.com/Z3r0DayZion-install/NeuralShell/issues/34">
+                Join beta thread
+              </a>
+            </div>
+            <ul class="hero-points">
+              <li>Strict IPC validation across the desktop surface</li>
+              <li>Offline-first defaults for local workstation control</li>
+              <li>Release checksums, manifests, and provenance gates</li>
+            </ul>
+          </div>
+
+          <aside class="hero-panel">
+            <div class="panel-header">
+              <span>Operator status</span>
+              <span class="status-pill">Live beta</span>
+            </div>
+            <div class="stack">
+              <div class="stat-row">
+                <span>Release</span>
+                <strong>v1.2.1-OMEGA</strong>
+              </div>
+              <div class="stat-row">
+                <span>Installer</span>
+                <strong>Signed Windows build</strong>
+              </div>
+              <div class="stat-row">
+                <span>Channel</span>
+                <strong>WinGet PR open</strong>
+              </div>
+              <div class="stat-row">
+                <span>Store kit</span>
+                <strong>6 screenshots ready</strong>
+              </div>
+            </div>
+            <div class="proof-card">
+              <p class="proof-kicker">Release proof</p>
+              <a href="https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/release/status.json">status.json</a>
+              <a href="https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/release/manifest.json">manifest.json</a>
+              <a href="https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/release/checksums.txt">checksums.txt</a>
+              <a href="https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/docs/PRIVACY_POLICY.md">privacy policy</a>
+            </div>
+          </aside>
+        </section>
+      </header>
+
+      <main>
+        <section class="signal-bar" aria-label="Highlights">
+          <div>
+            <span class="signal-label">Operating model</span>
+            <strong>Offline-first</strong>
+          </div>
+          <div>
+            <span class="signal-label">Boundary control</span>
+            <strong>Strict IPC validation</strong>
+          </div>
+          <div>
+            <span class="signal-label">Distribution state</span>
+            <strong>WinGet submitted</strong>
+          </div>
+          <div>
+            <span class="signal-label">Store readiness</span>
+            <strong>Assets generated</strong>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">Why it exists</p>
+            <h2>A workstation surface for users who care about local control.</h2>
+          </div>
+          <div class="card-grid">
+            <article class="feature-card">
+              <h3>Harder boundaries</h3>
+              <p>
+                NeuralShell prioritizes process separation and constrained IPC instead of treating the desktop as a wide-open
+                scripting surface.
+              </p>
+            </article>
+            <article class="feature-card">
+              <h3>Verifiable releases</h3>
+              <p>
+                Build status, release manifests, checksums, and signature verification are surfaced as first-class artifacts,
+                not afterthoughts.
+              </p>
+            </article>
+            <article class="feature-card">
+              <h3>Operator workflow</h3>
+              <p>
+                Chat, sessions, profiles, commands, runtime panels, and beta issue intake are organized into one intentional
+                desktop control surface.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">Product surface</p>
+            <h2>What the beta already looks like in practice.</h2>
+          </div>
+          <div class="gallery">
+            <figure class="shot wide">
+              <img src="site-assets/screenshots/main-workspace.png" alt="NeuralShell main workspace" />
+              <figcaption>Main workspace with chat, sessions, commands, and runtime overview.</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="site-assets/screenshots/session-management.png" alt="NeuralShell session management" />
+              <figcaption>Encrypted session storage with searchable metadata and workflow persistence.</figcaption>
+            </figure>
+            <figure class="shot">
+              <img src="site-assets/screenshots/settings-and-profiles.png" alt="NeuralShell settings and profiles" />
+              <figcaption>Profiles, local bridge configuration, token budgets, and autosave controls.</figcaption>
+            </figure>
+            <figure class="shot wide">
+              <img src="site-assets/screenshots/runtime-and-integrity.png" alt="NeuralShell runtime and integrity panels" />
+              <figcaption>Runtime telemetry, audit outputs, and integrity-oriented workflow context.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="section proof-section">
+          <div class="section-head">
+            <p class="eyebrow">Release trail</p>
+            <h2>Public links for verification, install, and feedback.</h2>
+          </div>
+          <div class="link-grid">
+            <a class="link-card" href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v1.2.1-OMEGA">
+              <span>Current release</span>
+              <strong>GitHub release page</strong>
+            </a>
+            <a class="link-card" href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/download/v1.2.1-OMEGA/NeuralShell.Setup.1.2.1-OMEGA.exe">
+              <span>Installer</span>
+              <strong>Windows setup EXE</strong>
+            </a>
+            <a class="link-card" href="https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose">
+              <span>Support</span>
+              <strong>Issue intake forms</strong>
+            </a>
+            <a class="link-card" href="https://github.com/Z3r0DayZion-install/NeuralShell/issues/34">
+              <span>Beta program</span>
+              <strong>Call for testers</strong>
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>
+          <span class="footer-mark">NeuralShell</span>
+          <p>Desktop workstation for local AI and developer workflows.</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/Z3r0DayZion-install/NeuralShell">Repository</a>
+          <a href="https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/docs/PRIVACY_POLICY.md">Privacy</a>
+          <a href="https://github.com/microsoft/winget-pkgs/pull/346920">WinGet PR</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

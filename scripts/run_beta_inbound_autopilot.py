@@ -24,6 +24,13 @@ from typing import Dict, List
 
 DEFAULT_INPUT = Path("release/inbound_replies.csv")
 DEFAULT_SUMMARY = Path("release/beta-inbound-autopilot-summary.json")
+REDACTED = "***REDACTED***"
+SECRET_FLAGS = {
+    "--app-password",
+    "--gmail-app-password",
+    "--password",
+    "--smtp-pass",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,6 +41,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-apply", action="store_true")
     parser.add_argument("--include-declines", action="store_true")
     parser.add_argument("--include-low-confidence", action="store_true")
+    parser.add_argument("--tracker-window-hours", type=int, default=24)
+    parser.add_argument("--skip-tracker-actions", action="store_true")
     parser.add_argument("--send-drafts", action="store_true")
     parser.add_argument("--send-drafts-dry-run", action="store_true")
     parser.add_argument("--fetch-limit", type=int, default=200)
@@ -53,11 +62,33 @@ def now_utc_iso() -> str:
     )
 
 
+def sanitize_command(command: List[str]) -> List[str]:
+    sanitized: List[str] = []
+    expect_secret_value = False
+    for token in command:
+        if expect_secret_value:
+            sanitized.append(REDACTED)
+            expect_secret_value = False
+            continue
+
+        key, sep, _value = token.partition("=")
+        if key in SECRET_FLAGS and sep:
+            sanitized.append(f"{key}={REDACTED}")
+            continue
+        if token in SECRET_FLAGS:
+            sanitized.append(token)
+            expect_secret_value = True
+            continue
+
+        sanitized.append(token)
+    return sanitized
+
+
 def run_step(name: str, command: List[str]) -> Dict[str, object]:
     completed = subprocess.run(command, text=True, capture_output=True)
     result = {
         "name": name,
-        "command": command,
+        "command": sanitize_command(command),
         "exit_code": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
@@ -120,6 +151,14 @@ def main() -> int:
         ok = False
 
     drafts_cmd = [sys.executable, "scripts/generate_beta_reply_drafts.py"]
+    if not args.skip_tracker_actions:
+        drafts_cmd.extend(
+            [
+                "--include-tracker-actions",
+                "--tracker-window-hours",
+                str(args.tracker_window_hours),
+            ]
+        )
     if args.include_declines:
         drafts_cmd.append("--include-declines")
     if args.include_low_confidence:
@@ -150,4 +189,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
