@@ -1,4 +1,7 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const {
   validateCommandArgs,
   validateCommandName,
@@ -9,10 +12,12 @@ const {
   validatePassphrase,
   validateSettings,
   validateSessionName,
+  validateWorkspaceActionRequest,
   validateStateKey,
   validateStateUpdates
 } = require("../src/core/ipcValidators");
 const { LLMService } = require("../src/core/llmService");
+const { previewWorkspaceAction } = require("../src/core/workspaceActionPlanner");
 
 function ok(name) {
   console.log(`PASS ${name}`);
@@ -85,6 +90,35 @@ async function testIpcValidators() {
   assert.equal(imported.chat.length, 1);
   assert.throws(() => validateImportedState({ chat: [{ role: "root", content: "x" }] }), /invalid/i);
   ok("ipcValidators");
+}
+
+function testWorkspaceActionGuards() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "neuralshell-workspace-"));
+  try {
+    const request = validateWorkspaceActionRequest({
+      kind: "file_replace",
+      rootPath: tempRoot,
+      directory: "docs",
+      filename: "My Notes.md",
+      content: "# Notes\n"
+    });
+    assert.equal(request.filename, "My Notes.md");
+
+    const preview = previewWorkspaceAction(request);
+    assert.equal(preview.relativePath, "docs/My Notes.md");
+    assert.match(preview.previewText, /My Notes\.md/);
+
+    assert.throws(() => validateWorkspaceActionRequest({
+      kind: "file_replace",
+      rootPath: tempRoot,
+      directory: "docs",
+      filename: "bad?.md",
+      content: "# invalid\n"
+    }), /unsupported|invalid/i);
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+  ok("workspace action guards");
 }
 
 function createJsonResponse(status, body) {
@@ -391,6 +425,7 @@ async function testLlmServiceFailureModes() {
 
 async function run() {
   await testIpcValidators();
+  testWorkspaceActionGuards();
   await testLlmServiceRetry();
   await testLlmServiceOffline();
   await testLlmServiceCancel();

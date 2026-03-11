@@ -45,6 +45,14 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "chatlog:tail",
   "chatlog:export",
   "chatlog:clear",
+  "workspace:pickRoot",
+  "workspace:summarize",
+  "workspace:clear",
+  "workspace:previewAction",
+  "workspace:applyAction",
+  "workspace:previewPatchPlan",
+  "workspace:applyPatchPlan",
+  "verification:run",
   "identity:pubkey",
   "identity:trust-peer",
   "identity:revoke-peer",
@@ -290,6 +298,9 @@ contextBridge.exposeInMainWorld("api", {
     list: () => ipcRenderer.invoke("command:list"),
     run: (name, args) => ipcRenderer.invoke("command:run", name, args)
   },
+  verification: {
+    run: (payload) => ipcRenderer.invoke("verification:run", payload)
+  },
   bridge: {
     get: () => ipcRenderer.invoke("llm:bridge:get"),
     test: (profile) => ipcRenderer.invoke("llm:bridge:test", profile),
@@ -327,6 +338,15 @@ contextBridge.exposeInMainWorld("api", {
     tail: (limit) => ipcRenderer.invoke("chatlog:tail", limit),
     export: () => ipcRenderer.invoke("chatlog:export"),
     clear: () => ipcRenderer.invoke("chatlog:clear")
+  },
+  workspace: {
+    pickRoot: () => ipcRenderer.invoke("workspace:pickRoot"),
+    summarize: (rootPath) => ipcRenderer.invoke("workspace:summarize", rootPath),
+    clear: () => ipcRenderer.invoke("workspace:clear"),
+    previewAction: (payload) => ipcRenderer.invoke("workspace:previewAction", payload),
+    applyAction: (payload) => ipcRenderer.invoke("workspace:applyAction", payload),
+    previewPatchPlan: (payload) => ipcRenderer.invoke("workspace:previewPatchPlan", payload),
+    applyPatchPlan: (payload) => ipcRenderer.invoke("workspace:applyPatchPlan", payload)
   },
   identity: {
     /** Returns own public key PEM and display fingerprint. */
