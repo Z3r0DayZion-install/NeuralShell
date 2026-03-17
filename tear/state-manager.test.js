@@ -66,6 +66,26 @@ test("StateManager setState merges nested settings instead of replacing", () => 
   }
 });
 
+test("StateManager load seeds workflow and release defaults on a fresh profile", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-defaults-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      const loaded = stateManager.load();
+
+      assert.equal(loaded.workflowId, "release_audit");
+      assert.equal(loaded.outputMode, "checklist");
+      assert.equal(loaded.workspaceAttachment, null);
+      assert.deepEqual(loaded.releasePacketHistory, []);
+      assert.deepEqual(loaded.promotedPaletteActions, []);
+      assert.equal(loaded.commandPaletteShortcutScope, "workflow");
+      assert.equal(loaded.verificationRunPlan, null);
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test("StateManager migrates v1 state to v2 bridge profile settings", () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-migrate-"));
   try {
@@ -110,6 +130,30 @@ test("StateManager set updates keys and writes encrypted state", () => {
       const raw = fs.readFileSync(stateManager.stateFile, "utf8");
       assert.ok(raw.includes(":"), "Encrypted state file should include iv:ciphertext format.");
       assert.ok(!raw.trim().startsWith("{"), "Encrypted state file should not be plain JSON.");
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("StateManager setState ignores non-object updates and recovers null settings", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-setstate-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      stateManager.load();
+      stateManager.set("settings", null);
+      stateManager.set("settings", { retryCount: 7 });
+      const repairedSettings = stateManager.get("settings");
+      assert.equal(repairedSettings.retryCount, 7);
+      assert.equal(repairedSettings.timeoutMs, undefined);
+
+      const before = stateManager.getState();
+      stateManager.setState(null);
+      const after = stateManager.getState();
+      assert.equal(after.workflowId, before.workflowId);
+      assert.equal(after.outputMode, before.outputMode);
+      assert.deepEqual(after.settings, before.settings);
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });

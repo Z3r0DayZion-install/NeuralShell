@@ -29,6 +29,16 @@ Use this as the single source of truth for the beta round.
 - Inbound import template: `docs/pilots/BETA_INBOUND_REPLY_IMPORT_TEMPLATE.csv`
 - Inbound triage runbook: `docs/pilots/BETA_INBOUND_TRIAGE_RUNBOOK_v1.2.1-OMEGA.md`
 - Gmail autopilot setup: `docs/pilots/BETA_GMAIL_AUTOPILOT_SETUP_v1.2.1-OMEGA.md`
+- Capterra listing packet: `docs/pilots/CAPTERRA_LISTING_SUBMISSION_PACKET_v1.2.1-OMEGA.md`
+- Channel submission playbook: `docs/pilots/CHANNEL_SUBMISSION_PLAYBOOK_v1.2.1-OMEGA.md`
+- Channel copy bank: `docs/pilots/CHANNEL_COPY_BANK_v1.2.1-OMEGA.md`
+- WinGet submission packet: `docs/pilots/WINGET_SUBMISSION_PACKET_v1.2.1-OMEGA.md`
+- Microsoft Store submission packet: `docs/pilots/MICROSOFT_STORE_SUBMISSION_PACKET_v1.2.1-OMEGA.md`
+- Microsoft Store screenshot set: `release/store-assets/microsoft-store/v1.2.1-OMEGA/README.md`
+- Press kit: `docs/pilots/PRESS_KIT_v1.2.1-OMEGA.md`
+- Uneed submission packet: `docs/pilots/UNEED_SUBMISSION_PACKET_v1.2.1-OMEGA.md`
+- Peerlist launch packet: `docs/pilots/PEERLIST_LAUNCH_PACKET_v1.2.1-OMEGA.md`
+- SourceForge submission packet: `docs/pilots/SOURCEFORGE_SUBMISSION_PACKET_v1.2.1-OMEGA.md`
 - Follow-up dry run command:
   `python scripts/send_beta_followup_emails.py --dry-run --min-age-hours 72 --limit 20`
 - Follow-up live command:
@@ -41,10 +51,20 @@ Use this as the single source of truth for the beta round.
   `python scripts/beta_outreach_status_report.py`
 - Generate reply drafts:
   `python scripts/generate_beta_reply_drafts.py`
+- Generate next-24h reply drafts from tracker + triage:
+  `python scripts/generate_beta_reply_drafts.py --include-tracker-actions --tracker-window-hours 24 --include-low-confidence`
 - Send reply drafts (dry run):
   `python scripts/send_beta_reply_outbox.py --dry-run`
 - Send reply drafts (live):
   `python scripts/send_beta_reply_outbox.py`
+- Mark Capterra manual form task completed:
+  `python scripts/mark_beta_manual_task_done.py --email vendors@capterra.com --completed-action submit_listing_form --next-action await_listing_confirmation --next-in-hours 72 --note gartner_digital_markets`
+- Generate WinGet manifests:
+  `python scripts/generate_winget_manifests.py`
+- Generate Microsoft Store screenshots:
+  `npm run channel:store:screenshots`
+- Prepare public site assets and social card:
+  `npm run channel:site:prepare`
 - Full inbound autopilot (fetch + triage + status + drafts):
   `python scripts/run_beta_inbound_autopilot.py`
 

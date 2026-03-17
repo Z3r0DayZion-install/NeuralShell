@@ -17,6 +17,9 @@ from typing import Dict, List
 DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_v1.2.1-OMEGA.csv")
 DEFAULT_MD = Path("release/beta-outreach-status.md")
 DEFAULT_JSON = Path("release/beta-outreach-status.json")
+MANUAL_TASK_ACTIONS = {
+    "submit_listing_form",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,6 +52,17 @@ def load_rows(path: Path) -> List[Dict[str, str]]:
         return [dict(row) for row in reader]
 
 
+def is_manual_action(next_action: str) -> bool:
+    action = (next_action or "").strip().lower()
+    if not action:
+        return False
+    if action in MANUAL_TASK_ACTIONS:
+        return True
+    if action.startswith("manual_") or action.startswith("submit_"):
+        return True
+    return False
+
+
 def build_markdown(summary: Dict[str, object]) -> str:
     state_counts = summary["stateCounts"]
     lines = [
@@ -60,6 +74,7 @@ def build_markdown(summary: Dict[str, object]) -> str:
         f"- Total contacts: {summary['totalContacts']}",
         f"- Follow-up due now: {summary['followupDueNow']}",
         f"- Priority reply due now: {summary['priorityReplyDueNow']}",
+        f"- Manual tasks due now: {summary['manualTasksDueNow']}",
         "",
         "## State Counts",
     ]
@@ -100,6 +115,23 @@ def build_markdown(summary: Dict[str, object]) -> str:
     else:
         lines.append("| (none) |  |  |  |")
 
+    lines.extend(
+        [
+            "",
+            "## Manual Tasks Due",
+            "| Email | State | Next Action | Due At |",
+            "|---|---|---|---|",
+        ]
+    )
+    due_manual = summary["manualTasksDue"]
+    if due_manual:
+        for row in due_manual:
+            lines.append(
+                f"| {row['email']} | {row['response_state']} | {row['next_action']} | {row['next_action_at']} |"
+            )
+    else:
+        lines.append("| (none) |  |  |  |")
+
     lines.append("")
     return "\n".join(lines)
 
@@ -116,6 +148,7 @@ def main() -> int:
 
     due_followups: List[Dict[str, str]] = []
     due_replies: List[Dict[str, str]] = []
+    due_manual_tasks: List[Dict[str, str]] = []
 
     for row in rows:
         next_action = (row.get("next_action") or "").strip()
@@ -134,7 +167,9 @@ def main() -> int:
         }
         if next_action == "follow_up_72h":
             due_followups.append(item)
-        if state in {"interested", "routed", "replied"}:
+        if is_manual_action(next_action):
+            due_manual_tasks.append(item)
+        elif state in {"interested", "routed", "replied"}:
             due_replies.append(item)
 
     summary = {
@@ -143,8 +178,10 @@ def main() -> int:
         "stateCounts": dict(sorted(states.items(), key=lambda x: x[0])),
         "followupDueNow": len(due_followups),
         "priorityReplyDueNow": len(due_replies),
+        "manualTasksDueNow": len(due_manual_tasks),
         "dueFollowups": due_followups,
         "priorityRepliesDue": due_replies,
+        "manualTasksDue": due_manual_tasks,
     }
 
     md_path = Path(args.md)
@@ -156,10 +193,11 @@ def main() -> int:
     json_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     print(
-        "[SUMMARY] contacts={contacts} due_followups={fup} due_priority_replies={rep}".format(
+        "[SUMMARY] contacts={contacts} due_followups={fup} due_priority_replies={rep} due_manual_tasks={manual}".format(
             contacts=summary["totalContacts"],
             fup=summary["followupDueNow"],
             rep=summary["priorityReplyDueNow"],
+            manual=summary["manualTasksDueNow"],
         )
     )
     print(f"[MD]   {md_path.resolve()}")
@@ -169,4 +207,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

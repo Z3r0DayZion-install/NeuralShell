@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-03-10T04:49:49.491Z",
+  "files": [
+    {
+      "label": "icon",
+      "source": "assets/icon-512.png",
+      "target": "docs/site-assets/icon-512.png",
+      "bytes": 18841
+    },
+    {
+      "label": "main_workspace",
+      "source": "release/store-assets/microsoft-store/v1.2.1-OMEGA/02-main-workspace.png",
+      "target": "docs/site-assets/screenshots/main-workspace.png",
+      "bytes": 374117
+    },
+    {
+      "label": "session_management",
+      "source": "release/store-assets/microsoft-store/v1.2.1-OMEGA/03-session-management.png",
+      "target": "docs/site-assets/screenshots/session-management.png",
+      "bytes": 303208
+    },
+    {
+      "label": "settings_and_profiles",
+      "source": "release/store-assets/microsoft-store/v1.2.1-OMEGA/04-settings-and-profiles.png",
+      "target": "docs/site-assets/screenshots/settings-and-profiles.png",
+      "bytes": 349955
+    },
+    {
+      "label": "runtime_and_integrity",
+      "source": "release/store-assets/microsoft-store/v1.2.1-OMEGA/05-runtime-and-integrity.png",
+      "target": "docs/site-assets/screenshots/runtime-and-integrity.png",
+      "bytes": 269452
+    },
+    {
+      "label": "command_palette",
+      "source": "release/store-assets/microsoft-store/v1.2.1-OMEGA/06-command-palette.png",
+      "target": "docs/site-assets/screenshots/command-palette.png",
+      "bytes": 149033
+    }
+  ]
+}

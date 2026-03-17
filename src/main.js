@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, session } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, session } = require("electron");
+const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
@@ -10,6 +11,14 @@ const { createRecoveryWindow } = require("./main/recovery/recoveryWindow");
 const { attemptRepair } = require("./main/recovery/repair");
 
 const { scanWorkspace } = require('./core/empireValidator');
+const {
+  applyPatchPlan,
+  applyWorkspaceAction,
+  previewPatchPlan,
+  previewWorkspaceAction
+} = require("./core/workspaceActionPlanner");
+const { summarizeWorkspace } = require("./core/workspaceSummary");
+const verificationCatalog = require("./verificationCatalog");
 
 const llmService = require("./core/llmService");
 const { LLMService } = require("./core/llmService");
@@ -25,8 +34,11 @@ const {
   validateMessages,
   validateModel,
   validatePassphrase,
+  validatePatchPlanRequest,
+  validateVerificationRunRequest,
   validateSettings,
   validateSessionName,
+  validateWorkspaceActionRequest,
   validateStateKey,
   validateStateUpdates
 } = require("./core/ipcValidators");
@@ -392,6 +404,91 @@ function persistConversation(chat) {
   });
 }
 
+function appendLimitedText(current, chunk, limit = 60000) {
+  const next = `${current || ""}${chunk || ""}`;
+  if (next.length <= limit) {
+    return next;
+  }
+  return next.slice(next.length - limit);
+}
+
+function runVerificationProcess(spec, rootPath) {
+  return new Promise((resolve) => {
+    const commandParts = Array.isArray(spec && spec.command) ? spec.command : [];
+    const rawCommand = String(commandParts[0] || "").trim();
+    const args = commandParts.slice(1).map((arg) => String(arg));
+    const startedAt = new Date();
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    let settled = false;
+
+    const finish = (payload) => {
+      if (settled) return;
+      settled = true;
+      resolve(payload);
+    };
+
+    const child = spawn(rawCommand, args, {
+      cwd: rootPath,
+      env: {
+        ...process.env,
+        CI: process.env.CI || "1"
+      },
+      shell: process.platform === "win32",
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true
+    });
+
+    const timeoutMs = Math.max(1000, Number(spec && spec.timeoutMs) || 180000);
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill();
+    }, timeoutMs);
+
+    child.stdout.on("data", (chunk) => {
+      stdout = appendLimitedText(stdout, String(chunk), 80000);
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr = appendLimitedText(stderr, String(chunk), 80000);
+    });
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      finish({
+        id: String(spec.id || ""),
+        label: String(spec.label || spec.id || ""),
+        commandLabel: String(spec.commandLabel || rawCommand),
+        ok: false,
+        exitCode: null,
+        durationMs: Date.now() - startedAt.getTime(),
+        startedAt: startedAt.toISOString(),
+        completedAt: new Date().toISOString(),
+        stdout,
+        stderr: appendLimitedText(stderr, String(err && err.message ? err.message : err), 80000),
+        timedOut
+      });
+    });
+
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      finish({
+        id: String(spec.id || ""),
+        label: String(spec.label || spec.id || ""),
+        commandLabel: String(spec.commandLabel || rawCommand),
+        ok: !timedOut && code === 0,
+        exitCode: code,
+        durationMs: Date.now() - startedAt.getTime(),
+        startedAt: startedAt.toISOString(),
+        completedAt: new Date().toISOString(),
+        stdout,
+        stderr,
+        timedOut
+      });
+    });
+  });
+}
+
 async function runBuiltInCommand(name, args) {
   switch (name) {
     case "help":
@@ -446,6 +543,15 @@ async function runBuiltInCommand(name, args) {
       const payload = {
         model: stateManager.get("model") || "llama3",
         chat: Array.isArray(stateManager.get("chat")) ? stateManager.get("chat") : [],
+        workflowId: String(stateManager.get("workflowId") || "release_audit"),
+        outputMode: String(stateManager.get("outputMode") || "checklist"),
+        workspaceAttachment: stateManager.get("workspaceAttachment") || null,
+        lastArtifact: stateManager.get("lastArtifact") || null,
+        releasePacketHistory: Array.isArray(stateManager.get("releasePacketHistory")) ? stateManager.get("releasePacketHistory") : [],
+        patchPlan: stateManager.get("patchPlan") || null,
+        promotedPaletteActions: Array.isArray(stateManager.get("promotedPaletteActions")) ? stateManager.get("promotedPaletteActions") : [],
+        commandPaletteShortcutScope: String(stateManager.get("commandPaletteShortcutScope") || "workflow"),
+        verificationRunPlan: stateManager.get("verificationRunPlan") || null,
         settings: stateManager.get("settings") || {},
         updatedAt: new Date().toISOString()
       };
@@ -464,6 +570,33 @@ async function runBuiltInCommand(name, args) {
         if (payload.model) {
           nextState.model = payload.model;
           llmService.setModel(payload.model);
+        }
+        if (payload.workflowId) {
+          nextState.workflowId = String(payload.workflowId);
+        }
+        if (payload.outputMode) {
+          nextState.outputMode = String(payload.outputMode);
+        }
+        if (Object.prototype.hasOwnProperty.call(payload, "workspaceAttachment")) {
+          nextState.workspaceAttachment = payload.workspaceAttachment || null;
+        }
+        if (Object.prototype.hasOwnProperty.call(payload, "lastArtifact")) {
+          nextState.lastArtifact = payload.lastArtifact || null;
+        }
+        if (Array.isArray(payload.releasePacketHistory)) {
+          nextState.releasePacketHistory = payload.releasePacketHistory;
+        }
+        if (Object.prototype.hasOwnProperty.call(payload, "patchPlan")) {
+          nextState.patchPlan = payload.patchPlan || null;
+        }
+        if (Array.isArray(payload.promotedPaletteActions)) {
+          nextState.promotedPaletteActions = payload.promotedPaletteActions;
+        }
+        if (payload.commandPaletteShortcutScope) {
+          nextState.commandPaletteShortcutScope = String(payload.commandPaletteShortcutScope);
+        }
+        if (Object.prototype.hasOwnProperty.call(payload, "verificationRunPlan")) {
+          nextState.verificationRunPlan = payload.verificationRunPlan || null;
         }
         if (payload.settings && typeof payload.settings === "object") {
           nextState.settings = {
@@ -1159,6 +1292,62 @@ ipcMain.handle("command:run", async (_event, rawName, rawArgs) => {
   return result;
 });
 
+ipcMain.handle("verification:run", async (_event, payload) => {
+  const request = validateVerificationRunRequest(payload);
+  if (!fs.existsSync(request.rootPath)) {
+    throw new Error(`Verification workspace not found: ${request.rootPath}`);
+  }
+  const results = [];
+  for (const checkId of request.checkIds) {
+    const spec = verificationCatalog.getCheck(checkId);
+    if (!spec) {
+      throw new Error(`Verification check is unavailable: ${checkId}`);
+    }
+    logger.log("info", "verification run started", {
+      checkId,
+      command: spec.commandLabel,
+      rootPath: request.rootPath
+    });
+    if (auditChain) {
+      auditChain.append({
+        event: "verification_run_started",
+        checkId,
+        command: spec.commandLabel,
+        rootPath: request.rootPath
+      });
+    }
+    const result = await runVerificationProcess(spec, request.rootPath);
+    results.push(result);
+    logger.log(result.ok ? "info" : "warn", "verification run completed", {
+      checkId,
+      command: spec.commandLabel,
+      rootPath: request.rootPath,
+      ok: result.ok,
+      exitCode: result.exitCode,
+      timedOut: result.timedOut,
+      durationMs: result.durationMs
+    });
+    if (auditChain) {
+      auditChain.append({
+        event: "verification_run_completed",
+        checkId,
+        command: spec.commandLabel,
+        rootPath: request.rootPath,
+        ok: result.ok,
+        exitCode: result.exitCode,
+        timedOut: result.timedOut,
+        durationMs: result.durationMs
+      });
+    }
+  }
+  return {
+    ok: results.every((item) => item.ok),
+    rootPath: request.rootPath,
+    executedAt: new Date().toISOString(),
+    results
+  };
+});
+
 // ---------------- SYSTEM & LOGGING IPC ----------------
 
 ipcMain.handle("system:stats", async () => systemMonitor.getStats());
@@ -1202,6 +1391,48 @@ ipcMain.handle("chatlog:export", async () => {
 
 ipcMain.handle("chatlog:clear", async () => {
   return chatLogStore.clear();
+});
+
+// ---------------- WORKSPACE IPC ----------------
+
+ipcMain.handle("workspace:pickRoot", async () => {
+  const targetWindow = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+  const result = await dialog.showOpenDialog(targetWindow || undefined, {
+    title: "Attach Workspace",
+    properties: ["openDirectory"]
+  });
+  if (result.canceled || !Array.isArray(result.filePaths) || !result.filePaths[0]) {
+    return null;
+  }
+  return summarizeWorkspace(result.filePaths[0]);
+});
+
+ipcMain.handle("workspace:summarize", async (_event, rootPath) => {
+  return summarizeWorkspace(rootPath);
+});
+
+ipcMain.handle("workspace:clear", async () => {
+  return { cleared: true };
+});
+
+ipcMain.handle("workspace:previewAction", async (_event, payload) => {
+  const safePayload = validateWorkspaceActionRequest(payload);
+  return previewWorkspaceAction(safePayload);
+});
+
+ipcMain.handle("workspace:applyAction", async (_event, payload) => {
+  const safePayload = validateWorkspaceActionRequest(payload);
+  return applyWorkspaceAction(safePayload);
+});
+
+ipcMain.handle("workspace:previewPatchPlan", async (_event, payload) => {
+  const safePayload = validatePatchPlanRequest(payload);
+  return previewPatchPlan(safePayload);
+});
+
+ipcMain.handle("workspace:applyPatchPlan", async (_event, payload) => {
+  const safePayload = validatePatchPlanRequest(payload);
+  return applyPatchPlan(safePayload);
 });
 
 // ---------------- XP IPC ----------------

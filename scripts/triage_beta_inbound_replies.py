@@ -106,6 +106,10 @@ STATE_RULES = {
             "copied",
             "routing this",
             "submission form",
+            "fill out this form",
+            "create a free account",
+            "being listed",
+            "our team will reach out",
         ],
         "template": "3) Listing/Directory Routing",
         "next_action": "respond_to_route",
@@ -120,6 +124,15 @@ STATE_RULES = {
 }
 
 SUBJECT_PREFIX_RE = re.compile(r"^(re|fw|fwd)\s*:\s*", re.IGNORECASE)
+GOOGLE_SECURITY_SENDERS = {
+    "no-reply@accounts.google.com",
+    "account-noreply@google.com",
+}
+GOOGLE_SECURITY_KEYWORDS = {
+    "security alert",
+    "app password created",
+    "important changes to your google account",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -154,6 +167,16 @@ def parse_iso(raw: str) -> datetime | None:
 
 def normalize_email(raw: str) -> str:
     return (raw or "").strip().lower()
+
+
+def canonical_email(raw: str) -> str:
+    email = normalize_email(raw)
+    if "@" not in email:
+        return email
+    local, domain = email.split("@", 1)
+    if "+" in local:
+        local = local.split("+", 1)[0]
+    return f"{local}@{domain}"
 
 
 def normalize_subject(raw: str) -> str:
@@ -232,6 +255,22 @@ def classify_reply(subject: str, body: str, email: str) -> Dict[str, str]:
     )
     haystack = re.sub(r"\s+", " ", haystack)
 
+    # Deterministic route for directory/vendor gatekeeper auto-replies.
+    if normalize_email(email).endswith("@capterra.com") and (
+        "gartner digital markets" in haystack
+        or "create a free account" in haystack
+        or "fill out this form" in haystack
+    ):
+        rule = STATE_RULES["routed"]
+        return {
+            "state": "routed",
+            "confidence": "high",
+            "matched": "directory_route_autoreply",
+            "template": str(rule["template"]),
+            "next_action": str(rule["next_action"]),
+            "next_in_hours": str(rule["hours"]),
+        }
+
     score: Dict[str, int] = {}
     matched: Dict[str, List[str]] = {}
     for state, rule in STATE_RULES.items():
@@ -276,7 +315,20 @@ def clip(text: str, length: int = 140) -> str:
     return clean if len(clean) <= length else clean[: length - 3] + "..."
 
 
-def build_queue_markdown(actions: List[Dict[str, str]], unmatched: List[Dict[str, str]]) -> str:
+def is_operational_notice(email: str, subject: str, body: str) -> bool:
+    sender = normalize_email(email)
+    if sender not in GOOGLE_SECURITY_SENDERS:
+        return False
+    haystack = f"{subject} {body}".lower()
+    return any(keyword in haystack for keyword in GOOGLE_SECURITY_KEYWORDS)
+
+
+def build_queue_markdown(
+    actions: List[Dict[str, str]],
+    unmatched: List[Dict[str, str]],
+    ignored: List[Dict[str, str]],
+    duplicates: List[Dict[str, str]],
+) -> str:
     lines = [
         "# Beta Inbound Action Queue",
         "",
@@ -322,6 +374,46 @@ def build_queue_markdown(actions: List[Dict[str, str]], unmatched: List[Dict[str
             )
     else:
         lines.append("| (none) |  |  |")
+
+    lines.extend(
+        [
+            "",
+            "## Ignored Operational Notices",
+            "| Email | Subject | Excerpt |",
+            "|---|---|---|",
+        ]
+    )
+    if ignored:
+        for item in ignored:
+            lines.append(
+                "| {email} | {subject} | {excerpt} |".format(
+                    email=item.get("email", ""),
+                    subject=clip(item.get("subject", "")).replace("|", "/"),
+                    excerpt=clip(item.get("body", "")).replace("|", "/"),
+                )
+            )
+    else:
+        lines.append("| (none) |  |  |")
+
+    lines.extend(
+        [
+            "",
+            "## Duplicate Replies Skipped",
+            "| Email | Subject | Message ID |",
+            "|---|---|---|",
+        ]
+    )
+    if duplicates:
+        for item in duplicates:
+            lines.append(
+                "| {email} | {subject} | {message_id} |".format(
+                    email=item.get("email", ""),
+                    subject=clip(item.get("subject", "")).replace("|", "/"),
+                    message_id=clip(item.get("message_id", ""), 160).replace("|", "/"),
+                )
+            )
+    else:
+        lines.append("| (none) |  |  |")
     lines.append("")
     return "\n".join(lines)
 
@@ -345,6 +437,11 @@ def main() -> int:
 
     tracker_rows, tracker_fields = load_tracker(tracker_path)
     tracker_by_email = {normalize_email(row.get("email", "")): row for row in tracker_rows}
+    tracker_by_canonical_email: Dict[str, List[Dict[str, str]]] = {}
+    for row in tracker_rows:
+        key = canonical_email(row.get("email", ""))
+        if key:
+            tracker_by_canonical_email.setdefault(key, []).append(row)
     tracker_by_subject: Dict[str, List[Dict[str, str]]] = {}
     for row in tracker_rows:
         key = normalize_subject(row.get("subject", ""))
@@ -353,19 +450,32 @@ def main() -> int:
 
     action_items: List[Dict[str, str]] = []
     unmatched: List[Dict[str, str]] = []
+    ignored: List[Dict[str, str]] = []
+    duplicates: List[Dict[str, str]] = []
 
     for idx, reply in enumerate(replies, start=1):
         email = normalize_email(str(reply.get("email", "")))
         subject = str(reply.get("subject", ""))
         body = str(reply.get("body", ""))
+        message_id = str(reply.get("message_id", "")).strip()
         received_at = parse_iso(str(reply.get("received_at", ""))) or now_utc()
 
         if not email:
             unmatched.append({"email": "", "subject": subject, "body": body})
             continue
 
+        if is_operational_notice(email, subject, body):
+            ignored.append({"email": email, "subject": subject, "body": body})
+            continue
+
         row = tracker_by_email.get(email)
         match_mode = "email"
+        if not row:
+            canonical_key = canonical_email(email)
+            canonical_candidates = tracker_by_canonical_email.get(canonical_key, [])
+            if len(canonical_candidates) == 1:
+                row = canonical_candidates[0]
+                match_mode = "canonical_email"
         if not row:
             subject_key = normalize_subject(subject)
             subject_candidates = tracker_by_subject.get(subject_key, [])
@@ -374,6 +484,16 @@ def main() -> int:
                 match_mode = "subject"
         if not row:
             unmatched.append({"email": email, "subject": subject, "body": body})
+            continue
+
+        if message_id and f"INBOUND_MSG:{message_id}" in (row.get("notes") or ""):
+            duplicates.append(
+                {
+                    "email": email,
+                    "subject": subject,
+                    "message_id": message_id,
+                }
+            )
             continue
 
         classification = classify_reply(subject, body, email)
@@ -404,6 +524,8 @@ def main() -> int:
             )
             if email and email != normalize_email(row.get("email", "")):
                 append_note(row, f"INBOUND_SOURCE:{iso_utc(now_utc())}:{email}")
+            if message_id:
+                append_note(row, f"INBOUND_MSG:{message_id}")
 
         action_items.append(
             {
@@ -427,7 +549,10 @@ def main() -> int:
         write_tracker(tracker_path, tracker_rows, tracker_fields)
 
     queue_path.parent.mkdir(parents=True, exist_ok=True)
-    queue_path.write_text(build_queue_markdown(action_items, unmatched), encoding="utf-8")
+    queue_path.write_text(
+        build_queue_markdown(action_items, unmatched, ignored, duplicates),
+        encoding="utf-8",
+    )
 
     report = {
         "generatedAt": iso_utc(now_utc()),
@@ -437,8 +562,12 @@ def main() -> int:
         "processed": len(replies),
         "matched": len(action_items),
         "unmatched": len(unmatched),
+        "ignored": len(ignored),
+        "duplicates": len(duplicates),
         "actions": action_items,
         "unmatchedItems": unmatched,
+        "ignoredItems": ignored,
+        "duplicateItems": duplicates,
         "queuePath": str(queue_path),
     }
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -457,6 +586,10 @@ def main() -> int:
 
     if unmatched:
         print(f"[WARN] unmatched_replies={len(unmatched)}")
+    if ignored:
+        print(f"[INFO] ignored_operational={len(ignored)}")
+    if duplicates:
+        print(f"[INFO] duplicate_replies_skipped={len(duplicates)}")
     return 0
 
 

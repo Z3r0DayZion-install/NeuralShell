@@ -163,6 +163,26 @@ function saveSession(name, payload, passphrase) {
     updatedAt: new Date().toISOString(),
     model: String(safePayload.model || "unknown"),
     tokens: countTokensFromChat(safePayload.chat),
+    workflowId: String(safePayload.workflowId || ""),
+    outputMode: String(safePayload.outputMode || ""),
+    workspaceLabel:
+      safePayload.workspaceAttachment && typeof safePayload.workspaceAttachment === "object"
+        ? String(safePayload.workspaceAttachment.label || "")
+        : "",
+    paletteShortcuts: Array.isArray(safePayload.promotedPaletteActions)
+      ? safePayload.promotedPaletteActions.length
+      : 0,
+    verificationChecks:
+      safePayload.verificationRunPlan && typeof safePayload.verificationRunPlan === "object" && Array.isArray(safePayload.verificationRunPlan.checks)
+        ? safePayload.verificationRunPlan.checks.length
+        : 0,
+    releasePackets: Array.isArray(safePayload.releasePacketHistory)
+      ? safePayload.releasePacketHistory.length
+      : 0,
+    patchPlanFiles:
+      safePayload.patchPlan && typeof safePayload.patchPlan === "object" && Array.isArray(safePayload.patchPlan.files)
+        ? safePayload.patchPlan.files.length
+        : 0,
     version: 2
   };
   writeIndex(index);
