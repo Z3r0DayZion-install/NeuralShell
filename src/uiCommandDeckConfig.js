@@ -28,8 +28,8 @@
     },
     {
       id: "release",
-      label: "Release Gate",
-      text: "Audit release readiness, list blockers first, and finish with explicit pass/fail gates plus verification."
+      label: "Shipping Gate",
+      text: "Audit shipping readiness, list blockers first, and finish with explicit pass/fail gates plus verification."
     },
     {
       id: "modular",
@@ -46,7 +46,7 @@
     context: ["context", "repo"],
     memory: ["memory", "draft", "recent"],
     profile: ["profile", "profiles"],
-    release: ["release", "ship"],
+    release: ["shipping", "ship"],
     session: ["session", "sessions"],
     shortcut: ["shortcut", "shortcuts"],
     workflow: ["workflow", "workflows"],
@@ -57,7 +57,7 @@
     "Context Profiles",
     "Repo Context",
     "Workflow Actions",
-    "Release Controls",
+    "Shipping Controls",
     "Apply Deck",
     "Artifact Dock",
     "Session Controls",

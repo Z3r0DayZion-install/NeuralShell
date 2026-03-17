@@ -197,7 +197,7 @@ function defaultState() {
     contextPackProfiles: [],
     activeContextPackProfileId: "",
     lastArtifact: null,
-    releasePacketHistory: [],
+    shippingPacketHistory: [],
     patchPlan: null,
     promotedPaletteActions: [],
     commandPaletteShortcutScope: "workflow",
@@ -352,8 +352,8 @@ function setState(updates) {
     ...state,
     ...next,
     settings: next.settings && typeof next.settings === "object" && !Array.isArray(next.settings)
-        ? mergeSettingsValue(state.settings, next.settings, next.model || state.model)
-        : state.settings
+      ? mergeSettingsValue(state.settings, next.settings, next.model || state.model)
+      : state.settings
   };
   save();
   return state;

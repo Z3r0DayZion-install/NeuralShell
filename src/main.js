@@ -102,7 +102,7 @@ const BUILT_IN_COMMANDS = [
   { name: "copylast", description: "Copy last assistant reply text.", args: [], source: "core" },
   { name: "clearlogs", description: "Clear application logs.", args: [], source: "core" },
   { name: "selftest", description: "Run client self-checks.", args: [], source: "core" },
-  { name: "stats", description: "Show basic runtime stats.", args: [], source: "core" },
+  { name: "stats", description: "Show basic performance stats.", args: [], source: "core" },
   { name: "persona", description: "Set assistant personality.", args: ["profile"], source: "core" }
 ];
 
@@ -280,7 +280,7 @@ function bridgeSettingsOptions(settings = {}) {
     normalizeProviderId: normalizeBridgeProviderId,
     getProvider: (providerId) => (
       bridgeProviderCatalog
-      && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+        && typeof bridgeProviderCatalog.getBridgeProvider === "function"
         ? bridgeProviderCatalog.getBridgeProvider(providerId)
         : { id: providerId, defaultBaseUrl: "http://127.0.0.1:11434", suggestedModels: [] }
     ),
@@ -796,7 +796,7 @@ async function runBuiltInCommand(name, args) {
         contextPackProfiles: Array.isArray(stateManager.get("contextPackProfiles")) ? stateManager.get("contextPackProfiles") : [],
         activeContextPackProfileId: String(stateManager.get("activeContextPackProfileId") || ""),
         lastArtifact: stateManager.get("lastArtifact") || null,
-        releasePacketHistory: Array.isArray(stateManager.get("releasePacketHistory")) ? stateManager.get("releasePacketHistory") : [],
+        shippingPacketHistory: Array.isArray(stateManager.get("shippingPacketHistory")) ? stateManager.get("shippingPacketHistory") : [],
         patchPlan: stateManager.get("patchPlan") || null,
         promotedPaletteActions: Array.isArray(stateManager.get("promotedPaletteActions")) ? stateManager.get("promotedPaletteActions") : [],
         commandPaletteShortcutScope: String(stateManager.get("commandPaletteShortcutScope") || "workflow"),
@@ -842,8 +842,8 @@ async function runBuiltInCommand(name, args) {
         if (Object.prototype.hasOwnProperty.call(payload, "lastArtifact")) {
           nextState.lastArtifact = payload.lastArtifact || null;
         }
-        if (Array.isArray(payload.releasePacketHistory)) {
-          nextState.releasePacketHistory = payload.releasePacketHistory;
+        if (Array.isArray(payload.shippingPacketHistory)) {
+          nextState.shippingPacketHistory = payload.shippingPacketHistory;
         }
         if (Object.prototype.hasOwnProperty.call(payload, "patchPlan")) {
           nextState.patchPlan = payload.patchPlan || null;

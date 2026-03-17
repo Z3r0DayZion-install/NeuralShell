@@ -50,7 +50,7 @@
   const GROUP_CHECK_MAP = {
     documentation: ["lint", "store_screenshots"],
     interface: ["lint", "founder_e2e"],
-    runtime: ["lint", "founder_e2e"],
+    performance: ["lint", "founder_e2e"],
     automation: ["lint", "founder_e2e", "store_screenshots"],
     project: ["lint"]
   };

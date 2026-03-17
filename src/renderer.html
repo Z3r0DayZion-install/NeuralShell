@@ -1,259 +1,103 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>NeuralShell</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <main class="app">
-      <header class="hero">
-        <div class="hero-copy">
-          <div class="hero-masthead">
-            <div class="hero-brand-lockup">
-              <div class="hero-brand-mark" aria-hidden="true">
-                <span>N</span>
-                <span>S</span>
-              </div>
-              <div class="hero-brand-copy">
-                <p class="kicker">Operator Console</p>
-                <div class="hero-title-row">
-                  <h1>NeuralShell</h1>
-                  <span id="heroWorkflowBadge" class="hero-edition">Bridge Diagnostics</span>
-                </div>
-              </div>
-            </div>
-            <div class="hero-top-rail" aria-hidden="true">
-              <span class="signal-pill">Ctrl/Cmd+K Palette</span>
-              <span class="signal-pill">Inbox / Thread / Workbench</span>
-              <span class="signal-pill">Preview Before Apply</span>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NeuralShell | Performance \u0026 Shipping</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <main class="app">
+    <header id="appHeader" class="app-header">
+      <div class="header-main">
+        <div class="header-brand">
+          <div class="brand-mark">NS</div>
+          <div class="brand-copy">
+            <h1>NeuralShell</h1>
+            <span id="heroWorkflowBadge" class="header-badge">Bridge Diagnostics</span>
+          </div>
+        </div>
+
+        <div class="header-status-group">
+          <div class="status-group">
+            <span class="stat-label">Model</span>
+            <div class="row row-tight">
+              <select id="modelSelect" class="header-select"></select>
+              <button id="refreshModelsBtn" class="btn-icon" title="Refresh Models">⟳</button>
             </div>
           </div>
-          <div class="hero-focus-band">
-            <div class="hero-focus-copy">
-              <span class="stat-label">Current Deck</span>
-              <div class="hero-focus-title-row">
-                <strong id="heroWorkflowSummaryText" class="hero-focus-title">Bridge diagnostics is active with structured local-first routing.</strong>
-                <span id="heroProviderBadge" class="hero-focus-chip">Offline Mode</span>
-              </div>
-              <p id="heroFocusSummaryText" class="hero-focus-note">Switch workflows, keep trust local, and move into the workbench only when there is artifact, patch, or release work worth reviewing.</p>
-            </div>
-            <div class="hero-focus-side">
-              <div class="hero-tags">
-                <span class="hero-tag">Offline-first</span>
-                <span class="hero-tag">Bridge-aware</span>
-                <span class="hero-tag">Clear handoffs</span>
-              </div>
-              <div class="hero-signal">
-                <span class="signal-dot" aria-hidden="true"></span>
-                <span class="signal-copy">One shell for routing, guarded local work, and session-grade recall.</span>
-              </div>
+
+          <div class="status-group">
+            <span class="stat-label">Workspace</span>
+            <div id="globalWorkspaceStatusText" class="header-status-value">No workspace attached</div>
+          </div>
+
+          <div class="status-group">
+            <span class="stat-label">Session</span>
+            <div id="activeSessionNameHeader" class="header-status-value">Draft</div>
+          </div>
+
+          <div class="status-group">
+            <span class="stat-label">Connectivity</span>
+            <div class="row row-tight">
+              <div id="globalBridgeStatusText" class="header-status-value">Checking...</div>
+              <label class="mode-switch-compact" for="offlineModeInput">
+                <input id="offlineModeInput" type="checkbox" role="switch" />
+                <span class="mode-switch-track"></span>
+                <span class="mode-switch-label">Offline</span>
+              </label>
             </div>
           </div>
         </div>
-        <div class="hero-status">
-          <div class="hero-status-head">
-            <div class="status-stack">
-              <span class="status-stack-label">Live Signal</span>
-              <div id="statusLabel"></div>
-              <div id="statusMeta"></div>
-              <div id="typingIndicator"></div>
-            </div>
-            <div class="hero-status-rail" aria-hidden="true">
-              <span class="hero-status-chip">Bridge-aware routing</span>
-              <span class="hero-status-chip">Session recall</span>
-              <span class="hero-status-chip">Verification ready</span>
-            </div>
+
+        <div class="header-actions">
+          <button id="commandPaletteOpenBtn" class="btn-header" title="Command Palette (Ctrl+K)">Palette</button>
+          <button id="settingsMenuOpenBtn" class="btn-header" aria-controls="settingsMenuPanel"
+            aria-expanded="false">Settings</button>
+          <button id="headerDetailsToggle" class="btn-header">Details</button>
+        </div>
+      </div>
+
+      <div id="headerDetailsPanel" class="header-details hidden">
+        <div class="header-details-grid">
+          <div class="detail-card">
+            <span class="stat-label">CPU</span>
+            <div id="cpuUsageHeader">--%</div>
           </div>
-          <div class="hero-metrics">
-            <div class="hero-metric-card">
-              <span class="hero-metric-label">Active Model</span>
-              <div id="modelSummary" class="hero-metric-value"></div>
-            </div>
-            <div class="hero-metric-card">
-              <span class="hero-metric-label">Sessions</span>
-              <div id="sessionSummary" class="hero-metric-value"></div>
-            </div>
-            <div class="hero-metric-card">
-              <span class="hero-metric-label">Commands</span>
-              <div id="commandSummary" class="hero-metric-value"></div>
-            </div>
-            <div class="hero-metric-card">
-              <span class="hero-metric-label">Token Load</span>
-              <div id="tokenSummary" class="hero-metric-value"></div>
-            </div>
+          <div class="detail-card">
+            <span class="stat-label">Memory</span>
+            <div id="memoryUsageHeader">-- MB</div>
           </div>
-          <div class="hero-status-note-shell">
-            <span class="stat-label">Shell Posture</span>
-            <p class="hero-actions-note">The bar below owns workflow, model, provider, pane, and Offline Mode controls so the center thread can stay dominant.</p>
+          <div class="detail-card">
+            <span class="stat-label">Tokens</span>
+            <div id="tokenSummaryHeader">0</div>
+          </div>
+          <div class="detail-card">
+            <span class="stat-label">Provider</span>
+            <div id="globalProviderStatusText">Ollama</div>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <section class="command-deck-topology">
-        <section class="surface-shell global-command-bar">
-          <div class="surface-head control-deck-head">
-            <span class="cluster-title">Global Control Bar</span>
-            <span class="cluster-note">One strip for workflow, model, provider, offline posture, and pane control.</span>
-          </div>
 
-          <div class="global-bar-primary">
-            <section class="global-bar-block global-bar-summary">
-              <div class="surface-head control-block-head">
-                <span class="cluster-title">Live Shell</span>
-                <span class="cluster-note">Bridge lane, workspace attachment, and the next best move without leaving the shell frame.</span>
-              </div>
-              <div class="global-bar-summary-grid">
-                <div class="global-summary-card">
-                  <span class="stat-label">Bridge Lane</span>
-                  <div id="globalBridgeStatusText" class="global-summary-value">Checking bridge posture...</div>
-                </div>
-                <div class="global-summary-card">
-                  <span class="stat-label">Workspace</span>
-                  <div id="globalWorkspaceStatusText" class="global-summary-value">No workspace attached yet.</div>
-                </div>
-                <div class="global-summary-card">
-                  <span class="stat-label">Next Move</span>
-                  <div id="globalNextActionText" class="global-summary-value">Load a workflow prompt and produce the next artifact.</div>
-                </div>
-              </div>
-            </section>
-
-            <section class="global-bar-block global-bar-controls">
-              <div class="surface-head control-block-head">
-                <span class="cluster-title">Global Controls</span>
-                <span class="cluster-note">Model, palette, settings, bridge checks, and inspector control live here instead of in the thread lane.</span>
-              </div>
-              <div class="global-controls-grid">
-                <label class="field-inline" for="modelSelect">
-                  <span>Model</span>
-                  <select id="modelSelect"></select>
-                </label>
-                <button id="refreshModelsBtn" class="btn-secondary">Refresh Models</button>
-                <button id="commandPaletteOpenBtn" class="btn-secondary">Command Palette</button>
-                <button id="settingsMenuOpenBtn" class="btn-secondary" aria-controls="settingsMenuPanel" aria-expanded="false">Settings</button>
-                <button id="bridgeAutoDetectBtn" class="btn-primary">Check Local Bridge</button>
-                <button id="toggleRightPaneBtn" class="btn-secondary" type="button" aria-pressed="false">Collapse Inspector</button>
-                <button id="resetPaneLayoutBtn" class="btn-secondary" type="button">Reset Layout</button>
-              </div>
-            </section>
-          </div>
-
-          <div class="global-bar-secondary">
-            <section class="global-bar-block global-bar-connection">
-              <div class="surface-head control-block-head">
-                <span class="cluster-title">Provider + Trust</span>
-                <span class="cluster-note">Keep profile, model routing, and Offline Mode visible at the shell level.</span>
-              </div>
-              <div class="global-connection-grid">
-                <label class="mode-switch hero-mode-switch" for="offlineModeInput">
-                  <span class="mode-switch-copy">
-                    <span class="mode-switch-label">Offline Mode</span>
-                    <span class="mode-switch-note">Keep hosted providers blocked unless you intentionally leave localhost.</span>
-                  </span>
-                  <input id="offlineModeInput" type="checkbox" role="switch" />
-                  <span class="mode-switch-track" aria-hidden="true">
-                    <span class="mode-switch-thumb"></span>
-                  </span>
-                </label>
-                <div class="global-connection-copy-shell">
-                  <div class="global-summary-card">
-                    <span class="stat-label">Live Bridge</span>
-                    <div id="globalProviderStatusText" class="global-summary-value">Local bridge profile is active.</div>
-                  </div>
-                  <div class="global-summary-card">
-                    <span class="stat-label">Connection Lane</span>
-                    <div id="offlineModeSummaryText" class="hero-connection-copy">Offline Mode is on. Hosted providers stay blocked.</div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="global-bar-block global-bar-workflow">
-              <div class="surface-head control-block-head">
-                <span class="cluster-title">Workflow Lane</span>
-                <span class="cluster-note">Switch lanes, keep the contract visible, and seed the next prompt without crowding the thread.</span>
-              </div>
-              <div class="workflow-deck-grid">
-                <div id="workflowQuickActions" class="workflow-quick-actions"></div>
-                <div class="workflow-console-shell workflow-console-shell-inline">
-                  <div class="workflow-console-grid">
-                    <div class="workflow-summary">
-                      <div id="workflowTitleText" class="workflow-title-text"></div>
-                      <p id="workflowDescriptionText" class="workflow-description-text"></p>
-                    </div>
-                    <div class="workflow-config">
-                      <label class="field-block" for="outputModeSelect">
-                        <span>Output Mode</span>
-                        <select id="outputModeSelect"></select>
-                      </label>
-                      <button id="workflowSeedPromptBtn" class="btn-secondary">Load Workflow Prompt</button>
-                    </div>
-                  </div>
-                  <div>
-                    <span class="stat-label">Suggested Follow-Ups</span>
-                    <div id="workflowFollowupActions" class="workflow-followups"></div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div class="global-bar-tertiary">
-            <section class="global-bar-block global-bar-ops">
-              <div class="surface-head control-block-head">
-                <span class="cluster-title">Operator Next Moves</span>
-                <span class="cluster-note">State-aware actions and the shortest route from workflow to guarded local apply.</span>
-              </div>
-              <div id="operatorRail" class="operator-rail"></div>
-            </section>
-
-            <section class="global-bar-block global-bar-readiness">
-              <div class="surface-head control-block-head">
-                <span class="cluster-title">Readiness Lanes</span>
-                <span class="cluster-note">Workspace, context, apply, and release posture from one compact command surface.</span>
-              </div>
-              <div id="missionControlGrid" class="mission-control-grid control-lane-grid"></div>
-            </section>
-          </div>
-        </section>
-      </section>
-
-      <section id="workspaceTopology" class="layout workspace-topology">
-        <section class="workspace-column workspace-center-column">
+    <section id="workspaceTopology" class="layout workspace-topology">
+      <section class="workspace-column workspace-center-column">
         <section class="panel panel-chat">
           <div class="panel-head">
             <div class="panel-head-copy">
               <h2>Active Thread</h2>
-              <p class="panel-note">Keep one operator conversation in focus while the rest of the product supports it.</p>
+              <p class="panel-note">One active thread in focus. Support tools are docked to the left and right.</p>
             </div>
             <div class="row row-tight">
               <button id="focusInboxBtn" class="btn-secondary" type="button">Focus Inbox</button>
-              <button id="focusInspectorBtn" class="btn-secondary" type="button">Focus Inspector</button>
+              <button id="focusSystemBtn" class="btn-secondary" type="button">Focus System</button>
             </div>
           </div>
 
-          <div class="surface-shell thread-task-shell">
-            <div class="surface-head">
-              <span class="cluster-title">Live Task Strip</span>
-              <span class="cluster-note">Stay oriented: current thread, current posture, and the next best move.</span>
-            </div>
-            <div class="thread-task-grid">
-              <div class="thread-task-card">
-                <span class="thread-task-label">Current Thread</span>
-                <div id="threadTaskFocusText" class="thread-task-value">Current draft is active.</div>
-              </div>
-              <div class="thread-task-card">
-                <span class="thread-task-label">Posture</span>
-                <div id="threadTaskCapabilityText" class="thread-task-value">Offline Mode is on. Keep the bridge local until you intentionally leave localhost.</div>
-              </div>
-              <div class="thread-task-card">
-                <span class="thread-task-label">Next Move</span>
-                <div id="threadTaskActionText" class="thread-task-value">Load a workflow prompt and produce the next structured artifact.</div>
-              </div>
-            </div>
-          </div>
+
 
           <div id="chatHistory"></div>
 
@@ -271,7 +115,8 @@
               <div class="composer-head">
                 <div class="composer-head-copy">
                   <span class="cluster-title">Composer</span>
-                  <span id="composerSummaryText" class="cluster-note">Bridge Diagnostics is active. Load a workflow prompt or start typing.</span>
+                  <span id="composerSummaryText" class="cluster-note">Bridge Diagnostics is active. Load a workflow
+                    prompt or start typing.</span>
                 </div>
                 <span id="composerMetaText" class="composer-meta-pill">Idle draft</span>
               </div>
@@ -286,9 +131,11 @@
               <div class="action-cluster-head">
                 <div class="action-cluster-copy">
                   <span class="cluster-title">Action Bar</span>
-                  <span class="cluster-note">Keep only the highest-value actions visible. Move recovery, search, and archive work into trays.</span>
+                  <span class="cluster-note">Keep only the highest-value actions visible. Move recovery, search, and
+                    archive work into trays.</span>
                 </div>
-                <span id="actionBarStatusText" class="action-bar-status">Composer is empty. Start with a prompt or restore a saved draft.</span>
+                <span id="actionBarStatusText" class="action-bar-status">Composer is empty. Start with a prompt or
+                  restore a saved draft.</span>
               </div>
               <div class="command-action-bar">
                 <div class="command-action-core row row-wrap action-grid">
@@ -298,14 +145,18 @@
                 </div>
               </div>
               <div class="chat-ops-tray-nav" role="tablist" aria-label="Chat ops tools">
-                <button id="threadToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="threadToolsTray" aria-expanded="true">Thread Tools</button>
-                <button id="assistToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="assistToolsTray" aria-expanded="false">Prompt Tools</button>
-                <button id="archiveToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="archiveToolsTray" aria-expanded="false">Archive Tools</button>
+                <button id="threadToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="threadToolsTray" aria-expanded="true">Thread Tools</button>
+                <button id="assistToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="assistToolsTray" aria-expanded="false">Prompt Tools</button>
+                <button id="archiveToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="archiveToolsTray" aria-expanded="false">Archive Tools</button>
               </div>
               <div id="threadToolsTray" class="chat-ops-tray-panel">
                 <div class="surface-head">
                   <span class="cluster-title">Thread Recovery</span>
-                  <span class="cluster-note">Reset or recover the active operator thread without leaving Chat Ops.</span>
+                  <span class="cluster-note">Reset or recover the active operator thread without leaving Chat
+                    Ops.</span>
                 </div>
                 <div class="row row-wrap action-grid">
                   <button id="regenerateBtn" class="btn-secondary">Regenerate</button>
@@ -317,7 +168,8 @@
               <div id="assistToolsTray" class="chat-ops-tray-panel hidden" hidden>
                 <div class="surface-head">
                   <span class="cluster-title">Prompt Helpers</span>
-                  <span class="cluster-note">Reusable snippets, command help, and shortcut overlays for faster prompt routing.</span>
+                  <span class="cluster-note">Reusable snippets, command help, and shortcut overlays for faster prompt
+                    routing.</span>
                 </div>
                 <div class="row row-wrap action-grid">
                   <label class="field-inline" for="snippetSelect">
@@ -333,7 +185,8 @@
               <div id="archiveToolsTray" class="chat-ops-tray-panel hidden" hidden>
                 <div class="surface-head">
                   <span class="cluster-title">Archive + Search</span>
-                  <span class="cluster-note">Search, export, and import the active thread only when you need the archival surface.</span>
+                  <span class="cluster-note">Search, export, and import the active thread only when you need the
+                    archival surface.</span>
                 </div>
                 <div class="row row-wrap action-grid">
                   <label class="field-inline grow" for="chatSearchInput">
@@ -359,16 +212,17 @@
 
           <div id="shortcutOverlay"></div>
         </section>
-        </section>
+      </section>
 
-        <button id="leftPaneResizeHandle" class="pane-splitter pane-splitter-left" type="button" aria-label="Resize inbox and thread lanes"></button>
+      <button id="leftPaneResizeHandle" class="pane-splitter pane-splitter-left" type="button"
+        aria-label="Resize inbox and thread groups"></button>
 
-        <aside class="workspace-column workspace-left-column">
+      <aside class="workspace-column workspace-left-column">
         <section class="panel panel-sessions">
           <div class="panel-head">
             <div class="panel-head-copy">
               <h2>Inbox</h2>
-              <p class="panel-note">Encrypted threads, recall controls, and a cleaner route back into saved work.</p>
+              <p class="panel-note">Encrypted threads and recall controls for saved work.</p>
             </div>
           </div>
           <section class="surface-shell inbox-brief-shell">
@@ -378,8 +232,8 @@
             </div>
             <div class="inbox-brief-grid">
               <div class="inbox-brief-card">
-                <span class="stat-label">Thread Lane</span>
-                <div id="inboxLaneStatusText"></div>
+                <span class="stat-label">Thread Group</span>
+                <div id="inboxGroupStatusText"></div>
               </div>
               <div class="inbox-brief-card">
                 <span class="stat-label">Current Focus</span>
@@ -390,30 +244,37 @@
           <section class="surface-shell inbox-filter-shell">
             <div class="surface-head">
               <span class="cluster-title">Inbox Filters</span>
-              <span id="inboxFilterSummaryText" class="cluster-note">Search saved threads, pin the keepers, or isolate unread work.</span>
+              <span id="inboxFilterSummaryText" class="cluster-note">Search saved threads, pin the keepers, or isolate
+                unread work.</span>
             </div>
             <div class="row row-wrap action-grid inbox-filter-pills" role="tablist" aria-label="Inbox filters">
-              <button id="inboxFilterAllBtn" class="btn-secondary tray-toggle-btn" type="button" aria-pressed="true">All Threads</button>
-              <button id="inboxFilterPinnedBtn" class="btn-secondary tray-toggle-btn" type="button" aria-pressed="false">Pinned</button>
-              <button id="inboxFilterUnreadBtn" class="btn-secondary tray-toggle-btn" type="button" aria-pressed="false">Unread</button>
+              <button id="inboxFilterAllBtn" class="btn-secondary tray-toggle-btn" type="button" aria-pressed="true">All
+                Threads</button>
+              <button id="inboxFilterPinnedBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-pressed="false">Pinned</button>
+              <button id="inboxFilterUnreadBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-pressed="false">Unread</button>
               <button id="newChatBtn" class="btn-primary" type="button">New Chat</button>
             </div>
             <label class="field-block" for="inboxSearchInput">
               <span>Search Inbox</span>
-              <input id="inboxSearchInput" placeholder="Filter thread names, workflow labels, workspace names, or previews" />
+              <input id="inboxSearchInput"
+                placeholder="Filter thread names, workflow labels, workspace names, or previews" />
             </label>
           </section>
           <div class="surface-shell thread-rail-shell inbox-thread-shell">
             <div class="surface-head">
               <span class="cluster-title">Conversation Heads</span>
-              <span id="threadRailSummaryText" class="cluster-note">Current draft and recent encrypted conversations.</span>
+              <span id="threadRailSummaryText" class="cluster-note">Current draft and recent encrypted
+                conversations.</span>
             </div>
             <div id="sessionChatHeadRail" class="thread-head-rail"></div>
           </div>
           <section class="surface-shell session-command-shell">
             <div class="surface-head">
               <span class="cluster-title">Session Deck</span>
-              <span id="sessionOpsSummary" class="cluster-note">Keep save and load visible. Open trays only for maintenance or metadata.</span>
+              <span id="sessionOpsSummary" class="cluster-note">Keep save and load visible. Open trays only for
+                maintenance or metadata.</span>
             </div>
             <div class="row row-wrap">
               <label class="field-inline" for="sessionName">
@@ -430,13 +291,16 @@
               <button id="loadSessionBtn" class="btn-secondary">Load Session</button>
             </div>
             <div class="session-tray-nav" role="tablist" aria-label="Session tools">
-              <button id="sessionManageTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="sessionManageTray" aria-expanded="true">Manage Sessions</button>
-              <button id="sessionInspectTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="sessionInspectTray" aria-expanded="false">Inspect Metadata</button>
+              <button id="sessionManageTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="sessionManageTray" aria-expanded="true">Manage Sessions</button>
+              <button id="sessionInspectTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="sessionInspectTray" aria-expanded="false">Inspect Metadata</button>
             </div>
             <div id="sessionManageTray" class="session-tray-panel">
               <div class="surface-head">
                 <span class="cluster-title">Session Maintenance</span>
-                <span class="cluster-note">Search, sort, rename, duplicate, delete, and repair the encrypted session index.</span>
+                <span class="cluster-note">Search, sort, rename, duplicate, delete, and repair the encrypted session
+                  index.</span>
               </div>
               <div class="row row-wrap">
                 <label class="field-inline grow" for="sessionSearchInput">
@@ -483,7 +347,8 @@
           <section class="surface-shell command-bus-shell">
             <div class="surface-head">
               <span class="cluster-title">Command Deck</span>
-              <span id="commandBusSummary" class="cluster-note">Route commands through the palette first. Open the raw slash index only when you need the catalog.</span>
+              <span id="commandBusSummary" class="cluster-note">Route commands through the palette first. Open the raw
+                slash index only when you need the catalog.</span>
             </div>
             <div class="row row-wrap action-grid command-bus-primary">
               <button id="refreshCommandsBtn" class="btn-secondary">Refresh Commands</button>
@@ -491,8 +356,10 @@
               <button id="commandBusHelpBtn" class="btn-secondary">Command Help</button>
             </div>
             <div class="command-tray-nav" role="tablist" aria-label="Command bus tools">
-              <button id="commandIndexTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="commandIndexTray" aria-expanded="true">Command Index</button>
-              <button id="commandRoutingTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="commandRoutingTray" aria-expanded="false">Routing Notes</button>
+              <button id="commandIndexTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="commandIndexTray" aria-expanded="true">Command Index</button>
+              <button id="commandRoutingTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="commandRoutingTray" aria-expanded="false">Routing Notes</button>
             </div>
             <div id="commandIndexTray" class="command-tray-panel">
               <div class="surface-head">
@@ -504,285 +371,311 @@
             <div id="commandRoutingTray" class="command-tray-panel hidden" hidden>
               <div class="surface-head">
                 <span class="cluster-title">Routing Notes</span>
-                <span class="cluster-note">Prefer the palette for discovery, keep slash commands concise, and reserve the raw index for low-level recall.</span>
+                <span class="cluster-note">Prefer the palette for discovery, keep slash commands concise, and reserve
+                  the raw index for low-level recall.</span>
               </div>
               <div class="workspace-action-hint-list">
-                <div class="workspace-action-hint">Use <code>Ctrl/Cmd + K</code> to route workflow actions and promoted verification shortcuts.</div>
-                <div class="workspace-action-hint">Use <code>/help</code> to inspect the active slash catalog from the prompt surface.</div>
-                <div class="workspace-action-hint">Keep raw command refresh explicit so the index stays local, deterministic, and audit-friendly.</div>
+                <div class="workspace-action-hint">Use <code>Ctrl/Cmd + K</code> to route workflow actions and promoted
+                  verification shortcuts.</div>
+                <div class="workspace-action-hint">Use <code>/help</code> to inspect the active slash catalog from the
+                  prompt surface.</div>
+                <div class="workspace-action-hint">Keep raw command refresh explicit so the index stays local,
+                  deterministic, and audit-friendly.</div>
               </div>
             </div>
           </section>
         </section>
-        </aside>
+      </aside>
 
-        <section id="settingsMenuPanel" class="panel panel-settings settings-drawer hidden" aria-hidden="true">
-          <div class="panel-head">
-            <div class="panel-head-copy">
-              <h2>Settings Menu</h2>
-              <p class="panel-note">Profiles, safety defaults, and workspace behavior.</p>
-            </div>
-            <button id="settingsMenuCloseBtn" class="btn-secondary" aria-controls="settingsMenuPanel">Close</button>
+      <section id="settingsMenuPanel" class="panel panel-settings settings-drawer hidden" aria-hidden="true">
+        <div class="panel-head">
+          <div class="panel-head-copy">
+            <h2>Settings Menu</h2>
+            <p class="panel-note">Profiles, safety defaults, and workspace behavior.</p>
           </div>
-          <p class="settings-menu-note">Set up the bridge, choose a model, then tune local defaults and guarded state transfer.</p>
+          <button id="settingsMenuCloseBtn" class="btn-secondary" aria-controls="settingsMenuPanel">Close</button>
+        </div>
+        <p class="settings-menu-note">Set up the bridge, choose a model, then tune local defaults and guarded state
+          transfer.</p>
 
-          <div class="surface-shell settings-shell">
-            <div class="surface-head">
-              <span class="cluster-title">Drawer Status</span>
-              <span class="cluster-note">Current bridge health and workspace safety posture.</span>
-            </div>
-            <div class="settings-status-grid">
-              <div class="settings-status-card">
-                <span class="stat-label">Bridge Status</span>
-                <div id="bridgeStatusText"></div>
-              </div>
-              <div class="settings-status-card">
-                <span class="stat-label">Workspace Mode</span>
-                <div id="workspaceModeText"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="surface-shell settings-form-shell">
-              <div class="surface-head">
-                <span class="cluster-title">LLM Setup</span>
-                <span class="cluster-note">Bring the local bridge online, pick the active model, and decide whether remote gateways are allowed.</span>
-              </div>
-              <div class="form-grid">
-                <label class="field-block" for="settingsModelSelect">
-                  <span>Active Model</span>
-                  <select id="settingsModelSelect"></select>
-                </label>
-                <div class="field-block">
-                  <span>Active Provider</span>
-                  <div id="settingsProviderSummaryText" class="panel-note">Local Ollama profile is active.</div>
-                </div>
-                <div class="field-block">
-                  <span>Bridge Actions</span>
-                  <div class="row row-wrap action-grid settings-inline-actions settings-action-grid">
-                    <button id="settingsDetectBridgeBtn" class="btn-primary">Detect Local Bridge</button>
-                    <button id="refreshSettingsModelsBtn" class="btn-secondary">Refresh Models</button>
-                    <button id="bridgeHealthBtn" class="btn-secondary">Bridge Health</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="settings-connection-grid">
-                <div class="surface-shell settings-mode-shell">
-                  <div class="surface-head">
-                    <span class="cluster-title">Connection Lane</span>
-                    <span id="settingsConnectionModeText" class="cluster-note">Offline Mode is on. Hosted providers stay blocked.</span>
-                  </div>
-                  <label class="mode-switch settings-mode-switch" for="allowRemoteBridgeInput">
-                    <span class="mode-switch-copy">
-                      <span class="mode-switch-label">Hosted Access</span>
-                      <span class="mode-switch-note">Turn this on only when you want a hosted or OpenAI-compatible provider to take live traffic. Apply Settings to save the draft.</span>
-                    </span>
-                    <input id="allowRemoteBridgeInput" type="checkbox" role="switch" />
-                    <span class="mode-switch-track" aria-hidden="true">
-                      <span class="mode-switch-thumb"></span>
-                    </span>
-                  </label>
-                </div>
-                <div class="settings-preference-stack">
-                  <label class="settings-toggle-card" for="connectOnStartupInput">
-                    <input id="connectOnStartupInput" type="checkbox" />
-                    <span class="settings-toggle-body">
-                      <span class="settings-toggle-title">Reconnect On Startup</span>
-                      <span class="settings-toggle-note">Probe the live bridge as soon as NeuralShell opens.</span>
-                    </span>
-                  </label>
-                  <label class="settings-toggle-card" for="autoLoadRecommendedContextProfileInput">
-                    <input id="autoLoadRecommendedContextProfileInput" type="checkbox" />
-                    <span class="settings-toggle-body">
-                      <span class="settings-toggle-title">Auto-Load Context Hints</span>
-                      <span class="settings-toggle-note">Pull in the recommended context profile when workflows change.</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="settings-quickstart-shell">
-                <div class="surface-head">
-                  <span class="cluster-title">Provider Presets</span>
-                  <span class="cluster-note">Jump into a saved provider profile, load a draft into the editor, or import hosted profiles from environment keys.</span>
-                </div>
-                <div id="providerPresetList" class="provider-preset-list"></div>
-                <div class="row row-wrap action-grid settings-inline-actions">
-                  <button id="importEnvProfilesBtn" class="btn-secondary">Import Env Profiles</button>
-                </div>
-                <div id="envProfileSummaryText" class="panel-note">No env-backed hosted providers detected yet.</div>
-              </div>
-
-              <div class="settings-quickstart-shell">
-                <div class="surface-head">
-                  <span class="cluster-title">What To Do Next</span>
-                  <span class="cluster-note">Use these steps if the console feels empty or the bridge is not ready yet.</span>
-                </div>
-                <div id="settingsQuickstartList" class="settings-quickstart-list"></div>
-              </div>
-            </div>
-
-            <div class="panel-head">
-              <div class="panel-head-copy">
-                <h2>Bridge Profiles</h2>
-                <p class="panel-note">Save repeatable bridge and model presets for local and guarded remote lanes.</p>
-              </div>
-              <button id="onboardingResetBtn" class="btn-secondary">Re-run Onboarding</button>
-            </div>
-
-            <div class="surface-shell settings-form-shell">
-              <div class="surface-head">
-                <span class="cluster-title">Profile Editor</span>
-                <span class="cluster-note">Define a bridge target, default model, timeout, and retry posture you can re-apply in one click.</span>
-              </div>
-              <div class="form-grid">
-                <label class="field-block" for="profileSelect">
-                  <span>Profile</span>
-                  <select id="profileSelect"></select>
-                </label>
-                <label class="field-block" for="profileNameInput">
-                  <span>Profile Name</span>
-                  <input id="profileNameInput" placeholder="Local Ollama" />
-                </label>
-                <label class="field-block" for="profileBaseUrlInput">
-                  <span>Profile Base URL</span>
-                  <input id="profileBaseUrlInput" placeholder="http://127.0.0.1:11434" />
-                </label>
-                <label class="field-block" for="profileProviderSelect">
-                  <span>Provider</span>
-                  <select id="profileProviderSelect"></select>
-                </label>
-                <label class="field-block" for="profileTimeoutInput">
-                  <span>Profile Timeout (ms)</span>
-                  <input id="profileTimeoutInput" type="number" min="1000" />
-                </label>
-                <label class="field-block" for="profileRetryInput">
-                  <span>Profile Retry Count</span>
-                  <input id="profileRetryInput" type="number" min="0" />
-                </label>
-                <label class="field-block" for="profileDefaultModelSelect">
-                  <span>Profile Default Model</span>
-                  <select id="profileDefaultModelSelect"></select>
-                </label>
-                <label class="field-block" for="profileApiKeyInput">
-                  <span>API Key</span>
-                  <input id="profileApiKeyInput" type="password" placeholder="Only needed for hosted providers" />
-                </label>
-              </div>
-              <p id="profileProviderHintText" class="panel-note">Local Ollama profiles do not need an API key.</p>
-              <div id="profileTestResultText" class="panel-note profile-test-result">Test the current draft before saving or using it.</div>
-              <div id="profileTestHintText" class="panel-note profile-test-hint">The test result will explain the next fix for this provider.</div>
-
-              <div class="row row-wrap action-grid profile-action-grid">
-                <button id="profileNewBtn" class="btn-secondary">New Profile</button>
-                <button id="profileTestBtn" class="btn-secondary">Test Profile</button>
-                <button id="profileSaveBtn" class="btn-primary">Save Profile</button>
-                <button id="profileDeleteBtn" class="btn-danger">Delete Profile</button>
-                <button id="profileUseBtn" class="btn-secondary">Use Profile</button>
-              </div>
-            </div>
-
-            <div class="surface-shell settings-form-shell">
-              <div class="surface-head">
-                <span class="cluster-title">Workspace Defaults</span>
-                <span class="cluster-note">Shape theme, token budget, and autosave without changing the bridge or model setup.</span>
-              </div>
-              <div class="form-grid">
-                <label class="field-block" for="baseUrlInput">
-                  <span>Base URL</span>
-                  <input id="baseUrlInput" placeholder="http://127.0.0.1:11434" />
-                </label>
-                <label class="field-block" for="timeoutInput">
-                  <span>Timeout (ms)</span>
-                  <input id="timeoutInput" type="number" min="1" />
-                </label>
-                <label class="field-block" for="retryInput">
-                  <span>Retry Count</span>
-                  <input id="retryInput" type="number" min="0" />
-                </label>
-                <label class="field-block" for="themeSelect">
-                  <span>Theme</span>
-                  <select id="themeSelect"></select>
-                </label>
-                <label class="field-block" for="tokenBudgetInput">
-                  <span>Token Budget</span>
-                  <input id="tokenBudgetInput" type="number" min="1" />
-                </label>
-                <label class="field-block" for="autosaveNameInput">
-                  <span>Autosave Name</span>
-                  <input id="autosaveNameInput" />
-                </label>
-                <label class="field-block" for="autosaveIntervalInput">
-                  <span>Autosave Interval (min)</span>
-                  <input id="autosaveIntervalInput" type="number" min="1" />
-                </label>
-              </div>
-
-              <div class="toggle-stack">
-                <label class="field-inline checkbox-field" for="autosaveEnabledInput">
-                  <input id="autosaveEnabledInput" type="checkbox" />
-                  <span>Autosave Enabled</span>
-                </label>
-              </div>
-
-              <div class="row row-wrap action-grid">
-                <button id="applySettingsBtn" class="btn-primary">Apply Settings</button>
-              </div>
-            </div>
-
-            <div class="surface-shell settings-form-shell">
-              <div class="surface-head">
-                <span class="cluster-title">State Transfer</span>
-                <span class="cluster-note">Export or import console state inside the guarded workspace.</span>
-              </div>
-              <div class="row row-wrap action-grid">
-                <button id="exportStateBtn" class="btn-secondary">Export State</button>
-                <input id="importStateFile" type="file" />
-                <button id="importStateBtn" class="btn-secondary">Import State</button>
-              </div>
-            </div>
-            </div>
-        </section>
-
-        <button id="rightPaneResizeHandle" class="pane-splitter pane-splitter-right" type="button" aria-label="Resize thread and inspector lanes"></button>
-
-        <aside class="workspace-column workspace-right-column">
-        <section class="surface-shell inspector-shell">
+        <div class="surface-shell settings-shell">
           <div class="surface-head">
-            <span class="cluster-title">Inspector</span>
-            <span id="inspectorSummaryText" class="cluster-note">Switch between workbench, runtime, release, and context surfaces without crowding the center thread.</span>
+            <span class="cluster-title">Drawer Status</span>
+            <span class="cluster-note">Current bridge health and workspace safety state.</span>
           </div>
-          <div class="inspector-nav" role="tablist" aria-label="Inspector surfaces">
-            <button id="inspectorWorkbenchBtn" class="btn-secondary tray-toggle-btn inspector-nav-card" type="button" aria-controls="inspectorWorkbenchSection" aria-expanded="true">
-              <span class="inspector-nav-label">Workbench</span>
-              <span id="inspectorWorkbenchStateText" class="inspector-nav-state">Artifact dock ready</span>
-              <span id="inspectorWorkbenchSummaryText" class="inspector-nav-summary">Artifacts, patch review, and guarded apply stay here so the center thread can stay clean.</span>
+          <div class="settings-status-grid">
+            <div class="settings-status-card">
+              <span class="stat-label">Bridge Status</span>
+              <div id="bridgeStatusText"></div>
+            </div>
+            <div class="settings-status-card">
+              <span class="stat-label">Workspace Mode</span>
+              <div id="workspaceModeText"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">LLM Setup</span>
+              <span class="cluster-note">Bring the local bridge online, pick the active model, and decide whether remote
+                gateways are allowed.</span>
+            </div>
+            <div class="form-grid">
+              <label class="field-block" for="settingsModelSelect">
+                <span>Active Model</span>
+                <select id="settingsModelSelect"></select>
+              </label>
+              <div class="field-block">
+                <span>Active Provider</span>
+                <div id="settingsProviderSummaryText" class="panel-note">Local Ollama profile is active.</div>
+              </div>
+              <div class="field-block">
+                <span>Bridge Actions</span>
+                <div class="row row-wrap action-grid settings-inline-actions settings-action-grid">
+                  <button id="settingsDetectBridgeBtn" class="btn-primary">Detect Local Bridge</button>
+                  <button id="refreshSettingsModelsBtn" class="btn-secondary">Refresh Models</button>
+                  <button id="bridgeHealthBtn" class="btn-secondary">Bridge Health</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-connection-grid">
+              <div class="surface-shell settings-mode-shell">
+                <div class="surface-head">
+                  <span class="cluster-title">Connection Group</span>
+                  <span id="settingsConnectionModeText" class="cluster-note">Offline Mode is on. Hosted providers stay
+                    blocked.</span>
+                </div>
+                <label class="mode-switch settings-mode-switch" for="allowRemoteBridgeInput">
+                  <span class="mode-switch-copy">
+                    <span class="mode-switch-label">Hosted Access</span>
+                    <span class="mode-switch-note">Turn this on only when you want a hosted or OpenAI-compatible
+                      provider to take live traffic. Apply Settings to save the draft.</span>
+                  </span>
+                  <input id="allowRemoteBridgeInput" type="checkbox" role="switch" />
+                  <span class="mode-switch-track" aria-hidden="true">
+                    <span class="mode-switch-thumb"></span>
+                  </span>
+                </label>
+              </div>
+              <div class="settings-preference-stack">
+                <label class="settings-toggle-card" for="connectOnStartupInput">
+                  <input id="connectOnStartupInput" type="checkbox" />
+                  <span class="settings-toggle-body">
+                    <span class="settings-toggle-title">Reconnect On Startup</span>
+                    <span class="settings-toggle-note">Probe the live bridge as soon as NeuralShell opens.</span>
+                  </span>
+                </label>
+                <label class="settings-toggle-card" for="autoLoadRecommendedContextProfileInput">
+                  <input id="autoLoadRecommendedContextProfileInput" type="checkbox" />
+                  <span class="settings-toggle-body">
+                    <span class="settings-toggle-title">Auto-Load Context Hints</span>
+                    <span class="settings-toggle-note">Pull in the recommended context profile when workflows
+                      change.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-quickstart-shell">
+              <div class="surface-head">
+                <span class="cluster-title">Provider Presets</span>
+                <span class="cluster-note">Jump into a saved provider profile, load a draft into the editor, or import
+                  hosted profiles from environment keys.</span>
+              </div>
+              <div id="providerPresetList" class="provider-preset-list"></div>
+              <div class="row row-wrap action-grid settings-inline-actions">
+                <button id="importEnvProfilesBtn" class="btn-secondary">Import Env Profiles</button>
+              </div>
+              <div id="envProfileSummaryText" class="panel-note">No env-backed hosted providers detected yet.</div>
+            </div>
+
+            <div class="settings-quickstart-shell">
+              <div class="surface-head">
+                <span class="cluster-note">Direct actions to restore operation if the bridge is not ready.</span>
+              </div>
+              <div id="settingsQuickstartList" class="settings-quickstart-list"></div>
+            </div>
+          </div>
+
+          <div class="panel-head">
+            <div class="panel-head-copy">
+              <h2>Bridge Profiles</h2>
+              <p class="panel-note">Save repeatable bridge and model presets for local and guarded remote groups.</p>
+            </div>
+            <button id="onboardingResetBtn" class="btn-secondary">Re-run Onboarding</button>
+          </div>
+
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Profile Editor</span>
+              <span class="cluster-note">Define a bridge target, default model, timeout, and retry connectivity you can
+                re-apply in one click.</span>
+            </div>
+            <div class="form-grid">
+              <label class="field-block" for="profileSelect">
+                <span>Profile</span>
+                <select id="profileSelect"></select>
+              </label>
+              <label class="field-block" for="profileNameInput">
+                <span>Profile Name</span>
+                <input id="profileNameInput" placeholder="Local Ollama" />
+              </label>
+              <label class="field-block" for="profileBaseUrlInput">
+                <span>Profile Base URL</span>
+                <input id="profileBaseUrlInput" placeholder="http://127.0.0.1:11434" />
+              </label>
+              <label class="field-block" for="profileProviderSelect">
+                <span>Provider</span>
+                <select id="profileProviderSelect"></select>
+              </label>
+              <label class="field-block" for="profileTimeoutInput">
+                <span>Profile Timeout (ms)</span>
+                <input id="profileTimeoutInput" type="number" min="1000" />
+              </label>
+              <label class="field-block" for="profileRetryInput">
+                <span>Profile Retry Count</span>
+                <input id="profileRetryInput" type="number" min="0" />
+              </label>
+              <label class="field-block" for="profileDefaultModelSelect">
+                <span>Profile Default Model</span>
+                <select id="profileDefaultModelSelect"></select>
+              </label>
+              <label class="field-block" for="profileApiKeyInput">
+                <span>API Key</span>
+                <input id="profileApiKeyInput" type="password" placeholder="Only needed for hosted providers" />
+              </label>
+            </div>
+            <p id="profileProviderHintText" class="panel-note">Local Ollama profiles do not need an API key.</p>
+            <div id="profileTestResultText" class="panel-note profile-test-result">Test the current draft before saving
+              or using it.</div>
+            <div id="profileTestHintText" class="panel-note profile-test-hint">The test result will explain the next fix
+              for this provider.</div>
+
+            <div class="row row-wrap action-grid profile-action-grid">
+              <button id="profileNewBtn" class="btn-secondary">New Profile</button>
+              <button id="profileTestBtn" class="btn-secondary">Test Profile</button>
+              <button id="profileSaveBtn" class="btn-primary">Save Profile</button>
+              <button id="profileDeleteBtn" class="btn-danger">Delete Profile</button>
+              <button id="profileUseBtn" class="btn-secondary">Use Profile</button>
+            </div>
+          </div>
+
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Workspace Defaults</span>
+              <span class="cluster-note">Shape theme, token budget, and autosave without changing the bridge or model
+                setup.</span>
+            </div>
+            <div class="form-grid">
+              <label class="field-block" for="baseUrlInput">
+                <span>Base URL</span>
+                <input id="baseUrlInput" placeholder="http://127.0.0.1:11434" />
+              </label>
+              <label class="field-block" for="timeoutInput">
+                <span>Timeout (ms)</span>
+                <input id="timeoutInput" type="number" min="1" />
+              </label>
+              <label class="field-block" for="retryInput">
+                <span>Retry Count</span>
+                <input id="retryInput" type="number" min="0" />
+              </label>
+              <label class="field-block" for="themeSelect">
+                <span>Theme</span>
+                <select id="themeSelect"></select>
+              </label>
+              <label class="field-block" for="tokenBudgetInput">
+                <span>Token Budget</span>
+                <input id="tokenBudgetInput" type="number" min="1" />
+              </label>
+              <label class="field-block" for="autosaveNameInput">
+                <span>Autosave Name</span>
+                <input id="autosaveNameInput" />
+              </label>
+              <label class="field-block" for="autosaveIntervalInput">
+                <span>Autosave Interval (min)</span>
+                <input id="autosaveIntervalInput" type="number" min="1" />
+              </label>
+            </div>
+
+            <div class="toggle-stack">
+              <label class="field-inline checkbox-field" for="autosaveEnabledInput">
+                <input id="autosaveEnabledInput" type="checkbox" />
+                <span>Autosave Enabled</span>
+              </label>
+            </div>
+
+            <div class="row row-wrap action-grid">
+              <button id="applySettingsBtn" class="btn-primary">Apply Settings</button>
+            </div>
+          </div>
+
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">State Transfer</span>
+              <span class="cluster-note">Export or import console state inside the guarded workspace.</span>
+            </div>
+            <div class="row row-wrap action-grid">
+              <button id="exportStateBtn" class="btn-secondary">Export State</button>
+              <input id="importStateFile" type="file" />
+              <button id="importStateBtn" class="btn-secondary">Import State</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <button id="rightPaneResizeHandle" class="pane-splitter pane-splitter-right" type="button"
+        aria-label="Resize thread and system groups"></button>
+
+      <aside class="workspace-column workspace-right-column">
+        <section class="surface-shell system-shell">
+          <div class="surface-head">
+            <span class="cluster-title">System Panel</span>
+            <span id="systemSummaryText" class="cluster-note">Switch between workbench, performance, shipping, and
+              context
+              surfaces without crowding the center thread.</span>
+          </div>
+          <div class="system-nav" role="tablist" aria-label="System sections">
+            <button id="systemWorkbenchBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemWorkbenchSection" aria-expanded="true">
+              <span class="system-nav-label">Workbench</span>
+              <span id="systemWorkbenchStateText" class="system-nav-state">Artifact dock ready</span>
+              <span id="systemWorkbenchSummaryText" class="system-nav-summary">Artifacts, patch review, and
+                guarded apply stay here so the center thread can stay clean.</span>
             </button>
-            <button id="inspectorRuntimeBtn" class="btn-secondary tray-toggle-btn inspector-nav-card" type="button" aria-controls="inspectorRuntimeSection" aria-expanded="false">
-              <span class="inspector-nav-label">Runtime</span>
-              <span id="inspectorRuntimeStateText" class="inspector-nav-state">Bridge status</span>
-              <span id="inspectorRuntimeSummaryText" class="inspector-nav-summary">Diagnostics, trace control, and raw outputs stay isolated from release and patch work.</span>
+            <button id="systemPerformanceBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemPerformanceSection" aria-expanded="false">
+              <span class="system-nav-label">Performance</span>
+              <span id="systemPerformanceStateText" class="system-nav-state">Bridge status</span>
+              <span id="systemPerformanceSummaryText" class="system-nav-summary">Health, trace control, and raw
+                logs.</span>
             </button>
-            <button id="inspectorReleaseBtn" class="btn-secondary tray-toggle-btn inspector-nav-card" type="button" aria-controls="inspectorReleaseSection" aria-expanded="false">
-              <span class="inspector-nav-label">Release</span>
-              <span id="inspectorReleaseStateText" class="inspector-nav-state">Release lane idle</span>
-              <span id="inspectorReleaseSummaryText" class="inspector-nav-summary">Release posture, verification gating, and packet export stay in one guarded lane.</span>
+            <button id="systemShippingBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemShippingSection" aria-expanded="false">
+              <span class="system-nav-label">Shipping</span>
+              <span id="systemShippingStateText" class="system-nav-state">Shipping group idle</span>
+              <span id="systemShippingSummaryText" class="system-nav-summary">Gating, verification, and packet
+                export.</span>
             </button>
-            <button id="inspectorContextBtn" class="btn-secondary tray-toggle-btn inspector-nav-card" type="button" aria-controls="inspectorContextSection" aria-expanded="false">
-              <span class="inspector-nav-label">Context</span>
-              <span id="inspectorContextStateText" class="inspector-nav-state">Workspace memory</span>
-              <span id="inspectorContextSummaryText" class="inspector-nav-summary">Workspace memory, repo context, and posture snapshots stay docked here so trusted roots stay easy to inspect.</span>
+            <button id="systemContextBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemContextSection" aria-expanded="false">
+              <span class="system-nav-label">Context</span>
+              <span id="systemContextStateText" class="system-nav-state">Workspace memory</span>
+              <span id="systemContextSummaryText" class="system-nav-summary">Project memory and connectivity
+                snapshots.</span>
             </button>
           </div>
         </section>
 
-        <section id="inspectorRuntimeSection" class="panel panel-runtime inspector-panel">
+        <section id="systemPerformanceSection" class="panel panel-performance system-panel">
           <div class="panel-head">
             <div class="panel-head-copy">
-              <h2>Runtime</h2>
-              <p class="panel-note">Diagnostics, trace control, and raw runtime surfaces for the active operator lane.</p>
+              <h2>Performance</h2>
+              <p class="panel-note">Diagnostics, trace control, and raw performance surfaces for the active operator
+                group.
+              </p>
             </div>
           </div>
 
@@ -805,20 +698,26 @@
             </div>
           </div>
 
-          <section class="surface-shell runtime-command-shell">
+          <section class="surface-shell performance-command-shell">
             <div class="surface-head">
-              <span class="cluster-title">Runtime Command Deck</span>
-              <span class="cluster-note">Keep release controls visible. Stage diagnostics, trace control, and raw outputs only when needed.</span>
+              <span class="cluster-title">Performance Command Deck</span>
+              <span class="cluster-note">Keep shipping controls visible. Stage diagnostics, trace control, and raw
+                outputs only when needed.</span>
             </div>
-            <div class="runtime-tray-nav" role="tablist" aria-label="Runtime tools">
-              <button id="runtimeDiagnosticsTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="runtimeDiagnosticsTray" aria-expanded="true">Diagnostics</button>
-              <button id="runtimeTraceTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="runtimeTraceTray" aria-expanded="false">Trace Control</button>
-              <button id="runtimeOutputTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="runtimeOutputTray" aria-expanded="false">Output Surfaces</button>
+            <div class="performance-tray-nav" role="tablist" aria-label="Performance tools">
+              <button id="performanceDiagnosticsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="performanceDiagnosticsTray" aria-expanded="true">Diagnostics</button>
+              <button id="performanceTraceTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="performanceTraceTray" aria-expanded="false">Trace Control</button>
+              <button id="performanceOutputTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="performanceOutputTray" aria-expanded="false">Output Surfaces</button>
             </div>
-            <div id="runtimeDiagnosticsTray" class="runtime-tray-panel">
+            <div id="performanceDiagnosticsTray" class="performance-tray-panel">
               <div class="surface-head">
                 <span class="cluster-title">Diagnostics</span>
-                <span class="cluster-note">Run integrity checks and pull the latest runtime traces without keeping every tool expanded.</span>
+                <span class="cluster-note">Run integrity checks and pull the latest performance traces without keeping
+                  every
+                  tool expanded.</span>
               </div>
               <div class="row row-wrap action-grid">
                 <button id="runSelfTestBtn" class="btn-secondary">Self Test</button>
@@ -827,10 +726,12 @@
                 <button id="loadChatLogsBtn" class="btn-secondary">Load Chat Logs</button>
               </div>
             </div>
-            <div id="runtimeTraceTray" class="runtime-tray-panel hidden" hidden>
+            <div id="performanceTraceTray" class="performance-tray-panel hidden" hidden>
               <div class="surface-head">
                 <span class="cluster-title">Trace Control</span>
-                <span class="cluster-note">Purge or export runtime and chat trails only when you are managing the trace surface.</span>
+                <span class="cluster-note">Purge or export performance and chat trails only when you are managing the
+                  trace
+                  surface.</span>
               </div>
               <div class="row row-wrap action-grid">
                 <button id="clearLogsBtn" class="btn-danger">Clear Logs</button>
@@ -839,31 +740,35 @@
                 <button id="exportChatLogsBtn" class="btn-secondary">Export Chat Logs</button>
               </div>
             </div>
-            <div id="runtimeOutputTray" class="runtime-tray-panel hidden" hidden>
+            <div id="performanceOutputTray" class="performance-tray-panel hidden" hidden>
               <div class="surface-head">
                 <span class="cluster-title">Output Surfaces</span>
-                <span class="cluster-note">Inspect one raw output surface at a time instead of keeping all logs fully expanded.</span>
+                <span class="cluster-note">Inspect one raw output surface at a time instead of keeping all logs fully
+                  expanded.</span>
               </div>
-              <div class="runtime-output-nav" role="tablist" aria-label="Runtime outputs">
-                <button id="runtimeAuditOutputBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="runtimeAuditOutputPanel" aria-expanded="true">Button Audit</button>
-                <button id="runtimeLogsOutputBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="runtimeLogsOutputPanel" aria-expanded="false">Runtime Logs</button>
-                <button id="runtimeChatLogsOutputBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="runtimeChatLogsOutputPanel" aria-expanded="false">Chat Logs</button>
+              <div class="performance-output-nav" role="tablist" aria-label="Performance outputs">
+                <button id="performanceAuditOutputBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="performanceAuditOutputPanel" aria-expanded="true">Button Audit</button>
+                <button id="performanceLogsOutputBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="performanceLogsOutputPanel" aria-expanded="false">Performance Logs</button>
+                <button id="performanceChatLogsOutputBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="performanceChatLogsOutputPanel" aria-expanded="false">Chat Logs</button>
               </div>
-              <div id="runtimeAuditOutputPanel" class="runtime-output-panel">
+              <div id="performanceAuditOutputPanel" class="performance-output-panel">
                 <div class="output-head">
                   <span class="cluster-title">Button Audit</span>
                   <span class="cluster-note">Surface integrity and binding coverage.</span>
                 </div>
                 <pre id="buttonAuditOutput"></pre>
               </div>
-              <div id="runtimeLogsOutputPanel" class="runtime-output-panel hidden" hidden>
+              <div id="performanceLogsOutputPanel" class="performance-output-panel hidden" hidden>
                 <div class="output-head">
-                  <span class="cluster-title">Runtime Logs</span>
-                  <span class="cluster-note">System diagnostics and release-state events.</span>
+                  <span class="cluster-title">Performance Logs</span>
+                  <span class="cluster-note">System diagnostics and shipping-state events.</span>
                 </div>
                 <pre id="logsOutput"></pre>
               </div>
-              <div id="runtimeChatLogsOutputPanel" class="runtime-output-panel hidden" hidden>
+              <div id="performanceChatLogsOutputPanel" class="performance-output-panel hidden" hidden>
                 <div class="output-head">
                   <span class="cluster-title">Chat Logs</span>
                   <span class="cluster-note">Conversation event stream and assistant payloads.</span>
@@ -876,70 +781,81 @@
 
         </section>
 
-        <section id="inspectorReleaseSection" class="panel panel-release inspector-panel">
+        <section id="systemShippingSection" class="panel panel-shipping system-panel">
           <div class="panel-head">
             <div class="panel-head-copy">
-              <h2>Release</h2>
-              <p class="panel-note">Stage release checks, build the packet, and export evidence from one guarded lane.</p>
+              <h2>Shipping</h2>
+              <p class="panel-note">Stage shipping checks, build the packet, and export evidence from one guarded group.
+              </p>
             </div>
           </div>
-          <section class="surface-shell release-cockpit-shell">
+          <section class="surface-shell shipping-cockpit-shell">
             <div class="surface-head">
-              <span class="cluster-title">Release Cockpit</span>
-              <span class="cluster-note">Keep release posture isolated so the center thread stays focused on the actual work.</span>
+              <span class="cluster-title">Shipping Cockpit</span>
+              <span class="cluster-note">Keep shipping state isolated so the center thread stays focused on the actual
+                work.</span>
             </div>
-            <div class="release-cockpit-grid">
-              <div class="release-cockpit-summary">
-                <div id="releaseCockpitTitleText" class="workflow-title-text"></div>
-                <p id="releaseCockpitSummaryText" class="workflow-description-text"></p>
-                <div id="releaseCockpitMetaRow" class="trust-scope-row"></div>
+            <div class="shipping-cockpit-grid">
+              <div class="shipping-cockpit-summary">
+                <div id="shippingCockpitTitleText" class="workflow-title-text"></div>
+                <p id="shippingCockpitSummaryText" class="workflow-description-text"></p>
+                <div id="shippingCockpitMetaRow" class="trust-scope-row"></div>
               </div>
-              <div class="release-cockpit-actions">
-                <button id="stageReleaseCockpitBtn" class="btn-primary">Stage Release Checks</button>
-                <button id="runReleaseCockpitBtn" class="btn-secondary">Run Release Checks</button>
-                <button id="buildReleasePacketBtn" class="btn-secondary">Build Release Packet</button>
-                <button id="exportReleaseEvidenceBtn" class="btn-secondary">Export Release Evidence</button>
-                <button id="openReleasePaletteBtn" class="btn-secondary">Open Release Palette</button>
+              <div class="shipping-cockpit-actions">
+                <button id="stageShippingCockpitBtn" class="btn-primary btn-action-primary">Stage Shipping
+                  Checks</button>
+                <button id="runShippingCockpitBtn" class="btn-secondary">Run Shipping Checks</button>
+                <button id="buildShippingPacketBtn" class="btn-secondary">Build Shipping Packet</button>
+                <button id="exportShippingEvidenceBtn" class="btn-secondary">Export Shipping Evidence</button>
+                <button id="openShippingPaletteBtn" class="btn-secondary">Open Shipping Palette</button>
               </div>
             </div>
-            <div id="releaseCockpitChecklist" class="workspace-action-hint-list"></div>
-            <div id="releaseCockpitBlockerList" class="release-cockpit-blocker-list"></div>
-            <div id="releaseCockpitStatusList" class="release-cockpit-status-list"></div>
+            <div id="shippingCockpitChecklist" class="workspace-action-hint-list"></div>
+            <div id="shippingCockpitBlockerList" class="shipping-cockpit-blocker-list"></div>
+            <div id="shippingCockpitStatusList" class="shipping-cockpit-status-list"></div>
           </section>
         </section>
 
-        <section id="inspectorWorkbenchSection" class="panel panel-intel inspector-panel">
+        <section id="systemWorkbenchSection" class="panel panel-intel system-panel">
           <div class="panel-head">
             <div class="panel-head-copy">
               <h2>Workbench</h2>
-              <p class="panel-note">Artifacts, patch review, guarded apply, and workspace context around the active thread.</p>
+              <p class="panel-note">Artifacts, patch review, guarded apply, and workspace context around the active
+                thread.</p>
             </div>
           </div>
           <section class="workbench-shell">
             <div class="surface-head">
               <span class="cluster-title">Execution Workbench</span>
-              <span class="cluster-note">Keep heavy review and apply work in the right lane so the active thread stays calm.</span>
+              <span class="cluster-note">Keep heavy review and apply work in the right group so the active thread stays
+                calm.</span>
             </div>
             <div class="workbench-nav" aria-label="Workbench sections">
-              <button id="workbenchArtifactBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="workbenchArtifactSection" aria-expanded="true">
+              <button id="workbenchArtifactBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="workbenchArtifactSection" aria-expanded="true">
                 <span class="workbench-nav-card">
-                  <span class="workbench-nav-label">Artifact Dock</span>
+                  <span class="workbench-nav-label">Outputs</span>
                   <span id="workbenchArtifactStateText" class="workbench-nav-state">No artifact yet</span>
-                  <span id="workbenchArtifactSummaryText" class="workbench-nav-summary">Latest structured output, evidence export, and release packet compare.</span>
+                  <span id="workbenchArtifactSummaryText" class="workbench-nav-summary">Latest structured output,
+                    evidence export, and shipping packet compare.</span>
                 </span>
               </button>
-              <button id="workbenchPatchBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="workbenchPatchSection" aria-expanded="false">
+              <button id="workbenchPatchBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="workbenchPatchSection" aria-expanded="false">
                 <span class="workbench-nav-card">
-                  <span class="workbench-nav-label">Patch Plan</span>
+                  <span class="workbench-nav-label">Review Changes</span>
                   <span id="workbenchPatchStateText" class="workbench-nav-state">No patch plan</span>
-                  <span id="workbenchPatchSummaryText" class="workbench-nav-summary">Preview grouped diffs, verification runs, and guarded patch apply.</span>
+                  <span id="workbenchPatchSummaryText" class="workbench-nav-summary">Preview grouped diffs, verification
+                    runs, and guarded patch apply.</span>
                 </span>
               </button>
-              <button id="workbenchApplyBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="workbenchApplySection" aria-expanded="false">
+              <button id="workbenchApplyBtn" class="btn-secondary tray-toggle-btn btn-action-primary" type="button"
+                aria-controls="workbenchApplySection" aria-expanded="false">
                 <span class="workbench-nav-card">
-                  <span class="workbench-nav-label">Apply Deck</span>
+                  <span class="workbench-nav-label">Apply Changes</span>
                   <span id="workbenchApplyStateText" class="workbench-nav-state">No apply draft</span>
-                  <span id="workbenchApplySummaryText" class="workbench-nav-summary">Target one file, preview the diff, then write locally with intent.</span>
+                  <span id="workbenchApplySummaryText" class="workbench-nav-summary">Target one file, preview the diff,
+                    then write locally with intent.</span>
                 </span>
               </button>
             </div>
@@ -947,7 +863,8 @@
             <section id="workbenchArtifactSection" class="surface-shell artifact-shell workbench-surface">
               <div class="surface-head">
                 <span class="cluster-title">Artifact Dock</span>
-                <span class="cluster-note">Preview the latest structured output, then export, copy, or package the evidence bundle.</span>
+                <span class="cluster-note">Preview the latest structured output, then export, copy, or package the
+                  evidence bundle.</span>
               </div>
               <div class="artifact-headline">
                 <div id="artifactTitleText" class="workflow-title-text"></div>
@@ -963,8 +880,10 @@
               </div>
               <div class="artifact-history-shell">
                 <div class="surface-head">
-                  <span class="cluster-title">Release Packet History</span>
-                  <span class="cluster-note">Bounded local ledger of generated release packets. Reload one into the dock or clear old packet history.</span>
+                  <span class="cluster-title">Shipping History</span>
+                  <span class="cluster-note">Bounded local ledger of generated shipping packets. Reload one into the
+                    dock
+                    or clear old packet history.</span>
                 </div>
                 <div id="artifactHistoryList" class="artifact-history-list"></div>
                 <div class="row row-wrap action-grid">
@@ -974,18 +893,21 @@
               <div class="artifact-history-shell">
                 <div class="surface-head">
                   <span class="cluster-title">Packet Compare</span>
-                  <span id="artifactCompareMetaText" class="cluster-note">Build at least two release packets to compare revisions side by side.</span>
+                  <span id="artifactCompareMetaText" class="cluster-note">Build at least two shipping packets to compare
+                    revisions side by side.</span>
                 </div>
                 <div id="artifactCompareDiffList" class="artifact-history-list"></div>
                 <div class="artifact-compare-grid">
                   <div class="workspace-action-card artifact-compare-card">
                     <div id="artifactCompareLeftTitle" class="workflow-title-text">Compare A</div>
-                    <div id="artifactCompareLeftMeta" class="cluster-note">Select a release packet from history.</div>
+                    <div id="artifactCompareLeftMeta" class="cluster-note">Select a shipping packet from history.</div>
                     <pre id="artifactCompareLeftPreview"></pre>
                   </div>
                   <div class="workspace-action-card artifact-compare-card">
                     <div id="artifactCompareRightTitle" class="workflow-title-text">Compare B</div>
-                    <div id="artifactCompareRightMeta" class="cluster-note">Select a second release packet from history.</div>
+                    <div id="artifactCompareRightMeta" class="cluster-note">Select a second shipping packet from
+                      history.
+                    </div>
                     <pre id="artifactCompareRightPreview"></pre>
                   </div>
                 </div>
@@ -995,10 +917,12 @@
               </div>
             </section>
 
-            <section id="workbenchPatchSection" class="surface-shell patch-plan-shell workbench-surface hidden" hidden aria-hidden="true">
+            <section id="workbenchPatchSection" class="surface-shell patch-plan-shell workbench-surface hidden" hidden
+              aria-hidden="true">
               <div class="surface-head">
-                <span class="cluster-title">Patch Plan</span>
-                <span class="cluster-note">Preview a multi-file plan, inspect per-file diffs, then apply selected changes inside the attached workspace.</span>
+                <span class="cluster-title">Review Changes</span>
+                <span class="cluster-note">Preview a multi-file plan, inspect per-file diffs, then apply selected
+                  changes inside the attached workspace.</span>
               </div>
               <div class="patch-plan-summary">
                 <div class="artifact-headline">
@@ -1021,14 +945,16 @@
               <div class="patch-plan-shortcut-shell">
                 <div class="surface-head">
                   <span class="cluster-title">Verification Shortcuts</span>
-                  <span class="cluster-note">Reusable palette actions promoted from patch groups. Load, reorder, or remove them here.</span>
+                  <span class="cluster-note">Reusable palette actions promoted from patch groups. Load, reorder, or
+                    remove them here.</span>
                 </div>
                 <div id="patchPlanShortcutList" class="patch-plan-shortcut-list"></div>
               </div>
               <div class="verification-run-shell">
                 <div class="surface-head">
                   <span class="cluster-title">Verification Run Plan</span>
-                  <span class="cluster-note">Stage an explicit local run plan from a patch group, preview the exact npm scripts, then run the selected checks.</span>
+                  <span class="cluster-note">Stage an explicit local run plan from a patch group, preview the exact npm
+                    scripts, then run the selected checks.</span>
                 </div>
                 <div class="artifact-headline">
                   <div id="verificationRunTitleText" class="workflow-title-text"></div>
@@ -1044,7 +970,8 @@
                 <div class="artifact-history-shell">
                   <div class="surface-head">
                     <span class="cluster-title">Run History</span>
-                    <span id="verificationRunHistoryMetaText" class="cluster-note">Recent local verification snapshots will appear here after you run a staged plan.</span>
+                    <span id="verificationRunHistoryMetaText" class="cluster-note">Recent local verification snapshots
+                      will appear here after you run a staged plan.</span>
                   </div>
                   <div class="artifact-history-filter-row">
                     <label class="field-block" for="verificationRunHistoryWorkflowFilter">
@@ -1074,15 +1001,18 @@
               <pre id="patchPlanPreview"></pre>
             </section>
 
-            <section id="workbenchApplySection" class="surface-shell workspace-action-shell workbench-surface hidden" hidden aria-hidden="true">
+            <section id="workbenchApplySection" class="surface-shell workspace-action-shell workbench-surface hidden"
+              hidden aria-hidden="true">
               <div class="surface-head">
-                <span class="cluster-title">Apply Deck</span>
-                <span class="cluster-note">Propose a guarded local write, inspect the exact file preview, then apply it inside the attached workspace.</span>
+                <span class="cluster-title">Apply Changes</span>
+                <span class="cluster-note">Propose a guarded local write, inspect the exact file preview, then apply it
+                  inside the attached workspace.</span>
               </div>
               <div class="workspace-edit-draft">
                 <div class="surface-head">
                   <span class="cluster-title">Diff Edit Draft</span>
-                  <span class="cluster-note">Target a file inside the attached workspace, load draft content, preview the diff, then apply the replacement explicitly.</span>
+                  <span class="cluster-note">Target a file inside the attached workspace, load draft content, preview
+                    the diff, then apply the replacement explicitly.</span>
                 </div>
                 <label class="field-block" for="workspaceEditPathInput">
                   <span>Target Path</span>
@@ -1090,7 +1020,8 @@
                 </label>
                 <label class="field-block" for="workspaceEditContentInput">
                   <span>Draft Content</span>
-                  <textarea id="workspaceEditContentInput" placeholder="Paste or load the replacement content for the file edit preview."></textarea>
+                  <textarea id="workspaceEditContentInput"
+                    placeholder="Paste or load the replacement content for the file edit preview."></textarea>
                 </label>
                 <div class="row row-wrap action-grid">
                   <button id="loadArtifactIntoEditBtn" class="btn-secondary">Load Artifact Into Draft</button>
@@ -1112,23 +1043,24 @@
             </section>
           </section>
         </section>
-        <section id="inspectorContextSection" class="panel panel-context inspector-panel">
+        <section id="systemContextSection" class="panel panel-context system-panel">
           <div class="panel-head">
             <div class="panel-head-copy">
               <h2>Context</h2>
-              <p class="panel-note">Workspace memory, repo context, and live posture for the current root.</p>
+              <p class="panel-note">Workspace memory, repo context, and live connectivity for the current root.</p>
             </div>
           </div>
           <div class="surface-shell operator-memory-shell">
             <div class="surface-head">
-              <span class="cluster-title">Operator Memory</span>
-              <span class="cluster-note">Recover unsent draft work, reopen recent workspaces, and keep your preferred console layout warm between launches.</span>
+              <span class="cluster-title">Recall & Recents</span>
+              <span class="cluster-note">Recover unsent drafts, reopen recent work, and keep your layout warm.</span>
             </div>
             <div class="operator-memory-grid">
               <article class="operator-memory-card operator-memory-copy">
                 <span class="stat-label">Draft Recall</span>
                 <div id="operatorMemorySummaryText" class="operator-memory-item-title">No saved draft yet.</div>
-                <p id="operatorMemoryDraftText" class="cluster-note">Start typing in the prompt editor and NeuralShell will keep the draft local to this device.</p>
+                <p id="operatorMemoryDraftText" class="cluster-note">Start typing in the prompt editor and NeuralShell
+                  will keep the draft local to this device.</p>
                 <div class="operator-memory-actions">
                   <button id="restoreDraftBtn" class="btn-secondary">Restore Draft</button>
                   <button id="clearDraftBtn" class="btn-secondary">Clear Draft</button>
@@ -1137,7 +1069,8 @@
               <article class="operator-memory-card">
                 <div class="surface-head">
                   <span class="cluster-title">Recent Prompts</span>
-                  <span class="cluster-note">Reuse high-value prompts without digging through the full chat history.</span>
+                  <span class="cluster-note">Reuse high-value prompts without digging through the full chat
+                    history.</span>
                 </div>
                 <div id="recentPromptList" class="operator-memory-list"></div>
               </article>
@@ -1152,19 +1085,21 @@
           </div>
           <div class="surface-shell workspace-shell">
             <div class="surface-head">
-              <span class="cluster-title">Workspace Attachment</span>
-              <span class="cluster-note">Attach one local project root for context packs, artifact exports, and evidence bundles.</span>
+              <span class="cluster-title">Workspace</span>
+              <span class="cluster-note">Attach one local project root for context packs, artifact exports, and evidence
+                bundles.</span>
             </div>
             <div class="row row-wrap action-grid">
-              <button id="attachWorkspaceBtn" class="btn-secondary">Attach Workspace</button>
+              <button id="attachWorkspaceBtn" class="btn-primary btn-action-primary">Attach Workspace</button>
               <button id="clearWorkspaceBtn" class="btn-secondary">Clear Workspace</button>
             </div>
             <div id="workspaceSummaryText" class="workspace-summary-text"></div>
           </div>
           <div class="surface-shell context-pack-shell">
             <div class="surface-head">
-              <span class="cluster-title">Repo Context Pack</span>
-              <span class="cluster-note">Select trusted local files, build reusable repo memory, and feed that context into workflows and exports.</span>
+              <span class="cluster-title">Project Context</span>
+              <span class="cluster-note">Select trusted local files, build reusable repo memory, and feed that context
+                into workflows and exports.</span>
             </div>
             <div class="row row-wrap action-grid context-pack-profile-row">
               <label class="field-block" for="contextPackProfileSelect">
@@ -1183,7 +1118,7 @@
             <div class="workflow-console-grid">
               <label class="field-block" for="contextPackNameInput">
                 <span>Pack Name</span>
-                <input id="contextPackNameInput" placeholder="Release Audit Context Pack" />
+                <input id="contextPackNameInput" placeholder="Performance Audit Context" />
               </label>
               <label class="field-block" for="contextPackPathsInput">
                 <span>Relative Paths</span>
@@ -1199,30 +1134,18 @@
             <div id="contextPackSummaryText" class="workspace-summary-text"></div>
             <pre id="contextPackPreview" class="context-pack-preview"></pre>
           </div>
-          <div class="surface-shell intel-brief">
+          <div class="surface-shell intelligence-panel">
             <div class="surface-head">
-              <span class="cluster-title">Posture Snapshot</span>
-              <span class="cluster-note">Live bridge posture, workspace mode, and session recall state.</span>
-            </div>
-            <div class="intel-brief-grid">
-              <div class="intel-brief-card">
-                <span class="stat-label">Operating Mode</span>
-                <div id="intelModeText"></div>
-              </div>
-              <div class="intel-brief-card">
-                <span class="stat-label">Bridge Signal</span>
-                <div id="intelBridgeText"></div>
-              </div>
-              <div class="intel-brief-card">
-                <span class="stat-label">Session Recall</span>
-                <div id="intelSessionText"></div>
-              </div>
+              <span class="cluster-title">Intelligence Flow</span>
+              <span class="cluster-note">Workflow insights, knowledge feed, and the safest next move for the current
+                context.</span>
             </div>
           </div>
           <section class="surface-shell intel-command-shell">
             <div class="surface-head">
-              <span class="cluster-title">Intel Command Deck</span>
-              <span class="cluster-note">Keep the operator brief visible, then open raw knowledge and capability detail only when you need it.</span>
+              <span class="cluster-title">What's Next</span>
+              <span class="cluster-note">Keep the operator brief visible, then open raw knowledge and capability detail
+                only when you need it.</span>
             </div>
             <div class="intel-summary-grid">
               <div class="intel-summary-card">
@@ -1230,152 +1153,141 @@
                 <div id="intelFocusText"></div>
               </div>
               <div class="intel-summary-card">
-                <span class="stat-label">Capability Posture</span>
-                <div id="intelCapabilityText"></div>
-              </div>
-              <div class="intel-summary-card">
                 <span class="stat-label">Next Action</span>
                 <div id="intelNextActionText"></div>
               </div>
             </div>
-            <div class="intel-tray-nav" role="tablist" aria-label="Intel tools">
-              <button id="intelBriefTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="intelBriefTray" aria-expanded="true">Operator Brief</button>
-              <button id="intelKnowledgeTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="intelKnowledgeTray" aria-expanded="false">Knowledge Feed</button>
-              <button id="intelCapabilityTrayBtn" class="btn-secondary tray-toggle-btn" type="button" aria-controls="intelCapabilityTray" aria-expanded="false">Capability Posture</button>
+            <div class="intel-tray-nav" role="tablist" aria-label="Intelligence tools">
+              <button id="intelBriefTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="intelBriefTray" aria-expanded="true">What's Next</button>
+              <button id="intelKnowledgeTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="intelKnowledgeTray" aria-expanded="false">Knowledge Feed</button>
             </div>
             <div id="intelBriefTray" class="intel-tray-panel">
               <div class="surface-head">
                 <span class="cluster-title">Operator Brief</span>
-                <span class="cluster-note">Curated context for the active workflow, release posture, and the safest next move.</span>
+                <span class="cluster-note">Curated context for the active workflow, shipping state, and the safest next
+                  move.</span>
               </div>
               <div id="intelActionHints" class="workspace-action-hint-list"></div>
             </div>
             <div id="intelKnowledgeTray" class="intel-tray-panel hidden" hidden>
               <div class="surface-head">
                 <span class="cluster-title">Knowledge Feed</span>
-                <span class="cluster-note">Live context, release posture, and operator notes.</span>
+                <span class="cluster-note">Live context, shipping state, and operator notes.</span>
               </div>
               <div id="knowledgeFeed"></div>
             </div>
-            <div id="intelCapabilityTray" class="intel-tray-panel hidden" hidden>
-              <div class="surface-head">
-                <span class="cluster-title">Capability Posture</span>
-                <span class="cluster-note">Active surfaces, execution scope, and the current readiness of each operator lane.</span>
-              </div>
-              <div id="capabilityGraph"></div>
-            </div>
           </section>
         </section>
-        </section>
-        </aside>
-      </section>
+    </section>
+    </aside>
+    </section>
 
-      <section id="settingsMenuBackdrop" class="overlay hidden" aria-hidden="true" role="presentation"></section>
+    <section id="settingsMenuBackdrop" class="overlay hidden" aria-hidden="true" role="presentation"></section>
 
-      <section id="onboardingOverlay" class="overlay hidden" aria-hidden="true">
-        <div class="overlay-card">
-          <div class="onboarding-layout">
-            <section class="onboarding-copy">
-              <p class="kicker">v1.2.0 Foundation</p>
-              <h2>Welcome to NeuralShell</h2>
-              <p class="subtitle">Quick setup to get your first reliable session running.</p>
-              <div class="hero-tags">
-                <span class="hero-tag">Local-first</span>
-                <span class="hero-tag">Guarded IPC</span>
-                <span class="hero-tag">Session recovery</span>
+    <section id="onboardingOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="onboarding-layout">
+          <section class="onboarding-copy">
+            <p class="kicker">v1.2.0 Foundation</p>
+            <h2>Welcome to NeuralShell</h2>
+            <p class="subtitle">Quick setup to get your first reliable session running.</p>
+            <div class="hero-tags">
+              <span class="hero-tag">Local-first</span>
+              <span class="hero-tag">Guarded IPC</span>
+              <span class="hero-tag">Session recovery</span>
+            </div>
+            <div class="onboarding-points">
+              <div class="onboarding-point">
+                <span class="cluster-title">1. Choose the active model</span>
+                <span class="cluster-note">NeuralShell will default to the selected bridge model for first-run
+                  prompts.</span>
               </div>
-              <div class="onboarding-points">
-                <div class="onboarding-point">
-                  <span class="cluster-title">1. Choose the active model</span>
-                  <span class="cluster-note">NeuralShell will default to the selected bridge model for first-run prompts.</span>
-                </div>
-                <div class="onboarding-point">
-                  <span class="cluster-title">2. Set operator comfort defaults</span>
-                  <span class="cluster-note">Auto-scroll and remember-completion determine day-one console behavior.</span>
-                </div>
-                <div class="onboarding-point">
-                  <span class="cluster-title">3. Enter the console</span>
-                  <span class="cluster-note">You can reopen onboarding later from the settings drawer.</span>
-                </div>
+              <div class="onboarding-point">
+                <span class="cluster-title">2. Set operator comfort defaults</span>
+                <span class="cluster-note">Auto-scroll and remember-completion determine day-one console
+                  behavior.</span>
               </div>
-            </section>
-            <section class="onboarding-config">
-              <div class="form-grid">
-                <label class="field-block" for="onboardingModelSelect">
-                  <span>Default Model</span>
-                  <select id="onboardingModelSelect"></select>
-                </label>
-                <label class="field-block" for="onboardingWorkflowSelect">
-                  <span>Kickoff Workflow</span>
-                  <select id="onboardingWorkflowSelect"></select>
-                </label>
-                <label class="field-inline checkbox-field" for="onboardingAutoScrollInput">
-                  <input id="onboardingAutoScrollInput" type="checkbox" checked />
-                  <span>Enable Auto Scroll</span>
-                </label>
-                <label class="field-inline checkbox-field" for="onboardingRememberInput">
-                  <input id="onboardingRememberInput" type="checkbox" checked />
-                  <span>Remember completion</span>
-                </label>
+              <div class="onboarding-point">
+                <span class="cluster-title">3. Enter the console</span>
+                <span class="cluster-note">You can reopen onboarding later from the settings drawer.</span>
               </div>
-              <div class="row row-wrap action-grid">
-                <button id="onboardingStartBtn" class="btn-primary">Start Console</button>
-                <button id="onboardingSkipBtn" class="btn-secondary">Skip Setup</button>
-              </div>
-            </section>
-          </div>
+            </div>
+          </section>
+          <section class="onboarding-config">
+            <div class="form-grid">
+              <label class="field-block" for="onboardingModelSelect">
+                <span>Default Model</span>
+                <select id="onboardingModelSelect"></select>
+              </label>
+              <label class="field-block" for="onboardingWorkflowSelect">
+                <span>Kickoff Workflow</span>
+                <select id="onboardingWorkflowSelect"></select>
+              </label>
+              <label class="field-inline checkbox-field" for="onboardingAutoScrollInput">
+                <input id="onboardingAutoScrollInput" type="checkbox" checked />
+                <span>Enable Auto Scroll</span>
+              </label>
+              <label class="field-inline checkbox-field" for="onboardingRememberInput">
+                <input id="onboardingRememberInput" type="checkbox" checked />
+                <span>Remember completion</span>
+              </label>
+            </div>
+            <div class="row row-wrap action-grid">
+              <button id="onboardingStartBtn" class="btn-primary">Start Console</button>
+              <button id="onboardingSkipBtn" class="btn-secondary">Skip Setup</button>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section id="commandPaletteOverlay" class="overlay hidden" aria-hidden="true">
-        <div class="overlay-card">
-          <div class="panel-head">
-            <div class="panel-head-copy">
-              <h2>Command Palette</h2>
-              <p class="panel-note">Search command routes, local actions, and quick controls.</p>
-            </div>
-            <button id="commandPaletteCloseBtn" class="btn-secondary">Close</button>
+    <section id="commandPaletteOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="panel-head">
+          <div class="panel-head-copy">
+            <h2>Command Palette</h2>
+            <p class="panel-note">Search command routes, local actions, and quick controls.</p>
           </div>
-          <div class="palette-bar">
-            <span class="palette-hint">Fast route for repo context, draft recall, release checks, sessions, slash commands, and workflow shortcuts. Prefixes: <code>profile:</code>, <code>context:</code>, <code>memory:</code>, <code>workflow:</code>, <code>release:</code>, <code>shortcut:</code>, <code>slash:</code>.</span>
-            <label class="field-inline palette-scope-field" for="commandPaletteShortcutScope">
-              <span>Shortcuts</span>
-              <select id="commandPaletteShortcutScope">
-                <option value="workflow">Current workflow</option>
-                <option value="all">All shortcuts</option>
-              </select>
-            </label>
-            <div class="palette-shortcuts" aria-hidden="true">
-              <span class="hero-tag">Enter executes</span>
-              <span class="hero-tag">Esc closes</span>
-              <span class="hero-tag">Up/down moves</span>
-            </div>
-          </div>
-          <label class="field-block" for="commandPaletteInput">
-            <span>Search</span>
-            <input id="commandPaletteInput" placeholder="Type a command or action" />
+          <button id="commandPaletteCloseBtn" class="btn-secondary">Close</button>
+        </div>
+        <div class="palette-bar">
+          <span class="palette-hint">Fast route for repo context, draft recall, shipping checks, sessions, slash
+            commands, and workflow shortcuts. Prefixes: <code>profile:</code>, <code>context:</code>,
+            <code>memory:</code>, <code>workflow:</code>, <code>shipping:</code>, <code>shortcut:</code>,
+            <code>slash:</code>.</span>
+          <label class="field-inline palette-scope-field" for="commandPaletteShortcutScope">
+            <span>Shortcuts</span>
+            <select id="commandPaletteShortcutScope">
+              <option value="workflow">Current workflow</option>
+              <option value="all">All shortcuts</option>
+            </select>
           </label>
-          <ul id="commandPaletteList"></ul>
+          <div class="palette-shortcuts" aria-hidden="true">
+            <span class="hero-tag">Enter executes</span>
+            <span class="hero-tag">Esc closes</span>
+            <span class="hero-tag">Up/down moves</span>
+          </div>
         </div>
-      </section>
-    </main>
-    <script src="uiCommandDeckConfig.js"></script>
-    <script src="airgapPolicy.js"></script>
-    <script src="bridgeProfileModel.js"></script>
-    <script src="bridgeSettingsModel.js"></script>
-    <script src="bridgeSettingsFeature.js"></script>
-    <script src="workflowCatalog.js"></script>
-    <script src="verificationCatalog.js"></script>
-    <script src="bridgeProviderCatalog.js"></script>
-    <script src="operatorMemoryStore.js"></script>
-    <script src="renderer.js"></script>
-  </body>
+        <label class="field-block" for="commandPaletteInput">
+          <span>Search</span>
+          <input id="commandPaletteInput" placeholder="Type a command or action" />
+        </label>
+        <ul id="commandPaletteList"></ul>
+      </div>
+    </section>
+  </main>
+  <script src="uiCommandDeckConfig.js"></script>
+  <script src="airgapPolicy.js"></script>
+  <script src="bridgeProfileModel.js"></script>
+  <script src="bridgeSettingsModel.js"></script>
+  <script src="bridgeSettingsFeature.js"></script>
+  <script src="workflowCatalog.js"></script>
+  <script src="verificationCatalog.js"></script>
+  <script src="bridgeProviderCatalog.js"></script>
+  <script src="operatorMemoryStore.js"></script>
+  <script src="renderer.js"></script>
+</body>
+
 </html>
-
-
-
-
-
-
-
-

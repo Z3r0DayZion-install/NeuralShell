@@ -80,8 +80,8 @@
         : "Draft change: Offline Mode will turn on after Apply Settings.";
     }
     return liveAllowRemote
-      ? "Hosted lane is active. Saved remote profiles can take live traffic."
-      : "Local-only lane is active. Hosted providers are blocked.";
+      ? "Hosted group is active. Saved remote profiles can take live traffic."
+      : "Local-only group is active. Hosted providers are blocked.";
   }
 
   function offlineModeSummaryText(allowRemoteBridge) {

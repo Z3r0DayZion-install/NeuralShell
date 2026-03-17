@@ -3,11 +3,11 @@ const IDS = [
   "settingsMenuOpenBtn", "bridgeAutoDetectBtn",
   "heroWorkflowBadge", "heroProviderBadge", "heroWorkflowSummaryText", "heroFocusSummaryText",
   "globalBridgeStatusText", "globalWorkspaceStatusText", "globalNextActionText", "globalProviderStatusText",
-  "toggleRightPaneBtn", "resetPaneLayoutBtn", "focusInboxBtn", "focusInspectorBtn",
+  "toggleRightPaneBtn", "resetPaneLayoutBtn", "focusInboxBtn", "focusSystemBtn",
   "workspaceTopology", "leftPaneResizeHandle", "rightPaneResizeHandle",
   "modelSummary", "sessionSummary", "commandSummary", "tokenSummary",
   "offlineModeInput", "offlineModeSummaryText",
-  "inboxLaneStatusText", "inboxFocusText", "inboxFilterSummaryText", "inboxSearchInput", "inboxFilterAllBtn", "inboxFilterPinnedBtn", "inboxFilterUnreadBtn",
+  "inboxGroupStatusText", "inboxFocusText", "inboxFilterSummaryText", "inboxSearchInput", "inboxFilterAllBtn", "inboxFilterPinnedBtn", "inboxFilterUnreadBtn",
   "workflowQuickActions", "workflowTitleText", "workflowDescriptionText", "workflowFollowupActions",
   "threadTaskFocusText", "threadTaskCapabilityText", "threadTaskActionText",
   "actionBarStatusText", "composerSummaryText", "composerMetaText",
@@ -16,12 +16,12 @@ const IDS = [
   "workbenchPatchStateText", "workbenchPatchSummaryText",
   "workbenchApplyStateText", "workbenchApplySummaryText",
   "workbenchArtifactSection", "workbenchPatchSection", "workbenchApplySection",
-  "inspectorSummaryText", "inspectorWorkbenchBtn", "inspectorRuntimeBtn", "inspectorReleaseBtn", "inspectorContextBtn",
-  "inspectorWorkbenchStateText", "inspectorWorkbenchSummaryText",
-  "inspectorRuntimeStateText", "inspectorRuntimeSummaryText",
-  "inspectorReleaseStateText", "inspectorReleaseSummaryText",
-  "inspectorContextStateText", "inspectorContextSummaryText",
-  "inspectorWorkbenchSection", "inspectorRuntimeSection", "inspectorReleaseSection", "inspectorContextSection",
+  "systemSummaryText", "systemWorkbenchBtn", "systemPerformanceBtn", "systemShippingBtn", "systemContextBtn",
+  "systemWorkbenchStateText", "systemWorkbenchSummaryText",
+  "systemPerformanceStateText", "systemPerformanceSummaryText",
+  "systemShippingStateText", "systemShippingSummaryText",
+  "systemContextStateText", "systemContextSummaryText",
+  "systemWorkbenchSection", "systemPerformanceSection", "systemShippingSection", "systemContextSection",
   "operatorMemorySummaryText", "operatorMemoryDraftText", "restoreDraftBtn", "clearDraftBtn", "recentPromptList", "recentWorkspaceList",
   "operatorRail",
   "missionControlGrid",
@@ -42,8 +42,8 @@ const IDS = [
   "runVerificationPlanBtn", "copyVerificationCommandsBtn", "clearVerificationPlanBtn",
   "verificationRunHistoryWorkflowFilter", "verificationRunHistoryGroupFilter", "verificationRunHistoryWorkspaceFilter", "resetVerificationRunHistoryFiltersBtn",
   "verificationRunHistoryMetaText", "verificationRunHistoryList", "clearVerificationRunHistoryBtn",
-  "releaseCockpitTitleText", "releaseCockpitSummaryText", "releaseCockpitMetaRow", "releaseCockpitChecklist", "releaseCockpitBlockerList", "releaseCockpitStatusList",
-  "stageReleaseCockpitBtn", "runReleaseCockpitBtn", "buildReleasePacketBtn", "exportReleaseEvidenceBtn", "openReleasePaletteBtn",
+  "shippingCockpitTitleText", "shippingCockpitSummaryText", "shippingCockpitMetaRow", "shippingCockpitChecklist", "shippingCockpitBlockerList", "shippingCockpitStatusList",
+  "stageShippingCockpitBtn", "runShippingCockpitBtn", "buildShippingPacketBtn", "exportShippingEvidenceBtn", "openShippingPaletteBtn",
   "workspaceEditPathInput", "workspaceEditContentInput", "loadArtifactIntoEditBtn", "previewWorkspaceEditBtn",
   "workspaceActionList", "workspaceActionPreviewTitle", "workspaceActionPreviewMeta", "workspaceActionPreview",
   "applyWorkspaceActionBtn", "clearWorkspaceActionPreviewBtn",
@@ -59,10 +59,10 @@ const IDS = [
   "baseUrlInput", "timeoutInput", "retryInput", "themeSelect", "tokenBudgetInput",
   "autosaveNameInput", "autosaveIntervalInput", "autosaveEnabledInput", "applySettingsBtn",
   "runSelfTestBtn", "runButtonAuditBtn", "buttonAuditOutput",
-  "runtimeDiagnosticsTrayBtn", "runtimeTraceTrayBtn", "runtimeOutputTrayBtn",
-  "runtimeDiagnosticsTray", "runtimeTraceTray", "runtimeOutputTray",
-  "runtimeAuditOutputBtn", "runtimeLogsOutputBtn", "runtimeChatLogsOutputBtn",
-  "runtimeAuditOutputPanel", "runtimeLogsOutputPanel", "runtimeChatLogsOutputPanel",
+  "performanceDiagnosticsTrayBtn", "performanceTraceTrayBtn", "performanceOutputTrayBtn",
+  "performanceDiagnosticsTray", "performanceTraceTray", "performanceOutputTray",
+  "performanceAuditOutputBtn", "performanceLogsOutputBtn", "performanceChatLogsOutputBtn",
+  "performanceAuditOutputPanel", "performanceLogsOutputPanel", "performanceChatLogsOutputPanel",
   "intelFocusText", "intelCapabilityText", "intelNextActionText", "intelActionHints",
   "intelBriefTrayBtn", "intelKnowledgeTrayBtn", "intelCapabilityTrayBtn",
   "intelBriefTray", "intelKnowledgeTray", "intelCapabilityTray",
@@ -109,8 +109,8 @@ const appState = {
   contextPackProfileStatus: null,
   contextPackProfileStatuses: {},
   lastArtifact: null,
-  releasePacketHistory: [],
-  releasePacketCompareIds: {
+  shippingPacketHistory: [],
+  shippingPacketCompareIds: {
     left: "",
     right: ""
   },
@@ -148,10 +148,10 @@ const appState = {
   chatOpsTray: "thread",
   sessionsTray: "manage",
   commandsTray: "index",
-  inspectorSurface: "workbench",
+  systemSurface: "workbench",
   workbenchSurface: "artifact",
-  runtimeTray: "diagnostics",
-  runtimeOutputView: "audit",
+  performanceTray: "diagnostics",
+  performanceOutputView: "audit",
   intelTray: "brief",
   leftPaneWidth: 308,
   rightPaneWidth: 392,
@@ -181,7 +181,7 @@ const appState = {
   commandPaletteIndex: 0
 };
 
-const RELEASE_PACKET_HISTORY_LIMIT = 8;
+const SHIPPING_PACKET_HISTORY_LIMIT = 8;
 const VERIFICATION_RUN_HISTORY_LIMIT = 16;
 const CONTEXT_PACK_FILE_LIMIT = 6;
 const CONTEXT_PACK_READ_LIMIT = 3200;
@@ -258,8 +258,8 @@ const airgapPolicy = window.NeuralShellAirgapPolicy || {
         : "Draft change: Offline Mode will turn on after Apply Settings.";
     }
     return liveAllowRemote
-      ? "Hosted lane is active. Saved remote profiles can take live traffic."
-      : "Local-only lane is active. Hosted providers are blocked.";
+      ? "Hosted group is active. Saved remote profiles can take live traffic."
+      : "Local-only group is active. Hosted providers are blocked.";
   },
   offlineModeSummaryText: (allowRemoteBridge) => allowRemoteBridge
     ? "Offline Mode is off. Hosted profiles are available whenever you intentionally select them."
@@ -447,19 +447,19 @@ function normalizeContextPackValue(value) {
   const rootLabel = String(value.rootLabel || rootPath || "").trim();
   const entries = Array.isArray(value.entries)
     ? value.entries
-        .map((entry) => {
-          if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-            return null;
-          }
-          const relativePath = normalizeDraftRelativePath(entry.relativePath);
-          return {
-            relativePath,
-            absolutePath: String(entry.absolutePath || "").trim(),
-            modifiedAt: String(entry.modifiedAt || "").trim(),
-            content: String(entry.content || "")
-          };
-        })
-        .filter(Boolean)
+      .map((entry) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+          return null;
+        }
+        const relativePath = normalizeDraftRelativePath(entry.relativePath);
+        return {
+          relativePath,
+          absolutePath: String(entry.absolutePath || "").trim(),
+          modifiedAt: String(entry.modifiedAt || "").trim(),
+          content: String(entry.content || "")
+        };
+      })
+      .filter(Boolean)
     : [];
   if (!rootPath || !entries.length) {
     return null;
@@ -552,14 +552,14 @@ function normalizeContextPackProfileValue(value, index = 0) {
     : "";
   const fileSnapshots = Array.isArray(value.fileSnapshots)
     ? value.fileSnapshots
-        .map((item) => {
-          if (!item || typeof item !== "object" || Array.isArray(item)) return null;
-          return {
-            relativePath: normalizeDraftRelativePath(item.relativePath),
-            modifiedAt: String(item.modifiedAt || "").trim()
-          };
-        })
-        .filter(Boolean)
+      .map((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+        return {
+          relativePath: normalizeDraftRelativePath(item.relativePath),
+          modifiedAt: String(item.modifiedAt || "").trim()
+        };
+      })
+      .filter(Boolean)
     : [];
   return {
     id: String(value.id || `context-pack-profile-${index + 1}`).trim() || `context-pack-profile-${index + 1}`,
@@ -741,22 +741,22 @@ function buildPatchPlanContextProvenance(options = {}) {
     workspaceRoot: rootPath,
     contextPack: contextPack && typeof contextPack === "object" && !Array.isArray(contextPack)
       ? {
-          id: String(contextPack.id || "").trim(),
-          name: String(contextPack.name || "").trim(),
-          fileCount: Array.isArray(contextPack.filePaths) ? contextPack.filePaths.length : Array.isArray(contextPack.entries) ? contextPack.entries.length : 0,
-          builtAt: String(contextPack.builtAt || "").trim(),
-          filePaths: Array.isArray(contextPack.filePaths)
-            ? contextPack.filePaths.map((item) => String(item || "").trim()).filter(Boolean)
-            : []
-        }
+        id: String(contextPack.id || "").trim(),
+        name: String(contextPack.name || "").trim(),
+        fileCount: Array.isArray(contextPack.filePaths) ? contextPack.filePaths.length : Array.isArray(contextPack.entries) ? contextPack.entries.length : 0,
+        builtAt: String(contextPack.builtAt || "").trim(),
+        filePaths: Array.isArray(contextPack.filePaths)
+          ? contextPack.filePaths.map((item) => String(item || "").trim()).filter(Boolean)
+          : []
+      }
       : null,
     contextPackProfile: contextPackProfile && typeof contextPackProfile === "object" && !Array.isArray(contextPackProfile)
       ? {
-          id: String(contextPackProfile.id || "").trim(),
-          name: String(contextPackProfile.name || "").trim(),
-          fileCount: Array.isArray(contextPackProfile.filePaths) ? contextPackProfile.filePaths.length : 0,
-          savedAt: String(contextPackProfile.savedAt || "").trim()
-        }
+        id: String(contextPackProfile.id || "").trim(),
+        name: String(contextPackProfile.name || "").trim(),
+        fileCount: Array.isArray(contextPackProfile.filePaths) ? contextPackProfile.filePaths.length : 0,
+        savedAt: String(contextPackProfile.savedAt || "").trim()
+      }
       : null
   };
 }
@@ -769,22 +769,22 @@ function normalizePatchPlanContextProvenance(value, options = {}) {
   const workspaceRoot = String(value.workspaceRoot || fallback && fallback.workspaceRoot || "").trim();
   const contextPack = value.contextPack && typeof value.contextPack === "object" && !Array.isArray(value.contextPack)
     ? {
-        id: String(value.contextPack.id || "").trim(),
-        name: String(value.contextPack.name || "").trim(),
-        fileCount: Number.isFinite(Number(value.contextPack.fileCount)) ? Number(value.contextPack.fileCount) : 0,
-        builtAt: String(value.contextPack.builtAt || "").trim(),
-        filePaths: Array.isArray(value.contextPack.filePaths)
-          ? value.contextPack.filePaths.map((item) => normalizeDraftRelativePath(item)).filter(Boolean)
-          : []
-      }
+      id: String(value.contextPack.id || "").trim(),
+      name: String(value.contextPack.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPack.fileCount)) ? Number(value.contextPack.fileCount) : 0,
+      builtAt: String(value.contextPack.builtAt || "").trim(),
+      filePaths: Array.isArray(value.contextPack.filePaths)
+        ? value.contextPack.filePaths.map((item) => normalizeDraftRelativePath(item)).filter(Boolean)
+        : []
+    }
     : null;
   const contextPackProfile = value.contextPackProfile && typeof value.contextPackProfile === "object" && !Array.isArray(value.contextPackProfile)
     ? {
-        id: String(value.contextPackProfile.id || "").trim(),
-        name: String(value.contextPackProfile.name || "").trim(),
-        fileCount: Number.isFinite(Number(value.contextPackProfile.fileCount)) ? Number(value.contextPackProfile.fileCount) : 0,
-        savedAt: String(value.contextPackProfile.savedAt || "").trim()
-      }
+      id: String(value.contextPackProfile.id || "").trim(),
+      name: String(value.contextPackProfile.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPackProfile.fileCount)) ? Number(value.contextPackProfile.fileCount) : 0,
+      savedAt: String(value.contextPackProfile.savedAt || "").trim()
+    }
     : null;
   if (!workspaceRoot && !contextPack && !contextPackProfile) {
     return fallback;
@@ -820,13 +820,13 @@ function ensurePatchPlanContextProvenance() {
 function setContextPackProfileStatus(value) {
   const normalized = value && typeof value === "object" && !Array.isArray(value)
     ? {
-        profileId: String(value.profileId || "").trim(),
-        stale: value.stale === true,
-        changedPaths: Array.isArray(value.changedPaths) ? value.changedPaths.map((item) => String(item || "").trim()).filter(Boolean) : [],
-        missingPaths: Array.isArray(value.missingPaths) ? value.missingPaths.map((item) => String(item || "").trim()).filter(Boolean) : [],
-        checkedAt: String(value.checkedAt || "").trim(),
-        message: String(value.message || "").trim()
-      }
+      profileId: String(value.profileId || "").trim(),
+      stale: value.stale === true,
+      changedPaths: Array.isArray(value.changedPaths) ? value.changedPaths.map((item) => String(item || "").trim()).filter(Boolean) : [],
+      missingPaths: Array.isArray(value.missingPaths) ? value.missingPaths.map((item) => String(item || "").trim()).filter(Boolean) : [],
+      checkedAt: String(value.checkedAt || "").trim(),
+      message: String(value.message || "").trim()
+    }
     : null;
   if (!normalized || !normalized.profileId) {
     appState.contextPackProfileStatus = null;
@@ -988,10 +988,10 @@ function getEvidenceBundleFilename() {
   return `${artifactFilenameBase()}-evidence-bundle.json`;
 }
 
-function hasReleasePacketArtifact() {
+function hasShippingPacketArtifact() {
   return Boolean(
     appState.lastArtifact
-    && String(appState.lastArtifact.outputMode || "").trim() === "release_packet"
+    && String(appState.lastArtifact.outputMode || "").trim() === "shipping_packet"
     && String(appState.lastArtifact.content || "").trim()
   );
 }
@@ -1044,61 +1044,61 @@ function normalizeArtifactProvenanceValue(value) {
   }
   const contextPack = value.contextPack && typeof value.contextPack === "object" && !Array.isArray(value.contextPack)
     ? {
-        id: String(value.contextPack.id || "").trim(),
-        name: String(value.contextPack.name || "").trim(),
-        fileCount: Number.isFinite(Number(value.contextPack.fileCount)) ? Number(value.contextPack.fileCount) : 0,
-        builtAt: String(value.contextPack.builtAt || "").trim(),
-        filePaths: Array.isArray(value.contextPack.filePaths)
-          ? value.contextPack.filePaths.map((item) => normalizeDraftRelativePath(item)).filter(Boolean)
-          : []
-      }
+      id: String(value.contextPack.id || "").trim(),
+      name: String(value.contextPack.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPack.fileCount)) ? Number(value.contextPack.fileCount) : 0,
+      builtAt: String(value.contextPack.builtAt || "").trim(),
+      filePaths: Array.isArray(value.contextPack.filePaths)
+        ? value.contextPack.filePaths.map((item) => normalizeDraftRelativePath(item)).filter(Boolean)
+        : []
+    }
     : null;
   const contextPackProfile = value.contextPackProfile && typeof value.contextPackProfile === "object" && !Array.isArray(value.contextPackProfile)
     ? {
-        id: String(value.contextPackProfile.id || "").trim(),
-        name: String(value.contextPackProfile.name || "").trim(),
-        fileCount: Number.isFinite(Number(value.contextPackProfile.fileCount)) ? Number(value.contextPackProfile.fileCount) : 0,
-        savedAt: String(value.contextPackProfile.savedAt || "").trim()
-      }
+      id: String(value.contextPackProfile.id || "").trim(),
+      name: String(value.contextPackProfile.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPackProfile.fileCount)) ? Number(value.contextPackProfile.fileCount) : 0,
+      savedAt: String(value.contextPackProfile.savedAt || "").trim()
+    }
     : null;
   const sourceArtifact = value.sourceArtifact && typeof value.sourceArtifact === "object" && !Array.isArray(value.sourceArtifact)
     ? {
-        id: String(value.sourceArtifact.id || "").trim(),
-        title: String(value.sourceArtifact.title || "").trim(),
-        outputMode: String(value.sourceArtifact.outputMode || "").trim(),
-        generatedAt: String(value.sourceArtifact.generatedAt || "").trim()
-      }
+      id: String(value.sourceArtifact.id || "").trim(),
+      title: String(value.sourceArtifact.title || "").trim(),
+      outputMode: String(value.sourceArtifact.outputMode || "").trim(),
+      generatedAt: String(value.sourceArtifact.generatedAt || "").trim()
+    }
     : null;
   const patchPlan = value.patchPlan && typeof value.patchPlan === "object" && !Array.isArray(value.patchPlan)
     ? {
-        id: String(value.patchPlan.id || "").trim(),
-        generatedAt: String(value.patchPlan.generatedAt || "").trim(),
-        totalFiles: Number.isFinite(Number(value.patchPlan.totalFiles)) ? Number(value.patchPlan.totalFiles) : 0
-      }
+      id: String(value.patchPlan.id || "").trim(),
+      generatedAt: String(value.patchPlan.generatedAt || "").trim(),
+      totalFiles: Number.isFinite(Number(value.patchPlan.totalFiles)) ? Number(value.patchPlan.totalFiles) : 0
+    }
     : null;
   const verification = value.verification && typeof value.verification === "object" && !Array.isArray(value.verification)
     ? {
-        groupId: String(value.verification.groupId || "").trim(),
-        runIds: Array.isArray(value.verification.runIds)
-          ? value.verification.runIds.map((item) => String(item || "").trim()).filter(Boolean)
-          : [],
-        executedAt: String(value.verification.executedAt || "").trim(),
-        previousRunId: String(value.verification.previousRunId || "").trim(),
-        ok: value.verification.ok === true,
-        selectedCount: Number.isFinite(Number(value.verification.selectedCount)) ? Number(value.verification.selectedCount) : 0,
-        passedCount: Number.isFinite(Number(value.verification.passedCount)) ? Number(value.verification.passedCount) : 0,
-        failedCount: Number.isFinite(Number(value.verification.failedCount)) ? Number(value.verification.failedCount) : 0,
-        pendingCount: Number.isFinite(Number(value.verification.pendingCount)) ? Number(value.verification.pendingCount) : 0,
-        summary: String(value.verification.summary || "").trim()
-      }
+      groupId: String(value.verification.groupId || "").trim(),
+      runIds: Array.isArray(value.verification.runIds)
+        ? value.verification.runIds.map((item) => String(item || "").trim()).filter(Boolean)
+        : [],
+      executedAt: String(value.verification.executedAt || "").trim(),
+      previousRunId: String(value.verification.previousRunId || "").trim(),
+      ok: value.verification.ok === true,
+      selectedCount: Number.isFinite(Number(value.verification.selectedCount)) ? Number(value.verification.selectedCount) : 0,
+      passedCount: Number.isFinite(Number(value.verification.passedCount)) ? Number(value.verification.passedCount) : 0,
+      failedCount: Number.isFinite(Number(value.verification.failedCount)) ? Number(value.verification.failedCount) : 0,
+      pendingCount: Number.isFinite(Number(value.verification.pendingCount)) ? Number(value.verification.pendingCount) : 0,
+      summary: String(value.verification.summary || "").trim()
+    }
     : null;
   const lineage = value.lineage && typeof value.lineage === "object" && !Array.isArray(value.lineage)
     ? {
-        packetId: String(value.lineage.packetId || "").trim(),
-        parentPacketId: String(value.lineage.parentPacketId || "").trim(),
-        sourceArtifactId: String(value.lineage.sourceArtifactId || "").trim(),
-        generation: Number.isFinite(Number(value.lineage.generation)) ? Number(value.lineage.generation) : 0
-      }
+      packetId: String(value.lineage.packetId || "").trim(),
+      parentPacketId: String(value.lineage.parentPacketId || "").trim(),
+      sourceArtifactId: String(value.lineage.sourceArtifactId || "").trim(),
+      generation: Number.isFinite(Number(value.lineage.generation)) ? Number(value.lineage.generation) : 0
+    }
     : null;
   const workspaceRoot = String(value.workspaceRoot || "").trim();
   const workspaceLabel = String(value.workspaceLabel || "").trim();
@@ -1117,7 +1117,7 @@ function normalizeArtifactProvenanceValue(value) {
   };
 }
 
-function releasePacketLinkedRunCount(artifact) {
+function shippingPacketLinkedRunCount(artifact) {
   const provenance = artifact && artifact.provenance && typeof artifact.provenance === "object"
     ? artifact.provenance
     : null;
@@ -1132,7 +1132,7 @@ function compactArtifactId(value) {
   return text.length > 18 ? `${text.slice(0, 18)}...` : text;
 }
 
-function releasePacketProvenanceSummaryLine(artifact) {
+function shippingPacketProvenanceSummaryLine(artifact) {
   const provenance = artifact && artifact.provenance && typeof artifact.provenance === "object"
     ? artifact.provenance
     : null;
@@ -1160,7 +1160,7 @@ function releasePacketProvenanceSummaryLine(artifact) {
   return "";
 }
 
-function releasePacketDecisionLabel(artifact) {
+function shippingPacketDecisionLabel(artifact) {
   const lines = String(artifact && artifact.content ? artifact.content : "")
     .split("\n")
     .map((line) => String(line || "").trim())
@@ -1169,7 +1169,7 @@ function releasePacketDecisionLabel(artifact) {
   return decisionLine ? decisionLine.replace("- Decision:", "").trim() : "";
 }
 
-function releasePacketWorkspaceLabel(artifact) {
+function shippingPacketWorkspaceLabel(artifact) {
   const provenance = artifact && artifact.provenance && typeof artifact.provenance === "object"
     ? artifact.provenance
     : null;
@@ -1178,22 +1178,22 @@ function releasePacketWorkspaceLabel(artifact) {
     : "";
 }
 
-function getReleasePacketArtifactById(artifactId) {
+function getShippingPacketArtifactById(artifactId) {
   const target = String(artifactId || "").trim();
   if (!target) return null;
-  return normalizeReleasePacketHistory(appState.releasePacketHistory).find((item) => String(item.id || "") === target) || null;
+  return normalizeShippingPacketHistory(appState.shippingPacketHistory).find((item) => String(item.id || "") === target) || null;
 }
 
-function reconcileReleasePacketCompareSelection() {
-  const history = normalizeReleasePacketHistory(appState.releasePacketHistory);
-  const currentLeft = getReleasePacketArtifactById(appState.releasePacketCompareIds.left);
-  const currentRight = getReleasePacketArtifactById(appState.releasePacketCompareIds.right);
+function reconcileShippingPacketCompareSelection() {
+  const history = normalizeShippingPacketHistory(appState.shippingPacketHistory);
+  const currentLeft = getShippingPacketArtifactById(appState.shippingPacketCompareIds.left);
+  const currentRight = getShippingPacketArtifactById(appState.shippingPacketCompareIds.right);
   if (currentLeft && currentRight && currentLeft.id !== currentRight.id) {
     return;
   }
   const left = history[0] || null;
   const right = history[1] || null;
-  appState.releasePacketCompareIds = {
+  appState.shippingPacketCompareIds = {
     left: left ? String(left.id || "") : "",
     right: right ? String(right.id || "") : ""
   };
@@ -1201,17 +1201,17 @@ function reconcileReleasePacketCompareSelection() {
 
 function setReleasePacketCompareSlot(slot, artifactId) {
   if (slot !== "left" && slot !== "right") return;
-  const artifact = getReleasePacketArtifactById(artifactId);
+  const artifact = getShippingPacketArtifactById(artifactId);
   if (!artifact) {
     throw new Error("Release packet compare target is unavailable.");
   }
   const oppositeSlot = slot === "left" ? "right" : "left";
-  const oppositeId = String(appState.releasePacketCompareIds[oppositeSlot] || "").trim();
+  const oppositeId = String(appState.shippingPacketCompareIds[oppositeSlot] || "").trim();
   if (artifact.id === oppositeId) {
-    throw new Error("Compare slots must target two different release packets.");
+    throw new Error("Compare slots must target two different shipping packets.");
   }
-  appState.releasePacketCompareIds = {
-    ...appState.releasePacketCompareIds,
+  appState.shippingPacketCompareIds = {
+    ...appState.shippingPacketCompareIds,
     [slot]: artifact.id
   };
   renderArtifactPanel();
@@ -1219,16 +1219,16 @@ function setReleasePacketCompareSlot(slot, artifactId) {
 }
 
 function clearReleasePacketCompareSelection() {
-  appState.releasePacketCompareIds = { left: "", right: "" };
-  reconcileReleasePacketCompareSelection();
+  appState.shippingPacketCompareIds = { left: "", right: "" };
+  reconcileShippingPacketCompareSelection();
   renderArtifactPanel();
   showBanner("Release packet compare reset to the latest pair.", "ok");
 }
 
 function getReleasePacketCompareModel() {
-  const history = normalizeReleasePacketHistory(appState.releasePacketHistory);
-  const left = getReleasePacketArtifactById(appState.releasePacketCompareIds.left) || history[0] || null;
-  const right = getReleasePacketArtifactById(appState.releasePacketCompareIds.right) || history[1] || null;
+  const history = normalizeShippingPacketHistory(appState.shippingPacketHistory);
+  const left = getShippingPacketArtifactById(appState.shippingPacketCompareIds.left) || history[0] || null;
+  const right = getShippingPacketArtifactById(appState.shippingPacketCompareIds.right) || history[1] || null;
   if (!left || !right || left.id === right.id) {
     return {
       left: left || null,
@@ -1237,16 +1237,16 @@ function getReleasePacketCompareModel() {
       diffs: []
     };
   }
-  const leftLinkedRuns = releasePacketLinkedRunCount(left);
-  const rightLinkedRuns = releasePacketLinkedRunCount(right);
-  const leftDecision = releasePacketDecisionLabel(left);
-  const rightDecision = releasePacketDecisionLabel(right);
+  const leftLinkedRuns = shippingPacketLinkedRunCount(left);
+  const rightLinkedRuns = shippingPacketLinkedRunCount(right);
+  const leftDecision = shippingPacketDecisionLabel(left);
+  const rightDecision = shippingPacketDecisionLabel(right);
   const leftGeneration = left.provenance && left.provenance.lineage ? Number(left.provenance.lineage.generation || 0) : 0;
   const rightGeneration = right.provenance && right.provenance.lineage ? Number(right.provenance.lineage.generation || 0) : 0;
   const leftPatchFiles = left.provenance && left.provenance.patchPlan ? Number(left.provenance.patchPlan.totalFiles || 0) : 0;
   const rightPatchFiles = right.provenance && right.provenance.patchPlan ? Number(right.provenance.patchPlan.totalFiles || 0) : 0;
-  const leftWorkspace = releasePacketWorkspaceLabel(left);
-  const rightWorkspace = releasePacketWorkspaceLabel(right);
+  const leftWorkspace = shippingPacketWorkspaceLabel(left);
+  const rightWorkspace = shippingPacketWorkspaceLabel(right);
   const diffs = [
     {
       label: "Decision",
@@ -1287,26 +1287,26 @@ function getReleasePacketCompareModel() {
   };
 }
 
-function releasePacketHistoryKey(value) {
+function shippingPacketHistoryKey(value) {
   const artifact = normalizeArtifactValue(value, {
-    forceOutputMode: "release_packet",
+    forceOutputMode: "shipping_packet",
     title: "Release Packet"
   });
   return String(artifact.id || `${artifact.generatedAt}|${artifact.title}|${artifact.content.slice(0, 160)}`);
 }
 
-function normalizeReleasePacketHistory(value) {
+function normalizeShippingPacketHistory(value) {
   if (!Array.isArray(value)) return [];
   const seen = new Set();
   const out = [];
   for (let index = 0; index < value.length; index += 1) {
     try {
       const artifact = normalizeArtifactValue(value[index], {
-        forceOutputMode: "release_packet",
+        forceOutputMode: "shipping_packet",
         title: "Release Packet"
       });
       if (!String(artifact.content || "").trim()) continue;
-      const key = releasePacketHistoryKey(artifact);
+      const key = shippingPacketHistoryKey(artifact);
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(artifact);
@@ -1315,19 +1315,19 @@ function normalizeReleasePacketHistory(value) {
     }
   }
   out.sort((left, right) => String(right.generatedAt || "").localeCompare(String(left.generatedAt || "")));
-  return out.slice(0, RELEASE_PACKET_HISTORY_LIMIT);
+  return out.slice(0, SHIPPING_PACKET_HISTORY_LIMIT);
 }
 
-function pushReleasePacketHistoryEntry(value) {
+function pushShippingPacketHistoryEntry(value) {
   const entry = normalizeArtifactValue(value, {
-    forceOutputMode: "release_packet",
+    forceOutputMode: "shipping_packet",
     title: "Release Packet"
   });
-  const targetKey = releasePacketHistoryKey(entry);
-  appState.releasePacketHistory = [
+  const targetKey = shippingPacketHistoryKey(entry);
+  appState.shippingPacketHistory = [
     entry,
-    ...normalizeReleasePacketHistory(appState.releasePacketHistory).filter((item) => releasePacketHistoryKey(item) !== targetKey)
-  ].slice(0, RELEASE_PACKET_HISTORY_LIMIT);
+    ...normalizeShippingPacketHistory(appState.shippingPacketHistory).filter((item) => shippingPacketHistoryKey(item) !== targetKey)
+  ].slice(0, SHIPPING_PACKET_HISTORY_LIMIT);
   return entry;
 }
 
@@ -1574,26 +1574,26 @@ function buildReleasePacketProvenance(options = {}) {
   const workspace = appState.workspaceAttachment;
   const sourceArtifact = appState.lastArtifact && String(appState.lastArtifact.content || "").trim()
     ? normalizeArtifactValue(appState.lastArtifact, {
-        workflowId: appState.workflowId,
-        outputMode: appState.outputMode
-      })
+      workflowId: appState.workflowId,
+      outputMode: appState.outputMode
+    })
     : null;
-  const latestPacket = normalizeReleasePacketHistory(appState.releasePacketHistory)[0] || null;
-  const parentPacket = sourceArtifact && sourceArtifact.outputMode === "release_packet"
+  const latestPacket = normalizeShippingPacketHistory(appState.shippingPacketHistory)[0] || null;
+  const parentPacket = sourceArtifact && sourceArtifact.outputMode === "shipping_packet"
     ? sourceArtifact
     : latestPacket;
   const parentGeneration = parentPacket
     && parentPacket.provenance
     && parentPacket.provenance.lineage
     && Number.isFinite(Number(parentPacket.provenance.lineage.generation))
-      ? Number(parentPacket.provenance.lineage.generation)
-      : 0;
+    ? Number(parentPacket.provenance.lineage.generation)
+    : 0;
   const patchPlanContextProvenance = appState.patchPlan
     ? normalizePatchPlanContextProvenance(appState.patchPlan.provenance, {
-        rootPath: workspace ? workspace.rootPath : "",
-        contextPack: appState.contextPack,
-        contextPackProfile: currentContextPackProfile()
-      })
+      rootPath: workspace ? workspace.rootPath : "",
+      contextPack: appState.contextPack,
+      contextPackProfile: currentContextPackProfile()
+    })
     : null;
   const contextProvenance = patchPlanContextProvenance || buildPatchPlanContextProvenance({
     rootPath: workspace ? workspace.rootPath : "",
@@ -1602,10 +1602,10 @@ function buildReleasePacketProvenance(options = {}) {
   });
   const patchPlan = patchPlanHasFiles() && appState.patchPlan
     ? {
-        id: String(appState.patchPlan.id || "").trim(),
-        generatedAt: String(appState.patchPlan.generatedAt || "").trim(),
-        totalFiles: Number(appState.patchPlan.totalFiles || (Array.isArray(appState.patchPlan.files) ? appState.patchPlan.files.length : 0))
-      }
+      id: String(appState.patchPlan.id || "").trim(),
+      generatedAt: String(appState.patchPlan.generatedAt || "").trim(),
+      totalFiles: Number(appState.patchPlan.totalFiles || (Array.isArray(appState.patchPlan.files) ? appState.patchPlan.files.length : 0))
+    }
     : null;
   const latestReleaseRun = verificationRunHistoryForGroup("release_cockpit", workspace ? workspace.rootPath : "")[0] || null;
   const previousReleaseRun = previousVerificationRunHistoryEntry(latestReleaseRun);
@@ -1617,25 +1617,25 @@ function buildReleasePacketProvenance(options = {}) {
     contextPackProfile: contextProvenance && contextProvenance.contextPackProfile ? contextProvenance.contextPackProfile : null,
     sourceArtifact: sourceArtifact
       ? {
-          title: String(sourceArtifact.title || "").trim(),
-          outputMode: String(sourceArtifact.outputMode || "").trim(),
-          generatedAt: String(sourceArtifact.generatedAt || "").trim()
-        }
+        title: String(sourceArtifact.title || "").trim(),
+        outputMode: String(sourceArtifact.outputMode || "").trim(),
+        generatedAt: String(sourceArtifact.generatedAt || "").trim()
+      }
       : null,
     patchPlan,
     verification: latestReleaseRun
       ? {
-          groupId: latestReleaseRun.groupId,
-          runIds: [latestReleaseRun.runId],
-          executedAt: latestReleaseRun.executedAt,
-          previousRunId: previousReleaseRun ? previousReleaseRun.runId : "",
-          ok: latestReleaseRun.ok === true,
-          selectedCount: counts ? counts.selected : 0,
-          passedCount: counts ? counts.passed : 0,
-          failedCount: counts ? counts.failed : 0,
-          pendingCount: counts ? counts.pending : 0,
-          summary: verificationRunDeltaSummary(latestReleaseRun, previousReleaseRun)
-        }
+        groupId: latestReleaseRun.groupId,
+        runIds: [latestReleaseRun.runId],
+        executedAt: latestReleaseRun.executedAt,
+        previousRunId: previousReleaseRun ? previousReleaseRun.runId : "",
+        ok: latestReleaseRun.ok === true,
+        selectedCount: counts ? counts.selected : 0,
+        passedCount: counts ? counts.passed : 0,
+        failedCount: counts ? counts.failed : 0,
+        pendingCount: counts ? counts.pending : 0,
+        summary: verificationRunDeltaSummary(latestReleaseRun, previousReleaseRun)
+      }
       : null,
     lineage: {
       packetId: String(options.packetId || "").trim(),
@@ -1919,7 +1919,7 @@ function normalizePromotedPaletteAction(value, index = 0) {
   const label = String(value.label || `Verify ${groupTitle}`).trim() || `Verify ${groupTitle}`;
   const detail = String(
     value.detail
-      || `${(getWorkflow(workflowId) || {}).title || workflowId} shortcut | ${Math.max(filePaths.length, 1)} files | ${checks[0] || "Load recommended checks"}`
+    || `${(getWorkflow(workflowId) || {}).title || workflowId} shortcut | ${Math.max(filePaths.length, 1)} files | ${checks[0] || "Load recommended checks"}`
   ).trim();
   return {
     id: String(value.id || getPromotedPaletteActionId(workflowId, groupId)).trim() || getPromotedPaletteActionId(workflowId, groupId),
@@ -2087,10 +2087,10 @@ function isReleaseCockpitEngaged(workflowId = appState.workflowId) {
   const normalizedWorkflowId = normalizeWorkflowId(workflowId);
   const workspaceRoot = rootPathFromWorkspaceBoundValue(appState.workspaceAttachment);
   return (
-    normalizedWorkflowId === "release_audit"
+    normalizedWorkflowId === "shipping_audit"
     || Boolean(getReleaseCockpitPlan())
-    || hasReleasePacketArtifact()
-    || normalizeReleasePacketHistory(appState.releasePacketHistory).length > 0
+    || hasShippingPacketArtifact()
+    || normalizeShippingPacketHistory(appState.shippingPacketHistory).length > 0
     || verificationRunHistoryForGroup("release_cockpit", workspaceRoot).length > 0
   );
 }
@@ -2149,7 +2149,7 @@ function getReleaseCockpitBlockers(options = {}) {
     blockers.push(`${unappliedSelectedPatchPlanFiles().length} selected patch-plan ${unappliedSelectedPatchPlanFiles().length === 1 ? "file is" : "files are"} still unapplied.`);
   }
 
-  if (workflowId === "release_audit") {
+  if (workflowId === "shipping_audit") {
     if (!recommendedProfile) {
       blockers.push("No workflow-linked release context profile is saved.");
     } else if (recommendedProfileStatus.stale) {
@@ -2173,7 +2173,7 @@ function getReleaseCockpitModel() {
   const running = selected.filter((check) => check.status === "running").length;
   const pending = selected.filter((check) => check.status === "pending").length;
   const workflowTitle = (workflow && workflow.title) || "Workflow";
-  const packetReady = hasReleasePacketArtifact();
+  const packetReady = hasShippingPacketArtifact();
   const recommendedProfile = recommendedContextPackProfile();
   const recommendedProfileLoaded = recommendedProfile && contextPackProfileMatchesLoadedPack(recommendedProfile);
   const recommendedProfileStatus = contextProfileStatusForCard(recommendedProfile);
@@ -2189,12 +2189,12 @@ function getReleaseCockpitModel() {
     recommendedProfileStatus
   });
   let title = "Stage release verification";
-  let summary = `Queue lint, founder e2e, and store screenshot refresh against ${hasWorkspaceAttachment() ? (appState.workspaceAttachment.label || "the attached workspace") : "one attached workspace"} before you call the release packet ready.`;
+  let summary = `Queue lint, founder e2e, and store screenshot refresh against ${hasWorkspaceAttachment() ? (appState.workspaceAttachment.label || "the attached workspace") : "one attached workspace"} before you call the shipping packet ready.`;
   let tone = "guard";
 
   if (!engaged) {
     title = "Release lane idle";
-    summary = "Use this lane when you are ready to run lint, founder e2e, screenshots, and a release packet. It stays quiet during bridge setup, bug triage, and normal chat work.";
+    summary = "Use this lane when you are ready to run lint, founder e2e, screenshots, and a shipping packet. It stays quiet during bridge setup, bug triage, and normal chat work.";
     tone = "guard";
   } else if (!hasWorkspaceAttachment()) {
     title = "Attach a workspace to open the release cockpit";
@@ -2203,7 +2203,7 @@ function getReleaseCockpitModel() {
   } else if (!getReleaseCockpitPlan()) {
     title = "Stage release verification";
     summary = `Use the cockpit to queue the guarded release lane for ${workflowTitle}. Keep expensive checks explicit and local.`;
-    tone = normalizeWorkflowId(appState.workflowId) === "release_audit" ? "ok" : "guard";
+    tone = normalizeWorkflowId(appState.workflowId) === "shipping_audit" ? "ok" : "guard";
   } else if (running > 0) {
     title = "Release verification running";
     summary = `${running} ${running === 1 ? "check is" : "checks are"} still running against ${appState.workspaceAttachment.label || "the attached workspace"}.`;
@@ -2214,11 +2214,11 @@ function getReleaseCockpitModel() {
     tone = "warn";
   } else if (passed > 0 && pending === 0 && packetReady) {
     title = "Release packet ready";
-    summary = "The release packet is docked with a clean selected verification pass. Export evidence and handoff while the state is fresh.";
+    summary = "The shipping packet is docked with a clean selected verification pass. Export evidence and handoff while the state is fresh.";
     tone = "good";
   } else if (passed > 0 && pending === 0) {
-    title = "Build the release packet";
-    summary = "All selected release checks passed. Build the release packet, then export evidence while the verification state is fresh.";
+    title = "Build the shipping packet";
+    summary = "All selected release checks passed. Build the shipping packet, then export evidence while the verification state is fresh.";
     tone = "good";
   } else if (passed > 0) {
     title = "Release verification partially complete";
@@ -2234,23 +2234,23 @@ function getReleaseCockpitModel() {
 
   const checklist = !engaged
     ? [
-        "Stay in diagnostics or workflow mode until you are ready to verify a release.",
-        "Attach a workspace only when you want lint, founder e2e, screenshots, and a release packet in one lane.",
-        "When release work starts, stage the checks explicitly and keep the packet/evidence current."
-      ]
+      "Stay in diagnostics or workflow mode until you are ready to verify a release.",
+      "Attach a workspace only when you want lint, founder e2e, screenshots, and a shipping packet in one lane.",
+      "When release work starts, stage the checks explicitly and keep the packet/evidence current."
+    ]
     : !hasWorkspaceAttachment()
-    ? [
+      ? [
         "Attach one local workspace root before staging release checks.",
         "Keep release verification local-only and explicit.",
         "Export evidence only after the workspace and checks align."
       ]
-    : !getReleaseCockpitPlan()
-      ? [
+      : !getReleaseCockpitPlan()
+        ? [
           "Stage lint, founder e2e, and store screenshot refresh into one guarded run plan.",
           "Uncheck expensive paths if you only need a partial proof for the current delta.",
-        "Run the selected checks explicitly, then export the evidence bundle."
-      ]
-      : rows.map((check) => {
+          "Run the selected checks explicitly, then export the evidence bundle."
+        ]
+        : rows.map((check) => {
           if (check.selected === false) {
             return `${check.label}: deselected for this pass.`;
           }
@@ -2269,7 +2269,7 @@ function getReleaseCockpitModel() {
   if (packetReady) {
     checklist.push(`Release packet artifact: ${appState.lastArtifact.title || "Release Packet"} is ready in the dock.`);
   } else if (passed > 0 && pending === 0 && !failed) {
-    checklist.push("Build the release packet now so the ship decision, verification state, and blockers are captured in one dock artifact.");
+    checklist.push("Build the shipping packet now so the ship decision, verification state, and blockers are captured in one dock artifact.");
   }
 
   return {
@@ -2342,8 +2342,8 @@ function getMissionControlCards() {
   const pendingChecks = selectedChecks.filter((check) => check.status === "pending").length;
   const patchSelected = selectedPatchPlanFiles().length;
   const patchPending = unappliedSelectedPatchPlanFiles().length;
-  const latestPacket = Array.isArray(appState.releasePacketHistory) && appState.releasePacketHistory.length
-    ? appState.releasePacketHistory[0]
+  const latestPacket = Array.isArray(appState.shippingPacketHistory) && appState.shippingPacketHistory.length
+    ? appState.shippingPacketHistory[0]
     : null;
 
   return [
@@ -2353,7 +2353,7 @@ function getMissionControlCards() {
       summary: outputMode
         ? `${outputMode.label} contract is active. Keep the next response structured and ready for promotion into local work.`
         : "Load a workflow and keep the next response structured.",
-      tone: normalizeWorkflowId(appState.workflowId) === "release_audit" ? "good" : "ok",
+      tone: normalizeWorkflowId(appState.workflowId) === "shipping_audit" ? "good" : "ok",
       scopes: [
         { label: "Structured output", tone: "read" },
         { label: hasArtifactContent() ? "Artifact staged" : "No artifact", tone: hasArtifactContent() ? "good" : "warn" }
@@ -2474,35 +2474,35 @@ function getMissionControlCards() {
     {
       eyebrow: "Release Lane",
       title: releaseModel.title,
-      summary: `${releaseModel.summary} Packet ledger: ${Array.isArray(appState.releasePacketHistory) ? appState.releasePacketHistory.length : 0} local ${(Array.isArray(appState.releasePacketHistory) ? appState.releasePacketHistory.length : 0) === 1 ? "snapshot" : "snapshots"} ready.`,
+      summary: `${releaseModel.summary} Packet ledger: ${Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0} local ${(Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0) === 1 ? "snapshot" : "snapshots"} ready.`,
       tone: releaseModel.tone,
       scopes: [
         { label: "Verification scoped", tone: "read" },
-        { label: hasReleasePacketArtifact() ? "Packet in dock" : "Packet pending", tone: hasReleasePacketArtifact() ? "good" : "warn" }
+        { label: hasShippingPacketArtifact() ? "Packet in dock" : "Packet pending", tone: hasShippingPacketArtifact() ? "good" : "warn" }
       ],
       metrics: [
         { label: "Selected Checks", value: `${selectedChecks.length}`, tone: selectedChecks.length ? "ok" : "warn" },
         { label: "Passed / Failed", value: `${passedChecks} / ${failedChecks}`, tone: failedChecks ? "warn" : (passedChecks ? "good" : "guard") },
         { label: "Packet Ledger", value: latestPacket ? formatTimestampLabel(latestPacket.generatedAt) : "Empty", tone: latestPacket ? "good" : "warn" }
       ],
-      actionLabel: hasReleasePacketArtifact()
+      actionLabel: hasShippingPacketArtifact()
         ? "Export Release Evidence"
         : releasePlan
           ? (failedChecks > 0 || pendingChecks > 0 ? "Run Release Checks" : "Build Release Packet")
           : "Stage Release Checks",
-      actionClass: hasReleasePacketArtifact() ? "btn-secondary" : "btn-primary",
+      actionClass: hasShippingPacketArtifact() ? "btn-secondary" : "btn-primary",
       action: () => {
-        if (hasReleasePacketArtifact()) {
+        if (hasShippingPacketArtifact()) {
           return exportEvidenceBundle();
         }
         if (!releasePlan) {
-          stageReleaseCockpit();
+          stageShippingCockpit();
           return Promise.resolve();
         }
         if (failedChecks > 0 || pendingChecks > 0) {
-          return runReleaseCockpitChecks();
+          return runShippingCockpitChecks();
         }
-        return buildReleasePacketArtifact();
+        return buildShippingPacketArtifact();
       }
     }
   ];
@@ -2592,29 +2592,29 @@ function renderChatOpsTrays() {
   }
 }
 
-function setRuntimeTray(nextTray, options = {}) {
-  const resolved = normalizeRuntimeTrayId(nextTray);
-  appState.runtimeTray = normalizeRuntimeTrayId(options.toggle && appState.runtimeTray === resolved ? "none" : resolved);
-  appState.inspectorSurface = "runtime";
-  renderRuntimeTrays();
-  renderInspectorNavigation();
+function setPerformanceTray(nextTray, options = {}) {
+  const resolved = normalizePerformanceTrayId(nextTray);
+  appState.performanceTray = normalizePerformanceTrayId(options.toggle && appState.performanceTray === resolved ? "none" : resolved);
+  appState.systemSurface = "runtime";
+  renderPerformanceTrays();
+  renderSystemNavigation();
   persistOperatorLayoutPreferences();
 }
 
 function setRuntimeOutputView(nextView) {
-  appState.runtimeOutputView = normalizeRuntimeOutputViewId(nextView);
-  renderRuntimeTrays();
+  appState.performanceOutputView = normalizeRuntimeOutputViewId(nextView);
+  renderPerformanceTrays();
   persistOperatorLayoutPreferences();
 }
 
-function renderRuntimeTrays() {
+function renderPerformanceTrays() {
   const trayMap = [
-    { id: "diagnostics", button: el.runtimeDiagnosticsTrayBtn, panel: el.runtimeDiagnosticsTray },
-    { id: "trace", button: el.runtimeTraceTrayBtn, panel: el.runtimeTraceTray },
-    { id: "outputs", button: el.runtimeOutputTrayBtn, panel: el.runtimeOutputTray }
+    { id: "diagnostics", button: el.performanceDiagnosticsTrayBtn, panel: el.performanceDiagnosticsTray },
+    { id: "trace", button: el.performanceTraceTrayBtn, panel: el.performanceTraceTray },
+    { id: "outputs", button: el.performanceOutputTrayBtn, panel: el.performanceOutputTray }
   ];
   for (const tray of trayMap) {
-    const isActive = appState.runtimeTray === tray.id;
+    const isActive = appState.performanceTray === tray.id;
     if (tray.button) {
       tray.button.classList.toggle("is-active", isActive);
       tray.button.setAttribute("aria-expanded", String(isActive));
@@ -2627,12 +2627,12 @@ function renderRuntimeTrays() {
   }
 
   const outputMap = [
-    { id: "audit", button: el.runtimeAuditOutputBtn, panel: el.runtimeAuditOutputPanel },
-    { id: "logs", button: el.runtimeLogsOutputBtn, panel: el.runtimeLogsOutputPanel },
-    { id: "chat", button: el.runtimeChatLogsOutputBtn, panel: el.runtimeChatLogsOutputPanel }
+    { id: "audit", button: el.performanceAuditOutputBtn, panel: el.performanceAuditOutputPanel },
+    { id: "logs", button: el.performanceLogsOutputBtn, panel: el.performanceLogsOutputPanel },
+    { id: "chat", button: el.performanceChatLogsOutputBtn, panel: el.performanceChatLogsOutputPanel }
   ];
   for (const output of outputMap) {
-    const isActive = appState.runtimeOutputView === output.id;
+    const isActive = appState.performanceOutputView === output.id;
     if (output.button) {
       output.button.classList.toggle("is-active", isActive);
       output.button.setAttribute("aria-expanded", String(isActive));
@@ -2704,7 +2704,7 @@ function buildIntelBriefModel() {
   const releaseModel = getReleaseCockpitModel();
   const patchGroups = patchPlanHasFiles() ? collectPatchPlanGroups(appState.patchPlan) : [];
   const verificationState = describeVerificationPlanState();
-  const packetCount = Array.isArray(appState.releasePacketHistory) ? appState.releasePacketHistory.length : 0;
+  const packetCount = Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0;
   const activeArtifact = appState.lastArtifact && appState.lastArtifact.title
     ? `${appState.lastArtifact.title} @ ${formatTimestampLabel(appState.lastArtifact.generatedAt)}`
     : "No dock artifact";
@@ -2740,10 +2740,10 @@ function buildIntelBriefModel() {
     nextAction = "Stage verification checks from the patch group you trust before applying the selected files.";
   } else if (appState.verificationRunPlan && verificationState.tone !== "good") {
     nextAction = "Run the selected verification checks or narrow the plan to the exact surface that changed.";
-  } else if (releaseModel.selected.length && releaseModel.pending === 0 && !releaseModel.failed && !hasReleasePacketArtifact()) {
-    nextAction = "Build the release packet now so the current verification state and blockers are captured in one dock artifact.";
-  } else if (hasReleasePacketArtifact()) {
-    nextAction = "Export evidence or save a handoff snapshot while the current release packet is still the active source of truth.";
+  } else if (releaseModel.selected.length && releaseModel.pending === 0 && !releaseModel.failed && !hasShippingPacketArtifact()) {
+    nextAction = "Build the shipping packet now so the current verification state and blockers are captured in one dock artifact.";
+  } else if (hasShippingPacketArtifact()) {
+    nextAction = "Export evidence or save a handoff snapshot while the current shipping packet is still the active source of truth.";
   }
 
   const hints = [
@@ -2758,7 +2758,7 @@ function buildIntelBriefModel() {
       ? `${(appState.patchPlan.files || []).length} patch files are staged. ${unappliedSelectedPatchPlanFiles().length} selected files still require explicit apply.`
       : "No patch review is staged yet. Use the dock artifact or workflow output to promote one into local review.",
     verificationState.detail,
-    hasReleasePacketArtifact()
+    hasShippingPacketArtifact()
       ? `Release packet history holds ${packetCount} ${packetCount === 1 ? "snapshot" : "snapshots"} for the current workspace.`
       : "Release packet history is empty. Build a packet only after the selected checks match the intended ship surface."
   ];
@@ -2822,7 +2822,7 @@ function getIntelKnowledgeEntries() {
   const entries = [
     {
       title: "Workflow Surface",
-      tone: normalizeWorkflowId(appState.workflowId) === "release_audit" ? "good" : "ok",
+      tone: normalizeWorkflowId(appState.workflowId) === "shipping_audit" ? "good" : "ok",
       state: (workflow && workflow.title) || "Workflow",
       note: outputMode
         ? `${outputMode.label} contract is active. ${hasArtifactContent() ? "A dock artifact is staged for promotion." : "No artifact is staged yet."}`
@@ -2861,8 +2861,8 @@ function getIntelKnowledgeEntries() {
     {
       title: "Release Cockpit",
       tone: releaseModel.failed ? "warn" : releaseModel.packetReady ? "good" : releaseModel.passed ? "ok" : "guard",
-      state: hasReleasePacketArtifact()
-        ? `${Array.isArray(appState.releasePacketHistory) ? appState.releasePacketHistory.length : 0} packet snapshots`
+      state: hasShippingPacketArtifact()
+        ? `${Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0} packet snapshots`
         : `${releaseModel.selected.length}/${releaseModel.rows.length} selected checks`,
       note: releaseModel.summary
     },
@@ -2883,8 +2883,8 @@ function getIntelKnowledgeEntries() {
 function getIntelCapabilityCards() {
   const verificationState = describeVerificationPlanState();
   const releaseModel = getReleaseCockpitModel();
-  const latestPacket = Array.isArray(appState.releasePacketHistory) && appState.releasePacketHistory.length
-    ? appState.releasePacketHistory[0]
+  const latestPacket = Array.isArray(appState.shippingPacketHistory) && appState.shippingPacketHistory.length
+    ? appState.shippingPacketHistory[0]
     : null;
   return [
     {
@@ -2922,7 +2922,7 @@ function getIntelCapabilityCards() {
       tone: hasArtifactContent() ? "good" : "guard",
       status: hasArtifactContent() ? "Artifact staged" : "No artifact",
       detail: hasArtifactContent()
-        ? "The active dock artifact can be promoted into patch review, verification, evidence, or release packet work."
+        ? "The active dock artifact can be promoted into patch review, verification, evidence, or shipping packet work."
         : "Generate a structured workflow artifact before promoting any downstream action.",
       target: appState.lastArtifact && appState.lastArtifact.title
         ? appState.lastArtifact.title
@@ -3139,7 +3139,7 @@ function renderCommandsTray() {
 
 function workbenchArtifactCardModel() {
   const artifact = appState.lastArtifact;
-  const historyCount = normalizeReleasePacketHistory(appState.releasePacketHistory).length;
+  const historyCount = normalizeShippingPacketHistory(appState.shippingPacketHistory).length;
   if (artifact && String(artifact.content || "").trim()) {
     const artifactTitle = String(artifact.title || (getOutputMode(artifact.outputMode) || {}).label || "Latest artifact").trim();
     const detailParts = [
@@ -3155,7 +3155,7 @@ function workbenchArtifactCardModel() {
   if (historyCount) {
     return {
       state: `${historyCount} packet${historyCount === 1 ? "" : "s"} ready`,
-      summary: "Reload release packet history into the dock or compare revisions side by side.",
+      summary: "Reload shipping packet history into the dock or compare revisions side by side.",
       tone: "good"
     };
   }
@@ -3243,21 +3243,21 @@ function workbenchApplyCardModel() {
   };
 }
 
-function refreshWorkbenchInspectorChrome() {
-  const model = workbenchInspectorCardModel();
-  if (el.inspectorWorkbenchBtn) {
-    el.inspectorWorkbenchBtn.dataset.tone = String(model.tone || "guard");
-    el.inspectorWorkbenchBtn.title = model.summary;
+function refreshWorkbenchSystemChrome() {
+  const model = workbenchSystemCardModel();
+  if (el.systemWorkbenchBtn) {
+    el.systemWorkbenchBtn.dataset.tone = String(model.tone || "guard");
+    el.systemWorkbenchBtn.title = model.summary;
   }
-  if (el.inspectorWorkbenchStateText) {
-    el.inspectorWorkbenchStateText.textContent = model.state;
-    el.inspectorWorkbenchStateText.dataset.tone = String(model.tone || "guard");
+  if (el.systemWorkbenchStateText) {
+    el.systemWorkbenchStateText.textContent = model.state;
+    el.systemWorkbenchStateText.dataset.tone = String(model.tone || "guard");
   }
-  if (el.inspectorWorkbenchSummaryText) {
-    el.inspectorWorkbenchSummaryText.textContent = model.summary;
+  if (el.systemWorkbenchSummaryText) {
+    el.systemWorkbenchSummaryText.textContent = model.summary;
   }
-  if (appState.inspectorSurface === "workbench" && el.inspectorSummaryText) {
-    el.inspectorSummaryText.textContent = model.summary;
+  if (appState.systemSurface === "workbench" && el.systemSummaryText) {
+    el.systemSummaryText.textContent = model.summary;
   }
   renderGlobalControlBar();
 }
@@ -3318,7 +3318,7 @@ function renderWorkbenchNavigation() {
       }
     }
   }
-  refreshWorkbenchInspectorChrome();
+  refreshWorkbenchSystemChrome();
 }
 
 function trimTrailingPeriod(value) {
@@ -3327,7 +3327,7 @@ function trimTrailingPeriod(value) {
     .trim();
 }
 
-function workbenchInspectorCardModel() {
+function workbenchSystemCardModel() {
   const plan = appState.verificationRunPlan;
   const patchPlan = appState.patchPlan;
   const artifact = appState.lastArtifact;
@@ -3385,24 +3385,25 @@ function workbenchInspectorCardModel() {
   };
 }
 
-function runtimeInspectorCardModel() {
+function performanceSystemCardModel() {
   const bridge = describeLlmStatus(appState.llmStatus);
   const liveProfile = liveBridgeProfile() || currentBridgeProfile();
   const provider = getBridgeProvider(liveProfile ? liveProfile.provider : "ollama");
-  const trayLabel = appState.runtimeTray === "trace"
+  const trayLabel = appState.performanceTray === "trace"
     ? "Trace lane"
-    : appState.runtimeTray === "outputs"
-      ? `Outputs · ${appState.runtimeOutputView === "logs" ? "logs" : appState.runtimeOutputView === "chat" ? "chat" : "audit"}`
+    : appState.performanceTray === "outputs"
+      ? `Outputs · ${appState.performanceOutputView === "logs" ? "logs" : appState.performanceOutputView === "chat" ? "chat" : "audit"}`
       : "Diagnostics";
   const modeLabel = offlineModeEnabled() ? "Offline Mode on" : "Hosted access available";
   return {
     state: offlineModeEnabled() ? "Offline guarded" : trimTrailingPeriod(bridge.short),
     summary: truncateInlineText(`${provider.label || "Bridge"} | ${modeLabel} | ${trayLabel}`, 132),
-    tone: bridge.tone === "bad" ? "warn" : bridge.tone
+    tone: bridge.tone === "bad" ? "warn" : bridge.tone,
+    ready: appState.bridgeStatus !== "connected"
   };
 }
 
-function releaseInspectorCardModel() {
+function shippingSystemCardModel() {
   const model = getReleaseCockpitModel();
   const selectedCount = Array.isArray(model.selected) ? model.selected.length : 0;
   const summaryParts = [];
@@ -3423,16 +3424,17 @@ function releaseInspectorCardModel() {
         : getReleaseCockpitPlan()
           ? "Verification staged"
           : model.blockers.length
-            ? "Release blocked"
+            ? "Shipping blocked"
             : model.engaged
-              ? "Release active"
-              : "Release lane idle",
+              ? "Shipping active"
+              : "Shipping group idle",
     summary: truncateInlineText(summaryParts.join(" | ") || model.summary, 132),
-    tone: model.tone
+    tone: model.tone,
+    ready: model.packetReady || model.passed > 0
   };
 }
 
-function contextInspectorCardModel() {
+function contextSystemCardModel() {
   const workspaceLabel = hasWorkspaceAttachment()
     ? String(appState.workspaceAttachment.label || "Attached workspace")
     : "No workspace attached";
@@ -3455,50 +3457,52 @@ function contextInspectorCardModel() {
   return {
     state: hasWorkspaceAttachment() ? "Workspace grounded" : "No workspace",
     summary: truncateInlineText(parts.join(" | "), 132),
-    tone: hasWorkspaceAttachment() ? (entryCount || activeProfile ? "good" : "ok") : "guard"
+    tone: hasWorkspaceAttachment() ? (entryCount || activeProfile ? "good" : "ok") : "guard",
+    ready: !hasWorkspaceAttachment()
   };
 }
 
-function renderInspectorNavigation() {
+function renderSystemNavigation() {
   const surfaceMap = [
     {
       id: "workbench",
-      button: el.inspectorWorkbenchBtn,
-      section: el.inspectorWorkbenchSection,
-      stateNode: el.inspectorWorkbenchStateText,
-      summaryNode: el.inspectorWorkbenchSummaryText,
-      ...workbenchInspectorCardModel()
+      button: el.systemWorkbenchBtn,
+      section: el.systemWorkbenchSection,
+      stateNode: el.systemWorkbenchStateText,
+      summaryNode: el.systemWorkbenchSummaryText,
+      ...workbenchSystemCardModel()
     },
     {
-      id: "runtime",
-      button: el.inspectorRuntimeBtn,
-      section: el.inspectorRuntimeSection,
-      stateNode: el.inspectorRuntimeStateText,
-      summaryNode: el.inspectorRuntimeSummaryText,
-      ...runtimeInspectorCardModel()
+      id: "performance",
+      button: el.systemPerformanceBtn,
+      section: el.systemPerformanceSection,
+      stateNode: el.systemPerformanceStateText,
+      summaryNode: el.systemPerformanceSummaryText,
+      ...performanceSystemCardModel()
     },
     {
-      id: "release",
-      button: el.inspectorReleaseBtn,
-      section: el.inspectorReleaseSection,
-      stateNode: el.inspectorReleaseStateText,
-      summaryNode: el.inspectorReleaseSummaryText,
-      ...releaseInspectorCardModel()
+      id: "shipping",
+      button: el.systemShippingBtn,
+      section: el.systemShippingSection,
+      stateNode: el.systemShippingStateText,
+      summaryNode: el.systemShippingSummaryText,
+      ...shippingSystemCardModel()
     },
     {
       id: "context",
-      button: el.inspectorContextBtn,
-      section: el.inspectorContextSection,
-      stateNode: el.inspectorContextStateText,
-      summaryNode: el.inspectorContextSummaryText,
-      ...contextInspectorCardModel()
+      button: el.systemContextBtn,
+      section: el.systemContextSection,
+      stateNode: el.systemContextStateText,
+      summaryNode: el.systemContextSummaryText,
+      ...contextSystemCardModel()
     }
   ];
-  let activeSummary = "Switch between workbench, runtime, release, and context surfaces without crowding the center thread.";
+  let activeSummary = "Switch between workbench, performance, shipping, and context surfaces without crowding the center thread.";
   for (const surface of surfaceMap) {
-    const isActive = appState.inspectorSurface === surface.id;
+    const isActive = appState.systemSurface === surface.id;
     if (surface.button) {
       surface.button.classList.toggle("is-active", isActive);
+      surface.button.classList.toggle("ready-to-act", !!surface.ready);
       surface.button.setAttribute("aria-expanded", String(isActive));
       surface.button.setAttribute("aria-pressed", String(isActive));
       surface.button.setAttribute("aria-selected", String(isActive));
@@ -3529,25 +3533,25 @@ function renderInspectorNavigation() {
       activeSummary = surface.summary;
     }
   }
-  if (el.inspectorSummaryText) {
-    el.inspectorSummaryText.textContent = activeSummary;
+  if (el.systemSummaryText) {
+    el.systemSummaryText.textContent = activeSummary;
   }
   renderGlobalControlBar();
 }
 
-function setInspectorSurface(nextSurface, options = {}) {
-  appState.inspectorSurface = normalizeInspectorSurfaceId(nextSurface);
-  renderInspectorNavigation();
+function setSystemSurface(nextSurface, options = {}) {
+  appState.systemSurface = normalizeSystemSurfaceId(nextSurface);
+  renderSystemNavigation();
   if (options.persist !== false) {
     persistOperatorLayoutPreferences({ render: false });
   }
-  const target = appState.inspectorSurface === "runtime"
-    ? el.inspectorRuntimeSection
-    : appState.inspectorSurface === "release"
-      ? el.inspectorReleaseSection
-      : appState.inspectorSurface === "context"
-        ? el.inspectorContextSection
-        : el.inspectorWorkbenchSection;
+  const target = appState.systemSurface === "performance"
+    ? el.systemPerformanceSection
+    : appState.systemSurface === "shipping"
+      ? el.systemShippingSection
+      : appState.systemSurface === "context"
+        ? el.systemContextSection
+        : el.systemWorkbenchSection;
   if (options.scroll !== false && target && typeof target.scrollIntoView === "function") {
     target.scrollIntoView({
       behavior: options.behavior || "smooth",
@@ -3562,9 +3566,9 @@ function setWorkbenchSurface(nextSurface, options = {}) {
   const resolved = normalizeWorkbenchSurfaceId(nextSurface);
   appState.workbenchSurface = resolved;
   ensureSurfaceEpoch(resolved);
-  appState.inspectorSurface = "workbench";
+  appState.systemSurface = "workbench";
   renderWorkbenchNavigation();
-  renderInspectorNavigation();
+  renderSystemNavigation();
   if (resolved === "artifact") {
     renderArtifactPanel({ forceRender: true });
   } else if (resolved === "patch") {
@@ -3788,7 +3792,7 @@ async function saveArtifactSessionSnapshot() {
     outputMode: appState.outputMode,
     workspaceAttachment: appState.workspaceAttachment,
     lastArtifact: appState.lastArtifact,
-    releasePacketHistory: appState.releasePacketHistory,
+    shippingPacketHistory: appState.shippingPacketHistory,
     patchPlan: appState.patchPlan,
     promotedPaletteActions: appState.promotedPaletteActions,
     commandPaletteShortcutScope: appState.commandPaletteShortcutScope,
@@ -4453,7 +4457,7 @@ function setVerificationRunPlan(plan, options = {}) {
   renderPatchPlanPanel();
   renderReleaseCockpit();
   if (options.persist !== false) {
-    persistChatState().catch(() => {});
+    persistChatState().catch(() => { });
   }
 }
 
@@ -4462,7 +4466,7 @@ function clearVerificationRunPlan(options = {}) {
   renderPatchPlanPanel();
   renderReleaseCockpit();
   if (options.persist !== false) {
-    persistChatState().catch(() => {});
+    persistChatState().catch(() => { });
   }
   if (options.announce !== false) {
     showBanner("Verification run plan cleared.", "ok");
@@ -4474,7 +4478,7 @@ function clearVerificationRunHistory(options = {}) {
   renderPatchPlanPanel();
   renderReleaseCockpit();
   if (options.persist !== false) {
-    persistChatState().catch(() => {});
+    persistChatState().catch(() => { });
   }
   if (options.announce !== false) {
     showBanner("Verification run history cleared.", "ok");
@@ -4486,7 +4490,7 @@ function setVerificationRunHistory(history, options = {}) {
   renderPatchPlanPanel();
   renderReleaseCockpit();
   if (options.persist !== false) {
-    persistChatState().catch(() => {});
+    persistChatState().catch(() => { });
   }
 }
 
@@ -4528,7 +4532,7 @@ function setVerificationRunCheckSelection(checkId, selected) {
   ));
   renderPatchPlanPanel();
   renderReleaseCockpit();
-  persistChatState().catch(() => {});
+  persistChatState().catch(() => { });
 }
 
 function stageVerificationRunPlanForGroup(groupId) {
@@ -4557,7 +4561,7 @@ function stageVerificationRunPlanForGroup(groupId) {
     checks
   }, { persist: false });
   setWorkbenchSurface("patch", { persist: false, scroll: false });
-  persistChatState().catch(() => {});
+  persistChatState().catch(() => { });
   showBanner(`Verification run plan staged: ${group.title}`, "ok");
 }
 
@@ -4647,14 +4651,14 @@ async function runVerificationRunPlanSelectedChecks() {
     checks: plan.checks.map((check) => (
       selectedChecks.some((row) => row.id === check.id)
         ? {
-            ...check,
-            status: "running",
-            lastRunAt: "",
-            exitCode: null,
-            durationMs: 0,
-            stdout: "",
-            stderr: ""
-          }
+          ...check,
+          status: "running",
+          lastRunAt: "",
+          exitCode: null,
+          durationMs: 0,
+          stdout: "",
+          stderr: ""
+        }
         : check
     ))
   };
@@ -4675,11 +4679,11 @@ async function runVerificationRunPlanSelectedChecks() {
       checks: plan.checks.map((check) => (
         selectedChecks.some((row) => row.id === check.id)
           ? {
-              ...check,
-              status: "failed",
-              lastRunAt: new Date().toISOString(),
-              stderr: String(err && err.message ? err.message : err || "Verification run failed.")
-            }
+            ...check,
+            status: "failed",
+            lastRunAt: new Date().toISOString(),
+            stderr: String(err && err.message ? err.message : err || "Verification run failed.")
+          }
           : check
       ))
     };
@@ -4694,7 +4698,7 @@ async function runVerificationRunPlanSelectedChecks() {
     }
     renderReleaseCockpit();
     if (String(plan.groupId || "").trim() === "release_cockpit") {
-      setInspectorSurface("release", { persist: false, scroll: false });
+      setSystemSurface("shipping", { persist: false, scroll: false });
     }
     await persistChatState();
     throw err;
@@ -4731,13 +4735,13 @@ async function runVerificationRunPlanSelectedChecks() {
   }
   renderReleaseCockpit();
   if (String(plan.groupId || "").trim() === "release_cockpit") {
-    setInspectorSurface("release", { persist: false, scroll: false });
+    setSystemSurface("shipping", { persist: false, scroll: false });
   }
   await persistChatState();
   showBanner(result && result.ok ? "Verification run complete." : "Verification run completed with failures.", result && result.ok ? "ok" : "bad");
 }
 
-function stageReleaseCockpit() {
+function stageShippingCockpit() {
   if (!hasWorkspaceAttachment()) {
     throw new Error("Attach a workspace before staging release verification.");
   }
@@ -4759,35 +4763,35 @@ function stageReleaseCockpit() {
     checks
   }, { persist: false });
   setWorkbenchSurface("patch", { persist: false, scroll: false });
-  persistChatState().catch(() => {});
+  persistChatState().catch(() => { });
   showBanner("Release cockpit staged. Review the selected checks in Workbench before you run them.", "ok");
 }
 
-async function runReleaseCockpitChecks() {
+async function runShippingCockpitChecks() {
   if (!getReleaseCockpitPlan()) {
-    stageReleaseCockpit();
+    stageShippingCockpit();
   }
-  setInspectorSurface("release", { persist: false });
+  setSystemSurface("shipping", { persist: false });
   await runVerificationRunPlanSelectedChecks();
 }
 
-async function buildReleasePacketArtifact(options = {}) {
+async function buildShippingPacketArtifact(options = {}) {
   if (!hasWorkspaceAttachment()) {
-    throw new Error("Attach a workspace before building the release packet.");
+    throw new Error("Attach a workspace before building the shipping packet.");
   }
   const generatedAt = String(options.generatedAt || new Date().toISOString());
   const packetId = String(options.packetId || buildArtifactId({
     workflowId: normalizeWorkflowId(appState.workflowId),
-    outputMode: "release_packet",
+    outputMode: "shipping_packet",
     generatedAt,
     title: "Release Packet"
   }));
   const provenance = buildReleasePacketProvenance({ packetId });
-  appState.lastArtifact = pushReleasePacketHistoryEntry({
+  appState.lastArtifact = pushShippingPacketHistoryEntry({
     id: packetId,
     title: "Release Packet",
     workflowId: normalizeWorkflowId(appState.workflowId),
-    outputMode: "release_packet",
+    outputMode: "shipping_packet",
     content: buildReleasePacketContent({ generatedAt, provenance }),
     generatedAt,
     provenance
@@ -4805,7 +4809,7 @@ async function buildReleasePacketArtifact(options = {}) {
   return appState.lastArtifact;
 }
 
-function openReleasePalette() {
+function openShippingPalette() {
   setCommandPaletteOpen(true);
   if (el.commandPaletteInput) {
     el.commandPaletteInput.value = "Release";
@@ -4816,56 +4820,56 @@ function openReleasePalette() {
 
 function renderReleaseCockpit() {
   const model = getReleaseCockpitModel();
-  if (el.releaseCockpitTitleText) {
-    el.releaseCockpitTitleText.textContent = model.title;
+  if (el.shippingCockpitTitleText) {
+    el.shippingCockpitTitleText.textContent = model.title;
   }
-  if (el.releaseCockpitSummaryText) {
-    el.releaseCockpitSummaryText.textContent = model.summary;
+  if (el.shippingCockpitSummaryText) {
+    el.shippingCockpitSummaryText.textContent = model.summary;
   }
-  if (el.releaseCockpitMetaRow) {
-    el.releaseCockpitMetaRow.innerHTML = "";
-    el.releaseCockpitMetaRow.appendChild(createStatusPill(model.workflowTitle, normalizeWorkflowId(appState.workflowId) === "release_audit" ? "good" : "guard"));
-    el.releaseCockpitMetaRow.appendChild(createStatusPill(
+  if (el.shippingCockpitMetaRow) {
+    el.shippingCockpitMetaRow.innerHTML = "";
+    el.shippingCockpitMetaRow.appendChild(createStatusPill(model.workflowTitle, normalizeWorkflowId(appState.workflowId) === "shipping_audit" ? "good" : "guard"));
+    el.shippingCockpitMetaRow.appendChild(createStatusPill(
       hasWorkspaceAttachment() ? String(appState.workspaceAttachment.label || "Workspace attached") : model.engaged ? "No workspace" : "Workspace optional",
       hasWorkspaceAttachment() ? "good" : model.engaged ? "warn" : "guard"
     ));
-    el.releaseCockpitMetaRow.appendChild(createStatusPill(
+    el.shippingCockpitMetaRow.appendChild(createStatusPill(
       model.decision,
       model.decision === "Ready" ? "good" : model.decision === "Conditional" ? "ok" : model.decision === "Idle" ? "guard" : "warn"
     ));
-    el.releaseCockpitMetaRow.appendChild(createStatusPill(
+    el.shippingCockpitMetaRow.appendChild(createStatusPill(
       model.engaged ? `${model.selected.length}/${model.rows.length} selected` : "Checks not staged",
       model.engaged ? (model.selected.length ? "ok" : "warn") : "guard"
     ));
-    el.releaseCockpitMetaRow.appendChild(createStatusPill(
+    el.shippingCockpitMetaRow.appendChild(createStatusPill(
       hasArtifactContent() ? "Artifact ready" : model.engaged ? "No artifact" : "Artifact optional",
       hasArtifactContent() ? "good" : "guard"
     ));
-    el.releaseCockpitMetaRow.appendChild(createStatusPill(model.packetReady ? "Packet built" : "Packet pending", model.packetReady ? "good" : "guard"));
+    el.shippingCockpitMetaRow.appendChild(createStatusPill(model.packetReady ? "Packet built" : "Packet pending", model.packetReady ? "good" : "guard"));
     if (model.blockers.length) {
-      el.releaseCockpitMetaRow.appendChild(createStatusPill(`${model.blockers.length} blocker${model.blockers.length === 1 ? "" : "s"}`, "warn"));
+      el.shippingCockpitMetaRow.appendChild(createStatusPill(`${model.blockers.length} blocker${model.blockers.length === 1 ? "" : "s"}`, "warn"));
     }
     if (model.running) {
-      el.releaseCockpitMetaRow.appendChild(createStatusPill(`${model.running} running`, "ok"));
+      el.shippingCockpitMetaRow.appendChild(createStatusPill(`${model.running} running`, "ok"));
     } else if (model.failed) {
-      el.releaseCockpitMetaRow.appendChild(createStatusPill(`${model.failed} failed`, "warn"));
+      el.shippingCockpitMetaRow.appendChild(createStatusPill(`${model.failed} failed`, "warn"));
     } else if (model.passed) {
-      el.releaseCockpitMetaRow.appendChild(createStatusPill(`${model.passed} passed`, model.pending === 0 ? "good" : "ok"));
+      el.shippingCockpitMetaRow.appendChild(createStatusPill(`${model.passed} passed`, model.pending === 0 ? "good" : "ok"));
     } else {
-      el.releaseCockpitMetaRow.appendChild(createStatusPill(`${model.pending} pending`, "guard"));
+      el.shippingCockpitMetaRow.appendChild(createStatusPill(`${model.pending} pending`, "guard"));
     }
   }
-  if (el.releaseCockpitChecklist) {
-    el.releaseCockpitChecklist.innerHTML = "";
+  if (el.shippingCockpitChecklist) {
+    el.shippingCockpitChecklist.innerHTML = "";
     for (const item of model.checklist) {
       const row = document.createElement("div");
       row.className = "workspace-action-hint";
       row.textContent = item;
-      el.releaseCockpitChecklist.appendChild(row);
+      el.shippingCockpitChecklist.appendChild(row);
     }
   }
-  if (el.releaseCockpitBlockerList) {
-    el.releaseCockpitBlockerList.innerHTML = "";
+  if (el.shippingCockpitBlockerList) {
+    el.shippingCockpitBlockerList.innerHTML = "";
     if (model.blockers.length) {
       for (const blocker of model.blockers) {
         const row = document.createElement("div");
@@ -4884,19 +4888,19 @@ function renderReleaseCockpit() {
         head.appendChild(copy);
         head.appendChild(createStatusPill("Blocked", "warn"));
         row.appendChild(head);
-        el.releaseCockpitBlockerList.appendChild(row);
+        el.shippingCockpitBlockerList.appendChild(row);
       }
     } else {
       const clearRow = document.createElement("div");
       clearRow.className = "workspace-action-hint";
       clearRow.textContent = model.engaged
-        ? "No active ship blockers. Keep the release packet and evidence current while the lane stays green."
-        : "Release lane is idle. Stage checks only when you are ready to verify a release.";
-      el.releaseCockpitBlockerList.appendChild(clearRow);
+        ? "No active ship blockers. Keep the shipping packet and evidence current while the shipping state stays green."
+        : "Shipping group idle. Stage checks only when you are ready to verify a release.";
+      el.shippingCockpitBlockerList.appendChild(clearRow);
     }
   }
-  if (el.releaseCockpitStatusList) {
-    el.releaseCockpitStatusList.innerHTML = "";
+  if (el.shippingCockpitStatusList) {
+    el.shippingCockpitStatusList.innerHTML = "";
     for (const check of model.rows) {
       const card = document.createElement("div");
       card.className = "workspace-action-card";
@@ -4933,20 +4937,20 @@ function renderReleaseCockpit() {
 
       card.appendChild(head);
       card.appendChild(meta);
-      el.releaseCockpitStatusList.appendChild(card);
+      el.shippingCockpitStatusList.appendChild(card);
     }
   }
-  if (el.stageReleaseCockpitBtn) {
-    el.stageReleaseCockpitBtn.disabled = !hasWorkspaceAttachment();
+  if (el.stageShippingCockpitBtn) {
+    el.stageShippingCockpitBtn.disabled = !hasWorkspaceAttachment();
   }
-  if (el.runReleaseCockpitBtn) {
-    el.runReleaseCockpitBtn.disabled = !hasWorkspaceAttachment() || !model.selected.length;
+  if (el.runShippingCockpitBtn) {
+    el.runShippingCockpitBtn.disabled = !hasWorkspaceAttachment() || !model.selected.length;
   }
-  if (el.buildReleasePacketBtn) {
-    el.buildReleasePacketBtn.disabled = !hasWorkspaceAttachment();
+  if (el.buildShippingPacketBtn) {
+    el.buildShippingPacketBtn.disabled = !hasWorkspaceAttachment();
   }
-  if (el.exportReleaseEvidenceBtn) {
-    el.exportReleaseEvidenceBtn.disabled = !hasWorkspaceAttachment() && !hasArtifactContent() && !appState.chat.length;
+  if (el.exportShippingEvidenceBtn) {
+    el.exportShippingEvidenceBtn.disabled = !hasWorkspaceAttachment() && !hasArtifactContent() && !appState.chat.length;
   }
   renderIntelSurface();
   renderMissionControl();
@@ -5268,31 +5272,31 @@ function getOperatorRailActions() {
     }
     addAction(promptValue
       ? {
-          id: "send-prompt",
-          title: "Generate Artifact",
-          note: "Dispatch the active prompt and lock a structured output into the artifact dock.",
-          status: "Ready",
-          scopes: [
-            { label: "Bridge", tone: "bridge" },
-            { label: "Structured output", tone: "guard" }
-          ],
-          buttonLabel: "Send Prompt",
-          buttonClass: "btn-primary",
-          run: async () => { await sendPrompt(); }
-        }
+        id: "send-prompt",
+        title: "Generate Artifact",
+        note: "Dispatch the active prompt and lock a structured output into the artifact dock.",
+        status: "Ready",
+        scopes: [
+          { label: "Bridge", tone: "bridge" },
+          { label: "Structured output", tone: "guard" }
+        ],
+        buttonLabel: "Send Prompt",
+        buttonClass: "btn-primary",
+        run: async () => { await sendPrompt(); }
+      }
       : {
-          id: "load-workflow-prompt",
-          title: "Load Workflow Prompt",
-          note: "Seed the prompt box with the built-in starter prompt for the active workflow.",
-          status: "Ready",
-          scopes: [
-            { label: "UI only", tone: "read" },
-            { label: "Workflow seed", tone: "guard" }
-          ],
-          buttonLabel: "Load Prompt",
-          buttonClass: "btn-primary",
-          run: async () => { seedStarterPrompt(); }
-        });
+        id: "load-workflow-prompt",
+        title: "Load Workflow Prompt",
+        note: "Seed the prompt box with the built-in starter prompt for the active workflow.",
+        status: "Ready",
+        scopes: [
+          { label: "UI only", tone: "read" },
+          { label: "Workflow seed", tone: "guard" }
+        ],
+        buttonLabel: "Load Prompt",
+        buttonClass: "btn-primary",
+        run: async () => { seedStarterPrompt(); }
+      });
     addAction(openPaletteAction);
     return actions.slice(0, 4);
   }
@@ -5362,7 +5366,7 @@ function getOperatorRailActions() {
   }
 
   const releaseModel = getReleaseCockpitModel();
-  if (normalizeWorkflowId(appState.workflowId) === "release_audit" && releaseModel.passed > 0 && releaseModel.pending === 0 && !releaseModel.failed && !releaseModel.packetReady) {
+  if (normalizeWorkflowId(appState.workflowId) === "shipping_audit" && releaseModel.passed > 0 && releaseModel.pending === 0 && !releaseModel.failed && !releaseModel.packetReady) {
     addAction({
       id: "build-release-packet",
       title: "Build Release Packet",
@@ -5375,7 +5379,7 @@ function getOperatorRailActions() {
       ],
       buttonLabel: "Build Packet",
       buttonClass: "btn-primary",
-      run: async () => { await buildReleasePacketArtifact(); }
+      run: async () => { await buildShippingPacketArtifact(); }
     });
   }
 
@@ -5721,7 +5725,7 @@ function setPatchPlanFileSelection(fileId, selected) {
   });
   syncPatchPlanSelections();
   renderPatchPlanPanel();
-  persistChatState().catch(() => {});
+  persistChatState().catch(() => { });
 }
 
 function setPatchPlanHunkSelection(fileId, hunkId, selected) {
@@ -5742,7 +5746,7 @@ function setPatchPlanHunkSelection(fileId, hunkId, selected) {
   });
   syncPatchPlanSelections();
   renderPatchPlanPanel();
-  persistChatState().catch(() => {});
+  persistChatState().catch(() => { });
 }
 
 function setPatchPlanGroupSelection(groupId, selected) {
@@ -5763,7 +5767,7 @@ function setPatchPlanGroupSelection(groupId, selected) {
   });
   syncPatchPlanSelections();
   renderPatchPlanPanel();
-  persistChatState().catch(() => {});
+  persistChatState().catch(() => { });
 }
 
 function setPatchPlanPreviewFile(fileId) {
@@ -6912,7 +6916,7 @@ function renderWorkspaceActionDeck(options = {}) {
 }
 
 function artifactHistorySummaryLine(artifact) {
-  const provenanceSummary = releasePacketProvenanceSummaryLine(artifact);
+  const provenanceSummary = shippingPacketProvenanceSummaryLine(artifact);
   if (provenanceSummary) {
     return provenanceSummary;
   }
@@ -6926,7 +6930,7 @@ function artifactHistorySummaryLine(artifact) {
 }
 
 async function loadReleasePacketHistoryEntry(index, options = {}) {
-  const entry = normalizeReleasePacketHistory(appState.releasePacketHistory)[index];
+  const entry = normalizeShippingPacketHistory(appState.shippingPacketHistory)[index];
   if (!entry) {
     throw new Error("Release packet history entry not found.");
   }
@@ -6946,8 +6950,8 @@ async function loadReleasePacketHistoryEntry(index, options = {}) {
 }
 
 async function clearReleasePacketHistory(options = {}) {
-  appState.releasePacketHistory = [];
-  appState.releasePacketCompareIds = { left: "", right: "" };
+  appState.shippingPacketHistory = [];
+  appState.shippingPacketCompareIds = { left: "", right: "" };
   renderArtifactPanel();
   if (options.persist !== false) {
     await persistChatState();
@@ -6961,7 +6965,7 @@ function renderArtifactComparePanel() {
   const model = getReleasePacketCompareModel();
   if (el.artifactCompareMetaText) {
     el.artifactCompareMetaText.textContent = !model.ready
-      ? "Build at least two release packets to compare revisions side by side."
+      ? "Build at least two shipping packets to compare revisions side by side."
       : `${artifactHistorySummaryLine(model.left)} vs ${artifactHistorySummaryLine(model.right)}`;
   }
   if (el.artifactCompareDiffList) {
@@ -6969,7 +6973,7 @@ function renderArtifactComparePanel() {
     if (!model.ready) {
       const empty = document.createElement("div");
       empty.className = "artifact-history-empty";
-      empty.textContent = "Compare needs two release packets. Build a second packet or reload another history entry into compare slots.";
+      empty.textContent = "Compare needs two shipping packets. Build a second packet or reload another history entry into compare slots.";
       el.artifactCompareDiffList.appendChild(empty);
     } else {
       for (const diff of model.diffs) {
@@ -7019,10 +7023,10 @@ function renderArtifactComparePanel() {
 
   const leftPreview = model.left && model.left.content
     ? model.left.content
-    : "No release packet loaded in compare slot A.";
+    : "No shipping packet loaded in compare slot A.";
   const rightPreview = model.right && model.right.content
     ? model.right.content
-    : "No release packet loaded in compare slot B.";
+    : "No shipping packet loaded in compare slot B.";
 
   if (el.artifactCompareLeftTitle) {
     el.artifactCompareLeftTitle.textContent = model.left ? `${model.left.title || "Release Packet"} A` : "Compare A";
@@ -7030,7 +7034,7 @@ function renderArtifactComparePanel() {
   if (el.artifactCompareLeftMeta) {
     el.artifactCompareLeftMeta.textContent = model.left
       ? `${formatTimestampLabel(model.left.generatedAt)} | ${artifactHistorySummaryLine(model.left)}`
-      : "Select a release packet from history.";
+      : "Select a shipping packet from history.";
   }
   if (el.artifactCompareLeftPreview) {
     el.artifactCompareLeftPreview.textContent = leftPreview;
@@ -7041,34 +7045,34 @@ function renderArtifactComparePanel() {
   if (el.artifactCompareRightMeta) {
     el.artifactCompareRightMeta.textContent = model.right
       ? `${formatTimestampLabel(model.right.generatedAt)} | ${artifactHistorySummaryLine(model.right)}`
-      : "Select a second release packet from history.";
+      : "Select a second shipping packet from history.";
   }
   if (el.artifactCompareRightPreview) {
     el.artifactCompareRightPreview.textContent = rightPreview;
   }
   if (el.clearArtifactCompareBtn) {
-    el.clearArtifactCompareBtn.disabled = !normalizeReleasePacketHistory(appState.releasePacketHistory).length;
+    el.clearArtifactCompareBtn.disabled = !normalizeShippingPacketHistory(appState.shippingPacketHistory).length;
   }
 }
 
 function renderArtifactHistory() {
   if (!el.artifactHistoryList) return;
-  const history = normalizeReleasePacketHistory(appState.releasePacketHistory);
-  appState.releasePacketHistory = history;
-  reconcileReleasePacketCompareSelection();
+  const history = normalizeShippingPacketHistory(appState.shippingPacketHistory);
+  appState.shippingPacketHistory = history;
+  reconcileShippingPacketCompareSelection();
   el.artifactHistoryList.innerHTML = "";
   if (!history.length) {
     const empty = document.createElement("div");
     empty.className = "artifact-history-empty";
-    empty.textContent = "No release packets yet. Build one from the Release Cockpit to keep a local handoff ledger.";
+    empty.textContent = "No shipping packets yet. Build one from the Release Cockpit to keep a local handoff ledger.";
     el.artifactHistoryList.appendChild(empty);
   } else {
     history.forEach((artifact, index) => {
       const card = document.createElement("div");
       const isActive = Boolean(
         appState.lastArtifact
-        && String(appState.lastArtifact.outputMode || "").trim() === "release_packet"
-        && releasePacketHistoryKey(appState.lastArtifact) === releasePacketHistoryKey(artifact)
+        && String(appState.lastArtifact.outputMode || "").trim() === "shipping_packet"
+        && shippingPacketHistoryKey(appState.lastArtifact) === shippingPacketHistoryKey(artifact)
       );
       card.className = `workspace-action-card artifact-history-card${isActive ? " is-active" : ""}`;
 
@@ -7103,8 +7107,8 @@ function renderArtifactHistory() {
       if (artifact.provenance && artifact.provenance.lineage && artifact.provenance.lineage.generation) {
         meta.appendChild(createStatusPill(`Rev ${artifact.provenance.lineage.generation}`, "guard"));
       }
-      if (releasePacketLinkedRunCount(artifact)) {
-        meta.appendChild(createStatusPill(`${releasePacketLinkedRunCount(artifact)} linked run${releasePacketLinkedRunCount(artifact) === 1 ? "" : "s"}`, "good"));
+      if (shippingPacketLinkedRunCount(artifact)) {
+        meta.appendChild(createStatusPill(`${shippingPacketLinkedRunCount(artifact)} linked run${shippingPacketLinkedRunCount(artifact) === 1 ? "" : "s"}`, "good"));
       }
       if (artifact.provenance && artifact.provenance.contextPackProfile && artifact.provenance.contextPackProfile.name) {
         meta.appendChild(createStatusPill(artifact.provenance.contextPackProfile.name, "read"));
@@ -7132,8 +7136,8 @@ function renderArtifactHistory() {
 
       const compareLeftButton = document.createElement("button");
       compareLeftButton.className = "btn-secondary";
-      compareLeftButton.textContent = String(appState.releasePacketCompareIds.left || "") === String(artifact.id || "") ? "Compare A" : "Set Compare A";
-      compareLeftButton.disabled = String(appState.releasePacketCompareIds.left || "") === String(artifact.id || "");
+      compareLeftButton.textContent = String(appState.shippingPacketCompareIds.left || "") === String(artifact.id || "") ? "Compare A" : "Set Compare A";
+      compareLeftButton.disabled = String(appState.shippingPacketCompareIds.left || "") === String(artifact.id || "");
       compareLeftButton.onclick = () => {
         try {
           setReleasePacketCompareSlot("left", artifact.id);
@@ -7145,8 +7149,8 @@ function renderArtifactHistory() {
 
       const compareRightButton = document.createElement("button");
       compareRightButton.className = "btn-secondary";
-      compareRightButton.textContent = String(appState.releasePacketCompareIds.right || "") === String(artifact.id || "") ? "Compare B" : "Set Compare B";
-      compareRightButton.disabled = String(appState.releasePacketCompareIds.right || "") === String(artifact.id || "");
+      compareRightButton.textContent = String(appState.shippingPacketCompareIds.right || "") === String(artifact.id || "") ? "Compare B" : "Set Compare B";
+      compareRightButton.disabled = String(appState.shippingPacketCompareIds.right || "") === String(artifact.id || "");
       compareRightButton.onclick = () => {
         try {
           setReleasePacketCompareSlot("right", artifact.id);
@@ -7184,9 +7188,9 @@ function renderArtifactPanel(options = {}) {
       : `${(workflow && workflow.title) || "Workflow"} Artifact`;
   }
   if (el.artifactMetaText) {
-    const linkedRuns = releasePacketLinkedRunCount(artifact);
-    const provenanceSummary = artifact && artifact.outputMode === "release_packet"
-      ? releasePacketProvenanceSummaryLine(artifact)
+    const linkedRuns = shippingPacketLinkedRunCount(artifact);
+    const provenanceSummary = artifact && artifact.outputMode === "shipping_packet"
+      ? shippingPacketProvenanceSummaryLine(artifact)
       : "";
     el.artifactMetaText.textContent = artifact && artifact.generatedAt
       ? `${(outputMode && outputMode.label) || "Output"} | ${formatTimestampLabel(artifact.generatedAt)}${linkedRuns ? ` | ${linkedRuns} linked run${linkedRuns === 1 ? "" : "s"}` : ""}${provenanceSummary ? ` | ${provenanceSummary}` : ""}`
@@ -7443,7 +7447,7 @@ async function setContextPack(value, options = {}) {
   renderReleaseCockpit();
   renderMissionControl();
   if (appState.activeContextPackProfileId && options.skipProfileStatusRefresh !== true) {
-    refreshContextPackProfileStatus(appState.activeContextPackProfileId).catch(() => {});
+    refreshContextPackProfileStatus(appState.activeContextPackProfileId).catch(() => { });
   }
   if (options.persist !== false) {
     await persistChatState();
@@ -7479,7 +7483,7 @@ async function setContextPackProfiles(value, options = {}) {
   }
   renderContextPackSurface({ seedDefaults: true });
   renderMissionControl();
-  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => {});
+  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => { });
   if (options.persist !== false) {
     await persistChatState();
   }
@@ -7554,7 +7558,7 @@ async function relinkContextPackProfileToWorkflow(profileId, workflowId = appSta
   appState.activeContextPackProfileId = nextProfile.id;
   renderContextPackSurface({ seedDefaults: true });
   renderMissionControl();
-  refreshRelevantContextPackProfileStatuses({ workflowId: nextWorkflowId }).catch(() => {});
+  refreshRelevantContextPackProfileStatuses({ workflowId: nextWorkflowId }).catch(() => { });
   if (options.persist !== false) {
     await persistChatState();
   }
@@ -7794,7 +7798,7 @@ function renderWorkflowSummary() {
   updateDynamicChrome();
   renderHeroSpotlight();
   renderGlobalControlBar();
-  renderInspectorNavigation();
+  renderSystemNavigation();
   if (el.workflowTitleText) {
     el.workflowTitleText.textContent = workflow ? workflow.title : "Workflow";
   }
@@ -7855,7 +7859,7 @@ async function persistChatState() {
     contextPackProfiles: appState.contextPackProfiles,
     activeContextPackProfileId: appState.activeContextPackProfileId,
     lastArtifact: appState.lastArtifact,
-    releasePacketHistory: appState.releasePacketHistory,
+    shippingPacketHistory: appState.shippingPacketHistory,
     patchPlan: appState.patchPlan,
     promotedPaletteActions: appState.promotedPaletteActions,
     commandPaletteShortcutScope: appState.commandPaletteShortcutScope,
@@ -7894,17 +7898,17 @@ async function activateWorkflow(workflowId, options = {}) {
       autoLoadError = err && err.message ? err.message : String(err);
     }
   }
-  if (workflow.id === "release_audit") {
-    appState.inspectorSurface = "release";
+  if (workflow.id === "shipping_audit") {
+    appState.systemSurface = "release";
   } else if (workflow.id === "bridge_diagnostics") {
-    appState.inspectorSurface = "runtime";
+    appState.systemSurface = "runtime";
   }
   renderWorkflowSummary();
   renderContextPackSurface({ seedDefaults: true });
   renderIntelSurface();
   renderPatchPlanPanel();
   renderArtifactPanel();
-  refreshRelevantContextPackProfileStatuses({ workflowId: workflow.id }).catch(() => {});
+  refreshRelevantContextPackProfileStatuses({ workflowId: workflow.id }).catch(() => { });
   if (shouldSeedPrompt && el.promptInput) {
     setPromptEditorValue(workflowPromptTemplate(workflow), { focus: true });
   }
@@ -7968,9 +7972,9 @@ async function setWorkspaceAttachment(summary, options = {}) {
   renderIntelSurface();
   renderOperatorMemorySurface();
   if (hasWorkspaceAttachment() && !hasContextPack() && el.contextPackPathsInput && !String(el.contextPackPathsInput.value || "").trim()) {
-    suggestContextPackFiles({ announce: false }).catch(() => {});
+    suggestContextPackFiles({ announce: false }).catch(() => { });
   }
-  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => {});
+  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => { });
   if (options.persist !== false) {
     await persistChatState();
   }
@@ -8032,7 +8036,7 @@ async function buildEvidenceBundle() {
     recentLogs: logRows,
     recentChatLogs: chatRows,
     artifact: appState.lastArtifact,
-    releasePacketHistory: appState.releasePacketHistory,
+    shippingPacketHistory: appState.shippingPacketHistory,
     patchPlan: appState.patchPlan,
     promotedPaletteActions: appState.promotedPaletteActions,
     verificationRunPlan: appState.verificationRunPlan,
@@ -8405,7 +8409,7 @@ const WORKFLOW_CHROME_PALETTES = {
     chatAssistantTint: "rgba(93, 154, 255, 0.2)",
     chatSystemTint: "rgba(255, 209, 102, 0.18)"
   },
-  release_audit: {
+  shipping_audit: {
     brand: "#ff8c61",
     brand2: "#ffd166",
     accentSpotA: "rgba(255, 140, 97, 0.24)",
@@ -8465,7 +8469,7 @@ const WORKFLOW_CHROME_PALETTES = {
 
 function chromePaletteForState() {
   const workflowId = normalizeWorkflowId(appState.workflowId);
-  const base = WORKFLOW_CHROME_PALETTES[workflowId] || WORKFLOW_CHROME_PALETTES.release_audit;
+  const base = WORKFLOW_CHROME_PALETTES[workflowId] || WORKFLOW_CHROME_PALETTES.shipping_audit;
   const liveProfile = liveBridgeProfile() || currentBridgeProfile();
   const provider = getBridgeProvider(liveProfile ? liveProfile.provider : "ollama");
   if (!provider.remote) {
@@ -8553,7 +8557,7 @@ function normalizeChatOpsTrayId(id) {
     : "thread";
 }
 
-function normalizeRuntimeTrayId(id) {
+function normalizePerformanceTrayId(id) {
   const normalized = String(id || "").trim().toLowerCase();
   return normalized === "trace" || normalized === "outputs" || normalized === "none"
     ? normalized
@@ -8595,7 +8599,7 @@ function normalizeInboxFilterId(id) {
     : "all";
 }
 
-function normalizeInspectorSurfaceId(id) {
+function normalizeSystemSurfaceId(id) {
   const normalized = String(id || "").trim().toLowerCase();
   return normalized === "runtime" || normalized === "release" || normalized === "context"
     ? normalized
@@ -8715,8 +8719,8 @@ function applyWorkspaceLayout() {
   }
   if (el.toggleRightPaneBtn) {
     const label = compact
-      ? "Inspector Stack"
-      : (appState.rightPaneCollapsed ? "Open Inspector" : "Collapse Inspector");
+      ? "System Stack"
+      : (appState.rightPaneCollapsed ? "Open System" : "Collapse System");
     el.toggleRightPaneBtn.textContent = label;
     el.toggleRightPaneBtn.setAttribute("aria-pressed", String(!compact && !appState.rightPaneCollapsed));
   }
@@ -8756,7 +8760,7 @@ function renderGlobalControlBar() {
   }
   if (el.globalProviderStatusText) {
     el.globalProviderStatusText.textContent = truncateInlineText(
-      `${providerLabel} | Model ${String(appState.model || "offline")} | ${workspaceLayoutIsCompact() ? "stacked inspector" : (appState.rightPaneCollapsed ? "inspector collapsed" : `${appState.inspectorSurface} inspector`)}`,
+      `${providerLabel} | Model ${String(appState.model || "offline")} | ${workspaceLayoutIsCompact() ? "stacked system" : (appState.rightPaneCollapsed ? "system collapsed" : `${appState.systemSurface} system`)}`,
       148
     );
   }
@@ -8871,12 +8875,12 @@ function refreshOperatorMemoryState() {
 function persistOperatorLayoutPreferences(options = {}) {
   operatorMemoryStore.saveLayoutPrefs({
     chatOpsTray: normalizeChatOpsTrayId(appState.chatOpsTray),
-    runtimeTray: normalizeRuntimeTrayId(appState.runtimeTray),
-    runtimeOutputView: normalizeRuntimeOutputViewId(appState.runtimeOutputView),
+    performanceTray: normalizePerformanceTrayId(appState.performanceTray),
+    performanceOutputView: normalizeRuntimeOutputViewId(appState.performanceOutputView),
     intelTray: normalizeIntelTrayId(appState.intelTray),
     sessionsTray: normalizeSessionsTrayId(appState.sessionsTray),
     commandsTray: normalizeCommandsTrayId(appState.commandsTray),
-    inspectorSurface: normalizeInspectorSurfaceId(appState.inspectorSurface),
+    systemSurface: normalizeSystemSurfaceId(appState.systemSurface),
     workbenchSurface: normalizeWorkbenchSurfaceId(appState.workbenchSurface),
     leftPaneWidth: normalizeLeftPaneWidth(appState.leftPaneWidth),
     rightPaneWidth: normalizeRightPaneWidth(appState.rightPaneWidth),
@@ -8896,12 +8900,12 @@ function restoreOperatorExperience() {
   refreshOperatorMemoryState();
   const layoutPrefs = operatorMemoryStore.loadLayoutPrefs();
   appState.chatOpsTray = normalizeChatOpsTrayId(layoutPrefs.chatOpsTray || appState.chatOpsTray);
-  appState.runtimeTray = normalizeRuntimeTrayId(layoutPrefs.runtimeTray || appState.runtimeTray);
-  appState.runtimeOutputView = normalizeRuntimeOutputViewId(layoutPrefs.runtimeOutputView || appState.runtimeOutputView);
+  appState.performanceTray = normalizePerformanceTrayId(layoutPrefs.performanceTray || appState.performanceTray);
+  appState.performanceOutputView = normalizeRuntimeOutputViewId(layoutPrefs.performanceOutputView || appState.performanceOutputView);
   appState.intelTray = normalizeIntelTrayId(layoutPrefs.intelTray || appState.intelTray);
   appState.sessionsTray = normalizeSessionsTrayId(layoutPrefs.sessionsTray || appState.sessionsTray);
   appState.commandsTray = normalizeCommandsTrayId(layoutPrefs.commandsTray || appState.commandsTray);
-  appState.inspectorSurface = normalizeInspectorSurfaceId(layoutPrefs.inspectorSurface || appState.inspectorSurface);
+  appState.systemSurface = normalizeSystemSurfaceId(layoutPrefs.systemSurface || appState.systemSurface);
   appState.workbenchSurface = normalizeWorkbenchSurfaceId(layoutPrefs.workbenchSurface || appState.workbenchSurface);
   appState.leftPaneWidth = normalizeLeftPaneWidth(layoutPrefs.leftPaneWidth || appState.leftPaneWidth);
   appState.rightPaneWidth = normalizeRightPaneWidth(layoutPrefs.rightPaneWidth || appState.rightPaneWidth);
@@ -8924,7 +8928,7 @@ function restoreOperatorExperience() {
   }
   applyWorkspaceLayout();
   renderWorkbenchNavigation();
-  renderInspectorNavigation();
+  renderSystemNavigation();
   renderGlobalControlBar();
 }
 function operatorMemoryPromptPreview(value = appState.draftPrompt, maxLength = 132) {
@@ -10133,10 +10137,10 @@ async function loadSessionTarget(sessionName, options = {}) {
       outputMode: appState.outputMode
     })
     : null;
-  appState.releasePacketHistory = normalizeReleasePacketHistory(payload && payload.releasePacketHistory);
-  if (!appState.releasePacketHistory.length && hasReleasePacketArtifact()) {
-    appState.releasePacketHistory = [normalizeArtifactValue(appState.lastArtifact, {
-      forceOutputMode: "release_packet",
+  appState.shippingPacketHistory = normalizeShippingPacketHistory(payload && payload.shippingPacketHistory);
+  if (!appState.shippingPacketHistory.length && hasShippingPacketArtifact()) {
+    appState.shippingPacketHistory = [normalizeArtifactValue(appState.lastArtifact, {
+      forceOutputMode: "shipping_packet",
       title: "Release Packet"
     })];
   }
@@ -10178,7 +10182,7 @@ async function loadSessionTarget(sessionName, options = {}) {
   renderOperatorMemorySurface();
   appState.contextPackProfileStatuses = {};
   syncSelectedContextPackProfileStatus();
-  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => {});
+  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => { });
   if (el.commandPaletteShortcutScope) {
     el.commandPaletteShortcutScope.value = appState.commandPaletteShortcutScope;
   }
@@ -10578,7 +10582,7 @@ async function selectContextPackProfile(profileId, options = {}) {
   syncSelectedContextPackProfileStatus();
   renderContextPackSurface({ seedDefaults: true });
   renderMissionControl();
-  refreshRelevantContextPackProfileStatuses({ workflowId: appState.workflowId }).catch(() => {});
+  refreshRelevantContextPackProfileStatuses({ workflowId: appState.workflowId }).catch(() => { });
   if (options.persist !== false) {
     await persistChatState();
   }
@@ -10959,17 +10963,17 @@ function getCommandPaletteActions() {
     {
       label: "Stage Release Verification",
       detail: "Queue lint, founder e2e, and store screenshot refresh into the release cockpit",
-      run: async () => { stageReleaseCockpit(); }
+      run: async () => { stageShippingCockpit(); }
     },
     {
       label: "Run Release Verification",
       detail: "Run the selected checks from the staged release cockpit plan",
-      run: async () => { await runReleaseCockpitChecks(); }
+      run: async () => { await runShippingCockpitChecks(); }
     },
     {
       label: "Build Release Packet",
-      detail: "Generate a dock-ready release packet from the current cockpit, artifact, and verification state",
-      run: async () => { await buildReleasePacketArtifact(); }
+      detail: "Generate a dock-ready shipping packet from the current cockpit, artifact, and verification state",
+      run: async () => { await buildShippingPacketArtifact(); }
     },
     {
       label: "Copy Verification Commands",
@@ -11612,7 +11616,7 @@ function renderSettingsQuickstartHints() {
 
   hints.push(hasWorkspaceAttachment()
     ? "Workspace is attached. Use patch plans, verification, and release work only when you want repo-scoped actions."
-    : "Attach a workspace only when you want patch plans, verification, or release packets tied to one repo.");
+    : "Attach a workspace only when you want patch plans, verification, or shipping packets tied to one repo.");
 
   for (const hint of hints.slice(0, 4)) {
     const row = document.createElement("div");
@@ -12405,10 +12409,10 @@ async function loadInitialState() {
       outputMode: appState.outputMode
     })
     : null;
-  appState.releasePacketHistory = normalizeReleasePacketHistory(state && state.releasePacketHistory);
-  if (!appState.releasePacketHistory.length && hasReleasePacketArtifact()) {
-    appState.releasePacketHistory = [normalizeArtifactValue(appState.lastArtifact, {
-      forceOutputMode: "release_packet",
+  appState.shippingPacketHistory = normalizeShippingPacketHistory(state && state.shippingPacketHistory);
+  if (!appState.shippingPacketHistory.length && hasShippingPacketArtifact()) {
+    appState.shippingPacketHistory = [normalizeArtifactValue(appState.lastArtifact, {
+      forceOutputMode: "shipping_packet",
       title: "Release Packet"
     })];
   }
@@ -12450,15 +12454,15 @@ async function loadInitialState() {
   renderChatOpsTrays();
   renderSessionsTrays();
   renderCommandsTray();
-  renderRuntimeTrays();
+  renderPerformanceTrays();
   renderIntelSurface();
   renderOperatorMemorySurface();
   if (hasWorkspaceAttachment() && !hasContextPack() && el.contextPackPathsInput && !String(el.contextPackPathsInput.value || "").trim()) {
-    suggestContextPackFiles({ announce: false }).catch(() => {});
+    suggestContextPackFiles({ announce: false }).catch(() => { });
   }
   appState.contextPackProfileStatuses = {};
   syncSelectedContextPackProfileStatus();
-  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => {});
+  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => { });
   if (el.commandPaletteShortcutScope) {
     el.commandPaletteShortcutScope.value = appState.commandPaletteShortcutScope;
   }
@@ -12487,8 +12491,8 @@ function bindEvents() {
     });
   }
   window.addEventListener("llm-stream-data", (event) => handleStreamData(event.detail));
-  window.addEventListener("llm-stream-complete", () => { handleStreamComplete().catch(() => {}); });
-  window.addEventListener("llm-stream-error", (event) => { handleStreamError(event).catch(() => {}); });
+  window.addEventListener("llm-stream-complete", () => { handleStreamComplete().catch(() => { }); });
+  window.addEventListener("llm-stream-error", (event) => { handleStreamError(event).catch(() => { }); });
 
   if (el.promptInput) {
     el.promptInput.addEventListener("input", updatePromptMetrics);
@@ -12504,12 +12508,12 @@ function bindEvents() {
       }
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         event.preventDefault();
-        sendPrompt().catch(() => {});
+        sendPrompt().catch(() => { });
         return;
       }
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-        sendPrompt().catch(() => {});
+        sendPrompt().catch(() => { });
       }
     });
   }
@@ -12600,24 +12604,24 @@ function bindEvents() {
       saveArtifactSessionSnapshot().catch((err) => showBanner(err.message || String(err), "bad"));
     };
   }
-  if (el.inspectorWorkbenchBtn) {
-    el.inspectorWorkbenchBtn.onclick = () => {
-      setInspectorSurface("workbench", { focus: true });
+  if (el.systemWorkbenchBtn) {
+    el.systemWorkbenchBtn.onclick = () => {
+      setSystemSurface("workbench", { focus: true });
     };
   }
-  if (el.inspectorRuntimeBtn) {
-    el.inspectorRuntimeBtn.onclick = () => {
-      setInspectorSurface("runtime", { focus: true });
+  if (el.systemPerformanceBtn) {
+    el.systemPerformanceBtn.onclick = () => {
+      setSystemSurface("performance", { focus: true });
     };
   }
-  if (el.inspectorReleaseBtn) {
-    el.inspectorReleaseBtn.onclick = () => {
-      setInspectorSurface("release", { focus: true });
+  if (el.systemShippingBtn) {
+    el.systemShippingBtn.onclick = () => {
+      setSystemSurface("shipping", { focus: true });
     };
   }
-  if (el.inspectorContextBtn) {
-    el.inspectorContextBtn.onclick = () => {
-      setInspectorSurface("context", { focus: true });
+  if (el.systemContextBtn) {
+    el.systemContextBtn.onclick = () => {
+      setSystemSurface("context", { focus: true });
     };
   }
   if (el.runVerificationPlanBtn) {
@@ -12660,33 +12664,33 @@ function bindEvents() {
       resetVerificationRunHistoryFilters();
     };
   }
-  if (el.stageReleaseCockpitBtn) {
-    el.stageReleaseCockpitBtn.onclick = () => {
+  if (el.stageShippingCockpitBtn) {
+    el.stageShippingCockpitBtn.onclick = () => {
       try {
-        stageReleaseCockpit();
+        stageShippingCockpit();
       } catch (err) {
         showBanner(err.message || String(err), "bad");
       }
     };
   }
-  if (el.runReleaseCockpitBtn) {
-    el.runReleaseCockpitBtn.onclick = () => {
-      runReleaseCockpitChecks().catch((err) => showBanner(err.message || String(err), "bad"));
+  if (el.runShippingCockpitBtn) {
+    el.runShippingCockpitBtn.onclick = () => {
+      runShippingCockpitChecks().catch((err) => showBanner(err.message || String(err), "bad"));
     };
   }
-  if (el.buildReleasePacketBtn) {
-    el.buildReleasePacketBtn.onclick = () => {
-      buildReleasePacketArtifact().catch((err) => showBanner(err.message || String(err), "bad"));
+  if (el.buildShippingPacketBtn) {
+    el.buildShippingPacketBtn.onclick = () => {
+      buildShippingPacketArtifact().catch((err) => showBanner(err.message || String(err), "bad"));
     };
   }
-  if (el.exportReleaseEvidenceBtn) {
-    el.exportReleaseEvidenceBtn.onclick = () => {
+  if (el.exportShippingEvidenceBtn) {
+    el.exportShippingEvidenceBtn.onclick = () => {
       exportEvidenceBundle().catch((err) => showBanner(err.message || String(err), "bad"));
     };
   }
-  if (el.openReleasePaletteBtn) {
-    el.openReleasePaletteBtn.onclick = () => {
-      openReleasePalette();
+  if (el.openShippingPaletteBtn) {
+    el.openShippingPaletteBtn.onclick = () => {
+      openShippingPalette();
     };
   }
   if (el.workspaceEditPathInput) {
@@ -12804,19 +12808,19 @@ function bindEvents() {
       setInboxSearchQuery(el.inboxSearchInput.value);
     };
   }
-  if (el.inspectorWorkbenchBtn) {
-    el.inspectorWorkbenchBtn.onclick = () => {
-      setInspectorSurface("workbench", { focus: true });
+  if (el.systemWorkbenchBtn) {
+    el.systemWorkbenchBtn.onclick = () => {
+      setSystemSurface("workbench", { focus: true });
     };
   }
-  if (el.inspectorRuntimeBtn) {
-    el.inspectorRuntimeBtn.onclick = () => {
-      setInspectorSurface("runtime", { focus: true });
+  if (el.systemPerformanceBtn) {
+    el.systemPerformanceBtn.onclick = () => {
+      setSystemSurface("performance", { focus: true });
     };
   }
-  if (el.inspectorReleaseBtn) {
-    el.inspectorReleaseBtn.onclick = () => {
-      setInspectorSurface("release", { focus: true });
+  if (el.systemShippingBtn) {
+    el.systemShippingBtn.onclick = () => {
+      setSystemSurface("shipping", { focus: true });
     };
   };
   if (el.leftPaneResizeHandle) {
@@ -12905,19 +12909,19 @@ function bindEvents() {
       setWorkbenchSurface("apply");
     };
   }
-  if (el.runtimeDiagnosticsTrayBtn) {
-    el.runtimeDiagnosticsTrayBtn.onclick = () => {
-      setRuntimeTray("diagnostics", { toggle: true });
+  if (el.performanceDiagnosticsTrayBtn) {
+    el.performanceDiagnosticsTrayBtn.onclick = () => {
+      setPerformanceTray("diagnostics", { toggle: true });
     };
   }
-  if (el.runtimeTraceTrayBtn) {
-    el.runtimeTraceTrayBtn.onclick = () => {
-      setRuntimeTray("trace", { toggle: true });
+  if (el.performanceTraceTrayBtn) {
+    el.performanceTraceTrayBtn.onclick = () => {
+      setPerformanceTray("trace", { toggle: true });
     };
   }
-  if (el.runtimeOutputTrayBtn) {
-    el.runtimeOutputTrayBtn.onclick = () => {
-      setRuntimeTray("outputs", { toggle: true });
+  if (el.performanceOutputTrayBtn) {
+    el.performanceOutputTrayBtn.onclick = () => {
+      setPerformanceTray("outputs", { toggle: true });
     };
   }
   if (el.intelBriefTrayBtn) {
@@ -12935,21 +12939,21 @@ function bindEvents() {
       setIntelTray("capability", { toggle: true });
     };
   }
-  if (el.runtimeAuditOutputBtn) {
-    el.runtimeAuditOutputBtn.onclick = () => {
-      setRuntimeTray("outputs");
+  if (el.performanceAuditOutputBtn) {
+    el.performanceAuditOutputBtn.onclick = () => {
+      setPerformanceTray("outputs");
       setRuntimeOutputView("audit");
     };
   }
-  if (el.runtimeLogsOutputBtn) {
-    el.runtimeLogsOutputBtn.onclick = () => {
-      setRuntimeTray("outputs");
+  if (el.performanceLogsOutputBtn) {
+    el.performanceLogsOutputBtn.onclick = () => {
+      setPerformanceTray("outputs");
       setRuntimeOutputView("logs");
     };
   }
-  if (el.runtimeChatLogsOutputBtn) {
-    el.runtimeChatLogsOutputBtn.onclick = () => {
-      setRuntimeTray("outputs");
+  if (el.performanceChatLogsOutputBtn) {
+    el.performanceChatLogsOutputBtn.onclick = () => {
+      setPerformanceTray("outputs");
       setRuntimeOutputView("chat");
     };
   }
@@ -12960,7 +12964,7 @@ function bindEvents() {
     if (appState.streamText.trim()) await handleStreamComplete(); else { renderChat(appState.streamBase); resetStreamState(); }
     showBanner("Generation cancelled.", "bad");
   };
-  if (el.retryBtn) el.retryBtn.onclick = () => sendPromptFromText(appState.lastPrompt).catch(() => {});
+  if (el.retryBtn) el.retryBtn.onclick = () => sendPromptFromText(appState.lastPrompt).catch(() => { });
   if (el.editLastBtn) el.editLastBtn.onclick = () => {
     for (let i = appState.chat.length - 1; i >= 0; i -= 1) {
       if (appState.chat[i] && appState.chat[i].role === "user") {
@@ -13055,7 +13059,7 @@ function bindEvents() {
       contextPackProfiles: appState.contextPackProfiles,
       activeContextPackProfileId: appState.activeContextPackProfileId,
       lastArtifact: appState.lastArtifact,
-      releasePacketHistory: appState.releasePacketHistory,
+      shippingPacketHistory: appState.shippingPacketHistory,
       patchPlan: appState.patchPlan,
       promotedPaletteActions: appState.promotedPaletteActions,
       commandPaletteShortcutScope: appState.commandPaletteShortcutScope,
@@ -13122,7 +13126,7 @@ function bindEvents() {
         el.sessionSortSelect.appendChild(option);
       });
     }
-    el.sessionSortSelect.onchange = () => refreshSessions().catch(() => {});
+    el.sessionSortSelect.onchange = () => refreshSessions().catch(() => { });
   }
   if (el.attachWorkspaceBtn) {
     el.attachWorkspaceBtn.onclick = () => {
@@ -13144,8 +13148,8 @@ function bindEvents() {
       appState.activeContextPackProfileId = String(el.contextPackProfileSelect.value || "").trim();
       syncSelectedContextPackProfileStatus();
       renderContextPackSurface({ seedDefaults: true });
-      refreshRelevantContextPackProfileStatuses({ workflowId: appState.workflowId }).catch(() => {});
-      persistChatState().catch(() => {});
+      refreshRelevantContextPackProfileStatuses({ workflowId: appState.workflowId }).catch(() => { });
+      persistChatState().catch(() => { });
     };
   }
   if (el.saveContextPackProfileBtn) {
@@ -13341,20 +13345,20 @@ function bindEvents() {
   if (el.runSelfTestBtn) el.runSelfTestBtn.onclick = async () => {
     const result = await window.api.command.run("selftest", []);
     if (el.logsOutput) el.logsOutput.textContent = JSON.stringify(result, null, 2);
-    setRuntimeTray("outputs");
+    setPerformanceTray("outputs");
     setRuntimeOutputView("logs");
   };
   if (el.runButtonAuditBtn) el.runButtonAuditBtn.onclick = () => {
     const missing = IDS.filter((id) => !el[id]);
     if (el.buttonAuditOutput) el.buttonAuditOutput.textContent = JSON.stringify({ total: IDS.length, missing }, null, 2);
-    setRuntimeTray("outputs");
+    setPerformanceTray("outputs");
     setRuntimeOutputView("audit");
   };
 
   if (el.loadLogsBtn) el.loadLogsBtn.onclick = async () => {
     const rows = await window.api.logger.tail(300);
     if (el.logsOutput) el.logsOutput.textContent = (rows || []).map((r) => `${r.ts} [${r.level}] ${r.message} ${JSON.stringify(r.meta)}`).join("\n");
-    setRuntimeTray("outputs");
+    setPerformanceTray("outputs");
     setRuntimeOutputView("logs");
   };
   if (el.clearLogsBtn) el.clearLogsBtn.onclick = async () => {
@@ -13367,7 +13371,7 @@ function bindEvents() {
   if (el.loadChatLogsBtn) el.loadChatLogsBtn.onclick = async () => {
     const rows = await window.api.chatlog.tail(300);
     if (el.chatLogsOutput) el.chatLogsOutput.textContent = (rows || []).map((r) => `${r.ts} [${r.type}] ${JSON.stringify(r.payload)}`).join("\n");
-    setRuntimeTray("outputs");
+    setPerformanceTray("outputs");
     setRuntimeOutputView("chat");
   };
   if (el.clearChatLogsBtn) el.clearChatLogsBtn.onclick = async () => {
@@ -13397,7 +13401,7 @@ async function bootstrap() {
   renderChatOpsTrays();
   renderSessionsTrays();
   renderCommandsTray();
-  renderRuntimeTrays();
+  renderPerformanceTrays();
   renderIntelSurface();
   renderOperatorMemorySurface();
   populateOnboardingModelSelect();
@@ -13410,7 +13414,7 @@ async function bootstrap() {
   }
   if (appState.statsTimer) clearInterval(appState.statsTimer);
   appState.statsTimer = setInterval(() => {
-    updateStats().catch(() => {});
+    updateStats().catch(() => { });
   }, 3000);
   if (appState.clockTimer) clearInterval(appState.clockTimer);
   appState.clockTimer = setInterval(() => {
@@ -13447,7 +13451,7 @@ window.NeuralShellRenderer = {
   previewWorkspaceActionProposal,
   previewWorkspaceEditDraft,
   promotePatchPlanGroupToPalette,
-  buildReleasePacketArtifact,
+  buildShippingPacketArtifact,
   removePromotedPaletteAction,
   runVerificationRunPlanSelectedChecks,
   renderArtifactPanel,
@@ -13480,12 +13484,12 @@ window.NeuralShellRenderer = {
   loadContextPackProfile,
   loadRecommendedContextPackProfile,
   relinkContextPackProfileToWorkflow,
-  stageReleaseCockpit,
+  stageShippingCockpit,
   stageVerificationRunPlanForGroup,
   suggestContextPackFiles,
   sendPrompt,
   showBanner,
-  runReleaseCockpitChecks,
+  runShippingCockpitChecks,
   setReleasePacketCompareSlot,
   setContextPack,
   updateAutonomousCheckpoint,

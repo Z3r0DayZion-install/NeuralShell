@@ -47,10 +47,10 @@ function listEntriesSafe(dirPath) {
 const CONTEXT_PACK_SUGGESTION_LIMIT = 6;
 
 const WORKFLOW_SUGGESTION_BONUSES = {
-  release_audit: [
+  shipping_audit: [
     [/^changelog(\.[^.]+)?$/i, 42],
     [/^package\.json$/i, 36],
-    [/^docs\/release/i, 34],
+    [/^docs\/shipping/i, 34],
     [/^docs\//i, 18],
     [/^scripts\//i, 24],
     [/^README(\.[^.]+)?$/i, 14]
@@ -126,7 +126,7 @@ function suggestContextPackPaths(rootPath, workflowId = "") {
   }
   const changelogEntry = rootEntries.find((entry) => entry.isFile() && /^changelog(\.[^.]+)?$/i.test(String(entry.name || "")));
   if (changelogEntry) {
-    pushSuggestion(changelogEntry.name, "Release history", 28);
+    pushSuggestion(changelogEntry.name, "Shipping history", 28);
   }
   if (rootEntries.some((entry) => entry.isFile() && entry.name === "package.json")) {
     pushSuggestion("package.json", "Scripts and package metadata", 26);
@@ -155,7 +155,7 @@ function suggestContextPackPaths(rootPath, workflowId = "") {
   }
 
   const srcFiles = [
-    ["src/main.js", "Main process and runtime bridge", 18],
+    ["src/main.js", "Main process and performance bridge", 18],
     ["src/preload.js", "Guarded preload and IPC bridge", 18],
     ["src/renderer.js", "Renderer workflow and operator state", 16],
     ["src/renderer.html", "Primary UI layout surface", 16],

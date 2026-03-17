@@ -33,21 +33,21 @@
       instruction: "Return a handoff note with current state, decisions made, open work, and next steps."
     },
     {
-      id: "release_packet",
-      label: "Release Packet",
-      instruction: "Return a release-ready packet with verification state, evidence posture, blockers, and next ship actions."
+      id: "shipping_packet",
+      label: "Shipping Packet",
+      instruction: "Return a shipping-ready packet with verification state, evidence status, blockers, and next ship actions."
     }
   ];
 
   const WORKFLOWS = [
     {
-      id: "release_audit",
-      title: "Release Audit",
-      description: "Validate a local release workflow, runtime posture, and ship-readiness without leaving the guarded console.",
+      id: "shipping_audit",
+      title: "Shipping Audit",
+      description: "Validate a local shipping workflow, performance status, and ship-readiness without leaving the guarded console.",
       defaultOutputMode: "checklist",
-      starterPrompt: "Audit the current release state, identify the highest-risk gaps, and prepare a ship checklist that stays local-first.",
+      starterPrompt: "Audit the current shipping state, identify the highest-risk gaps, and prepare a ship checklist that stays local-first.",
       followUpActions: [
-        "Top 3 release risks + verification",
+        "Top 3 shipping risks + verification",
         "Final ship checklist with pass/fail gates",
         "Founder handoff for blockers"
       ]
@@ -55,7 +55,7 @@
     {
       id: "bug_triage",
       title: "Bug Triage",
-      description: "Turn an issue, log sample, or runtime symptom into a concrete diagnosis and smallest safe fix path.",
+      description: "Turn an issue, log sample, or performance symptom into a concrete diagnosis and smallest safe fix path.",
       defaultOutputMode: "patch_plan",
       starterPrompt: "Triage the current issue, list likely root causes, rank them by probability, and recommend the smallest safe fix plus verification.",
       followUpActions: [
@@ -73,7 +73,7 @@
       followUpActions: [
         "Engineering checklist",
         "Risk assumptions + edge cases",
-        "Release-ready change summary"
+        "Shipping-ready change summary"
       ]
     },
     {
@@ -91,11 +91,11 @@
     {
       id: "bridge_diagnostics",
       title: "Bridge Diagnostics",
-      description: "Inspect local model bridge health, runtime posture, and the minimum fix path for offline-first operation.",
+      description: "Inspect local model bridge health, performance status, and the minimum fix path for offline-first operation.",
       defaultOutputMode: "checklist",
-      starterPrompt: "Diagnose the local bridge, explain the current operating posture, and produce a minimal checklist to restore a healthy offline-first workflow.",
+      starterPrompt: "Diagnose the local bridge, explain the current operating status, and produce a minimal checklist to restore a healthy offline-first workflow.",
       followUpActions: [
-        "Runtime brief",
+        "Performance brief",
         "Local operator checklist",
         "Reconnect + fallback verification plan"
       ]
