@@ -42,7 +42,7 @@ const sampleChat = [
   {
     role: "assistant",
     content:
-      "Profile: Local Guarded Bridge\nBase URL: http://127.0.0.1:11434\nTheme: light\nToken budget: 2048\nAutosave: enabled every 12 minutes"
+      "Profile: Local Guarded Bridge\nBase URL: http://127.0.0.1:11434\nTheme: dark\nToken budget: 2048\nAutosave: enabled every 12 minutes"
   }
 ];
 
@@ -93,7 +93,7 @@ const screenshotPlan = [
   {
     filename: "02-main-workspace.png",
     title: "Main workspace",
-    caption: "Mission control, the Intel command deck, grouped patch review, release packet history, and trust-scoped apply surfaces."
+    caption: "Mission control, the Intel command deck, workflow-ranked repo context-pack suggestions, workflow-linked saved profiles with freshness and auto-load posture, context-linked grouped patch review with hunk acceptance, filtered verification run history, release packet history, and trust-scoped apply surfaces."
   },
   {
     filename: "03-session-management.png",
@@ -103,17 +103,17 @@ const screenshotPlan = [
   {
     filename: "04-settings-and-profiles.png",
     title: "Settings and profiles",
-    caption: "Settings drawer with connection profiles, bridge health, and workspace controls."
+    caption: "Settings drawer with LLM setup, bridge profiles, workflow-linked context defaults, model selection, and guarded workspace controls."
   },
   {
     filename: "05-runtime-and-integrity.png",
     title: "Runtime and integrity",
-    caption: "Runtime telemetry with the guided release cockpit, staged diagnostics trays, focused output surfaces, and packet history."
+    caption: "Runtime telemetry with the release cockpit, staged diagnostics trays, focused output surfaces, blocker tracking, and packet history."
   },
   {
     filename: "06-command-palette.png",
     title: "Command palette",
-    caption: "Keyboard-driven workflow actions, workflow-scoped shortcut filters, operator routing, and guarded preview/apply controls."
+    caption: "Keyboard-driven workflow actions, sectioned prefix-routed repo-context and workflow-profile controls, workflow-scoped shortcut filters, operator routing, and guarded preview/apply controls."
   }
 ];
 
@@ -166,7 +166,7 @@ async function launchApp(userDataDir) {
     return true;
   }, viewport);
   await page.evaluate(() => {
-    document.documentElement.setAttribute("data-theme", "light");
+    document.documentElement.setAttribute("data-theme", "dark");
   });
   await wait(400);
   return { app, page };
@@ -179,6 +179,13 @@ async function seedWorkspace(page) {
         const node = document.getElementById(id);
         if (node) {
           node.textContent = value;
+        }
+      };
+
+      const setHtml = (id, value) => {
+        const node = document.getElementById(id);
+        if (node) {
+          node.innerHTML = value;
         }
       };
 
@@ -234,6 +241,54 @@ async function seedWorkspace(page) {
           }
         ]
       };
+      const contextPack = {
+        id: "context-pack-release-audit",
+        name: "Release Audit Context Pack",
+        rootPath: workflowSummary.rootPath,
+        rootLabel: workflowSummary.label,
+        builtAt: "2026-03-10T08:28:40.000Z",
+        filePaths: ["README.md", "package.json"],
+        entries: [
+          {
+            relativePath: "README.md",
+            absolutePath: `${workflowSummary.rootPath}/README.md`,
+            content: "# NeuralShell\n\n- Offline-first founder console\n- Workflow console with guarded local apply\n- Release packet and evidence export surfaces\n"
+          },
+          {
+            relativePath: "package.json",
+            absolutePath: `${workflowSummary.rootPath}/package.json`,
+            content: "{\n  \"name\": \"neuralshell\",\n  \"private\": true,\n  \"scripts\": {\n    \"lint\": \"eslint .\",\n    \"test:e2e\": \"playwright test\",\n    \"channel:store:screenshots\": \"node scripts/capture_store_screenshots.js\"\n  }\n}"
+          }
+        ]
+      };
+      const contextPackProfiles = [
+        {
+          id: "context-pack-profile-release",
+          workspaceRoot: workflowSummary.rootPath,
+          workspaceLabel: workflowSummary.label,
+          workflowId: "release_audit",
+          name: "Release Audit Context Pack",
+          filePaths: ["README.md", "package.json"],
+          fileSnapshots: [
+            { relativePath: "README.md", modifiedAt: "2026-03-10T08:28:30.000Z" },
+            { relativePath: "package.json", modifiedAt: "2026-03-10T08:28:30.000Z" }
+          ],
+          savedAt: "2026-03-10T08:28:45.000Z"
+        },
+        {
+          id: "context-pack-profile-ui",
+          workspaceRoot: workflowSummary.rootPath,
+          workspaceLabel: workflowSummary.label,
+          workflowId: "bug_triage",
+          name: "UI Surface Context Pack",
+          filePaths: ["README.md", "src/renderer.html"],
+          fileSnapshots: [
+            { relativePath: "README.md", modifiedAt: "2026-03-10T08:29:00.000Z" },
+            { relativePath: "src/renderer.html", modifiedAt: "2026-03-10T08:29:00.000Z" }
+          ],
+          savedAt: "2026-03-10T08:29:05.000Z"
+        }
+      ];
       const promotedPaletteActions = [
         {
           id: "shortcut-release-audit-documentation",
@@ -321,6 +376,59 @@ async function seedWorkspace(page) {
           }
         ]
       };
+      const verificationRunHistory = [
+        {
+          runId: "verification-run-2026-03-10T08-30-42-release_cockpit",
+          planId: "release-cockpit-release-audit",
+          groupId: "release_cockpit",
+          groupTitle: "Release Cockpit",
+          workflowId: "release_audit",
+          rootPath: workflowSummary.rootPath,
+          rootLabel: workflowSummary.label,
+          preparedAt: "2026-03-10T08:30:10.000Z",
+          executedAt: "2026-03-10T08:30:42.000Z",
+          ok: true,
+          selectedCheckIds: ["lint"],
+          checks: verificationRunPlan.checks
+        },
+        {
+          runId: "verification-run-2026-03-10T08-18-12-release_cockpit",
+          planId: "release-cockpit-release-audit",
+          groupId: "release_cockpit",
+          groupTitle: "Release Cockpit",
+          workflowId: "release_audit",
+          rootPath: workflowSummary.rootPath,
+          rootLabel: workflowSummary.label,
+          preparedAt: "2026-03-10T08:17:40.000Z",
+          executedAt: "2026-03-10T08:18:12.000Z",
+          ok: false,
+          selectedCheckIds: ["lint", "founder_e2e"],
+          checks: [
+            {
+              id: "lint",
+              selected: true,
+              status: "passed",
+              lastRunAt: "2026-03-10T08:18:12.000Z",
+              exitCode: 0,
+              durationMs: 18210
+            },
+            {
+              id: "founder_e2e",
+              selected: true,
+              status: "failed",
+              lastRunAt: "2026-03-10T08:18:12.000Z",
+              exitCode: 1,
+              durationMs: 46812,
+              stderr: "1 founder flow failed while the drawer route was still being updated."
+            },
+            {
+              id: "store_screenshots",
+              selected: false,
+              status: "pending"
+            }
+          ]
+        }
+      ];
 
       if (window.NeuralShellRenderer && typeof window.NeuralShellRenderer.activateWorkflow === "function") {
         await window.NeuralShellRenderer.activateWorkflow("release_audit", {
@@ -345,6 +453,15 @@ async function seedWorkspace(page) {
         renderChatFallback(chat);
       }
 
+      let seededSettings = null;
+      if (window.api && window.api.settings && typeof window.api.settings.get === "function" && typeof window.api.settings.update === "function") {
+        const currentSettings = (await window.api.settings.get()) || {};
+        seededSettings = await window.api.settings.update({
+          ...currentSettings,
+          autoLoadRecommendedContextProfile: true
+        });
+      }
+
       if (window.api && window.api.state) {
         await window.api.state.update({
           chat,
@@ -352,17 +469,22 @@ async function seedWorkspace(page) {
           workflowId: "release_audit",
           outputMode: "checklist",
           workspaceAttachment: workflowSummary,
+          contextPack,
+          contextPackProfiles,
+          activeContextPackProfileId: "context-pack-profile-release",
           releasePacketHistory: [],
           patchPlan,
           promotedPaletteActions,
           commandPaletteShortcutScope: "all",
-          verificationRunPlan
+          verificationRunPlan,
+          verificationRunHistory
         });
       }
 
       if (window.api && window.api.session) {
         const settings =
-          (window.api.settings && (await window.api.settings.get())) || {};
+          seededSettings ||
+          ((window.api.settings && (await window.api.settings.get())) || {});
         for (const row of sessions) {
           await window.api.session.save(
             row.name,
@@ -372,6 +494,9 @@ async function seedWorkspace(page) {
               workflowId: "release_audit",
               outputMode: "checklist",
               workspaceAttachment: workflowSummary,
+              contextPack,
+              contextPackProfiles,
+              activeContextPackProfileId: "context-pack-profile-release",
               lastArtifact: {
                 title: "Release Audit Artifact",
                 workflowId: "release_audit",
@@ -384,6 +509,7 @@ async function seedWorkspace(page) {
               promotedPaletteActions,
               commandPaletteShortcutScope: "all",
               verificationRunPlan,
+              verificationRunHistory,
               settings,
               updatedAt: row.updatedAt
             },
@@ -400,15 +526,32 @@ async function seedWorkspace(page) {
       }
       if (
         window.NeuralShellRenderer &&
+        typeof window.NeuralShellRenderer.setContextPack === "function" &&
+        typeof window.NeuralShellRenderer.setContextPackProfiles === "function" &&
+        typeof window.NeuralShellRenderer.refreshContextPackProfileStatus === "function" &&
         typeof window.NeuralShellRenderer.setPatchPlan === "function" &&
         typeof window.NeuralShellRenderer.setPromotedPaletteActions === "function" &&
         typeof window.NeuralShellRenderer.previewPatchPlanFiles === "function" &&
         typeof window.NeuralShellRenderer.setVerificationRunPlan === "function" &&
+        typeof window.NeuralShellRenderer.setVerificationRunHistory === "function" &&
         typeof window.NeuralShellRenderer.buildReleasePacketArtifact === "function" &&
         typeof window.NeuralShellRenderer.setWorkspaceEditDraft === "function" &&
         typeof window.NeuralShellRenderer.previewWorkspaceEditDraft === "function"
       ) {
         try {
+          await window.NeuralShellRenderer.setContextPackProfiles(contextPackProfiles, {
+            persist: false
+          });
+          await window.NeuralShellRenderer.setContextPack(contextPack, {
+            persist: false,
+            announce: false
+          });
+          const contextPackProfileSelect = document.getElementById("contextPackProfileSelect");
+          if (contextPackProfileSelect) {
+            contextPackProfileSelect.value = "context-pack-profile-release";
+            contextPackProfileSelect.dispatchEvent(new window.Event("change", { bubbles: true }));
+          }
+          await window.NeuralShellRenderer.refreshContextPackProfileStatus("context-pack-profile-release");
           window.NeuralShellRenderer.setPatchPlan(patchPlan, {
             workflowId: "release_audit",
             generatedAt: "2026-03-10T08:29:30.000Z"
@@ -423,6 +566,14 @@ async function seedWorkspace(page) {
           window.NeuralShellRenderer.setVerificationRunPlan(verificationRunPlan, {
             persist: false
           });
+          window.NeuralShellRenderer.setVerificationRunHistory(verificationRunHistory, {
+            persist: false
+          });
+          const workflowHistoryFilter = document.getElementById("verificationRunHistoryWorkflowFilter");
+          if (workflowHistoryFilter) {
+            workflowHistoryFilter.value = "current";
+            workflowHistoryFilter.dispatchEvent(new window.Event("change", { bubbles: true }));
+          }
           await window.NeuralShellRenderer.buildReleasePacketArtifact({
             persist: false,
             announce: false,
@@ -467,16 +618,31 @@ async function seedWorkspace(page) {
         "Validate a local release workflow, runtime posture, and ship-readiness without leaving the guarded console. Output contract: Return a concrete checklist with short action items and verification notes."
       );
       setText("artifactTitleText", "Release Packet");
-      setText("artifactMetaText", "Release Packet | Mar 10, 8:32 AM");
+      setText("artifactMetaText", "Release Packet | Mar 10, 8:32 AM | Rev 2 | 1 linked run | No status change from the previous run.");
+      setText("artifactCompareMetaText", "Revision 2 from release_packet-r... vs Revision 1");
       setText(
         "artifactPreview",
-        "# Release Packet\n\n- Decision: Ready\n- Workflow: Release Audit\n- Evidence Bundle: Ready to export\n\n## Verification\n- [PASSED] Run lint -> npm run lint\n- [DESELECTED] Run founder e2e -> npm run test:e2e\n- [PENDING] Refresh store screenshots -> npm run channel:store:screenshots"
+        "# Release Packet\n\n- Decision: Ready\n- Workflow: Release Audit\n- Evidence Bundle: Ready to export\n\n## Verification\n- [PASSED] Run lint -> npm run lint\n- [DESELECTED] Run founder e2e -> npm run test:e2e\n- [PENDING] Refresh store screenshots -> npm run channel:store:screenshots\n\n## Verification Provenance\n- Snapshot ID: verification-run-2026-03-10T08-30-42-release_cockpit\n- Delta: No status change from the previous run.\n- Context Pack Snapshot: Release Audit Context Pack | 2 files | built 2026-03-10T08:28:00.000Z\n- Context Pack Files: README.md, package.json\n- Context Pack Profile: Release Audit Context Pack | 2 files | saved 2026-03-10T08:28:00.000Z\n- Packet Revision: 2"
       );
+      setHtml(
+        "artifactCompareDiffList",
+        '<article class="workspace-action-card"><div class="workspace-action-card-head"><div class="workflow-title-text">Revision</div><span class="operator-action-status workspace-action-state" data-tone="ok">Revision</span></div><div class="artifact-compare-row"><div class="artifact-compare-cell"><span class="cluster-note">A</span><strong>Rev 2</strong></div><div class="artifact-compare-cell"><span class="cluster-note">B</span><strong>Rev 1</strong></div></div></article><article class="workspace-action-card"><div class="workspace-action-card-head"><div class="workflow-title-text">Linked Runs</div><span class="operator-action-status workspace-action-state" data-tone="guard">Linked Runs</span></div><div class="artifact-compare-row"><div class="artifact-compare-cell"><span class="cluster-note">A</span><strong>1</strong></div><div class="artifact-compare-cell"><span class="cluster-note">B</span><strong>1</strong></div></div></article>'
+      );
+      setText("artifactCompareLeftTitle", "Release Packet A");
+      setText("artifactCompareLeftMeta", "Mar 10, 8:32 AM | Revision 2 from release_packet-r...");
+      setText("artifactCompareLeftPreview", "# Release Packet\n\n- Decision: Ready\n- Packet Revision: 2");
+      setText("artifactCompareRightTitle", "Release Packet B");
+      setText("artifactCompareRightMeta", "Mar 10, 8:30 AM | Revision 1");
+      setText("artifactCompareRightPreview", "# Release Packet\n\n- Decision: Ready\n- Packet Revision: 1");
       setText("patchPlanTitleText", "Workflow Console Patch Plan");
       setText("patchPlanMetaText", "2 files | 2 new | 0 modified | 10 lines");
       setText(
         "patchPlanSummaryText",
         "Add guarded patch-plan guidance and a verification note to the local workspace docs."
+      );
+      setText(
+        "patchPlanProvenanceText",
+        `Context Pack: Release Audit Context Pack | 2 files | Profile: Release Audit Context Pack | saved Mar 10, 8:28 AM | Workspace: ${workflowSummary.rootPath}`
       );
       setText(
         "patchPlanVerification",
@@ -504,7 +670,7 @@ async function seedWorkspace(page) {
         "patchPlanPreview",
         `Path: ${workflowSummary.rootPath}\\docs\\patch-plan-preview.md\n\n--- a/docs/patch-plan-preview.md\n+++ b/docs/patch-plan-preview.md\n@@ -0,0 +1,4 @@\n+# Patch Plan Preview\n+\n+- Guarded local diff preview\n+- Explicit apply only`
       );
-      setText("intelModeText", "Local-only bridge | auto reconnect | light");
+      setText("intelModeText", "Local-only bridge | auto reconnect | dark");
       setText("intelBridgeText", "Local bridge online.");
       setText("intelSessionText", "3 indexed | Active Release-Audit");
       setText(
@@ -685,13 +851,14 @@ async function configureSettings(page, options = {}) {
   await page.fill("#baseUrlInput", "http://127.0.0.1:11434");
   await page.fill("#timeoutInput", "18000");
   await page.fill("#retryInput", "3");
-  await page.selectOption("#themeSelect", "light");
+  await page.selectOption("#themeSelect", "dark");
   await page.fill("#tokenBudgetInput", "2048");
   await page.fill("#autosaveNameInput", "release-guarded");
   await page.fill("#autosaveIntervalInput", "12");
   await page.check("#autosaveEnabledInput");
   await page.check("#connectOnStartupInput");
   await page.uncheck("#allowRemoteBridgeInput");
+  await page.check("#autoLoadRecommendedContextProfileInput");
   await page.click("#applySettingsBtn");
   await page.waitForFunction(() => {
     const node = document.getElementById("statusLabel");
@@ -699,7 +866,7 @@ async function configureSettings(page, options = {}) {
   });
   await page.waitForFunction(() => {
     const mode = document.getElementById("workspaceModeText");
-    return Boolean(mode && mode.textContent && mode.textContent.toLowerCase().includes("local-only bridge"));
+    return Boolean(mode && mode.textContent && mode.textContent.toLowerCase().includes("offline mode on"));
   });
   if (!keepOpen) {
     await closeSettingsMenu(page);
@@ -715,9 +882,35 @@ async function captureViewport(page, filename) {
   return filePath;
 }
 
+async function forceOnboardingOpen(page) {
+  await page.evaluate(async () => {
+    if (window.api && window.api.settings && typeof window.api.settings.get === "function" && typeof window.api.settings.update === "function") {
+      const current = (await window.api.settings.get()) || {};
+      await window.api.settings.update({
+        ...current,
+        onboardingCompleted: false
+      });
+    }
+    if (typeof window.setOnboardingOpen === "function") {
+      window.setOnboardingOpen(true);
+      return;
+    }
+    const overlay = document.getElementById("onboardingOverlay");
+    if (overlay) {
+      overlay.classList.remove("hidden");
+      overlay.setAttribute("aria-hidden", "false");
+    }
+  });
+  await page.waitForFunction(() => {
+    const node = document.getElementById("onboardingOverlay");
+    return Boolean(node && node.getAttribute("aria-hidden") === "false");
+  });
+}
+
 async function captureShots(page) {
   const artifacts = [];
 
+  await forceOnboardingOpen(page);
   await page.evaluate(() => window.scrollTo(0, 0));
   await wait(250);
   artifacts.push(await captureViewport(page, screenshotPlan[0].filename));
@@ -750,7 +943,13 @@ async function captureShots(page) {
   await wait(200);
   artifacts.push(await captureViewport(page, screenshotPlan[2].filename));
 
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await wait(160);
   await openSettingsMenu(page);
+  await page.evaluate(() => {
+    const panel = document.getElementById("settingsMenuPanel");
+    if (panel) panel.scrollTop = 0;
+  });
   await wait(200);
   artifacts.push(await captureViewport(page, screenshotPlan[3].filename));
   await closeSettingsMenu(page);
@@ -774,13 +973,35 @@ async function captureShots(page) {
 
   await page.evaluate(() => window.scrollTo(0, 0));
   await wait(200);
+  await page.evaluate(async () => {
+    if (window.NeuralShellRenderer && typeof window.NeuralShellRenderer.activateWorkflow === "function") {
+      await window.NeuralShellRenderer.activateWorkflow("release_audit", {
+        persist: false,
+        announce: false,
+        autoLoadRecommendedProfile: false
+      });
+    }
+    if (window.NeuralShellRenderer && typeof window.NeuralShellRenderer.selectContextPackProfile === "function") {
+      const select = document.getElementById("contextPackProfileSelect");
+      const target = select
+        ? [...select.options].find((option) => option.textContent.includes("UI Surface Context Pack"))
+        : null;
+      if (target) {
+        await window.NeuralShellRenderer.selectContextPackProfile(target.value, {
+          persist: false,
+          announce: false
+        });
+      }
+    }
+  });
+  await wait(200);
   await page.click("#commandPaletteOpenBtn");
   await page.waitForFunction(() => {
     const node = document.getElementById("commandPaletteOverlay");
     return Boolean(node && node.getAttribute("aria-hidden") === "false");
   });
   await page.selectOption("#commandPaletteShortcutScope", "all");
-  await page.fill("#commandPaletteInput", "Verify");
+  await page.fill("#commandPaletteInput", "profile:");
   await wait(200);
   artifacts.push(await captureViewport(page, screenshotPlan[5].filename));
   await page.click("#commandPaletteCloseBtn");
