@@ -1,11 +1,11 @@
 {
   "phase": "runtime",
-  "startedAt": "2026-03-07T21:21:21.967Z",
-  "finishedAt": "2026-03-07T21:21:22.715Z",
-  "durationMs": 748,
+  "startedAt": "2026-03-12T07:37:56.758Z",
+  "finishedAt": "2026-03-12T07:37:57.513Z",
+  "durationMs": 755,
   "budgetMs": 30000,
   "ok": true,
-  "artifactDir": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\state\\proofs\\2026-03-07T21-21-21-965Z-runtime",
+  "artifactDir": "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\state\\proofs\\2026-03-12T07-37-56-755Z-runtime",
   "coldStart": {
     "purged": true,
     "deletedPaths": [],
@@ -20,16 +20,16 @@
       "port": 3000,
       "baseUrl": "http://127.0.0.1:3000",
       "portCollision": {
-        "reservedPort": 63050,
+        "reservedPort": 61861,
         "actualPort": 3000
       },
       "restartResetOk": true,
       "restartRequests0": 0,
       "restartFailures0": 0,
       "memory": {
-        "rssBefore": 47464448,
-        "rssAfter": 48812032,
-        "deltaMb": 1.285,
+        "rssBefore": 56242176,
+        "rssAfter": 57499648,
+        "deltaMb": 1.199,
         "maxMb": 80
       },
       "uptimeDeltaSec": 0.31,
@@ -48,9 +48,9 @@
       "restartRequests0": 0,
       "restartFailures0": 0,
       "memory": {
-        "rssBefore": 49737728,
-        "rssAfter": 50032640,
-        "deltaMb": 0.281,
+        "rssBefore": 58040320,
+        "rssAfter": 58310656,
+        "deltaMb": 0.258,
         "maxMb": 80
       },
       "uptimeDeltaSec": 0.29,
