@@ -5,6 +5,7 @@ const {
   validateMessages,
   validateModel,
   validatePassphrase,
+  validateSettings,
   validateSessionName,
   validateStateKey,
   validateStateUpdates
@@ -47,4 +48,23 @@ test("validateLog normalizes and validates level", () => {
   assert.equal(payload.level, "warn");
   assert.equal(payload.message, "sample");
   assert.throws(() => validateLog("fatal", "x"), /invalid/i);
+});
+
+test("validateSettings normalizes provider-aware bridge profiles", () => {
+  const settings = validateSettings({
+    connectionProfiles: [
+      {
+        id: "hosted",
+        name: "Hosted OpenAI",
+        provider: "openai",
+        baseUrl: "https://api.openai.com",
+        defaultModel: "gpt-4.1-mini",
+        apiKey: "secret-key"
+      }
+    ]
+  });
+
+  assert.equal(settings.connectionProfiles[0].provider, "openai");
+  assert.equal(settings.connectionProfiles[0].defaultModel, "gpt-4.1-mini");
+  assert.equal(settings.connectionProfiles[0].apiKey, "secret-key");
 });

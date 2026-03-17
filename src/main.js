@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, session } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, screen, session } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -17,8 +17,16 @@ const {
   previewPatchPlan,
   previewWorkspaceAction
 } = require("./core/workspaceActionPlanner");
-const { summarizeWorkspace } = require("./core/workspaceSummary");
+const {
+  summarizeWorkspace,
+  suggestContextPackPaths,
+  statWorkspaceFiles,
+  readWorkspaceFile
+} = require("./core/workspaceSummary");
 const verificationCatalog = require("./verificationCatalog");
+const bridgeProviderCatalog = require("./bridgeProviderCatalog");
+const airgapPolicy = require("./airgapPolicy");
+const bridgeSettingsModel = require("./bridgeSettingsModel");
 
 const llmService = require("./core/llmService");
 const { LLMService } = require("./core/llmService");
@@ -225,45 +233,172 @@ function currentSafetyPolicy() {
   return settings && settings.safetyPolicy ? settings.safetyPolicy : "balanced";
 }
 
+function normalizeBridgeProviderId(id) {
+  if (bridgeProviderCatalog && typeof bridgeProviderCatalog.normalizeBridgeProviderId === "function") {
+    return bridgeProviderCatalog.normalizeBridgeProviderId(id);
+  }
+  return String(id || "ollama").trim().toLowerCase() || "ollama";
+}
+
+const ENV_BRIDGE_PROVIDER_BINDINGS = [
+  {
+    providerId: "openai",
+    apiKeyEnv: "OPENAI_API_KEY",
+    baseUrlEnv: "OPENAI_BASE_URL",
+    modelEnv: "OPENAI_MODEL"
+  },
+  {
+    providerId: "openrouter",
+    apiKeyEnv: "OPENROUTER_API_KEY",
+    baseUrlEnv: "OPENROUTER_BASE_URL",
+    modelEnv: "OPENROUTER_MODEL"
+  },
+  {
+    providerId: "groq",
+    apiKeyEnv: "GROQ_API_KEY",
+    baseUrlEnv: "GROQ_BASE_URL",
+    modelEnv: "GROQ_MODEL"
+  },
+  {
+    providerId: "together",
+    apiKeyEnv: "TOGETHER_API_KEY",
+    baseUrlEnv: "TOGETHER_BASE_URL",
+    modelEnv: "TOGETHER_MODEL"
+  },
+  {
+    providerId: "custom_openai",
+    apiKeyEnv: "CUSTOM_OPENAI_API_KEY",
+    baseUrlEnv: "CUSTOM_OPENAI_BASE_URL",
+    modelEnv: "CUSTOM_OPENAI_MODEL",
+    requireBaseUrl: true
+  }
+];
+
+function bridgeSettingsOptions(settings = {}) {
+  return {
+    fallbackModel: String(settings.model || stateManager && stateManager.get("model") || "llama3").trim() || "llama3",
+    normalizeProviderId: normalizeBridgeProviderId,
+    getProvider: (providerId) => (
+      bridgeProviderCatalog
+      && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+        ? bridgeProviderCatalog.getBridgeProvider(providerId)
+        : { id: providerId, defaultBaseUrl: "http://127.0.0.1:11434", suggestedModels: [] }
+    ),
+    defaultLocalBaseUrl: "http://127.0.0.1:11434",
+    defaultTimeoutMs: 15000,
+    defaultRetryCount: 2,
+    defaultAllowRemoteBridge: false,
+    defaultConnectOnStartup: true,
+    defaultAutoLoadRecommendedContextProfile: false
+  };
+}
+
+function normalizeBridgeSettings(settings = {}) {
+  return bridgeSettingsModel.normalizeBridgeSettings(settings, bridgeSettingsOptions(settings));
+}
+
+function mergeBridgeSettings(current, patch) {
+  const merged = {
+    ...(current && typeof current === "object" ? current : {}),
+    ...(patch && typeof patch === "object" ? patch : {})
+  };
+  return bridgeSettingsModel.mergeBridgeSettings(current, patch, bridgeSettingsOptions(merged));
+}
+
 function normalizeBridgeProfiles(settings = {}) {
-  const raw = Array.isArray(settings.connectionProfiles) ? settings.connectionProfiles : [];
-  const profiles = raw
-    .filter((p) => p && typeof p === "object" && p.name && p.baseUrl)
-    .map((p, idx) => ({
-      id: String(p.id || `profile-${idx + 1}`),
-      name: String(p.name),
-      baseUrl: String(p.baseUrl),
-      timeoutMs: Number(p.timeoutMs) || 15000,
-      retryCount: Number(p.retryCount) || 2,
-      defaultModel: String(p.defaultModel || "llama3")
-    }));
-  return profiles;
+  return normalizeBridgeSettings(settings).connectionProfiles;
+}
+
+function providerEnvStatusEntries(settings = {}) {
+  const profiles = normalizeBridgeProfiles(settings);
+  return ENV_BRIDGE_PROVIDER_BINDINGS.map((binding) => {
+    const provider = bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+      ? bridgeProviderCatalog.getBridgeProvider(binding.providerId)
+      : { id: binding.providerId, label: binding.providerId, defaultBaseUrl: "" };
+    const apiKey = String(process.env[binding.apiKeyEnv] || "").trim();
+    const baseUrlOverride = String(process.env[binding.baseUrlEnv] || "").trim();
+    const modelOverride = String(process.env[binding.modelEnv] || "").trim();
+    const existingProfile = profiles.find((profile) => profile.id === `env-${provider.id}`) || null;
+    const ready = Boolean(apiKey) && (!binding.requireBaseUrl || Boolean(baseUrlOverride));
+    const incompleteReason = !apiKey
+      ? `Missing ${binding.apiKeyEnv}`
+      : binding.requireBaseUrl && !baseUrlOverride
+        ? `Missing ${binding.baseUrlEnv}`
+        : "";
+    return {
+      providerId: provider.id,
+      label: provider.label,
+      apiKeyEnv: binding.apiKeyEnv,
+      baseUrlEnv: binding.baseUrlEnv || "",
+      modelEnv: binding.modelEnv || "",
+      apiKeyPresent: Boolean(apiKey),
+      ready,
+      imported: Boolean(existingProfile),
+      profileId: existingProfile ? existingProfile.id : `env-${provider.id}`,
+      baseUrl: baseUrlOverride || String(provider.defaultBaseUrl || ""),
+      defaultModel: modelOverride || (Array.isArray(provider.suggestedModels) && provider.suggestedModels[0]) || "llama3",
+      incompleteReason
+    };
+  });
+}
+
+function importEnvBackedBridgeProfiles(settings = {}) {
+  const statuses = providerEnvStatusEntries(settings);
+  const connectionProfiles = normalizeBridgeProfiles(settings).map((profile) => ({ ...profile }));
+  const importedProfiles = [];
+
+  for (const status of statuses) {
+    if (!status.ready) continue;
+    const provider = bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+      ? bridgeProviderCatalog.getBridgeProvider(status.providerId)
+      : { id: status.providerId, label: status.providerId };
+    const apiKey = String(process.env[status.apiKeyEnv] || "").trim();
+    const nextProfile = {
+      id: `env-${provider.id}`,
+      name: `${provider.label} (Env)`,
+      provider: provider.id,
+      baseUrl: String(status.baseUrl || provider.defaultBaseUrl || "").trim(),
+      timeoutMs: Number(settings.timeoutMs) || 15000,
+      retryCount: Number(settings.retryCount) || 2,
+      defaultModel: String(status.defaultModel || "llama3").trim() || "llama3",
+      apiKey
+    };
+    const existingIndex = connectionProfiles.findIndex((profile) => profile.id === nextProfile.id);
+    if (existingIndex >= 0) connectionProfiles[existingIndex] = nextProfile;
+    else connectionProfiles.push(nextProfile);
+    importedProfiles.push({
+      id: nextProfile.id,
+      name: nextProfile.name,
+      providerId: provider.id,
+      baseUrl: nextProfile.baseUrl,
+      defaultModel: nextProfile.defaultModel
+    });
+  }
+
+  return {
+    settings: {
+      ...settings,
+      connectionProfiles,
+      allowRemoteBridge: importedProfiles.length ? true : Boolean(settings.allowRemoteBridge)
+    },
+    importedProfiles,
+    statuses
+  };
 }
 
 function pickActiveBridgeProfile(settings = {}) {
   const profiles = normalizeBridgeProfiles(settings);
-  if (!profiles.length) return null;
-  const activeId = String(settings.activeProfileId || "");
-  const selected = profiles.find((p) => p.id === activeId) || profiles[0];
-  if (!settings.allowRemoteBridge) {
-    try {
-      const host = new URL(selected.baseUrl).hostname.toLowerCase();
-      const isLocal = host === "127.0.0.1" || host === "localhost" || host === "::1";
-      if (!isLocal) {
-        return profiles.find((p) => {
-          try {
-            const h = new URL(p.baseUrl).hostname.toLowerCase();
-            return h === "127.0.0.1" || h === "localhost" || h === "::1";
-          } catch {
-            return false;
-          }
-        }) || null;
-      }
-    } catch {
-      return null;
-    }
-  }
-  return selected;
+  const selection = airgapPolicy.resolveBridgeSelection({
+    profiles,
+    activeProfileId: String(settings.activeProfileId || ""),
+    allowRemoteBridge: Boolean(settings.allowRemoteBridge),
+    isRemoteProvider: (providerId) => Boolean(
+      bridgeProviderCatalog
+      && typeof bridgeProviderCatalog.isRemoteBridgeProvider === "function"
+      && bridgeProviderCatalog.isRemoteBridgeProvider(providerId)
+    )
+  });
+  return selection.liveProfile || null;
 }
 
 function applyBridgeSettings(settings = {}) {
@@ -271,6 +406,8 @@ function applyBridgeSettings(settings = {}) {
   if (active) {
     llmService.configure({
       baseUrl: active.baseUrl,
+      provider: active.provider,
+      apiKey: active.apiKey,
       requestTimeoutMs: active.timeoutMs,
       maxRetries: active.retryCount
     });
@@ -278,6 +415,8 @@ function applyBridgeSettings(settings = {}) {
   }
   llmService.configure({
     baseUrl: settings.ollamaBaseUrl,
+    provider: "ollama",
+    apiKey: "",
     requestTimeoutMs: settings.timeoutMs,
     maxRetries: settings.retryCount
   });
@@ -345,6 +484,113 @@ function countChatTokens(messages) {
     total += countWords(message && message.content);
   }
   return total;
+}
+
+function clampWindowMetric(value, min, max) {
+  const safeMin = Math.min(min, max);
+  return Math.min(max, Math.max(safeMin, value));
+}
+
+function getDisplayWorkArea(display) {
+  if (
+    display
+    && display.workArea
+    && Number.isFinite(display.workArea.width)
+    && Number.isFinite(display.workArea.height)
+  ) {
+    return display.workArea;
+  }
+  if (
+    display
+    && display.workAreaSize
+    && Number.isFinite(display.workAreaSize.width)
+    && Number.isFinite(display.workAreaSize.height)
+  ) {
+    return {
+      x: 0,
+      y: 0,
+      width: display.workAreaSize.width,
+      height: display.workAreaSize.height
+    };
+  }
+  return {
+    x: 0,
+    y: 0,
+    width: 1600,
+    height: 1000
+  };
+}
+
+function getAdaptiveWindowMetrics(display) {
+  const workArea = getDisplayWorkArea(display);
+  const workWidth = Number(workArea.width) > 0 ? Number(workArea.width) : 1600;
+  const workHeight = Number(workArea.height) > 0 ? Number(workArea.height) : 1000;
+  const compactDisplay = workWidth < 1440 || workHeight < 920;
+  const minWidth = Math.min(workWidth, Math.max(760, Math.min(1220, workWidth - 40)));
+  const minHeight = Math.min(workHeight, Math.max(620, Math.min(820, workHeight - 40)));
+  const maxWidth = Math.max(minWidth, workWidth - (compactDisplay ? 20 : 48));
+  const maxHeight = Math.max(minHeight, workHeight - (compactDisplay ? 24 : 52));
+  const width = clampWindowMetric(
+    Math.round(workWidth * (compactDisplay ? 0.96 : 0.9)),
+    minWidth,
+    maxWidth
+  );
+  const height = clampWindowMetric(
+    Math.round(workHeight * (compactDisplay ? 0.95 : 0.9)),
+    minHeight,
+    maxHeight
+  );
+  return {
+    workArea,
+    width,
+    height,
+    minWidth,
+    minHeight,
+    shouldMaximize: workWidth <= 1120 || workHeight <= 720
+  };
+}
+
+function fitWindowToDisplay(targetWindow, options = {}) {
+  if (!targetWindow || targetWindow.isDestroyed()) return;
+  const force = Boolean(options.force);
+  const display = screen.getDisplayMatching(targetWindow.getBounds());
+  const metrics = getAdaptiveWindowMetrics(display);
+  const workArea = metrics.workArea;
+  targetWindow.setMinimumSize(metrics.minWidth, metrics.minHeight);
+  if (metrics.shouldMaximize && !targetWindow.isFullScreen()) {
+    targetWindow.maximize();
+    return;
+  }
+  if (targetWindow.isMaximized() || targetWindow.isFullScreen()) return;
+  const current = targetWindow.getBounds();
+  const exceedsWorkArea =
+    current.width > workArea.width
+    || current.height > workArea.height
+    || current.x < workArea.x
+    || current.y < workArea.y
+    || current.x + current.width > workArea.x + workArea.width
+    || current.y + current.height > workArea.y + workArea.height;
+  if (!force && !exceedsWorkArea) return;
+  const nextWidth = force
+    ? metrics.width
+    : clampWindowMetric(current.width, metrics.minWidth, workArea.width);
+  const nextHeight = force
+    ? metrics.height
+    : clampWindowMetric(current.height, metrics.minHeight, workArea.height);
+  const maxX = workArea.x + Math.max(0, workArea.width - nextWidth);
+  const maxY = workArea.y + Math.max(0, workArea.height - nextHeight);
+  const nextX = force
+    ? Math.round(workArea.x + ((workArea.width - nextWidth) / 2))
+    : clampWindowMetric(current.x, workArea.x, maxX);
+  const nextY = force
+    ? Math.round(workArea.y + ((workArea.height - nextHeight) / 2))
+    : clampWindowMetric(current.y, workArea.y, maxY);
+  targetWindow.setBounds({
+    x: nextX,
+    y: nextY,
+    width: nextWidth,
+    height: nextHeight
+  });
 }
 
 function readKnowledgeEntries(limit = 200) {
@@ -543,15 +789,19 @@ async function runBuiltInCommand(name, args) {
       const payload = {
         model: stateManager.get("model") || "llama3",
         chat: Array.isArray(stateManager.get("chat")) ? stateManager.get("chat") : [],
-        workflowId: String(stateManager.get("workflowId") || "release_audit"),
+        workflowId: String(stateManager.get("workflowId") || "bridge_diagnostics"),
         outputMode: String(stateManager.get("outputMode") || "checklist"),
         workspaceAttachment: stateManager.get("workspaceAttachment") || null,
+        contextPack: stateManager.get("contextPack") || null,
+        contextPackProfiles: Array.isArray(stateManager.get("contextPackProfiles")) ? stateManager.get("contextPackProfiles") : [],
+        activeContextPackProfileId: String(stateManager.get("activeContextPackProfileId") || ""),
         lastArtifact: stateManager.get("lastArtifact") || null,
         releasePacketHistory: Array.isArray(stateManager.get("releasePacketHistory")) ? stateManager.get("releasePacketHistory") : [],
         patchPlan: stateManager.get("patchPlan") || null,
         promotedPaletteActions: Array.isArray(stateManager.get("promotedPaletteActions")) ? stateManager.get("promotedPaletteActions") : [],
         commandPaletteShortcutScope: String(stateManager.get("commandPaletteShortcutScope") || "workflow"),
         verificationRunPlan: stateManager.get("verificationRunPlan") || null,
+        verificationRunHistory: Array.isArray(stateManager.get("verificationRunHistory")) ? stateManager.get("verificationRunHistory") : [],
         settings: stateManager.get("settings") || {},
         updatedAt: new Date().toISOString()
       };
@@ -580,6 +830,15 @@ async function runBuiltInCommand(name, args) {
         if (Object.prototype.hasOwnProperty.call(payload, "workspaceAttachment")) {
           nextState.workspaceAttachment = payload.workspaceAttachment || null;
         }
+        if (Object.prototype.hasOwnProperty.call(payload, "contextPack")) {
+          nextState.contextPack = payload.contextPack || null;
+        }
+        if (Array.isArray(payload.contextPackProfiles)) {
+          nextState.contextPackProfiles = payload.contextPackProfiles;
+        }
+        if (Object.prototype.hasOwnProperty.call(payload, "activeContextPackProfileId")) {
+          nextState.activeContextPackProfileId = String(payload.activeContextPackProfileId || "");
+        }
         if (Object.prototype.hasOwnProperty.call(payload, "lastArtifact")) {
           nextState.lastArtifact = payload.lastArtifact || null;
         }
@@ -597,6 +856,9 @@ async function runBuiltInCommand(name, args) {
         }
         if (Object.prototype.hasOwnProperty.call(payload, "verificationRunPlan")) {
           nextState.verificationRunPlan = payload.verificationRunPlan || null;
+        }
+        if (Array.isArray(payload.verificationRunHistory)) {
+          nextState.verificationRunHistory = payload.verificationRunHistory;
         }
         if (payload.settings && typeof payload.settings === "object") {
           nextState.settings = {
@@ -686,9 +948,13 @@ async function runBuiltInCommand(name, args) {
 }
 
 function createWindow() {
+  const metrics = getAdaptiveWindowMetrics(screen.getPrimaryDisplay());
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: metrics.width,
+    height: metrics.height,
+    minWidth: metrics.minWidth,
+    minHeight: metrics.minHeight,
+    center: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -738,6 +1004,10 @@ function createWindow() {
     mainWindow = null;
   });
 
+  mainWindow.once("ready-to-show", () => {
+    fitWindowToDisplay(mainWindow, { force: true });
+  });
+
   mainWindow.loadFile(path.join(__dirname, "renderer.html"));
 }
 
@@ -767,9 +1037,9 @@ app.whenReady().then(async () => {
     path.join(app.getPath("userData"), "audit-chain.jsonl")
   );
 
+  await identityKernel.init();
   stateManager.load();
   auditChain.init();
-  await identityKernel.init();
   const settings = stateManager.get("settings") || {};
   applyBridgeSettings(settings);
   llmService.setModel(stateManager.get("model") || "llama3");
@@ -793,6 +1063,12 @@ app.whenReady().then(async () => {
   await pluginLoader.onLoad();
   startBridgeHealthLoop();
   createWindow();
+  const refitMainWindow = () => {
+    fitWindowToDisplay(mainWindow);
+  };
+  screen.on("display-metrics-changed", refitMainWindow);
+  screen.on("display-added", refitMainWindow);
+  screen.on("display-removed", refitMainWindow);
   auditChain.append({ event: "app_ready", settingsVersion: Number(stateManager.get("stateVersion") || 0) });
 
   if (SMOKE_MODE) {
@@ -1025,10 +1301,7 @@ ipcMain.handle("state:import", async (_event, payload) => {
     llmService.setModel(safeState.model);
   }
   if (safeState.settings) {
-    const mergedSettings = {
-      ...(stateManager.get("settings") || {}),
-      ...safeState.settings
-    };
+    const mergedSettings = mergeBridgeSettings(stateManager.get("settings") || {}, safeState.settings);
     safeState.settings = mergedSettings;
     llmService.setPersona(mergedSettings.personalityProfile || "balanced");
     applyBridgeSettings(mergedSettings);
@@ -1052,54 +1325,75 @@ ipcMain.handle("settings:get", async () => {
 
 ipcMain.handle("settings:update", async (_event, settings) => {
   const safeSettings = validateSettings(settings);
-  const merged = {
-    ...(stateManager.get("settings") || {}),
-    ...safeSettings
-  };
+  const merged = mergeBridgeSettings(stateManager.get("settings") || {}, safeSettings);
   stateManager.set("settings", merged);
-  llmService.setPersona(merged.personalityProfile || "balanced");
-  applyBridgeSettings(merged);
+  const savedSettings = stateManager.get("settings") || merged;
+  llmService.setPersona(savedSettings.personalityProfile || "balanced");
+  applyBridgeSettings(savedSettings);
   if (rgbController) {
-    rgbController.configure(merged);
-    await rgbController.applyMood("idle", merged.personalityProfile || "balanced");
+    rgbController.configure(savedSettings);
+    await rgbController.applyMood("idle", savedSettings.personalityProfile || "balanced");
   }
-  return merged;
+  return savedSettings;
 });
 
 ipcMain.handle("llm:bridge:get", async () => {
-  const settings = stateManager.get("settings") || {};
-  const profiles = normalizeBridgeProfiles(settings);
+  const normalizedSettings = normalizeBridgeSettings(stateManager.get("settings") || {});
   return {
-    profiles,
-    activeProfileId: settings.activeProfileId || (profiles[0] && profiles[0].id) || "",
-    connectOnStartup: settings.connectOnStartup !== false,
-    allowRemoteBridge: Boolean(settings.allowRemoteBridge)
+    profiles: normalizedSettings.connectionProfiles,
+    activeProfileId: normalizedSettings.activeProfileId,
+    connectOnStartup: normalizedSettings.connectOnStartup !== false,
+    allowRemoteBridge: Boolean(normalizedSettings.allowRemoteBridge)
+  };
+});
+
+ipcMain.handle("llm:bridge:envStatus", async () => {
+  const settings = stateManager.get("settings") || {};
+  return {
+    providers: providerEnvStatusEntries(settings)
   };
 });
 
 ipcMain.handle("llm:bridge:test", async (_event, rawProfile) => {
   const profile = rawProfile && typeof rawProfile === "object" ? rawProfile : {};
+  const providerId = normalizeBridgeProviderId(profile.provider);
+  const provider = bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+    ? bridgeProviderCatalog.getBridgeProvider(providerId)
+    : { id: providerId, label: providerId, requiresApiKey: false };
   const baseUrl = String(profile.baseUrl || "").trim();
   if (!/^https?:\/\//i.test(baseUrl)) {
     throw new Error("Bridge baseUrl must start with http:// or https://");
   }
   const settings = stateManager.get("settings") || {};
-  if (!settings.allowRemoteBridge) {
-    const host = new URL(baseUrl).hostname.toLowerCase();
-    const isLocal = host === "127.0.0.1" || host === "localhost" || host === "::1";
-    if (!isLocal) {
-      throw new Error("Remote bridges are disabled in offline-first mode.");
-    }
+  if (
+    !settings.allowRemoteBridge
+    && airgapPolicy.profileNeedsRemoteAccess({ provider: providerId, baseUrl }, {
+      isRemoteProvider: (candidateId) => Boolean(
+        bridgeProviderCatalog
+        && typeof bridgeProviderCatalog.isRemoteBridgeProvider === "function"
+        && bridgeProviderCatalog.isRemoteBridgeProvider(candidateId)
+      )
+    })
+  ) {
+    throw new Error(airgapPolicy.OFFLINE_MODE_BLOCKED_MESSAGE);
   }
   const timeoutMs = Number(profile.timeoutMs) || 15000;
   const retryCount = Number(profile.retryCount) || 2;
   const model = String(profile.defaultModel || stateManager.get("model") || "llama3");
+  const apiKey = String(profile.apiKey || "").trim();
+  if (provider.requiresApiKey && !apiKey) {
+    throw new Error(`${provider.label} requires an API key.`);
+  }
   const probe = new LLMService({
+    provider: providerId,
+    apiKey,
     requestTimeoutMs: timeoutMs,
     maxRetries: retryCount
   });
   probe.configure({
     baseUrl,
+    provider: providerId,
+    apiKey,
     requestTimeoutMs: timeoutMs,
     maxRetries: retryCount
   });
@@ -1109,6 +1403,7 @@ ipcMain.handle("llm:bridge:test", async (_event, rawProfile) => {
   return {
     ok: Boolean(health && health.ok),
     baseUrl,
+    provider: providerId,
     models: models.slice(0, 20),
     modelCount: models.length,
     health
@@ -1118,20 +1413,30 @@ ipcMain.handle("llm:bridge:test", async (_event, rawProfile) => {
 ipcMain.handle("llm:bridge:save", async (_event, payload) => {
   const data = payload && typeof payload === "object" ? payload : {};
   const settings = stateManager.get("settings") || {};
-  const next = {
-    ...settings,
+  const next = mergeBridgeSettings(settings, {
     connectionProfiles: Array.isArray(data.profiles) ? data.profiles : settings.connectionProfiles || [],
     activeProfileId: String(data.activeProfileId || settings.activeProfileId || ""),
     connectOnStartup: data.connectOnStartup == null ? settings.connectOnStartup !== false : Boolean(data.connectOnStartup),
     allowRemoteBridge: data.allowRemoteBridge == null ? Boolean(settings.allowRemoteBridge) : Boolean(data.allowRemoteBridge)
-  };
-  const safeSettings = validateSettings(next);
-  stateManager.set("settings", {
-    ...settings,
-    ...safeSettings
   });
-  applyBridgeSettings(stateManager.get("settings") || {});
+  const safeSettings = validateSettings(next);
+  stateManager.set("settings", safeSettings);
+  applyBridgeSettings(stateManager.get("settings") || safeSettings);
   return true;
+});
+
+ipcMain.handle("llm:bridge:importEnvProfiles", async () => {
+  const settings = stateManager.get("settings") || {};
+  const imported = importEnvBackedBridgeProfiles(settings);
+  const safeSettings = validateSettings(normalizeBridgeSettings(imported.settings));
+  stateManager.set("settings", safeSettings);
+  const savedSettings = stateManager.get("settings") || safeSettings;
+  applyBridgeSettings(savedSettings);
+  return {
+    ok: true,
+    importedProfiles: imported.importedProfiles,
+    providers: providerEnvStatusEntries(savedSettings)
+  };
 });
 
 ipcMain.handle("rgb:status", async () => {
@@ -1250,8 +1555,10 @@ ipcMain.handle("identity:list-peers", async () => {
 });
 
 ipcMain.handle("identity:rotate", async () => {
-  auditChain.append({ event: "identity_key_rotation" });
-  return identityKernel.rotate();
+  const result = identityKernel.rotate();
+  stateManager.save();
+  auditChain.append({ event: "identity_key_rotation", fingerprint: result.fingerprint });
+  return result;
 });
 
 // ---------------- DAEMON IPC ----------------
@@ -1411,6 +1718,18 @@ ipcMain.handle("workspace:summarize", async (_event, rootPath) => {
   return summarizeWorkspace(rootPath);
 });
 
+ipcMain.handle("workspace:suggestContextPack", async (_event, rootPath, workflowId) => {
+  return suggestContextPackPaths(rootPath, workflowId);
+});
+
+ipcMain.handle("workspace:statFiles", async (_event, rootPath, relativePaths) => {
+  return statWorkspaceFiles(rootPath, relativePaths);
+});
+
+ipcMain.handle("workspace:readFile", async (_event, rootPath, relativePath, maxChars) => {
+  return readWorkspaceFile(rootPath, relativePath, maxChars);
+});
+
 ipcMain.handle("workspace:clear", async () => {
   return { cleared: true };
 });
@@ -1496,7 +1815,23 @@ ipcMain.handle("vault:compact", async (_event, data, format) => {
 // ---------------- ENHANCED LLM IPC ----------------
 
 ipcMain.handle("llm:autoDetect", async () => {
-  return llmService.autoDetectLocalLLM();
+  const settings = stateManager.get("settings") || {};
+  const profiles = normalizeBridgeProfiles(settings);
+  const localProfile = profiles.find((profile) => {
+    try {
+      const host = new URL(profile.baseUrl).hostname.toLowerCase();
+      return host === "127.0.0.1" || host === "localhost" || host === "::1";
+    } catch {
+      return false;
+    }
+  });
+  const probe = new LLMService({
+    provider: "ollama",
+    baseUrl: localProfile ? localProfile.baseUrl : (settings.ollamaBaseUrl || "http://127.0.0.1:11434"),
+    requestTimeoutMs: localProfile ? localProfile.timeoutMs : settings.timeoutMs,
+    maxRetries: localProfile ? localProfile.retryCount : settings.retryCount
+  });
+  return probe.autoDetectLocalLLM();
 });
 
 ipcMain.handle("llm:setPersona", async (_event, personaId) => {
@@ -1558,3 +1893,7 @@ ipcMain.handle("kernel:request", async (_event, intent, payload) => {
     throw err;
   }
 });
+
+
+
+

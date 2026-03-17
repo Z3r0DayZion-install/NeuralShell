@@ -1,4 +1,5 @@
 const { TextDecoder } = require("util");
+const bridgeProviderCatalog = require("../bridgeProviderCatalog");
 
 const PERSONA_PROMPTS = {
   balanced: "You are NeuralShell assistant: practical, concise, and accurate.",
@@ -14,6 +15,8 @@ class LLMService {
   constructor(options = {}) {
     this.fetchImpl = options.fetchImpl || globalThis.fetch;
     this.baseUrl = String(options.baseUrl || "http://127.0.0.1:11434");
+    this.provider = normalizeBridgeProviderId(options.provider || "ollama");
+    this.apiKey = String(options.apiKey || "");
     this.maxRetries = Number.isFinite(Number(options.maxRetries)) ? Number(options.maxRetries) : 2;
     this.retryBaseDelayMs = Number.isFinite(Number(options.retryBaseDelayMs)) ? Number(options.retryBaseDelayMs) : 250;
     this.requestTimeoutMs = Number.isFinite(Number(options.requestTimeoutMs)) ? Number(options.requestTimeoutMs) : 15000;
@@ -27,6 +30,12 @@ class LLMService {
   configure(options = {}) {
     if (options.baseUrl) {
       this.baseUrl = String(options.baseUrl);
+    }
+    if (options.provider != null) {
+      this.provider = normalizeBridgeProviderId(options.provider);
+    }
+    if (options.apiKey != null) {
+      this.apiKey = String(options.apiKey || "");
     }
     if (options.maxRetries != null) {
       this.maxRetries = Number(options.maxRetries);
@@ -64,6 +73,15 @@ class LLMService {
   }
 
   async autoDetectLocalLLM() {
+    if (this.provider !== "ollama") {
+      return {
+        ok: false,
+        detected: false,
+        baseUrl: this.baseUrl,
+        latencyMs: 0,
+        reason: "auto_detect_supported_for_ollama_only"
+      };
+    }
     const started = Date.now();
     try {
       const version = await this._fetchJson("/api/version", { method: "GET" });
@@ -107,12 +125,21 @@ class LLMService {
 
   async getModelList() {
     const result = await this._withRetry(async () => {
-      const response = await this._fetchJson("/api/tags", {
+      if (this._providerProtocol() === "ollama") {
+        const response = await this._fetchJson("/api/tags", {
+          method: "GET"
+        });
+        const models = Array.isArray(response.models) ? response.models : [];
+        return models
+          .map((entry) => (entry && typeof entry.name === "string" ? entry.name : ""))
+          .filter(Boolean);
+      }
+      const response = await this._fetchJson("/v1/models", {
         method: "GET"
       });
-      const models = Array.isArray(response.models) ? response.models : [];
+      const models = Array.isArray(response.data) ? response.data : [];
       return models
-        .map((entry) => (entry && typeof entry.name === "string" ? entry.name : ""))
+        .map((entry) => (entry && typeof entry.id === "string" ? entry.id : ""))
         .filter(Boolean);
     });
     this._lastHealth = { ok: true };
@@ -123,11 +150,11 @@ class LLMService {
   async getHealth() {
     try {
       await this.getModelList();
-      return { ok: true, baseUrl: this.baseUrl, model: this.model, persona: this.persona };
+      return { ok: true, baseUrl: this.baseUrl, model: this.model, persona: this.persona, provider: this.provider };
     } catch (err) {
       const reason = err && err.message ? err.message : "unknown error";
       this._lastHealth = { ok: false, reason };
-      return { ok: false, baseUrl: this.baseUrl, model: this.model, persona: this.persona, reason };
+      return { ok: false, baseUrl: this.baseUrl, model: this.model, persona: this.persona, provider: this.provider, reason };
     }
   }
 
@@ -162,7 +189,17 @@ class LLMService {
     try {
       if (streamMode) {
         const response = await this._withRetry(async () => {
-          return this._fetchResponse("/api/chat", {
+          if (this._providerProtocol() === "ollama") {
+            return this._fetchResponse("/api/chat", {
+              method: "POST",
+              body: JSON.stringify({
+                model: this.model,
+                stream: true,
+                messages: payloadMessages
+              })
+            }, controller);
+          }
+          return this._fetchResponse("/v1/chat/completions", {
             method: "POST",
             body: JSON.stringify({
               model: this.model,
@@ -173,11 +210,23 @@ class LLMService {
         });
 
         this._emitStatus("online");
-        return this._streamJsonLines(response);
+        return this._providerProtocol() === "ollama"
+          ? this._streamJsonLines(response)
+          : this._streamOpenAiEvents(response);
       }
 
       const response = await this._withRetry(async () => {
-        return this._fetchJson("/api/chat", {
+        if (this._providerProtocol() === "ollama") {
+          return this._fetchJson("/api/chat", {
+            method: "POST",
+            body: JSON.stringify({
+              model: this.model,
+              stream: false,
+              messages: payloadMessages
+            })
+          }, controller);
+        }
+        return this._fetchJson("/v1/chat/completions", {
           method: "POST",
           body: JSON.stringify({
             model: this.model,
@@ -188,7 +237,7 @@ class LLMService {
       });
 
       this._emitStatus("online");
-      return response;
+      return this._providerProtocol() === "ollama" ? response : this._normalizeOpenAiChatResponse(response);
     } catch (err) {
       const cancelledByUser = controller.__cancelledByUser === true;
       if (cancelledByUser || /aborted|cancelled/i.test(String(err && err.message))) {
@@ -239,9 +288,26 @@ class LLMService {
     return new Promise((resolve) => setTimeout(resolve, Math.max(0, delay)));
   }
 
+  _providerProtocol() {
+    if (bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function") {
+      const provider = bridgeProviderCatalog.getBridgeProvider(this.provider);
+      return String(provider.protocol || "ollama").trim().toLowerCase();
+    }
+    return this.provider === "ollama" ? "ollama" : "openai";
+  }
+
   async _fetchResponse(endpoint, init = {}, controller) {
     if (typeof this.fetchImpl !== "function") {
       throw new Error("No fetch implementation available.");
+    }
+    if (this._providerProtocol() !== "ollama") {
+      const provider =
+        bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+          ? bridgeProviderCatalog.getBridgeProvider(this.provider)
+          : null;
+      if (provider && provider.requiresApiKey && !String(this.apiKey || "").trim()) {
+        throw new Error(`${provider.label || provider.id} requires an API key.`);
+      }
     }
 
     const signalController = controller || new AbortController();
@@ -255,6 +321,7 @@ class LLMService {
         ...init,
         headers: {
           "content-type": "application/json",
+          ...this._authHeaders(),
           ...(init.headers || {})
         },
         signal: signalController.signal
@@ -347,9 +414,119 @@ class LLMService {
       }
     }
   }
+
+  _authHeaders() {
+    if (!this.apiKey) return {};
+    const provider = bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+      ? bridgeProviderCatalog.getBridgeProvider(this.provider)
+      : { id: this.provider };
+    const headers = {
+      authorization: `Bearer ${this.apiKey}`
+    };
+    if (provider.id === "openrouter") {
+      headers["x-title"] = "NeuralShell";
+      headers["http-referer"] = "https://neuralshell.app";
+    }
+    return headers;
+  }
+
+  _normalizeOpenAiChatResponse(response) {
+    const choices = Array.isArray(response && response.choices) ? response.choices : [];
+    const first = choices[0] || {};
+    const message = first && first.message && typeof first.message === "object" ? first.message : {};
+    return {
+      message: {
+        role: String(message.role || "assistant"),
+        content: String(message.content || "")
+      },
+      raw: response
+    };
+  }
+
+  async *_streamOpenAiEvents(response) {
+    const decoder = new TextDecoder("utf8");
+    let buffer = "";
+
+    for await (const chunk of this._iterateBodyChunks(response.body)) {
+      buffer += decoder.decode(this._toUint8Array(chunk), { stream: true });
+      let boundary = buffer.indexOf("\n\n");
+      while (boundary >= 0) {
+        const eventBlock = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        const lines = eventBlock
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === "[DONE]") {
+            continue;
+          }
+          try {
+            const parsed = JSON.parse(payload);
+            const delta =
+              parsed
+              && Array.isArray(parsed.choices)
+              && parsed.choices[0]
+              && parsed.choices[0].delta
+                ? parsed.choices[0].delta
+                : {};
+            const content = typeof delta.content === "string" ? delta.content : "";
+            yield {
+              message: {
+                role: String(delta.role || "assistant"),
+                content
+              },
+              done: false,
+              raw: parsed
+            };
+          } catch {
+            // Ignore malformed SSE chunks and continue.
+          }
+        }
+        boundary = buffer.indexOf("\n\n");
+      }
+    }
+    buffer += decoder.decode();
+    const tail = buffer.trim();
+    if (!tail) return;
+    for (const line of tail.split(/\r?\n/).map((item) => item.trim()).filter(Boolean)) {
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(payload);
+        const delta =
+          parsed
+          && Array.isArray(parsed.choices)
+          && parsed.choices[0]
+          && parsed.choices[0].delta
+            ? parsed.choices[0].delta
+            : {};
+        yield {
+          message: {
+            role: String(delta.role || "assistant"),
+            content: typeof delta.content === "string" ? delta.content : ""
+          },
+          done: false,
+          raw: parsed
+        };
+      } catch {
+        // Ignore malformed tail chunks.
+      }
+    }
+  }
 }
 
 const defaultService = new LLMService();
+
+function normalizeBridgeProviderId(id) {
+  if (bridgeProviderCatalog && typeof bridgeProviderCatalog.normalizeBridgeProviderId === "function") {
+    return bridgeProviderCatalog.normalizeBridgeProviderId(id);
+  }
+  return String(id || "ollama").trim().toLowerCase() || "ollama";
+}
 
 module.exports = defaultService;
 module.exports.LLMService = LLMService;

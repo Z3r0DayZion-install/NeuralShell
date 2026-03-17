@@ -1,6 +1,7 @@
 const path = require("path");
 const workflowCatalog = require("../workflowCatalog");
 const verificationCatalog = require("../verificationCatalog");
+const bridgeProviderCatalog = require("../bridgeProviderCatalog");
 const {
   VALID_WORKSPACE_ACTION_KINDS,
   normalizeFilename
@@ -19,6 +20,22 @@ const VALID_PERSONALITY_PROFILES = new Set([
 ]);
 const VALID_RGB_PROVIDERS = new Set(["openrgb", "none"]);
 const VALID_LOG_LEVELS = new Set(["debug", "info", "warn", "error"]);
+const DEFAULT_WORKFLOW_ID =
+  workflowCatalog && typeof workflowCatalog.DEFAULT_WORKFLOW_ID === "string"
+    ? String(workflowCatalog.DEFAULT_WORKFLOW_ID).trim() || "bridge_diagnostics"
+    : "bridge_diagnostics";
+const normalizeBridgeProviderId =
+  bridgeProviderCatalog && typeof bridgeProviderCatalog.normalizeBridgeProviderId === "function"
+    ? bridgeProviderCatalog.normalizeBridgeProviderId
+    : (value) => String(value || "ollama").trim().toLowerCase() || "ollama";
+const getBridgeProvider =
+  bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+    ? bridgeProviderCatalog.getBridgeProvider
+    : (value) => ({
+        id: normalizeBridgeProviderId(value),
+        defaultBaseUrl: "http://127.0.0.1:11434",
+        requiresApiKey: false
+      });
 
 function assert(condition, message) {
   if (!condition) {
@@ -111,24 +128,29 @@ function validateLog(level, message) {
 
 function normalizeConnectionProfile(profile, index) {
   const raw = profile && typeof profile === "object" ? profile : {};
+  const providerId = normalizeBridgeProviderId(raw.provider);
+  const provider = getBridgeProvider(providerId);
   const id = String(raw.id || `profile-${index + 1}`).trim();
   const name = toTrimmedString(
     raw.name || `Profile ${index + 1}`,
     "Connection profile name"
   );
   const baseUrl = toTrimmedString(
-    raw.baseUrl || "http://127.0.0.1:11434",
+    raw.baseUrl || provider.defaultBaseUrl || "http://127.0.0.1:11434",
     "Connection profile baseUrl"
   );
   const timeoutMs = Number(raw.timeoutMs);
   const retryCount = Number(raw.retryCount);
+  const apiKey = raw.apiKey == null ? "" : String(raw.apiKey).trim();
   return {
     id,
     name,
+    provider: providerId,
     baseUrl,
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 15000,
     retryCount: Number.isFinite(retryCount) && retryCount >= 0 ? retryCount : 2,
-    defaultModel: String(raw.defaultModel || "llama3")
+    defaultModel: String(raw.defaultModel || "llama3"),
+    apiKey
   };
 }
 
@@ -203,7 +225,9 @@ function validateSettings(input) {
     activeProfileId:
       input.activeProfileId == null ? "" : String(input.activeProfileId),
     connectOnStartup:
-      input.connectOnStartup == null ? true : Boolean(input.connectOnStartup)
+      input.connectOnStartup == null ? true : Boolean(input.connectOnStartup),
+    autoLoadRecommendedContextProfile:
+      input.autoLoadRecommendedContextProfile == null ? false : Boolean(input.autoLoadRecommendedContextProfile)
   };
 
   assert(
@@ -301,6 +325,15 @@ function validateImportedState(payload) {
   if (payload.workspaceAttachment != null) {
     out.workspaceAttachment = validateWorkspaceAttachment(payload.workspaceAttachment);
   }
+  if (payload.contextPack != null) {
+    out.contextPack = validateContextPack(payload.contextPack);
+  }
+  if (payload.contextPackProfiles != null) {
+    out.contextPackProfiles = validateContextPackProfiles(payload.contextPackProfiles);
+  }
+  if (payload.activeContextPackProfileId != null) {
+    out.activeContextPackProfileId = String(payload.activeContextPackProfileId || "").trim();
+  }
   if (payload.lastArtifact != null) {
     out.lastArtifact = validateArtifact(payload.lastArtifact);
   }
@@ -321,6 +354,9 @@ function validateImportedState(payload) {
   if (payload.verificationRunPlan != null) {
     out.verificationRunPlan = validateVerificationRunPlan(payload.verificationRunPlan);
   }
+  if (payload.verificationRunHistory != null) {
+    out.verificationRunHistory = validateVerificationRunHistory(payload.verificationRunHistory);
+  }
 
   return out;
 }
@@ -339,6 +375,78 @@ function validateWorkspaceAttachment(value) {
   };
 }
 
+function validateContextPack(value) {
+  assert(value && typeof value === "object" && !Array.isArray(value), "contextPack must be an object.");
+  const rootPath = path.resolve(toTrimmedString(value.rootPath, "contextPack.rootPath"));
+  const rootLabel = toTrimmedString(value.rootLabel || rootPath, "contextPack.rootLabel");
+  const filePaths = Array.isArray(value.filePaths)
+    ? value.filePaths.map((item) => validatePatchPlanFilePath(item))
+    : [];
+  const entries = Array.isArray(value.entries)
+    ? value.entries.map((entry, index) => {
+      assert(entry && typeof entry === "object" && !Array.isArray(entry), `contextPack.entries[${index}] must be an object.`);
+      const relativePath = validatePatchPlanFilePath(entry.relativePath);
+      return {
+        relativePath,
+        absolutePath: entry.absolutePath == null ? "" : String(entry.absolutePath),
+        modifiedAt: entry.modifiedAt == null ? "" : String(entry.modifiedAt),
+        content: String(entry.content == null ? "" : entry.content)
+      };
+    })
+    : [];
+  assert(entries.length > 0, "contextPack must include at least one entry.");
+  return {
+    id: String(value.id || "").trim(),
+    name: toTrimmedString(value.name || "Context Pack", "contextPack.name"),
+    rootPath,
+    rootLabel,
+    builtAt: value.builtAt == null ? "" : String(value.builtAt),
+    filePaths: filePaths.length ? filePaths : entries.map((entry) => entry.relativePath),
+    entries
+  };
+}
+
+function validateContextPackProfile(value, index) {
+  assert(value && typeof value === "object" && !Array.isArray(value), `contextPackProfiles[${index}] must be an object.`);
+  const workspaceRoot = path.resolve(toTrimmedString(value.workspaceRoot, `contextPackProfiles[${index}].workspaceRoot`));
+  const workspaceLabel = toTrimmedString(value.workspaceLabel || workspaceRoot, `contextPackProfiles[${index}].workspaceLabel`);
+  const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
+  if (workflowId) {
+    assert(workflowCatalog.isWorkflowId(workflowId), `invalid contextPackProfiles[${index}].workflowId.`);
+  }
+  const filePaths = Array.isArray(value.filePaths)
+    ? value.filePaths.map((item) => validatePatchPlanFilePath(item))
+    : [];
+  assert(filePaths.length > 0, `contextPackProfiles[${index}] must include at least one file path.`);
+  const fileSnapshots = Array.isArray(value.fileSnapshots)
+    ? value.fileSnapshots.map((item, snapshotIndex) => {
+      assert(
+        item && typeof item === "object" && !Array.isArray(item),
+        `contextPackProfiles[${index}].fileSnapshots[${snapshotIndex}] must be an object.`
+      );
+      return {
+        relativePath: validatePatchPlanFilePath(item.relativePath),
+        modifiedAt: item.modifiedAt == null ? "" : String(item.modifiedAt)
+      };
+    })
+    : [];
+  return {
+    id: String(value.id || `context-pack-profile-${index + 1}`).trim() || `context-pack-profile-${index + 1}`,
+    workspaceRoot,
+    workspaceLabel,
+    workflowId,
+    name: toTrimmedString(value.name || `Context Pack Profile ${index + 1}`, `contextPackProfiles[${index}].name`),
+    filePaths,
+    fileSnapshots,
+    savedAt: value.savedAt == null ? "" : String(value.savedAt)
+  };
+}
+
+function validateContextPackProfiles(value) {
+  assert(Array.isArray(value), "contextPackProfiles must be an array.");
+  return value.map((item, index) => validateContextPackProfile(item, index));
+}
+
 function validateArtifact(value) {
   assert(value && typeof value === "object" && !Array.isArray(value), "lastArtifact must be an object.");
   const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
@@ -349,12 +457,122 @@ function validateArtifact(value) {
   if (outputMode) {
     assert(workflowCatalog.isOutputModeId(outputMode), "invalid lastArtifact.outputMode.");
   }
+  const provenance = value.provenance == null ? null : validateArtifactProvenance(value.provenance);
   return {
+    id: String(value.id || "").trim(),
     title: String(value.title || "").trim(),
     workflowId,
     outputMode,
     content: String(value.content || ""),
-    generatedAt: value.generatedAt == null ? "" : String(value.generatedAt)
+    generatedAt: value.generatedAt == null ? "" : String(value.generatedAt),
+    provenance
+  };
+}
+
+function validateArtifactProvenance(value) {
+  assert(value && typeof value === "object" && !Array.isArray(value), "artifact provenance must be an object.");
+  let contextPack = null;
+  if (value.contextPack != null) {
+    assert(
+      value.contextPack && typeof value.contextPack === "object" && !Array.isArray(value.contextPack),
+      "artifact provenance contextPack must be an object."
+    );
+    contextPack = {
+      id: String(value.contextPack.id || "").trim(),
+      name: String(value.contextPack.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPack.fileCount)) ? Number(value.contextPack.fileCount) : 0,
+      builtAt: value.contextPack.builtAt == null ? "" : String(value.contextPack.builtAt),
+      filePaths: Array.isArray(value.contextPack.filePaths)
+        ? value.contextPack.filePaths.map((item) => validatePatchPlanFilePath(item))
+        : []
+    };
+  }
+  let contextPackProfile = null;
+  if (value.contextPackProfile != null) {
+    assert(
+      value.contextPackProfile && typeof value.contextPackProfile === "object" && !Array.isArray(value.contextPackProfile),
+      "artifact provenance contextPackProfile must be an object."
+    );
+    contextPackProfile = {
+      id: String(value.contextPackProfile.id || "").trim(),
+      name: String(value.contextPackProfile.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPackProfile.fileCount)) ? Number(value.contextPackProfile.fileCount) : 0,
+      savedAt: value.contextPackProfile.savedAt == null ? "" : String(value.contextPackProfile.savedAt)
+    };
+  }
+  let sourceArtifact = null;
+  if (value.sourceArtifact != null) {
+    assert(
+      value.sourceArtifact && typeof value.sourceArtifact === "object" && !Array.isArray(value.sourceArtifact),
+      "artifact provenance sourceArtifact must be an object."
+    );
+    const sourceOutputMode = value.sourceArtifact.outputMode == null ? "" : String(value.sourceArtifact.outputMode).trim();
+    if (sourceOutputMode) {
+      assert(workflowCatalog.isOutputModeId(sourceOutputMode), "invalid artifact provenance sourceArtifact.outputMode.");
+    }
+    sourceArtifact = {
+      id: String(value.sourceArtifact.id || "").trim(),
+      title: String(value.sourceArtifact.title || "").trim(),
+      outputMode: sourceOutputMode,
+      generatedAt: value.sourceArtifact.generatedAt == null ? "" : String(value.sourceArtifact.generatedAt)
+    };
+  }
+  let patchPlan = null;
+  if (value.patchPlan != null) {
+    assert(
+      value.patchPlan && typeof value.patchPlan === "object" && !Array.isArray(value.patchPlan),
+      "artifact provenance patchPlan must be an object."
+    );
+    patchPlan = {
+      id: String(value.patchPlan.id || "").trim(),
+      generatedAt: value.patchPlan.generatedAt == null ? "" : String(value.patchPlan.generatedAt),
+      totalFiles: Number.isFinite(Number(value.patchPlan.totalFiles)) ? Number(value.patchPlan.totalFiles) : 0
+    };
+  }
+  let verification = null;
+  if (value.verification != null) {
+    assert(
+      value.verification && typeof value.verification === "object" && !Array.isArray(value.verification),
+      "artifact provenance verification must be an object."
+    );
+    const runIds = Array.isArray(value.verification.runIds)
+      ? value.verification.runIds.map((item, index) => toTrimmedString(item, `artifact provenance verification.runIds[${index}]`))
+      : [];
+    verification = {
+      groupId: String(value.verification.groupId || "").trim(),
+      runIds,
+      executedAt: value.verification.executedAt == null ? "" : String(value.verification.executedAt),
+      previousRunId: value.verification.previousRunId == null ? "" : String(value.verification.previousRunId),
+      ok: value.verification.ok === true,
+      selectedCount: Number.isFinite(Number(value.verification.selectedCount)) ? Number(value.verification.selectedCount) : 0,
+      passedCount: Number.isFinite(Number(value.verification.passedCount)) ? Number(value.verification.passedCount) : 0,
+      failedCount: Number.isFinite(Number(value.verification.failedCount)) ? Number(value.verification.failedCount) : 0,
+      pendingCount: Number.isFinite(Number(value.verification.pendingCount)) ? Number(value.verification.pendingCount) : 0,
+      summary: String(value.verification.summary || "").trim()
+    };
+  }
+  let lineage = null;
+  if (value.lineage != null) {
+    assert(
+      value.lineage && typeof value.lineage === "object" && !Array.isArray(value.lineage),
+      "artifact provenance lineage must be an object."
+    );
+    lineage = {
+      packetId: String(value.lineage.packetId || "").trim(),
+      parentPacketId: String(value.lineage.parentPacketId || "").trim(),
+      sourceArtifactId: String(value.lineage.sourceArtifactId || "").trim(),
+      generation: Number.isFinite(Number(value.lineage.generation)) ? Number(value.lineage.generation) : 0
+    };
+  }
+  return {
+    workspaceRoot: String(value.workspaceRoot || "").trim(),
+    workspaceLabel: String(value.workspaceLabel || "").trim(),
+    contextPack,
+    contextPackProfile,
+    sourceArtifact,
+    patchPlan,
+    verification,
+    lineage
   };
 }
 
@@ -398,6 +616,84 @@ function validatePatchPlanFilePath(value) {
   return next;
 }
 
+function validatePatchPlanHunkLine(value, hunkIndex, lineIndex) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    `patchPlan.files[].hunks[${hunkIndex}].lines[${lineIndex}] must be an object.`
+  );
+  const type = String(value.type || "").trim().toLowerCase();
+  assert(
+    type === "context" || type === "remove" || type === "add",
+    `patchPlan.files[].hunks[${hunkIndex}].lines[${lineIndex}] type is invalid.`
+  );
+  return {
+    type,
+    text: String(value.text == null ? "" : value.text)
+  };
+}
+
+function validatePatchPlanHunk(value, index) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    `patchPlan.files[].hunks[${index}] must be an object.`
+  );
+  const lines = Array.isArray(value.lines)
+    ? value.lines.map((line, lineIndex) => validatePatchPlanHunkLine(line, index, lineIndex))
+    : [];
+  return {
+    hunkId: String(value.hunkId || `hunk-${index + 1}`).trim() || `hunk-${index + 1}`,
+    oldStart: Number.isFinite(Number(value.oldStart)) ? Number(value.oldStart) : 1,
+    oldCount: Number.isFinite(Number(value.oldCount)) ? Number(value.oldCount) : 0,
+    newStart: Number.isFinite(Number(value.newStart)) ? Number(value.newStart) : 1,
+    newCount: Number.isFinite(Number(value.newCount)) ? Number(value.newCount) : 0,
+    addedCount: Number.isFinite(Number(value.addedCount)) ? Number(value.addedCount) : lines.filter((line) => line.type === "add").length,
+    removedCount: Number.isFinite(Number(value.removedCount)) ? Number(value.removedCount) : lines.filter((line) => line.type === "remove").length,
+    selected: value.selected !== false,
+    appliedAt: value.appliedAt == null ? "" : String(value.appliedAt),
+    lines
+  };
+}
+
+function validatePatchPlanProvenance(value) {
+  assert(value && typeof value === "object" && !Array.isArray(value), "patchPlan.provenance must be an object.");
+  let contextPack = null;
+  if (value.contextPack != null) {
+    assert(
+      value.contextPack && typeof value.contextPack === "object" && !Array.isArray(value.contextPack),
+      "patchPlan.provenance.contextPack must be an object."
+    );
+    contextPack = {
+      id: String(value.contextPack.id || "").trim(),
+      name: String(value.contextPack.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPack.fileCount)) ? Number(value.contextPack.fileCount) : 0,
+      builtAt: value.contextPack.builtAt == null ? "" : String(value.contextPack.builtAt),
+      filePaths: Array.isArray(value.contextPack.filePaths)
+        ? value.contextPack.filePaths.map((item) => validatePatchPlanFilePath(item))
+        : []
+    };
+  }
+  let contextPackProfile = null;
+  if (value.contextPackProfile != null) {
+    assert(
+      value.contextPackProfile && typeof value.contextPackProfile === "object" && !Array.isArray(value.contextPackProfile),
+      "patchPlan.provenance.contextPackProfile must be an object."
+    );
+    contextPackProfile = {
+      id: String(value.contextPackProfile.id || "").trim(),
+      name: String(value.contextPackProfile.name || "").trim(),
+      fileCount: Number.isFinite(Number(value.contextPackProfile.fileCount)) ? Number(value.contextPackProfile.fileCount) : 0,
+      savedAt: value.contextPackProfile.savedAt == null ? "" : String(value.contextPackProfile.savedAt)
+    };
+  }
+  return {
+    workspaceRoot: value.workspaceRoot == null || String(value.workspaceRoot).trim() === ""
+      ? ""
+      : path.resolve(String(value.workspaceRoot)),
+    contextPack,
+    contextPackProfile
+  };
+}
+
 function validatePatchPlan(value) {
   assert(value && typeof value === "object" && !Array.isArray(value), "patchPlan must be an object.");
   const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
@@ -414,12 +710,13 @@ function validatePatchPlan(value) {
 
   return {
     id: String(value.id || "").trim(),
-    workflowId: workflowId || "release_audit",
+    workflowId: workflowId || DEFAULT_WORKFLOW_ID,
     outputMode,
     title: String(value.title || "").trim(),
     summary: String(value.summary || ""),
     generatedAt: value.generatedAt == null ? "" : String(value.generatedAt),
     rootPath,
+    provenance: value.provenance == null ? null : validatePatchPlanProvenance(value.provenance),
     verification: Array.isArray(value.verification)
       ? value.verification.map((item) => String(item || "").trim()).filter(Boolean)
       : [],
@@ -443,12 +740,16 @@ function validatePatchPlan(value) {
         status,
         rationale: String(file.rationale || ""),
         content: String(file.content || ""),
+        originalContent: String(file.originalContent || ""),
         diffText: String(file.diffText || ""),
         bytes: Number.isFinite(Number(file.bytes)) ? Number(file.bytes) : 0,
         lines: Number.isFinite(Number(file.lines)) ? Number(file.lines) : 0,
         selected: file.selected !== false,
         appliedAt: file.appliedAt == null ? "" : String(file.appliedAt),
-        absolutePath: file.absolutePath == null ? "" : String(file.absolutePath)
+        absolutePath: file.absolutePath == null ? "" : String(file.absolutePath),
+        hunks: Array.isArray(file.hunks)
+          ? file.hunks.map((hunk, hunkIndex) => validatePatchPlanHunk(hunk, hunkIndex))
+          : []
       };
     })
   };
@@ -471,8 +772,8 @@ function validatePromotedPaletteAction(value, index) {
     ? value.filePaths.map((item) => validatePatchPlanFilePath(item))
     : [];
   return {
-    id: String(value.id || `${workflowId || "release_audit"}:${groupId}`).trim() || `${workflowId || "release_audit"}:${groupId}`,
-    workflowId: workflowId || "release_audit",
+    id: String(value.id || `${workflowId || DEFAULT_WORKFLOW_ID}:${groupId}`).trim() || `${workflowId || DEFAULT_WORKFLOW_ID}:${groupId}`,
+    workflowId: workflowId || DEFAULT_WORKFLOW_ID,
     groupId,
     groupTitle: String(value.groupTitle || "").trim(),
     label: toTrimmedString(
@@ -539,13 +840,60 @@ function validateVerificationRunPlan(value) {
     id: String(value.id || "").trim(),
     groupId: String(value.groupId || "").trim(),
     groupTitle: String(value.groupTitle || "").trim(),
-    workflowId: workflowId || "release_audit",
+    workflowId: workflowId || DEFAULT_WORKFLOW_ID,
     rootPath,
     rootLabel: String(value.rootLabel || "").trim(),
     preparedAt: value.preparedAt == null ? "" : String(value.preparedAt),
     lastRunAt: value.lastRunAt == null ? "" : String(value.lastRunAt),
     checks
   };
+}
+
+function validateVerificationRunHistoryEntry(value, index) {
+  assert(
+    value && typeof value === "object" && !Array.isArray(value),
+    "verificationRunHistory entry is invalid."
+  );
+  const workflowId = value.workflowId == null ? "" : String(value.workflowId).trim();
+  if (workflowId) {
+    assert(workflowCatalog.isWorkflowId(workflowId), "invalid verificationRunHistory[].workflowId.");
+  }
+  const rootPath = path.resolve(toTrimmedString(
+    value.rootPath,
+    `verificationRunHistory[${index}].rootPath`
+  ));
+  const checks = Array.isArray(value.checks)
+    ? value.checks.map((check, checkIndex) => validateVerificationRunCheck(check, checkIndex))
+    : [];
+  assert(checks.length > 0, "verificationRunHistory entry must include checks.");
+  const selectedCheckIds = Array.isArray(value.selectedCheckIds)
+    ? value.selectedCheckIds.map((item) => toTrimmedString(item, `verificationRunHistory[${index}].selectedCheckIds[]`))
+    : checks.filter((check) => check.selected !== false).map((check) => check.id);
+  for (const id of selectedCheckIds) {
+    assert(verificationCatalog.isCheckId(id), `invalid verificationRunHistory selected check: ${id}`);
+  }
+  return {
+    runId: String(value.runId || value.id || "").trim(),
+    planId: String(value.planId || "").trim(),
+    groupId: String(value.groupId || "").trim(),
+    groupTitle: String(value.groupTitle || "").trim(),
+    workflowId: workflowId || DEFAULT_WORKFLOW_ID,
+    rootPath,
+    rootLabel: String(value.rootLabel || "").trim(),
+    preparedAt: value.preparedAt == null ? "" : String(value.preparedAt),
+    executedAt: value.executedAt == null ? "" : String(value.executedAt),
+    ok: value.ok === true,
+    selectedCheckIds,
+    checks: checks.map((check) => ({
+      ...check,
+      selected: selectedCheckIds.includes(check.id)
+    }))
+  };
+}
+
+function validateVerificationRunHistory(value) {
+  assert(Array.isArray(value), "verificationRunHistory must be an array.");
+  return value.map((entry, index) => validateVerificationRunHistoryEntry(entry, index));
 }
 
 function validateWorkspaceActionRequest(value) {
@@ -635,6 +983,7 @@ module.exports = {
   validatePassphrase,
   validatePatchPlanRequest,
   validateVerificationRunRequest,
+  validateVerificationRunHistory,
   validateSettings,
   validateSessionName,
   validateWorkspaceActionRequest,

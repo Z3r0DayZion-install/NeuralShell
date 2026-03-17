@@ -28,6 +28,8 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "command:list",
   "command:run",
   "llm:bridge:get",
+  "llm:bridge:envStatus",
+  "llm:bridge:importEnvProfiles",
   "llm:bridge:test",
   "llm:bridge:save",
   "rgb:status",
@@ -47,6 +49,9 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "chatlog:clear",
   "workspace:pickRoot",
   "workspace:summarize",
+  "workspace:suggestContextPack",
+  "workspace:statFiles",
+  "workspace:readFile",
   "workspace:clear",
   "workspace:previewAction",
   "workspace:applyAction",
@@ -303,6 +308,8 @@ contextBridge.exposeInMainWorld("api", {
   },
   bridge: {
     get: () => ipcRenderer.invoke("llm:bridge:get"),
+    envStatus: () => ipcRenderer.invoke("llm:bridge:envStatus"),
+    importEnvProfiles: () => ipcRenderer.invoke("llm:bridge:importEnvProfiles"),
     test: (profile) => ipcRenderer.invoke("llm:bridge:test", profile),
     save: (payload) => ipcRenderer.invoke("llm:bridge:save", payload)
   },
@@ -342,6 +349,9 @@ contextBridge.exposeInMainWorld("api", {
   workspace: {
     pickRoot: () => ipcRenderer.invoke("workspace:pickRoot"),
     summarize: (rootPath) => ipcRenderer.invoke("workspace:summarize", rootPath),
+    suggestContextPack: (rootPath, workflowId) => ipcRenderer.invoke("workspace:suggestContextPack", rootPath, workflowId),
+    statFiles: (rootPath, relativePaths) => ipcRenderer.invoke("workspace:statFiles", rootPath, relativePaths),
+    readFile: (rootPath, relativePath, maxChars) => ipcRenderer.invoke("workspace:readFile", rootPath, relativePath, maxChars),
     clear: () => ipcRenderer.invoke("workspace:clear"),
     previewAction: (payload) => ipcRenderer.invoke("workspace:previewAction", payload),
     applyAction: (payload) => ipcRenderer.invoke("workspace:applyAction", payload),

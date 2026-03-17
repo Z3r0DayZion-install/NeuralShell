@@ -21,6 +21,10 @@ const {
 const { LLMService } = require("../src/core/llmService");
 const verificationCatalog = require("../src/verificationCatalog");
 const workflowCatalog = require("../src/workflowCatalog");
+const airgapPolicy = require("../src/airgapPolicy");
+const bridgeProfileModel = require("../src/bridgeProfileModel");
+const bridgeSettingsModel = require("../src/bridgeSettingsModel");
+const bridgeSettingsFeature = require("../src/bridgeSettingsFeature");
 const {
   applyPatchPlan,
   applyWorkspaceAction,
@@ -425,7 +429,7 @@ function testValidatorDefaultBranches() {
     assert.equal(imported.lastArtifact.content, "");
     assert.equal(imported.lastArtifact.generatedAt, "");
     assert.equal(imported.releasePacketHistory[0].title, "Release Packet");
-    assert.equal(imported.patchPlan.workflowId, "release_audit");
+    assert.equal(imported.patchPlan.workflowId, "bridge_diagnostics");
     assert.equal(imported.patchPlan.outputMode, "patch_plan");
     assert.equal(imported.patchPlan.rootPath, "");
     assert.deepEqual(imported.patchPlan.verification, []);
@@ -441,15 +445,15 @@ function testValidatorDefaultBranches() {
     assert.equal(imported.patchPlan.files[0].appliedAt, "");
     assert.equal(imported.patchPlan.files[0].absolutePath, "");
     assert.equal(imported.promotedPaletteActions[0].groupId, "group-1");
-    assert.equal(imported.promotedPaletteActions[0].id, "release_audit:group-1");
-    assert.equal(imported.promotedPaletteActions[0].workflowId, "release_audit");
+    assert.equal(imported.promotedPaletteActions[0].id, "bridge_diagnostics:group-1");
+    assert.equal(imported.promotedPaletteActions[0].workflowId, "bridge_diagnostics");
     assert.equal(imported.promotedPaletteActions[0].label, "Verify group-1");
     assert.equal(imported.promotedPaletteActions[0].detail, "");
     assert.equal(imported.promotedPaletteActions[0].promptLead, "");
     assert.deepEqual(imported.promotedPaletteActions[0].checks, []);
     assert.deepEqual(imported.promotedPaletteActions[0].filePaths, []);
     assert.equal(imported.promotedPaletteActions[0].promotedAt, "");
-    assert.equal(imported.verificationRunPlan.workflowId, "release_audit");
+    assert.equal(imported.verificationRunPlan.workflowId, "bridge_diagnostics");
     assert.equal(imported.verificationRunPlan.id, "");
     assert.equal(imported.verificationRunPlan.groupId, "");
     assert.equal(imported.verificationRunPlan.groupTitle, "");
@@ -551,7 +555,7 @@ function testCatalogHelpers() {
   );
 
   assert.equal(workflowCatalog.getWorkflow("bug_triage").id, "bug_triage");
-  assert.equal(workflowCatalog.getWorkflow("missing").id, "release_audit");
+  assert.equal(workflowCatalog.getWorkflow("missing").id, "bridge_diagnostics");
   assert.equal(workflowCatalog.getOutputMode("release_packet").id, "release_packet");
   assert.equal(workflowCatalog.getOutputMode("missing").id, "brief");
   assert.equal(workflowCatalog.isWorkflowId("session_handoff"), true);
@@ -700,6 +704,164 @@ async function collectAsync(iterable) {
     output.push(item);
   }
   return output;
+}
+
+function testBridgeProfileModel() {
+  const providerMap = {
+    ollama: {
+      id: "ollama",
+      defaultBaseUrl: "http://127.0.0.1:11434",
+      suggestedModels: ["llama3"]
+    },
+    openai: {
+      id: "openai",
+      defaultBaseUrl: "https://api.openai.com",
+      suggestedModels: ["gpt-4.1-mini"]
+    }
+  };
+  const profiles = bridgeProfileModel.normalizeBridgeProfiles({
+    connectionProfiles: [
+      { id: "dup", name: "Remote One", provider: "openai", baseUrl: "https://api.openai.com" },
+      { id: "dup", name: "Local One", provider: "ollama", baseUrl: "http://127.0.0.1:11434" }
+    ]
+  }, {
+    fallbackModel: "llama3",
+    normalizeProviderId: (providerId) => String(providerId || "ollama").trim().toLowerCase() || "ollama",
+    getProvider: (providerId) => providerMap[providerId] || providerMap.ollama,
+    defaultLocalBaseUrl: "http://127.0.0.1:11434",
+    defaultTimeoutMs: 15000,
+    defaultRetryCount: 2
+  });
+  assert.equal(profiles.length, 2);
+  assert.equal(profiles[0].id, "dup");
+  assert.equal(profiles[1].id, "dup-1");
+  assert.equal(profiles[0].defaultModel, "llama3");
+  const seeded = bridgeProfileModel.normalizeBridgeProfiles({}, {
+    fallbackModel: "llama3",
+    normalizeProviderId: (providerId) => String(providerId || "ollama").trim().toLowerCase() || "ollama",
+    getProvider: (providerId) => providerMap[providerId] || providerMap.ollama,
+    defaultLocalBaseUrl: "http://127.0.0.1:11434",
+    defaultTimeoutMs: 15000,
+    defaultRetryCount: 2
+  });
+  assert.equal(seeded.length, 1);
+  assert.equal(seeded[0].id, "local-default");
+  assert.equal(bridgeProfileModel.resolveActiveProfileId({ activeProfileId: "dup-1" }, profiles), "dup-1");
+  assert.equal(bridgeProfileModel.findBridgeProfileById(profiles, "dup-1").name, "Local One");
+  ok("bridge profile model");
+}
+
+function testBridgeSettingsFeatureModule() {
+  assert.equal(typeof bridgeSettingsFeature.createBridgeSettingsFeature, "function");
+  ok("bridge settings feature module");
+}
+
+function testBridgeSettingsModel() {
+  const providerMap = {
+    ollama: {
+      id: "ollama",
+      defaultBaseUrl: "http://127.0.0.1:11434",
+      suggestedModels: ["llama3"]
+    },
+    openai: {
+      id: "openai",
+      defaultBaseUrl: "https://api.openai.com",
+      suggestedModels: ["gpt-4.1-mini"]
+    }
+  };
+  const options = {
+    fallbackModel: "llama3",
+    normalizeProviderId: (providerId) => String(providerId || "ollama").trim().toLowerCase() || "ollama",
+    getProvider: (providerId) => providerMap[providerId] || providerMap.ollama,
+    defaultLocalBaseUrl: "http://127.0.0.1:11434",
+    defaultTimeoutMs: 15000,
+    defaultRetryCount: 2,
+    defaultAllowRemoteBridge: false,
+    defaultConnectOnStartup: true,
+    defaultAutoLoadRecommendedContextProfile: false
+  };
+  const normalized = bridgeSettingsModel.normalizeBridgeSettings({
+    allowRemoteBridge: true,
+    connectionProfiles: [
+      {
+        id: "remote",
+        name: "Remote",
+        provider: "openai",
+        baseUrl: "https://api.openai.com",
+        timeoutMs: 22000,
+        retryCount: 3,
+        defaultModel: "gpt-4.1-mini"
+      }
+    ]
+  }, options);
+  assert.equal(normalized.connectionProfiles.length, 1);
+  assert.equal(normalized.activeProfileId, "remote");
+  assert.equal(normalized.ollamaBaseUrl, "https://api.openai.com");
+  assert.equal(normalized.timeoutMs, 22000);
+  assert.equal(normalized.retryCount, 3);
+  assert.equal(normalized.allowRemoteBridge, true);
+  assert.equal(normalized.connectOnStartup, true);
+  assert.equal(normalized.autoLoadRecommendedContextProfile, false);
+
+  const merged = bridgeSettingsModel.mergeBridgeSettings(normalized, {
+    allowRemoteBridge: false,
+    activeProfileId: "missing",
+    connectionProfiles: [
+      {
+        id: "local-default",
+        name: "Local Ollama",
+        provider: "ollama",
+        baseUrl: "http://127.0.0.1:11434",
+        timeoutMs: 12000,
+        retryCount: 1,
+        defaultModel: "llama3"
+      }
+    ]
+  }, options);
+  assert.equal(merged.activeProfileId, "local-default");
+  assert.equal(merged.ollamaBaseUrl, "http://127.0.0.1:11434");
+  assert.equal(merged.timeoutMs, 12000);
+  assert.equal(merged.retryCount, 1);
+  assert.equal(merged.allowRemoteBridge, false);
+  ok("bridge settings model");
+}
+
+function testAirgapPolicy() {
+  assert.equal(airgapPolicy.isLoopbackHost("LOCALHOST"), true);
+  assert.equal(airgapPolicy.isLoopbackHost("example.com"), false);
+  assert.equal(
+    airgapPolicy.profileNeedsRemoteAccess(
+      { provider: "ollama", baseUrl: "http://127.0.0.1:11434" },
+      { isRemoteProvider: (providerId) => providerId === "openai" }
+    ),
+    false
+  );
+  assert.equal(
+    airgapPolicy.profileNeedsRemoteAccess(
+      { provider: "openai", baseUrl: "https://api.openai.com" },
+      { isRemoteProvider: (providerId) => providerId === "openai" }
+    ),
+    true
+  );
+  const selection = airgapPolicy.resolveBridgeSelection({
+    profiles: [
+      { id: "remote", provider: "openai", baseUrl: "https://api.openai.com" },
+      { id: "local", provider: "ollama", baseUrl: "http://127.0.0.1:11434" }
+    ],
+    activeProfileId: "remote",
+    allowRemoteBridge: false,
+    isRemoteProvider: (providerId) => providerId === "openai"
+  });
+  assert.equal(selection.selectedProfile.id, "remote");
+  assert.equal(selection.liveProfile.id, "local");
+  assert.equal(selection.blockedByRemoteToggle, true);
+  assert.match(
+    airgapPolicy.settingsConnectionModeText({ liveAllowRemote: false, draftAllowRemote: true }),
+    /turn on/i
+  );
+  assert.match(airgapPolicy.offlineModeSummaryText(false), /local-only|local-only|local-only/i);
+  assert.equal(airgapPolicy.offlineModeEnabled({ allowRemoteBridge: false }), true);
+  ok("airgap policy");
 }
 
 async function testLlmServiceRetry() {
@@ -943,6 +1105,10 @@ async function run() {
   testValidatorDefaultBranches();
   testCatalogHelpers();
   testPatchPlanHelpers();
+  testBridgeProfileModel();
+  testBridgeSettingsFeatureModule();
+  testBridgeSettingsModel();
+  testAirgapPolicy();
   await testLlmServiceRetry();
   await testLlmServiceOffline();
   await testLlmServiceCancel();
@@ -957,3 +1123,7 @@ run().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+
+
+

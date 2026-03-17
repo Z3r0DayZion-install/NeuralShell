@@ -25,6 +25,15 @@ function testMainBuiltInCommandWiring() {
     mainJs.includes("if (builtInResult !== null)"),
     "main.js command:run does not short-circuit on built-in command results."
   );
+  assert(
+    mainJs.indexOf("await identityKernel.init();") < mainJs.indexOf("stateManager.load();"),
+    "main.js must initialize identityKernel before loading state."
+  );
+  assert(
+    mainJs.includes("const result = identityKernel.rotate();") &&
+      mainJs.includes("stateManager.save();"),
+    "main.js identity rotation must persist state after rotating the keypair."
+  );
 }
 
 function testRendererStateAndModelLinkage() {

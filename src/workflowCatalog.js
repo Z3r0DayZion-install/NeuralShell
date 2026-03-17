@@ -5,6 +5,7 @@
   }
   root.NeuralShellWorkflowCatalog = catalog;
 })(typeof globalThis !== "undefined" ? globalThis : this, function buildWorkflowCatalog() {
+  const DEFAULT_WORKFLOW_ID = "bridge_diagnostics";
   const OUTPUT_MODES = [
     {
       id: "brief",
@@ -46,9 +47,9 @@
       defaultOutputMode: "checklist",
       starterPrompt: "Audit the current release state, identify the highest-risk gaps, and prepare a ship checklist that stays local-first.",
       followUpActions: [
-        "Summarize the top 3 release risks and how to verify each one.",
-        "Turn this audit into a final ship checklist with pass/fail gates.",
-        "Draft a founder handoff for the release state and unresolved blockers."
+        "Top 3 release risks + verification",
+        "Final ship checklist with pass/fail gates",
+        "Founder handoff for blockers"
       ]
     },
     {
@@ -58,9 +59,9 @@
       defaultOutputMode: "patch_plan",
       starterPrompt: "Triage the current issue, list likely root causes, rank them by probability, and recommend the smallest safe fix plus verification.",
       followUpActions: [
-        "Convert this triage into a reproduction checklist.",
-        "Write a regression test plan for the most likely fix.",
-        "Summarize the user-visible impact and rollback path."
+        "Reproduction checklist",
+        "Regression test plan",
+        "User impact + rollback path"
       ]
     },
     {
@@ -70,9 +71,9 @@
       defaultOutputMode: "brief",
       starterPrompt: "Write a product and implementation spec for the requested feature. Keep it decision complete, pragmatic, and implementation ready.",
       followUpActions: [
-        "Turn this spec into an engineering checklist.",
-        "Call out the highest-risk assumptions and edge cases.",
-        "Rewrite the spec as a release-ready change summary."
+        "Engineering checklist",
+        "Risk assumptions + edge cases",
+        "Release-ready change summary"
       ]
     },
     {
@@ -82,9 +83,9 @@
       defaultOutputMode: "handoff",
       starterPrompt: "Summarize the current session into a handoff with current state, key decisions, open work, risks, and the next 3 concrete actions.",
       followUpActions: [
-        "Rewrite this handoff for a founder update.",
-        "Turn this handoff into a checklist for the next session.",
-        "Extract only the blockers, assumptions, and verification steps."
+        "Founder update version",
+        "Next-session checklist",
+        "Blockers, assumptions, and verification"
       ]
     },
     {
@@ -94,9 +95,9 @@
       defaultOutputMode: "checklist",
       starterPrompt: "Diagnose the local bridge, explain the current operating posture, and produce a minimal checklist to restore a healthy offline-first workflow.",
       followUpActions: [
-        "Summarize bridge health as a short runtime brief.",
-        "Convert the diagnosis into a local operator checklist.",
-        "Write a verification plan for reconnect and safe fallback behavior."
+        "Runtime brief",
+        "Local operator checklist",
+        "Reconnect + fallback verification plan"
       ]
     }
   ];
@@ -105,7 +106,7 @@
   const outputModeMap = Object.fromEntries(OUTPUT_MODES.map((mode) => [mode.id, mode]));
 
   function getWorkflow(id) {
-    return workflowMap[String(id || "").trim()] || WORKFLOWS[0];
+    return workflowMap[String(id || "").trim()] || workflowMap[DEFAULT_WORKFLOW_ID] || WORKFLOWS[0];
   }
 
   function getOutputMode(id) {
@@ -121,6 +122,7 @@
   }
 
   return {
+    DEFAULT_WORKFLOW_ID,
     OUTPUT_MODES,
     WORKFLOWS,
     getOutputMode,

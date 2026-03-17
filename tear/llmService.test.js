@@ -87,3 +87,46 @@ test("LLMService emits cancelled status on cancelStream", async () => {
   await assert.rejects(() => run, /cancelled/i);
   assert.ok(statuses.includes("cancelled"));
 });
+
+test("LLMService lists models from OpenAI-compatible providers with auth", async () => {
+  let receivedHeaders = null;
+  const service = new LLMService({
+    provider: "openai",
+    apiKey: "test-key",
+    fetchImpl: async (_url, init) => {
+      receivedHeaders = init && init.headers;
+      return createJsonResponse(200, {
+        data: [
+          { id: "gpt-4.1-mini" },
+          { id: "gpt-4o-mini" }
+        ]
+      });
+    }
+  });
+
+  const models = await service.getModelList();
+  assert.deepEqual(models, ["gpt-4.1-mini", "gpt-4o-mini"]);
+  assert.equal(receivedHeaders.authorization, "Bearer test-key");
+});
+
+test("LLMService normalizes OpenAI-compatible chat responses", async () => {
+  const service = new LLMService({
+    provider: "openai",
+    apiKey: "test-key",
+    fetchImpl: async () => createJsonResponse(200, {
+      id: "chatcmpl-1",
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content: "Hosted reply"
+          }
+        }
+      ]
+    })
+  });
+
+  const response = await service.chat([{ role: "user", content: "Hello" }], false);
+  assert.equal(response.message.role, "assistant");
+  assert.equal(response.message.content, "Hosted reply");
+});

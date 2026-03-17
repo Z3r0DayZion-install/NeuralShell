@@ -8,6 +8,7 @@ const VALID_WORKSPACE_ACTION_KINDS = new Set([
   "file_replace"
 ]);
 const WINDOWS_RESERVED_FILENAME_PATTERN = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
+const DEFAULT_WORKFLOW_ID = "bridge_diagnostics";
 
 function assert(condition, message) {
   if (!condition) {
@@ -114,11 +115,169 @@ function ensureInsideRoot(rootPath, targetPath) {
 }
 
 function splitLines(text) {
-  return String(text || "").replace(/\r\n/g, "\n").split("\n");
+  const normalized = String(text || "").replace(/\r\n/g, "\n");
+  return normalized === "" ? [] : normalized.split("\n");
 }
 
-function summarizeUnifiedDiff(oldText, newText, relativePath) {
-  if (String(oldText || "") === String(newText || "")) {
+function appendOperation(operations, type, line) {
+  const safeType = String(type || "").trim();
+  if (!safeType || safeType === "context") {
+    throw new Error("Diff operation type is invalid.");
+  }
+  const text = String(line == null ? "" : line);
+  const last = operations[operations.length - 1];
+  if (last && last.type === safeType) {
+    last.lines.push(text);
+    return;
+  }
+  operations.push({
+    type: safeType,
+    lines: [text]
+  });
+}
+
+function buildLcsTable(oldLines, newLines) {
+  const rows = oldLines.length + 1;
+  const cols = newLines.length + 1;
+  const table = Array.from({ length: rows }, () => Array(cols).fill(0));
+  for (let i = oldLines.length - 1; i >= 0; i -= 1) {
+    for (let j = newLines.length - 1; j >= 0; j -= 1) {
+      table[i][j] = oldLines[i] === newLines[j]
+        ? table[i + 1][j + 1] + 1
+        : Math.max(table[i + 1][j], table[i][j + 1]);
+    }
+  }
+  return table;
+}
+
+function buildDiffOperations(oldLines, newLines) {
+  const table = buildLcsTable(oldLines, newLines);
+  const operations = [];
+  let oldIndex = 0;
+  let newIndex = 0;
+
+  while (oldIndex < oldLines.length && newIndex < newLines.length) {
+    if (oldLines[oldIndex] === newLines[newIndex]) {
+      appendOperation(operations, "equal", oldLines[oldIndex]);
+      oldIndex += 1;
+      newIndex += 1;
+      continue;
+    }
+    if (table[oldIndex + 1][newIndex] >= table[oldIndex][newIndex + 1]) {
+      appendOperation(operations, "remove", oldLines[oldIndex]);
+      oldIndex += 1;
+    } else {
+      appendOperation(operations, "add", newLines[newIndex]);
+      newIndex += 1;
+    }
+  }
+
+  while (oldIndex < oldLines.length) {
+    appendOperation(operations, "remove", oldLines[oldIndex]);
+    oldIndex += 1;
+  }
+  while (newIndex < newLines.length) {
+    appendOperation(operations, "add", newLines[newIndex]);
+    newIndex += 1;
+  }
+
+  return operations;
+}
+
+function annotateOperations(operations) {
+  let oldCursor = 1;
+  let newCursor = 1;
+  return operations.map((operation) => {
+    const entry = {
+      ...operation,
+      oldStart: oldCursor,
+      newStart: newCursor
+    };
+    if (operation.type !== "add") {
+      oldCursor += operation.lines.length;
+    }
+    if (operation.type !== "remove") {
+      newCursor += operation.lines.length;
+    }
+    return entry;
+  });
+}
+
+function buildDiffHunks(oldText, newText) {
+  const oldLines = splitLines(oldText);
+  const newLines = splitLines(newText);
+  const context = 3;
+  const annotated = annotateOperations(buildDiffOperations(oldLines, newLines));
+  const hunks = [];
+  let index = 0;
+
+  while (index < annotated.length) {
+    if (annotated[index].type === "equal") {
+      index += 1;
+      continue;
+    }
+
+    const startIndex = index;
+    let endIndex = index;
+    while (
+      endIndex + 2 < annotated.length &&
+      annotated[endIndex + 1].type === "equal" &&
+      annotated[endIndex + 1].lines.length <= context * 2 &&
+      annotated[endIndex + 2].type !== "equal"
+    ) {
+      endIndex += 2;
+    }
+
+    const leading = startIndex > 0 && annotated[startIndex - 1].type === "equal"
+      ? annotated[startIndex - 1].lines.slice(-context)
+      : [];
+    const trailing = endIndex + 1 < annotated.length && annotated[endIndex + 1].type === "equal"
+      ? annotated[endIndex + 1].lines.slice(0, context)
+      : [];
+
+    const lines = [];
+    for (const text of leading) {
+      lines.push({ type: "context", text });
+    }
+    for (let opIndex = startIndex; opIndex <= endIndex; opIndex += 1) {
+      const operation = annotated[opIndex];
+      const lineType = operation.type === "equal" ? "context" : operation.type;
+      for (const text of operation.lines) {
+        lines.push({ type: lineType, text });
+      }
+    }
+    for (const text of trailing) {
+      lines.push({ type: "context", text });
+    }
+
+    const oldStart = Math.max(1, annotated[startIndex].oldStart - leading.length);
+    const newStart = Math.max(1, annotated[startIndex].newStart - leading.length);
+    const oldCount = lines.reduce((sum, line) => sum + (line.type === "add" ? 0 : 1), 0);
+    const newCount = lines.reduce((sum, line) => sum + (line.type === "remove" ? 0 : 1), 0);
+    const addedCount = lines.reduce((sum, line) => sum + (line.type === "add" ? 1 : 0), 0);
+    const removedCount = lines.reduce((sum, line) => sum + (line.type === "remove" ? 1 : 0), 0);
+
+    hunks.push({
+      hunkId: `hunk-${hunks.length + 1}-${oldStart}-${newStart}`,
+      oldStart,
+      oldCount,
+      newStart,
+      newCount,
+      addedCount,
+      removedCount,
+      selected: true,
+      appliedAt: "",
+      lines
+    });
+
+    index = endIndex + 1;
+  }
+
+  return hunks;
+}
+
+function formatDiffText(relativePath, hunks) {
+  if (!Array.isArray(hunks) || !hunks.length) {
     return [
       `--- a/${relativePath}`,
       `+++ b/${relativePath}`,
@@ -127,46 +286,106 @@ function summarizeUnifiedDiff(oldText, newText, relativePath) {
     ].join("\n");
   }
 
-  const oldLines = splitLines(oldText);
-  const newLines = splitLines(newText);
-  let prefix = 0;
-  while (
-    prefix < oldLines.length &&
-    prefix < newLines.length &&
-    oldLines[prefix] === newLines[prefix]
-  ) {
-    prefix += 1;
-  }
-
-  let suffix = 0;
-  while (
-    suffix < oldLines.length - prefix &&
-    suffix < newLines.length - prefix &&
-    oldLines[oldLines.length - 1 - suffix] === newLines[newLines.length - 1 - suffix]
-  ) {
-    suffix += 1;
-  }
-
-  const context = 3;
-  const prefixContextStart = Math.max(0, prefix - context);
-  const prefixContext = oldLines.slice(prefixContextStart, prefix);
-  const suffixContext = suffix > 0
-    ? oldLines.slice(oldLines.length - suffix, Math.min(oldLines.length, oldLines.length - suffix + context))
-    : [];
-  const removed = oldLines.slice(prefix, oldLines.length - suffix);
-  const added = newLines.slice(prefix, newLines.length - suffix);
-  const hunkOldCount = prefixContext.length + removed.length + suffixContext.length;
-  const hunkNewCount = prefixContext.length + added.length + suffixContext.length;
-
-  return [
+  const out = [
     `--- a/${relativePath}`,
-    `+++ b/${relativePath}`,
-    `@@ -${prefixContextStart + 1},${hunkOldCount} +${prefixContextStart + 1},${hunkNewCount} @@`,
-    ...prefixContext.map((line) => ` ${line}`),
-    ...removed.map((line) => `-${line}`),
-    ...added.map((line) => `+${line}`),
-    ...suffixContext.map((line) => ` ${line}`)
-  ].join("\n");
+    `+++ b/${relativePath}`
+  ];
+  for (const hunk of hunks) {
+    out.push(`@@ -${hunk.oldStart},${hunk.oldCount} +${hunk.newStart},${hunk.newCount} @@`);
+    for (const line of hunk.lines) {
+      out.push(`${line.type === "add" ? "+" : line.type === "remove" ? "-" : " "}${line.text}`);
+    }
+  }
+  return out.join("\n");
+}
+
+function summarizeUnifiedDiff(oldText, newText, relativePath) {
+  return formatDiffText(relativePath, buildDiffHunks(oldText, newText));
+}
+
+function normalizePatchPlanHunk(value, index) {
+  assert(value && typeof value === "object" && !Array.isArray(value), `Patch plan hunk ${index + 1} is invalid.`);
+  const lines = Array.isArray(value.lines)
+    ? value.lines.map((line, lineIndex) => {
+      assert(line && typeof line === "object" && !Array.isArray(line), `Patch plan hunk ${index + 1} line ${lineIndex + 1} is invalid.`);
+      const type = String(line.type || "").trim().toLowerCase();
+      assert(type === "context" || type === "remove" || type === "add", `Patch plan hunk ${index + 1} line ${lineIndex + 1} type is invalid.`);
+      return {
+        type,
+        text: String(line.text == null ? "" : line.text)
+      };
+    })
+    : [];
+
+  return {
+    hunkId: String(value.hunkId || `hunk-${index + 1}`).trim() || `hunk-${index + 1}`,
+    oldStart: Number.isFinite(Number(value.oldStart)) ? Number(value.oldStart) : 1,
+    oldCount: Number.isFinite(Number(value.oldCount)) ? Number(value.oldCount) : 0,
+    newStart: Number.isFinite(Number(value.newStart)) ? Number(value.newStart) : 1,
+    newCount: Number.isFinite(Number(value.newCount)) ? Number(value.newCount) : 0,
+    addedCount: Number.isFinite(Number(value.addedCount)) ? Number(value.addedCount) : lines.filter((line) => line.type === "add").length,
+    removedCount: Number.isFinite(Number(value.removedCount)) ? Number(value.removedCount) : lines.filter((line) => line.type === "remove").length,
+    selected: value.selected !== false,
+    appliedAt: String(value.appliedAt || "").trim(),
+    lines
+  };
+}
+
+function buildPreviewHunks(oldText, newText, previousHunks, fallbackSelected = true) {
+  const nextHunks = buildDiffHunks(oldText, newText);
+  const previousMap = new Map(
+    Array.isArray(previousHunks)
+      ? previousHunks.map((hunk, index) => {
+        const normalized = normalizePatchPlanHunk(hunk, index);
+        return [normalized.hunkId, normalized];
+      })
+      : []
+  );
+  return nextHunks.map((hunk, index) => {
+    const previous = previousMap.get(hunk.hunkId);
+    return previous
+      ? {
+          ...hunk,
+          selected: previous.selected !== false,
+          appliedAt: previous.appliedAt || ""
+        }
+      : {
+          ...hunk,
+          hunkId: String(hunk.hunkId || `hunk-${index + 1}`).trim() || `hunk-${index + 1}`,
+          selected: fallbackSelected !== false
+        };
+  });
+}
+
+function selectedHunksForFile(file) {
+  return Array.isArray(file && file.hunks)
+    ? file.hunks.filter((hunk) => hunk && hunk.selected !== false)
+    : [];
+}
+
+function materializeContentFromHunks(originalContent, hunks, fallbackContent) {
+  if (!Array.isArray(hunks) || !hunks.length) {
+    return normalizeContent(fallbackContent);
+  }
+  const selected = selectedHunksForFile({ hunks })
+    .slice()
+    .sort((a, b) => (Number(b.oldStart || 0) - Number(a.oldStart || 0)) || String(b.hunkId || "").localeCompare(String(a.hunkId || "")));
+  if (!selected.length) {
+    return String(originalContent || "");
+  }
+  const nextLines = splitLines(originalContent).slice();
+  for (const hunk of selected) {
+    const startIndex = Math.max(0, Number(hunk.oldStart || 1) - 1);
+    const deleteCount = Math.max(0, Number(hunk.oldCount || 0));
+    const replacement = Array.isArray(hunk.lines)
+      ? hunk.lines
+          .filter((line) => String(line.type || "") !== "remove")
+          .map((line) => String(line.text == null ? "" : line.text))
+      : [];
+    nextLines.splice(startIndex, deleteCount, ...replacement);
+  }
+  const nextContent = nextLines.join("\n");
+  return nextContent === "" ? "" : (nextContent.endsWith("\n") ? nextContent : `${nextContent}\n`);
 }
 
 function previewWorkspaceAction(request) {
@@ -229,7 +448,7 @@ function normalizePatchPlan(requestPlan) {
 
   return {
     id: String(plan.id || `patch-plan-${Date.now()}`),
-    workflowId: String(plan.workflowId || "release_audit"),
+    workflowId: String(plan.workflowId || DEFAULT_WORKFLOW_ID),
     outputMode: String(plan.outputMode || "patch_plan"),
     title: String(plan.title || "Patch Plan").trim() || "Patch Plan",
     summary: String(plan.summary || "").trim(),
@@ -247,12 +466,16 @@ function normalizePatchPlan(requestPlan) {
         status: String(file.status || "").trim(),
         rationale: String(file.rationale || "").trim(),
         content: normalizeContent(file.content),
+        originalContent: String(file.originalContent || ""),
         diffText: String(file.diffText || ""),
         bytes: Number.isFinite(Number(file.bytes)) ? Number(file.bytes) : 0,
         lines: Number.isFinite(Number(file.lines)) ? Number(file.lines) : 0,
         selected: file.selected !== false,
         appliedAt: String(file.appliedAt || "").trim(),
-        absolutePath: String(file.absolutePath || "").trim()
+        absolutePath: String(file.absolutePath || "").trim(),
+        hunks: Array.isArray(file.hunks)
+          ? file.hunks.map((hunk, hunkIndex) => normalizePatchPlanHunk(hunk, hunkIndex))
+          : []
       };
     })
   };
@@ -274,15 +497,27 @@ function previewPatchPlan(request) {
       filename: target.filename,
       content: file.content
     });
+    const originalContent = preview.exists ? fs.readFileSync(preview.absolutePath, "utf8") : "";
+    const hunks = buildPreviewHunks(
+      originalContent,
+      file.content,
+      file.hunks,
+      file.selected !== false
+    );
+    const selected = hunks.length
+      ? hunks.some((hunk) => hunk.selected !== false)
+      : false;
     return {
       ...file,
       path: preview.relativePath,
       status: preview.exists ? "modify" : "new",
-      diffText: preview.diffText || preview.previewText,
+      originalContent,
+      diffText: formatDiffText(preview.relativePath, hunks),
       bytes: preview.bytes,
       lines: preview.lines,
-      selected: file.selected !== false,
-      absolutePath: preview.absolutePath
+      selected,
+      absolutePath: preview.absolutePath,
+      hunks
     };
   });
 
@@ -321,6 +556,17 @@ function applyPatchPlan(request) {
     if (!selectedSet.has(file.fileId)) {
       return file;
     }
+    const currentContent = fs.existsSync(file.absolutePath)
+      ? fs.readFileSync(file.absolutePath, "utf8")
+      : "";
+    assert(
+      currentContent === String(file.originalContent || ""),
+      `Patch plan source changed for ${file.path}. Preview again before apply.`
+    );
+    const nextContent = materializeContentFromHunks(file.originalContent, file.hunks, file.content);
+    if (String(nextContent || "") === currentContent) {
+      return file;
+    }
     const target = splitRelativeFilePath(file.path);
     const applied = applyWorkspaceAction({
       proposalId: file.fileId,
@@ -330,10 +576,11 @@ function applyPatchPlan(request) {
       rootPath: preview.rootPath,
       directory: target.directory,
       filename: target.filename,
-      content: file.content
+      content: nextContent === "" ? "\n" : nextContent
     });
     return {
       ...file,
+      originalContent: currentContent,
       diffText: applied.diffText || file.diffText,
       bytes: applied.bytes,
       lines: applied.lines,
@@ -342,9 +589,16 @@ function applyPatchPlan(request) {
     };
   });
 
+  const nextPreview = previewPatchPlan({
+    rootPath: preview.rootPath,
+    plan: {
+      ...preview,
+      files: appliedFiles
+    }
+  });
+
   return {
-    ...preview,
-    files: appliedFiles,
+    ...nextPreview,
     appliedFileIds: selectedIds,
     appliedCount: selectedIds.length,
     appliedAt: new Date().toISOString()
