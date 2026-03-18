@@ -175,6 +175,7 @@ const appState = {
   clockTimer: null,
   autonomous: false,
   llmStatus: "booting",
+  llmStatusEpoch: 0,
   settingsMenuOpen: false,
   commandPaletteOpen: false,
   commandPaletteItems: [],
@@ -8099,6 +8100,18 @@ function describeLlmStatus(status) {
         detail: "NeuralShell is probing the configured model bridge.",
         tone: "ok"
       };
+    case "bridge_reconnecting":
+      return {
+        short: "Reconnecting to bridge...",
+        detail: "The bridge connection was lost or is initializing. Retrying in the background based on your connection rules.",
+        tone: "warn"
+      };
+    case "error":
+      return {
+        short: "Bridge error detected.",
+        detail: "A critical error occurred while communicating with the bridge. Check your logs and local LLM service status.",
+        tone: "bad"
+      };
     default:
       return {
         short: `LLM status: ${normalized || "unknown"}.`,
@@ -8229,8 +8242,18 @@ function updateWorkspaceModeText() {
   renderIntelSurface();
 }
 
-function applyLlmStatus(status) {
-  appState.llmStatus = String(status || "unknown");
+function applyLlmStatus(status, options = {}) {
+  const nextStatus = String(status || "unknown");
+
+  // Manual actions always win and increment the epoch.
+  // Heartbeat updates from IPC are ignored if a newer epoch exists.
+  if (options.manual) {
+    appState.llmStatusEpoch += 1;
+  } else if (options.epoch != null && options.epoch < appState.llmStatusEpoch) {
+    return; // Ignore stale heartbeat
+  }
+
+  appState.llmStatus = nextStatus;
   const copy = describeLlmStatus(appState.llmStatus);
   if (el.statusMeta) {
     el.statusMeta.textContent = copy.short;
@@ -8296,15 +8319,15 @@ async function runBridgeAutoDetect() {
     const result = await window.api.llm.autoDetect();
     if (result && result.ok) {
       await refreshModels();
-      applyLlmStatus("bridge_online");
+      applyLlmStatus("bridge_online", { manual: true });
       showBanner(`Local bridge detected at ${result.baseUrl}.`, "ok");
       return result;
     }
-    applyLlmStatus(appState.settings.connectOnStartup !== false ? "bridge_reconnecting" : "bridge_offline");
+    applyLlmStatus(appState.settings.connectOnStartup !== false ? "bridge_reconnecting" : "bridge_offline", { manual: true });
     showBanner(`Local bridge not detected: ${result && result.reason ? result.reason : "offline"}`, "bad");
     return result;
   } catch (err) {
-    applyLlmStatus("error");
+    applyLlmStatus("error", { manual: true });
     showBanner(`Bridge detect failed: ${err.message || String(err)}`, "bad");
     throw err;
   }
@@ -8315,7 +8338,7 @@ async function runBridgeHealthCheck() {
   showBanner("Checking bridge health...", "ok");
   try {
     const health = await window.api.llm.health();
-    applyLlmStatus(health && health.ok ? "bridge_online" : "bridge_offline");
+    applyLlmStatus(health && health.ok ? "bridge_online" : "bridge_offline", { manual: true });
     showBanner(
       health && health.ok
         ? `Bridge healthy at ${health.baseUrl}.`
@@ -8324,7 +8347,7 @@ async function runBridgeHealthCheck() {
     );
     return health;
   } catch (err) {
-    applyLlmStatus("error");
+    applyLlmStatus("error", { manual: true });
     showBanner(`Bridge health failed: ${err.message || String(err)}`, "bad");
     throw err;
   }
@@ -10259,12 +10282,12 @@ async function refreshModels() {
     const models = await window.api.llm.listModels();
     setModelOptions(Array.isArray(models) ? models : []);
     populateOnboardingModelSelect();
-    applyLlmStatus("bridge_online");
+    applyLlmStatus("bridge_online", { manual: true });
     showBanner("Models refreshed.", "ok");
   } catch (err) {
     setModelOptions([appState.model]);
     populateOnboardingModelSelect();
-    applyLlmStatus(appState.settings.connectOnStartup !== false ? "bridge_reconnecting" : "bridge_offline");
+    applyLlmStatus(appState.settings.connectOnStartup !== false ? "bridge_reconnecting" : "bridge_offline", { manual: true });
     showBanner(`Model refresh failed: ${err.message || String(err)}`, "bad");
   }
 }
@@ -12487,7 +12510,8 @@ async function updateStats() {
 function bindEvents() {
   if (window.api && typeof window.api.on === "function") {
     window.api.on("llm-status-change", (status) => {
-      applyLlmStatus(status);
+      // Background IPC updates are considered heartbeat/non-manual
+      applyLlmStatus(status, { manual: false });
     });
   }
   window.addEventListener("llm-stream-data", (event) => handleStreamData(event.detail));

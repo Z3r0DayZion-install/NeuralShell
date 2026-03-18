@@ -8,6 +8,8 @@ yarn-error.log*
 dist/
 win-unpacked/
 release/
+NeuralShell_*_GoldMaster_Release/
+NeuralShell_Distribution_Ready/
 *.exe
 *.zip
 *.asar

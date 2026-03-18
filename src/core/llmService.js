@@ -143,7 +143,6 @@ class LLMService {
         .filter(Boolean);
     });
     this._lastHealth = { ok: true };
-    this._emitStatus("online");
     return result;
   }
 
@@ -209,7 +208,6 @@ class LLMService {
           }, controller);
         });
 
-        this._emitStatus("online");
         return this._providerProtocol() === "ollama"
           ? this._streamJsonLines(response)
           : this._streamOpenAiEvents(response);
@@ -236,7 +234,6 @@ class LLMService {
         }, controller);
       });
 
-      this._emitStatus("online");
       return this._providerProtocol() === "ollama" ? response : this._normalizeOpenAiChatResponse(response);
     } catch (err) {
       const cancelledByUser = controller.__cancelledByUser === true;
@@ -244,7 +241,6 @@ class LLMService {
         this._emitStatus("cancelled");
         throw new Error("cancelled");
       }
-      this._emitStatus("error");
       throw err;
     } finally {
       if (this._activeController === controller) {
@@ -266,20 +262,31 @@ class LLMService {
   async _withRetry(task) {
     let lastError = null;
     const attempts = Math.max(0, this.maxRetries) + 1;
+    const seq = (this._lastRequestSeq || 0) + 1;
+    this._lastRequestSeq = seq;
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       try {
-        return await task();
+        const result = await task();
+        if (this._lastRequestSeq === seq) {
+          this._emitStatus("online");
+        }
+        return result;
       } catch (err) {
         lastError = err;
         if (attempt >= attempts - 1) {
           break;
         }
-        this._emitStatus("reconnecting");
+        if (this._lastRequestSeq === seq) {
+          this._emitStatus("reconnecting");
+        }
         await this._sleep(this.retryBaseDelayMs * (attempt + 1));
       }
     }
 
+    if (this._lastRequestSeq === seq) {
+      this._emitStatus("error");
+    }
     throw lastError || new Error("request failed");
   }
 
@@ -467,9 +474,9 @@ class LLMService {
             const parsed = JSON.parse(payload);
             const delta =
               parsed
-              && Array.isArray(parsed.choices)
-              && parsed.choices[0]
-              && parsed.choices[0].delta
+                && Array.isArray(parsed.choices)
+                && parsed.choices[0]
+                && parsed.choices[0].delta
                 ? parsed.choices[0].delta
                 : {};
             const content = typeof delta.content === "string" ? delta.content : "";
@@ -499,9 +506,9 @@ class LLMService {
         const parsed = JSON.parse(payload);
         const delta =
           parsed
-          && Array.isArray(parsed.choices)
-          && parsed.choices[0]
-          && parsed.choices[0].delta
+            && Array.isArray(parsed.choices)
+            && parsed.choices[0]
+            && parsed.choices[0].delta
             ? parsed.choices[0].delta
             : {};
         yield {

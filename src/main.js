@@ -423,23 +423,44 @@ function applyBridgeSettings(settings = {}) {
   return null;
 }
 
+let _isBridgeHealthCheckInProgress = false;
+let _lastBridgeStatusSent = null;
+
 function startBridgeHealthLoop() {
   if (bridgeHealthTimer) {
     clearInterval(bridgeHealthTimer);
     bridgeHealthTimer = null;
   }
   bridgeHealthTimer = setInterval(async () => {
-    const settings = stateManager.get("settings") || {};
-    const health = await llmService.getHealth();
-    if (health && health.ok) {
-      sendToRenderer("llm-status-change", "bridge_online");
-      return;
-    }
-    if (settings.connectOnStartup) {
-      applyBridgeSettings(settings);
-      sendToRenderer("llm-status-change", "bridge_reconnecting");
-    } else {
-      sendToRenderer("llm-status-change", "bridge_offline");
+    if (_isBridgeHealthCheckInProgress) return;
+    _isBridgeHealthCheckInProgress = true;
+
+    try {
+      const settings = stateManager.get("settings") || {};
+      const health = await llmService.getHealth();
+
+      let nextStatus = "bridge_offline";
+      if (health && health.ok) {
+        nextStatus = "bridge_online";
+      } else if (settings.connectOnStartup) {
+        // Only attempt configuration if we aren't already trying or if we're definitively offline
+        if (_lastBridgeStatusSent !== "bridge_reconnecting") {
+          applyBridgeSettings(settings);
+        }
+        nextStatus = "bridge_reconnecting";
+      }
+
+      if (nextStatus !== _lastBridgeStatusSent) {
+        _lastBridgeStatusSent = nextStatus;
+        sendToRenderer("llm-status-change", nextStatus);
+      }
+    } catch (err) {
+      if (_lastBridgeStatusSent !== "error") {
+        _lastBridgeStatusSent = "error";
+        sendToRenderer("llm-status-change", "error");
+      }
+    } finally {
+      _isBridgeHealthCheckInProgress = false;
     }
   }, 12000);
 }
