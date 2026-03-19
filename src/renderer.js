@@ -373,7 +373,7 @@ class TerminalOverlay {
 
     // Update header context if provided
     if (entry.workspacePath) {
-      this.wsContext.textContent = `| ${path.basename(entry.workspacePath)}`;
+      this.wsContext.textContent = `| ${window.api.utils.basename(entry.workspacePath)}`;
     }
 
     const line = document.createElement("div");
@@ -450,7 +450,7 @@ class TerminalOverlay {
     else this.titleText.textContent = `Awaiting Interaction`;
 
     if (workspacePath) {
-      this.wsContext.textContent = `| ${path.basename(workspacePath)}`;
+      this.wsContext.textContent = `| ${window.api.utils.basename(workspacePath)}`;
     }
 
     const promptDiv = document.createElement("div");

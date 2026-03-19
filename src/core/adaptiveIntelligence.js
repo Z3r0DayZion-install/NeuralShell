@@ -147,7 +147,9 @@ function predictFailure(actionId, workspacePath, intelligence) {
                         recommendation: "Wait for background processes to finish."
                     };
                 }
-            } catch (e) { }
+            } catch (e) {
+                // Ignore stat errors for missing lockfiles
+            }
         }
     }
 

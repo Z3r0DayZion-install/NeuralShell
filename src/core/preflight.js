@@ -14,20 +14,23 @@ async function checkSafe(rootPath, requirement, context = {}) {
         case "has_workspace":
             return { ok: !!normalizedRoot && fs.existsSync(normalizedRoot), reason: "No workspace attached" };
 
-        case "has_package_json":
+        case "has_package_json": {
             if (!normalizedRoot) return { ok: false, reason: "No workspace" };
             const hasPkg = fs.existsSync(path.join(normalizedRoot, "package.json"));
             return { ok: hasPkg, reason: hasPkg ? null : "package.json missing" };
+        }
 
-        case "has_node_modules":
+        case "has_node_modules": {
             if (!normalizedRoot) return { ok: false, reason: "No workspace" };
             const hasModules = fs.existsSync(path.join(normalizedRoot, "node_modules"));
             return { ok: hasModules, reason: hasModules ? null : "node_modules missing (Run npm install)" };
+        }
 
-        case "has_git":
+        case "has_git": {
             if (!normalizedRoot) return { ok: false, reason: "No workspace" };
             const hasGit = fs.existsSync(path.join(normalizedRoot, ".git"));
             return { ok: hasGit, reason: hasGit ? null : "Not a git repository" };
+        }
 
         case "is_git_clean":
             if (!normalizedRoot || !fs.existsSync(path.join(normalizedRoot, ".git"))) {
@@ -40,7 +43,7 @@ async function checkSafe(rootPath, requirement, context = {}) {
                 return { ok: false, reason: "Git status check failed" };
             }
 
-        case "has_build_script":
+        case "has_build_script": {
             if (!normalizedRoot) return { ok: false, reason: "No workspace" };
             const bPkgPath = path.join(normalizedRoot, "package.json");
             if (!fs.existsSync(bPkgPath)) return { ok: false, reason: "package.json missing" };
@@ -51,8 +54,9 @@ async function checkSafe(rootPath, requirement, context = {}) {
             } catch {
                 return { ok: false, reason: "Failed to parse package.json" };
             }
+        }
 
-        case "has_playwright":
+        case "has_playwright": {
             if (!normalizedRoot) return { ok: false, reason: "No workspace" };
             const pwPkgPath = path.join(normalizedRoot, "package.json");
             try {
@@ -63,10 +67,12 @@ async function checkSafe(rootPath, requirement, context = {}) {
             } catch {
                 return { ok: false, reason: "Failed to parse package.json" };
             }
+        }
 
-        case "has_session_history":
+        case "has_session_history": {
             const hasHistory = Array.isArray(context.chat) && context.chat.length > 0;
             return { ok: hasHistory, reason: hasHistory ? null : "No session history available" };
+        }
 
         default:
             return { ok: true, reason: null };

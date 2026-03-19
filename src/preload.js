@@ -377,7 +377,14 @@ contextBridge.exposeInMainWorld("api", {
     previewAction: (payload) => ipcRenderer.invoke("workspace:previewAction", payload),
     applyAction: (payload) => ipcRenderer.invoke("workspace:applyAction", payload),
     previewPatchPlan: (payload) => ipcRenderer.invoke("workspace:previewPatchPlan", payload),
-    applyPatchPlan: (payload) => ipcRenderer.invoke("workspace:applyPatchPlan", payload)
+    applyPatchPlan: (payload) => ipcRenderer.invoke("workspace:applyPatchPlan", payload),
+    getAll: () => ipcRenderer.invoke("workspace:get-all"),
+    getActive: () => ipcRenderer.invoke("workspace:get-active"),
+    setActive: (id) => ipcRenderer.invoke("workspace:set-active", id),
+    register: (path) => ipcRenderer.invoke("workspace:register", path),
+    getChainProposals: (workspacePath) => ipcRenderer.invoke("workspace:get-chain-proposals", workspacePath),
+    onChanged: (fn) => ipcRenderer.on("workspace:changed", (_e, data) => fn(data)),
+    onListUpdated: (fn) => ipcRenderer.on("workspace:list-updated", (_e, data) => fn(data))
   },
   identity: {
     /** Returns own public key PEM and display fingerprint. */
@@ -417,14 +424,12 @@ contextBridge.exposeInMainWorld("api", {
     runChain: (templateId, workspacePath) => ipcRenderer.invoke("action:run-chain", templateId, workspacePath),
     resumeChain: (chainId, workspacePath) => ipcRenderer.invoke("action:resume-chain", chainId, workspacePath)
   },
-  workspace: {
-    getAll: () => ipcRenderer.invoke("workspace:get-all"),
-    getActive: () => ipcRenderer.invoke("workspace:get-active"),
-    setActive: (id) => ipcRenderer.invoke("workspace:set-active", id),
-    register: (path) => ipcRenderer.invoke("workspace:register", path),
-    getChainProposals: (workspacePath) => ipcRenderer.invoke("workspace:get-chain-proposals", workspacePath),
-    onChanged: (fn) => ipcRenderer.on("workspace:changed", (_e, data) => fn(data)),
-    onListUpdated: (fn) => ipcRenderer.on("workspace:list-updated", (_e, data) => fn(data))
+  utils: {
+    basename: (p) => {
+      if (!p) return "";
+      const parts = p.split(/[/\\]/);
+      return parts[parts.length - 1];
+    }
   }
 });
 
