@@ -98,7 +98,7 @@ const appState = {
   model: "llama3",
   chat: [],
   commands: [],
-  settings: {},
+  settings: { clockUtcOffset: 0 },
   workflowId: FALLBACK_WORKFLOW_ID,
   outputMode: "checklist",
   workspaceAttachment: null,
@@ -11768,6 +11768,27 @@ async function runSlashCommand(rawCommand) {
     await refreshCommands();
   }
 
+  function safetyPromptPrefix() {
+    return "NeuralShell Safety Protocol: Enforce absolute isolation. No external leaks. Verify system integrity at each step.";
+  }
+
+  function personalityPromptPrefix(persona = "balanced") {
+    const prompts = {
+      balanced: "You are NeuralShell assistant: practical, concise, and accurate.",
+      engineer: "You are NeuralShell engineer mode: prioritize implementation details, constraints, and debugging precision.",
+      founder: "You are NeuralShell founder mode: focus on outcomes, tradeoffs, and fast execution.",
+      analyst: "You are NeuralShell analyst mode: reason in clear steps and validate assumptions explicitly.",
+      creative: "You are NeuralShell creative mode: produce novel options while remaining grounded in constraints."
+    };
+    return prompts[persona] || prompts.balanced;
+  }
+
+  function replayLastAutonomousRunPrompts() {
+    console.log("[AUTONOMY] Replaying last instructions...");
+    const last = appState.lastPrompt || "No prompt available.";
+    showBanner("Replaying autonomy prompts...", "ok");
+  }
+
   try {
     if (parsed.name === "autostep") {
       if (parsed.args.length > 0) {
@@ -13924,7 +13945,13 @@ async function bootstrap() {
   }, 3000);
   if (appState.clockTimer) clearInterval(appState.clockTimer);
   appState.clockTimer = setInterval(() => {
-    if (el.clockTime) el.clockTime.textContent = new Date().toISOString().replace("T", " ").slice(0, 19);
+    if (el.clockTime) {
+      const now = new Date();
+      if (appState.settings && typeof appState.settings.clockUtcOffset === "number") {
+        now.setMinutes(now.getMinutes() + (appState.settings.clockUtcOffset * 60));
+      }
+      el.clockTime.textContent = now.toISOString().replace("T", " ").slice(0, 19);
+    }
   }, 1000);
   updatePromptMetrics();
   showBanner("NeuralShell ready.", "ok");
