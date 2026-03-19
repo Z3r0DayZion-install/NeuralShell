@@ -141,35 +141,6 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.on(channel, wrapped);
     return () => ipcRenderer.removeListener(channel, wrapped);
   },
-  /**
-   * Status of the LLM bridge.
-   * Generic IPC invoke wrapper. Use this to call ipcMain.handle() channels.
-   * @param {string} channel The channel name
-   * @param {any} data The argument to send
-   */
-  invoke: (channel, ...args) => {
-    assertAllowed(ALLOWED_INVOKE_CHANNELS, channel, "invoke");
-    return ipcRenderer.invoke(channel, ...args);
-  },
-  /**
-   * Generic IPC send wrapper for asynchronous messages.
-   * @param {string} channel
-   * @param {any} data
-   */
-  send: (channel, ...args) => {
-    assertAllowed(ALLOWED_SEND_CHANNELS, channel, "send");
-    return ipcRenderer.send(channel, ...args);
-  },
-  /**
-   * Listen for an IPC message from the main process. The handler is
-   * called with the message's arguments when the event fires.
-   * @param {string} channel
-   * @param {function} func
-   */
-  on: (channel, func) => {
-    assertAllowed(ALLOWED_ON_CHANNELS, channel, "on");
-    return ipcRenderer.on(channel, (_event, ...args) => func(...args));
-  },
   // Namespaced typed APIs for backward compatibility. These call the
   // underlying ipcRenderer.invoke methods internally.
   llm: {
