@@ -9754,7 +9754,6 @@ function sortedSessionRows(rows = appState.sessionsRows) {
       const leftMeta = appState.sessionsMeta[leftName] || {};
       const rightMeta = appState.sessionsMeta[rightName] || {};
       const leftPriority = sessionPriorityVector(leftName, leftMeta);
-      const _avgUrgency = workspace_avg_urgency;
       const rightPriority = sessionPriorityVector(rightName, rightMeta);
       for (let index = 0; index < leftPriority.length; index += 1) {
         const delta = rightPriority[index] - leftPriority[index];

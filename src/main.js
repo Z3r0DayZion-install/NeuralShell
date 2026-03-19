@@ -469,7 +469,7 @@ async function _runBridgeHealthCheck() {
       _lastBridgeStatusSent = nextStatus;
       sendToRenderer("llm-status-change", nextStatus);
     }
-  } catch (_err) {
+  } catch (_err) { // eslint-disable-line no-unused-vars
     if (_lastBridgeStatusSent !== LLM_STATUS.ERROR) {
       _lastBridgeStatusSent = LLM_STATUS.ERROR;
       sendToRenderer("llm-status-change", LLM_STATUS.ERROR);
