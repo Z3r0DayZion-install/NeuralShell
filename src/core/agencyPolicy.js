@@ -51,8 +51,8 @@ function loadPolicy() {
 // Initial Load
 loadPolicy();
 
-// Wave 15B: File Watcher
-if (fs.existsSync(POLICY_PATH)) {
+// Wave 15B: File Watcher - Disabled for files inside ASAR (read-only archive)
+if (fs.existsSync(POLICY_PATH) && !POLICY_PATH.includes("app.asar")) {
     fs.watch(POLICY_PATH, (event) => {
         if (event === 'change') loadPolicy();
     });
