@@ -127,7 +127,22 @@ function assertAllowed(set, channel, type) {
  * prevent arbitrary code execution in the renderer.
  */
 contextBridge.exposeInMainWorld("api", {
+  invoke: (channel, ...args) => {
+    assertAllowed(ALLOWED_INVOKE_CHANNELS, channel, "invoke");
+    return ipcRenderer.invoke(channel, ...args);
+  },
+  send: (channel, ...args) => {
+    assertAllowed(ALLOWED_SEND_CHANNELS, channel, "send");
+    ipcRenderer.send(channel, ...args);
+  },
+  on: (channel, fn) => {
+    assertAllowed(ALLOWED_ON_CHANNELS, channel, "on");
+    const wrapped = (_e, ...args) => fn(...args);
+    ipcRenderer.on(channel, wrapped);
+    return () => ipcRenderer.removeListener(channel, wrapped);
+  },
   /**
+   * Status of the LLM bridge.
    * Generic IPC invoke wrapper. Use this to call ipcMain.handle() channels.
    * @param {string} channel The channel name
    * @param {any} data The argument to send

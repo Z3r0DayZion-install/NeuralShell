@@ -56,8 +56,10 @@
     - [x] "Fleet Board" Workspace Switcher Refinement
     - [x] Tactical Documentation (Brand Guide, Handoff)
 
-- [/] Stage 19: Final Deployment & Shipping
-    - [/] Baseline Commits & Version Bump (v2.1.0)
-    - [ ] Execute `npm run ship` (Release Pipeline)
-    - [ ] Generate V2.1 Tactical Release Manifest
-    - [ ] Final Evidence Pack & Project Seal
+- [ ] Stage 19: Final Deployment & Shipping [/]
+    - [x] Resolve linting blockers (0-warning baseline)
+    - [x] Neutralize OMEGA Security AST Gate violations
+    - [x] Re-stabilize Source Integrity Manifest
+    - [/] Core Build & Signing (V2.1.0)
+    - [ ] Generate V2.1 Evidence Pack
+    - [ ] Project Seal
