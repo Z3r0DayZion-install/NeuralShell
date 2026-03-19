@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-19T19:25:22.930Z",
-  "commit": "493099209dbd7d7dab279bf8ca1936ff7212914d",
+  "generatedAt": "2026-03-19T20:19:20.102Z",
+  "commit": "673604bd62cdd286df4ec37d60a867875f65781e",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -587,7 +587,7 @@
     "src/plugins/manifests/swarm-consensus.json": "16069b17dd912bd1de10eb83176f035ee9bbf2ff60fab6dc10d1b36da7623abc",
     "src/preload.js": "f620e9235e9b7f6e735de9c7d9174c8ac81d811c5381f9f7907e21d735f650e6",
     "src/renderer.html": "33262ec3635f79dc9a6f0e4a15c706e6212a7b19a58e5714eb03637ebf058443",
-    "src/renderer.js": "be4560fdeb8049e89052b084221990eacb0a332e0249816c68cff2d054a63afb",
+    "src/renderer.js": "d00cc3b5e38fb2d203edf263aa7f38bd96e3db29f4c54809516add70cf4b4288",
     "src/security/intentFirewall.js": "dcfcbe82ebc41f73a7d4fc69854bf740c0fada3a597f68ef6861744e431ae348",
     "src/style.css": "f484439826833a163d0ba89d748c9911f9f9bdb0f295d1a7da2a6660323d4ce8",
     "src/uiCommandDeckConfig.js": "ae26e37a1b1fe765d6b5ed49cb2942f04d62aa6e01f8ef37bf09e022e280f5eb",
