@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-19T17:45:37.240Z",
-  "commit": "bab48ba5949e1271582a271f94921c0b47083e38",
+  "generatedAt": "2026-03-19T18:43:14.222Z",
+  "commit": "91b09c93864759c4ae2b2b58f41fde4726453071",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -528,7 +528,7 @@
     "src/core/actionPipelines.js": "5da1d91d9f587cbb709cdb95d8db8995434a7de94a0e6ab4911f5d7ac874bc1b",
     "src/core/actionRegistry.js": "1a8890758e9f9b61ac2b5492d30b5abb5cafb60feef3df31c8b61a6cabbe7453",
     "src/core/adaptiveIntelligence.js": "8c7d2419a5e011742c7595db384a86f6385d6d449d272118e85193c1fd3b09f6",
-    "src/core/agencyPolicy.js": "0f723a592c2bf5477ce19288a86becbc268071a66591de985a4d96a8a29cbf8b",
+    "src/core/agencyPolicy.js": "c3e81723a5a46e9d52a01f48b33375f5beb200927a3321b9372611bcde02af8d",
     "src/core/agentController.js": "1e06f783779ea5b2338aef7139f6e4c8a765b0f4c0a853eb93ae9970716ac9fe",
     "src/core/auditChain.js": "f7c2d5a1e179c0c30282aadb37e5c413acd2029bf7190e728bd99a667760eec6",
     "src/core/chainPlanner.js": "804ebec754231b6ea62974cdfaa97c0d025475f8dc84505ec2f8257ef8bbe756",
