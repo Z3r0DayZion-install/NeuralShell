@@ -20,6 +20,7 @@ const VALID_PERSONALITY_PROFILES = new Set([
 ]);
 const VALID_RGB_PROVIDERS = new Set(["openrgb", "none"]);
 const VALID_LOG_LEVELS = new Set(["debug", "info", "warn", "error"]);
+const VALID_TELEMETRY_TYPES = new Set(["ui_action", "bridge_status", "session_event", "performance", "error"]);
 const DEFAULT_WORKFLOW_ID =
   workflowCatalog && typeof workflowCatalog.DEFAULT_WORKFLOW_ID === "string"
     ? String(workflowCatalog.DEFAULT_WORKFLOW_ID).trim() || "bridge_diagnostics"
@@ -32,10 +33,10 @@ const getBridgeProvider =
   bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
     ? bridgeProviderCatalog.getBridgeProvider
     : (value) => ({
-        id: normalizeBridgeProviderId(value),
-        defaultBaseUrl: "http://127.0.0.1:11434",
-        requiresApiKey: false
-      });
+      id: normalizeBridgeProviderId(value),
+      defaultBaseUrl: "http://127.0.0.1:11434",
+      requiresApiKey: false
+    });
 
 function assert(condition, message) {
   if (!condition) {
@@ -113,16 +114,23 @@ function validatePassphrase(value) {
 function validateModel(value) {
   return toTrimmedString(value, "Model");
 }
-
 function validateLog(level, message) {
-  const normalizedLevel = String(level || "")
-    .trim()
-    .toLowerCase();
+  const normalizedLevel = String(level || "").trim().toLowerCase();
   assert(VALID_LOG_LEVELS.has(normalizedLevel), `invalid log level: ${level}`);
   const normalizedMessage = toTrimmedString(message, "Log message");
   return {
     level: normalizedLevel,
     message: normalizedMessage
+  };
+}
+
+function validateTelemetry(type, action) {
+  const normalizedType = String(type || "").trim().toLowerCase();
+  assert(VALID_TELEMETRY_TYPES.has(normalizedType), `invalid telemetry type: ${type}`);
+  const normalizedAction = toTrimmedString(action, "Telemetry action");
+  return {
+    type: normalizedType,
+    action: normalizedAction
   };
 }
 
@@ -582,8 +590,8 @@ function validateReleasePacketHistory(value) {
     .map((entry, index) => {
       const artifact = validateArtifact(entry);
       assert(
-        artifact.outputMode === "release_packet",
-        `releasePacketHistory[${index}] must use release_packet outputMode.`
+        artifact.outputMode === "shipping_packet",
+        `releasePacketHistory[${index}] must use shipping_packet outputMode.`
       );
       assert(
         String(artifact.content || "").trim().length > 0,
@@ -592,7 +600,7 @@ function validateReleasePacketHistory(value) {
       return {
         ...artifact,
         title: artifact.title || "Release Packet",
-        outputMode: "release_packet"
+        outputMode: "shipping_packet"
       };
     })
     .slice(0, 8);
@@ -608,9 +616,9 @@ function validatePatchPlanFilePath(value) {
   const next = path.posix.normalize(normalized);
   assert(
     next !== "." &&
-      next !== ".." &&
-      !next.startsWith("../") &&
-      !next.includes("/../"),
+    next !== ".." &&
+    !next.startsWith("../") &&
+    !next.includes("/../"),
     "patchPlan file path is invalid."
   );
   return next;
@@ -917,9 +925,9 @@ function validateWorkspaceActionRequest(value) {
   if (normalizedDirectory !== ".") {
     assert(
       normalizedDirectory !== ".." &&
-        !normalizedDirectory.startsWith("../") &&
-        !normalizedDirectory.includes("/../") &&
-        !normalizedDirectory.startsWith("/"),
+      !normalizedDirectory.startsWith("../") &&
+      !normalizedDirectory.includes("/../") &&
+      !normalizedDirectory.startsWith("/"),
       "workspace action directory is invalid."
     );
   }
@@ -988,5 +996,6 @@ module.exports = {
   validateSessionName,
   validateWorkspaceActionRequest,
   validateStateKey,
-  validateStateUpdates
+  validateStateUpdates,
+  validateTelemetry
 };

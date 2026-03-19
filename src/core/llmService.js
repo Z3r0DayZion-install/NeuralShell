@@ -1,5 +1,6 @@
 const { TextDecoder } = require("util");
 const bridgeProviderCatalog = require("../bridgeProviderCatalog");
+const { LLM_STATUS, CONNECTION_DEFAULTS } = require("./config");
 
 const PERSONA_PROMPTS = {
   balanced: "You are NeuralShell assistant: practical, concise, and accurate.",
@@ -17,9 +18,9 @@ class LLMService {
     this.baseUrl = String(options.baseUrl || "http://127.0.0.1:11434");
     this.provider = normalizeBridgeProviderId(options.provider || "ollama");
     this.apiKey = String(options.apiKey || "");
-    this.maxRetries = Number.isFinite(Number(options.maxRetries)) ? Number(options.maxRetries) : 2;
-    this.retryBaseDelayMs = Number.isFinite(Number(options.retryBaseDelayMs)) ? Number(options.retryBaseDelayMs) : 250;
-    this.requestTimeoutMs = Number.isFinite(Number(options.requestTimeoutMs)) ? Number(options.requestTimeoutMs) : 15000;
+    this.maxRetries = Number.isFinite(Number(options.maxRetries)) ? Number(options.maxRetries) : CONNECTION_DEFAULTS.RETRY_COUNT;
+    this.retryBaseDelayMs = Number.isFinite(Number(options.retryBaseDelayMs)) ? Number(options.retryBaseDelayMs) : CONNECTION_DEFAULTS.RETRY_BASE_DELAY_MS;
+    this.requestTimeoutMs = Number.isFinite(Number(options.requestTimeoutMs)) ? Number(options.requestTimeoutMs) : CONNECTION_DEFAULTS.REQUEST_TIMEOUT_MS;
     this.model = "llama3";
     this.persona = "balanced";
     this._listeners = new Set();
@@ -101,7 +102,7 @@ class LLMService {
         detected: false,
         baseUrl: this.baseUrl,
         latencyMs: Date.now() - started,
-        reason: err && err.message ? err.message : "detection_failed"
+        reason: this._classifyError(err)
       };
     }
   }
@@ -183,7 +184,7 @@ class LLMService {
     const payloadMessages = this._applyPersona(messages);
     const controller = new AbortController();
     this._activeController = controller;
-    this._emitStatus("busy");
+    this._emitStatus(LLM_STATUS.BUSY);
 
     try {
       if (streamMode) {
@@ -238,7 +239,7 @@ class LLMService {
     } catch (err) {
       const cancelledByUser = controller.__cancelledByUser === true;
       if (cancelledByUser || /aborted|cancelled/i.test(String(err && err.message))) {
-        this._emitStatus("cancelled");
+        this._emitStatus(LLM_STATUS.CANCELLED);
         throw new Error("cancelled");
       }
       throw err;
@@ -253,7 +254,7 @@ class LLMService {
     if (this._activeController) {
       this._activeController.__cancelledByUser = true;
       this._activeController.abort();
-      this._emitStatus("cancelled");
+      this._emitStatus(LLM_STATUS.CANCELLED);
       return true;
     }
     return false;
@@ -269,7 +270,7 @@ class LLMService {
       try {
         const result = await task();
         if (this._lastRequestSeq === seq) {
-          this._emitStatus("online");
+          this._emitStatus(LLM_STATUS.ONLINE);
         }
         return result;
       } catch (err) {
@@ -278,14 +279,15 @@ class LLMService {
           break;
         }
         if (this._lastRequestSeq === seq) {
-          this._emitStatus("reconnecting");
+          this._emitStatus(LLM_STATUS.RECONNECTING);
         }
-        await this._sleep(this.retryBaseDelayMs * (attempt + 1));
+        const delay = this.retryBaseDelayMs * Math.pow(2, attempt) + (Math.random() * 200);
+        await this._sleep(delay);
       }
     }
 
     if (this._lastRequestSeq === seq) {
-      this._emitStatus("error");
+      this._emitStatus(LLM_STATUS.ERROR);
     }
     throw lastError || new Error("request failed");
   }
@@ -318,7 +320,7 @@ class LLMService {
     }
 
     const signalController = controller || new AbortController();
-    const timeoutMs = Number.isFinite(this.requestTimeoutMs) ? this.requestTimeoutMs : 15000;
+    const timeoutMs = Number.isFinite(this.requestTimeoutMs) ? this.requestTimeoutMs : CONNECTION_DEFAULTS.REQUEST_TIMEOUT_MS;
     const timer = setTimeout(() => {
       signalController.abort();
     }, timeoutMs);
@@ -523,6 +525,15 @@ class LLMService {
         // Ignore malformed tail chunks.
       }
     }
+  }
+
+  _classifyError(err) {
+    if (!err) return "unknown_error";
+    if (err.name === "AbortError") return "request_timeout";
+    const code = err.code || (err.cause && err.cause.code);
+    if (code === "ECONNREFUSED") return "service_offline";
+    if (code === "ETIMEDOUT" || code === "ENOTFOUND") return "network_unreachable";
+    return err.message || "detection_failed";
   }
 }
 

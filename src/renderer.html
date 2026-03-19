@@ -13,10 +13,10 @@
     <header id="appHeader" class="app-header">
       <div class="header-main">
         <div class="header-brand">
-          <div class="brand-mark">NS</div>
+          <img src="../assets/logo-primary.svg" class="brand-logo" alt="NeuralShell" />
           <div class="brand-copy">
-            <h1>NeuralShell</h1>
-            <span id="heroWorkflowBadge" class="header-badge">Bridge Diagnostics</span>
+            <h1 class="visually-hidden">NeuralShell</h1>
+            <span id="heroWorkflowBadge" class="header-badge">CONSOLIDATED ACCESS</span>
           </div>
         </div>
 
@@ -82,6 +82,11 @@
       </div>
     </header>
 
+    <div id="recoveryBanner" class="recovery-banner hidden">
+      <span class="banner-icon">⚠️</span>
+      <span class="banner-text">SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED</span>
+    </div>
+
 
     <section id="workspaceTopology" class="layout workspace-topology">
       <section class="workspace-column workspace-center-column">
@@ -99,6 +104,39 @@
 
 
 
+          <div id="starterActionsSpotlight" class="starter-actions-grid hidden">
+            <div class="starter-action-card" data-action="audit">
+              <div class="starter-action-visual">
+                <span class="starter-action-icon">AUDIT</span>
+                <div class="visual-pulse"></div>
+              </div>
+              <div class="starter-action-info">
+                <span class="starter-action-label">SYSTEM HEALTH</span>
+                <span class="starter-action-note">Comprehensive scan of local and remote environment health.</span>
+              </div>
+            </div>
+            <div class="starter-action-card" data-action="scan">
+              <div class="starter-action-visual">
+                <span class="starter-action-icon">SCAN</span>
+                <div class="visual-pulse"></div>
+              </div>
+              <div class="starter-action-info">
+                <span class="starter-action-label">NETWORK TOPOLOGY</span>
+                <span class="starter-action-note">Discover active bridge nodes and connection latency.</span>
+              </div>
+            </div>
+            <div class="starter-action-card" data-action="tunnel">
+              <div class="starter-action-visual">
+                <span class="starter-action-icon">TUNNEL</span>
+                <div class="visual-pulse"></div>
+              </div>
+              <div class="starter-action-info">
+                <span class="starter-action-label">SECURE PIPELINE</span>
+                <span class="starter-action-note">Establish direct secure pipeline for LLM routing.</span>
+              </div>
+            </div>
+          </div>
+
           <div id="chatHistory"></div>
 
           <div class="control-band">
@@ -109,6 +147,7 @@
               </label>
               <div id="promptMetrics"></div>
               <div id="tokensUsed"></div>
+              <div id="typingIndicator" class="typing-indicator"></div>
             </div>
 
             <div class="composer-shell">
@@ -774,6 +813,8 @@
                   <span class="cluster-note">Conversation event stream and assistant payloads.</span>
                 </div>
                 <pre id="chatLogsOutput"></pre>
+                <div id="statusLabel" class="hidden" aria-hidden="true"></div>
+                <div id="statusMeta" class="hidden" aria-hidden="true"></div>
               </div>
             </div>
           </section>
@@ -1278,6 +1319,7 @@
       </div>
     </section>
   </main>
+  <script src="core/config.js"></script>
   <script src="uiCommandDeckConfig.js"></script>
   <script src="airgapPolicy.js"></script>
   <script src="bridgeProfileModel.js"></script>

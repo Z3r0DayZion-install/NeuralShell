@@ -1,66 +1,105 @@
-# Walkthrough - NeuralShell UX Polish and MVP Hardening: Phases 2–5
+# NeuralShell V2.0 RC Final (Post-Gen Expanded)
 
-I have finalized the UX Polish and MVP Hardening for NeuralShell, completing Phases 2 through 5. The application now features a consistent terminology set, improved visual hierarchy, and a high-trust "Golden Flow" for a stable production workflow.
+This walkthrough documents the successful finalization of the **NeuralShell V2.0 RC Final** release. It provides a technical record of the core hardening and post-gen resilience expansions that define the current production-ready baseline.
 
-## Phase 2: Terminology Reconciliation
-- **Global Rename**: Replaced all user-facing instances of "Inspector," "Runtime," and "Release" with "System," "Performance," and "Shipping."
-- **Internal Sync**: Updated `IDS` array, `appState` fields, function names, and CSS classes across `renderer.js`, `renderer.html`, `style.css`, and `main.js`.
-- **Core Logic**: Reconciled suggestion IDs (`shipping_audit`) and group check maps in the verification layer.
+## ⚖️ Audit & Release Scope
+The repository contains artifacts from across the project's development history. To maintain a truthful and professional handoff, we distinguish between the **Current Public Release Surface** and **Historical Records**:
 
-## Phase 3: Action Emphasis & Scanability
-- **Primary Setup Animation**: Implemented brand-pulsing animations for 'Attach Workspace' and 'Detect Bridge' when the system is in an idle/guarded state.
-- **Density Reduction**: Simplified right-column support text and panel notes to reduce visual fatigue.
-- **Empty States**: Refined placeholders for Artifacts and Project Context to be more concise and action-oriented.
+- **RC_RELEASE_SCOPE.md**: Defines the normative boundary for the V2.0 RC Final release assets.
+- **LEGACY_ARTIFACTS_AUDIT.md**: Categorizes historical residue (Beta, OMEGA) kept for traceability.
 
-## Phase 4: Onboarding & Guidance
-Implemented a guided "Cold Start" experience and reduced visual noise for new users.
+---
 
-### Key Improvements:
-- **Getting Started Hero**: Replaced the empty thread state with a status-aware Hero card that guides users to attach a workspace and detect a bridge.
-- **Show Advanced Parameters**: Technical LLM parameters are now hidden by default, accessible via a new "Show Advanced Parameters" toggle in the settings drawer.
-- **Smarter Action Guidance**: Primary actions now pulse based on the missing requirements (e.g., pulsing "Attach Workspace" when empty).
-- **Refined Recovery**: Bridge failure messages now provide more direct, actionable steps for reconnection.
+## 🛡️ V2.0 RC: Operational Hardening
 
-### Verification Notes:
-- **Guided Setup**: Verified that the "Getting Started" hero card correctly sequences Step 1 (Attach Workspace) and Step 2 (Detect Local Bridge).
-- **Complexity Reduction**: Confirmed that technical LLM parameters are hidden by default and accessible via the new "Show Advanced Parameters" toggle.
-- **Action Readiness**: Verified that primary action buttons pulse when prerequisites are missing, guiding the user to the correct next step.
-- **Improved Recovery**: Confirmed that bridge failure states provide direct, actionable reconnection instructions.
+The core Release Candidate provides a high-reliability environment with deterministic guards and optimized resource management.
 
-## Phase 5: MVP Hardening
-Hardened the core "Golden Flow" (Startup -> Setup -> Action -> Save -> Load) to ensure a high-trust, low-friction production workflow.
+### 1. Reliability Hardening
+- **Implemented**: Chain inactivity timeouts, stale workload reapers, and duplicate-run execution guards.
+- **Outcome**: The `ExecutionEngine` gracefully handles system restarts and prevents redundant action triggers in active workspaces.
+- **Verification**: `reliability_hardening.test.js` confirmed stable state transitions and duplicate suppression.
 
-### Key Improvements:
-- **Status-Aware Hero**: The Hero card now evolves with the system state.
-    - **Step 1**: Guided workspace attachment.
-    - **Step 2**: Guided bridge detection.
-    - **Ready State**: Shows exact starter actions:
-        - Analyze Workspace
-        - Security Audit
-        - Draft Release Notes
-        - Open Command Palette
-- **Session Pinning**: Added an "Active Session" indicator to the AppHeader that updates in real-time, confirming that work is being tracked.
-- **Messaging Tightening**: Simplified LLM recovery strings to focus on user actions rather than technical errors.
-- **Visual Feedback**: Added a subtle "Ready" glow to the main thread column when both workspace and bridge are active.
+### 2. Performance & Load Stability
+- **Implemented**: TTL-based intelligence caching and urgency recomputation throttling.
+- **Outcome**: Disk I/O is significantly reduced by memoizing workspace scans, and UI responsiveness is preserved through debounced signal propagation.
+- **Verification**: `performance_load.test.js` demonstrated consistent latency under concurrent multi-repo load.
 
-### Verification Notes:
-- **Cold Start Recovery**: Verified cold-start hero renders correctly for "no-workspace" state.
-- **Bridge Sequencing**: Verified bridge-detection step renders immediately after workspace attachment.
-- **Task Seeding**: Verified exact behavior:
-    - Analyze Workspace, Security Audit, and Draft Release Notes seed the prompt input
-    - Open Command Palette opens the overlay instead of seeding prompt text
-- **Session Persistence**: Verified active session indicator updates in the app header and persists through work sessions.
-- **UI Polish**: Verified ready-state visual feedback (subtle glow) appears in the center column when the system is grounded and connected.
+### 3. Strategic Policy Depth
+- **Implemented**: Risk-tiered autonomy (SAFE, MEDIUM, HIGH) with human-readable rationales.
+- **Outcome**: `AgencyPolicy` enforces mandatory operator gating for high-risk actions and provides clear explanations for policy-based suppression.
+- **Verification**: `strategic_policy.test.js` verified that risk boundaries are correctly enforced across varied environments.
 
-## Phase 6: Release Operations & Archival
-Finalized the project for handoff with a release-locked Gold Master bundle.
+### 4. Conflict-Safe Multi-Repo Coordination
+- **Implemented**: `ConflictModel` for workspace health tracking and cross-chain signal propagation.
+- **Outcome**: Merge conflicts or drift in a linked repository correctly escalate urgency in sibling workspaces to prevent upstream breakage.
+- **Verification**: `conflict_safe_coordination.test.js` validated signal propagation across linked mock workspaces.
 
-### Key Operations:
-- **Portability Scrub**: Performed a global, automated scrub of all shippable artifacts to strip machine-local paths (`C:\Users\`), session-specific URLs (`file:///`, `cci:`), and environment-specific headers (`.gemini`).
-- **Gold Master Rebuild**: Consolidated the 6 evidence docs and 3 release records (`RELEASE_MANIFEST.md`, `SHA256SUMS.txt`, `FINAL_HANDOFF_STATUS.md`) into a definitive 9-file ZIP.
-- **Checksum Verification**: Verified the final artifact against the approved SHA-256 hash: `c4b9cbfbe0154c30aa875dda8c15252c72cfc507c6c76f4fae94528ea22c7bce`.
-- **Git Tagging**: Created and pushed the annotated tag `neuralshell-phases2-5-goldmaster` to orchestrate the release baseline.
-- **GitHub Draft Release**: Created a draft release on GitHub with the verified asset attached and finalize release notes.
+### 5. Audit & Diagnostics Pack
+- **Implemented**: `DiagnosticsLedger` — a centralized, append-only decision log.
+- **Outcome**: Full transparency into every `PROPOSAL`, `GATE`, `SUPPRESSION`, and `COMPLETION`.
+- **Verification**: `audit_diagnostics.test.js` confirmed accurate retrieval of diagnostic events via the IPC layer.
 
-## Final Project Closeout
-NeuralShell MVP is now hardened and release-locked. The system features a guided onboarding path, a consistent terminology set, and a responsive active-session tracking system. The "Golden Flow" is verified, stable, and delivered as a 100% portable Gold Master package.
+---
+
+## 🌀 Post-Gen Resilience Expansion
+
+Following the core hardening pass, the system entered the Post-Gen finalization stage (Internal build: Stage 515), adding advanced autonomous longevity.
+
+### 15A. Self-Repairing Tactical Kernels
+- **Implemented**: Heartbeat-based liveness monitoring via `kernelRepair.js`.
+- **Outcome**: The system detects stalled execution pipelines and automatically triggers tactical resets to restore orchestration state.
+- **Verification**: `kernel_repair.test.js` confirmed proactive recovery from simulated service stalls.
+
+### 15B. Hot-Reloadable Strategic Policies
+- **Implemented**: External `agencyPolicy.json` configuration with runtime hot-reloading.
+- **Outcome**: Approval boundaries and risk tiers can be adjusted dynamically without restarting the application.
+- **Verification**: `policy_hotload.test.js` demonstrated immediate enforcement of updated policy rules.
+
+### 15C. Proactive Anomaly Detection
+- **Implemented**: Behavioral heuristic engine in `adaptiveIntelligence.js` calculating "Anomaly Risk".
+- **Outcome**: Autonomous execution is dynamically suppressed if the system detects high failure density or abnormal coordination drift.
+- **Verification**: `anomaly_detection.test.js` verified that safety gates are intelligently applied during detected failure spikes.
+
+---
+
+## 🛰️ V2.1 Update: Stealth Tactical & Bridge Resilience
+
+Following the design directive for a mission-critical command aesthetic, the system has been upgraded to the **Stealth Tactical** baseline.
+
+### 16. Adaptive Bridge Hardening
+- **Implemented**: 45s local timeouts, 3x retry limit, and jittered exponential backoff in `llmService.js`.
+- **Outcome**: Improved connection stability for slow-loading local models (e.g., Ollama under VRAM pressure).
+- **Verification**: Classified socket errors now provide clear diagnostic feedback (e.g., `service_offline`).
+
+### 17. Stealth Tactical Visual Overhaul
+- **Implemented**: Mission-inspired charcoal (#151816), deep olive (#354030), and pale stone (#E3E7DC) color palette.
+- **Branding**: Official "Neural Security" logo merging neural network and shield motifs.
+## V2.1 Tactical Consolidation Baseline
+The V2.1 suite delivers a production-grade "Stealth Tactical" environment. All branding elements have been consolidated into professional SVG vectors and the icon set has been rebuilt for mission-readiness.
+
+### Branding & Assets
+- **Primary Logo**: Integrated `assets/logo-primary.svg` into the global header.
+- **Icon Suite**: Generated `.ico`, `.icns`, and full PNG set from `logo-mark.svg`.
+- **Design Tokens**: Standardized `--ns-*` palette (Charcoal, Olive, Amber) across all surfaces.
+
+### UI Refinements
+- **Intelligence Surface**: Consolidated "Starter Actions" for Audit, Scan, and Tunneling.
+- **Fleet Board**: Workspace switcher now features real-time signal badges and urgency states.
+- **Telemetric Terminal**: High-density log layout and risk-tier visibility.
+
+### Verification Evidence
+![V2.1 Tactical Landing Surface](file:///C:/Users/KickA/.gemini/antigravity/brain/4338ac39-99d5-4a2d-8cfb-3e0e3e2cb7a5/neuralshell_landing_state_mission_control_1773939434813.png)
+*Mission Control landing state showing consolidated branding and starter actions.*
+
+---
+
+## 📦 Final Packaging & Evidence
+The V2.1 RC Final package is supported by the following definitive artifacts:
+- `docs/rc/V2_RC_RELEASE_NOTES.md`
+- `POST_GEN_RC_FINAL_MANIFEST.md`
+- `POST_GEN_VERIFICATION_LOG.txt`
+- `task.md` (Stage 17 Complete)
+
+---
+**Status: SEALED (V2.1 RC Final — Stealth Tactical)**
+NeuralShell V2.1 is a high-fidelity, resilient, and mission-ready baseline.

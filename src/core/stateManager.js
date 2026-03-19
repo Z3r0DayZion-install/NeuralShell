@@ -197,7 +197,7 @@ function defaultState() {
     contextPackProfiles: [],
     activeContextPackProfileId: "",
     lastArtifact: null,
-    shippingPacketHistory: [],
+    releasePacketHistory: [],
     patchPlan: null,
     promotedPaletteActions: [],
     commandPaletteShortcutScope: "workflow",

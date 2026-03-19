@@ -23,15 +23,22 @@ const {
   statWorkspaceFiles,
   readWorkspaceFile
 } = require("./core/workspaceSummary");
+const projectIntelligence = require("./core/projectIntelligence");
+const executionEngine = require("./core/executionEngine");
+const chainPlanner = require("./core/chainPlanner");
+const diagnosticsLedger = require("./core/diagnosticsLedger");
+const actionOutcomeStore = require("./core/actionOutcomeStore");
 const verificationCatalog = require("./verificationCatalog");
 const bridgeProviderCatalog = require("./bridgeProviderCatalog");
 const airgapPolicy = require("./airgapPolicy");
 const bridgeSettingsModel = require("./bridgeSettingsModel");
 
 const llmService = require("./core/llmService");
+const { LLM_STATUS, CONNECTION_DEFAULTS } = require("./core/config");
 const { LLMService } = require("./core/llmService");
 const { AuditChain } = require("./core/auditChain");
 const identityKernel = require("./core/identityKernel");
+const telemetry = require("./core/telemetry");
 const { DaemonWatchdog } = require("./core/daemonWatchdog");
 const { enforcePolicyOnArgs, enforcePolicyOnMessages } = require("./core/policyFirewall");
 const {
@@ -48,7 +55,8 @@ const {
   validateSessionName,
   validateWorkspaceActionRequest,
   validateStateKey,
-  validateStateUpdates
+  validateStateUpdates,
+  validateTelemetry
 } = require("./core/ipcValidators");
 let logger;
 let chatLogStore;
@@ -285,8 +293,8 @@ function bridgeSettingsOptions(settings = {}) {
         : { id: providerId, defaultBaseUrl: "http://127.0.0.1:11434", suggestedModels: [] }
     ),
     defaultLocalBaseUrl: "http://127.0.0.1:11434",
-    defaultTimeoutMs: 15000,
-    defaultRetryCount: 2,
+    defaultTimeoutMs: CONNECTION_DEFAULTS.REQUEST_TIMEOUT_MS,
+    defaultRetryCount: CONNECTION_DEFAULTS.RETRY_COUNT,
     defaultAllowRemoteBridge: false,
     defaultConnectOnStartup: true,
     defaultAutoLoadRecommendedContextProfile: false
@@ -431,38 +439,44 @@ function startBridgeHealthLoop() {
     clearInterval(bridgeHealthTimer);
     bridgeHealthTimer = null;
   }
-  bridgeHealthTimer = setInterval(async () => {
-    if (_isBridgeHealthCheckInProgress) return;
-    _isBridgeHealthCheckInProgress = true;
 
-    try {
-      const settings = stateManager.get("settings") || {};
-      const health = await llmService.getHealth();
+  // Immediate probe on start
+  _runBridgeHealthCheck();
 
-      let nextStatus = "bridge_offline";
-      if (health && health.ok) {
-        nextStatus = "bridge_online";
-      } else if (settings.connectOnStartup) {
-        // Only attempt configuration if we aren't already trying or if we're definitively offline
-        if (_lastBridgeStatusSent !== "bridge_reconnecting") {
-          applyBridgeSettings(settings);
-        }
-        nextStatus = "bridge_reconnecting";
-      }
+  bridgeHealthTimer = setInterval(_runBridgeHealthCheck, CONNECTION_DEFAULTS.BRIDGE_HEALTH_INTERVAL_MS);
+}
 
-      if (nextStatus !== _lastBridgeStatusSent) {
-        _lastBridgeStatusSent = nextStatus;
-        sendToRenderer("llm-status-change", nextStatus);
+async function _runBridgeHealthCheck() {
+  if (_isBridgeHealthCheckInProgress) return;
+  _isBridgeHealthCheckInProgress = true;
+
+  try {
+    const settings = stateManager.get("settings") || {};
+    const health = await llmService.getHealth();
+
+    let nextStatus = LLM_STATUS.OFFLINE;
+    if (health && health.ok) {
+      nextStatus = LLM_STATUS.ONLINE;
+    } else if (settings.connectOnStartup) {
+      // Only attempt configuration if we aren't already trying or if we're definitively offline
+      if (_lastBridgeStatusSent !== LLM_STATUS.RECONNECTING) {
+        applyBridgeSettings(settings);
       }
-    } catch (err) {
-      if (_lastBridgeStatusSent !== "error") {
-        _lastBridgeStatusSent = "error";
-        sendToRenderer("llm-status-change", "error");
-      }
-    } finally {
-      _isBridgeHealthCheckInProgress = false;
+      nextStatus = LLM_STATUS.RECONNECTING;
     }
-  }, 12000);
+
+    if (nextStatus !== _lastBridgeStatusSent) {
+      _lastBridgeStatusSent = nextStatus;
+      sendToRenderer("llm-status-change", nextStatus);
+    }
+  } catch (err) {
+    if (_lastBridgeStatusSent !== LLM_STATUS.ERROR) {
+      _lastBridgeStatusSent = LLM_STATUS.ERROR;
+      sendToRenderer("llm-status-change", LLM_STATUS.ERROR);
+    }
+  } finally {
+    _isBridgeHealthCheckInProgress = false;
+  }
 }
 
 function clearConversationState() {
@@ -547,8 +561,8 @@ function getAdaptiveWindowMetrics(display) {
   const workWidth = Number(workArea.width) > 0 ? Number(workArea.width) : 1600;
   const workHeight = Number(workArea.height) > 0 ? Number(workArea.height) : 1000;
   const compactDisplay = workWidth < 1440 || workHeight < 920;
-  const minWidth = Math.min(workWidth, Math.max(760, Math.min(1220, workWidth - 40)));
-  const minHeight = Math.min(workHeight, Math.max(620, Math.min(820, workHeight - 40)));
+  const minWidth = Math.min(workWidth, Math.max(640, Math.min(1220, workWidth - 40)));
+  const minHeight = Math.min(workHeight, Math.max(480, Math.min(820, workHeight - 40)));
   const maxWidth = Math.max(minWidth, workWidth - (compactDisplay ? 20 : 48));
   const maxHeight = Math.max(minHeight, workHeight - (compactDisplay ? 24 : 52));
   const width = clampWindowMetric(
@@ -567,7 +581,7 @@ function getAdaptiveWindowMetrics(display) {
     height,
     minWidth,
     minHeight,
-    shouldMaximize: workWidth <= 1120 || workHeight <= 720
+    shouldMaximize: workWidth <= 1024 || workHeight <= 600
   };
 }
 
@@ -1057,6 +1071,32 @@ app.whenReady().then(async () => {
   auditChain = new AuditChain(
     path.join(app.getPath("userData"), "audit-chain.jsonl")
   );
+  actionOutcomeStore.init(app.getPath("userData"));
+  const workflowMemory = require("./core/workflowMemory");
+  workflowMemory.init(app.getPath("userData"));
+  const workspaceRegistry = require("./core/workspaceRegistry");
+  workspaceRegistry.init(app.getPath("userData"));
+
+  // --- ORCHESTRATION HARDENING (Phase 10B) ---
+  const savedActionStatus = stateManager.get("actionStatus");
+  if (savedActionStatus) {
+    executionEngine.restoreState(savedActionStatus);
+  }
+  executionEngine.onStateChange = (newState) => {
+    stateManager.set("actionStatus", newState);
+  };
+
+  executionEngine.onLog = (logEntry) => {
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send("action:log", logEntry);
+    });
+  };
+
+  executionEngine.onInteraction = (interaction) => {
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send("action:interaction", interaction);
+    });
+  };
 
   await identityKernel.init();
   stateManager.load();
@@ -1686,6 +1726,12 @@ ipcMain.handle("log:log", async (_event, level, message, meta) => {
   return true;
 });
 
+ipcMain.handle("telemetry:log", async (_event, type, action, meta) => {
+  const payload = validateTelemetry(type, action);
+  telemetry.track(payload.type, payload.action, meta && typeof meta === "object" ? meta : {});
+  return true;
+});
+
 ipcMain.handle("log:tail", async (_event, lines) => {
   return logger.tail(lines);
 });
@@ -1773,6 +1819,93 @@ ipcMain.handle("workspace:previewPatchPlan", async (_event, payload) => {
 ipcMain.handle("workspace:applyPatchPlan", async (_event, payload) => {
   const safePayload = validatePatchPlanRequest(payload);
   return applyPatchPlan(safePayload);
+});
+
+ipcMain.handle("project:analyze", async (_event, rootPath, workflowId, sessionHistory) => {
+  const intelligence = projectIntelligence.analyzeProject(rootPath);
+  if (!intelligence.ok) return intelligence;
+
+  // Wave 12B: Factor in action status for urgency
+  const actions = {};
+  executionEngine.activeActions.forEach((v, k) => {
+    if (k.startsWith(rootPath)) {
+      actions[k] = v;
+    }
+  });
+  intelligence.urgency = projectIntelligence.analyzeUrgency(rootPath, intelligence, actions);
+
+  const rankedActions = projectIntelligence.rankActions(intelligence, workflowId, sessionHistory);
+  return {
+    ...intelligence,
+    rankedActions
+  };
+});
+
+ipcMain.handle("action:run", async (_event, actionId, context) => {
+  const workspaceRegistry = require("./core/workspaceRegistry");
+  const { analyzeProject } = require("./core/projectIntelligence");
+
+  let rootPath = context ? context.rootPath : null;
+  if (!rootPath) {
+    const activeWs = workspaceRegistry.getActiveWorkspace();
+    rootPath = activeWs ? activeWs.path : process.cwd();
+  }
+
+  // Ensure workspace is registered
+  const intel = analyzeProject(rootPath);
+  workspaceRegistry.register(rootPath, intel);
+
+  return await executionEngine.runAction(actionId, rootPath, context);
+});
+
+// --- WORKSPACE IPC (Phase 11D) ---
+ipcMain.handle("workspace:get-all", () => {
+  const workspaceRegistry = require("./core/workspaceRegistry");
+  return workspaceRegistry.getWorkspaces();
+});
+
+ipcMain.handle("workspace:get-active", () => {
+  const workspaceRegistry = require("./core/workspaceRegistry");
+  return workspaceRegistry.getActiveWorkspace();
+});
+
+ipcMain.handle("workspace:set-active", (event, id) => {
+  const workspaceRegistry = require("./core/workspaceRegistry");
+  const success = workspaceRegistry.setActiveWorkspace(id);
+  if (success) {
+    const active = workspaceRegistry.getActiveWorkspace();
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send("workspace:changed", active);
+    });
+  }
+  return success;
+});
+
+ipcMain.handle("workspace:register", (event, pathStr) => {
+  const workspaceRegistry = require("./core/workspaceRegistry");
+  const { analyzeProject } = require("./core/projectIntelligence");
+  const intel = analyzeProject(pathStr);
+  const ws = workspaceRegistry.register(pathStr, intel);
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send("workspace:list-updated", workspaceRegistry.getWorkspaces());
+  });
+  return ws;
+});
+
+ipcMain.handle("action:status", async (_event, actionId, workspacePath) => {
+  return executionEngine.getStatus(actionId, workspacePath);
+});
+
+ipcMain.handle("action:checkReady", async (_event, actionId, context) => {
+  return await executionEngine.checkReady(actionId, context);
+});
+
+ipcMain.handle("action:respond", async (_event, actionId, response, workspacePath) => {
+  return executionEngine.submitResponse(actionId, response, workspacePath);
+});
+
+ipcMain.handle("action:cancel", async (_event, actionId, workspacePath) => {
+  return executionEngine.cancelAction(actionId, workspacePath);
 });
 
 // ---------------- XP IPC ----------------
@@ -1914,6 +2047,72 @@ ipcMain.handle("kernel:request", async (_event, intent, payload) => {
     throw err;
   }
 });
+
+ipcMain.handle("diagnostics:get-recent", (event, { workspacePath, limit }) => {
+  return diagnosticsLedger.getRecent(workspacePath, limit);
+});
+
+ipcMain.handle("diagnostics:clear", () => {
+  diagnosticsLedger.clear();
+  return true;
+});
+
+ipcMain.handle("intelligence:get-signals", async (event, { workspacePath }) => {
+  try {
+    const intelligence = await projectIntelligence.analyzeProject(workspacePath);
+    // Factor in urgency for proposals (Wave 12B)
+    const actions = {};
+    executionEngine.activeActions.forEach((v, k) => {
+      actions[k] = v;
+    });
+    intelligence.urgency = projectIntelligence.analyzeUrgency(workspacePath, intelligence, actions);
+    return intelligence;
+  } catch (err) {
+    logger.log("error", `Failed to get signals: ${err.message}`, { workspacePath });
+    return { signals: [], health: {}, urgency: 0 };
+  }
+});
+
+// ---------------- ADVANCED AGENCY IPC ----------------
+
+ipcMain.handle("workspace:get-chain-proposals", async (_event, workspacePath) => {
+  try {
+    const intelligence = await projectIntelligence.analyzeProject(workspacePath);
+    // Factor in urgency for proposals (Wave 12B)
+    const actions = {};
+    executionEngine.activeActions.forEach((v, k) => {
+      actions[k] = v;
+    });
+    intelligence.urgency = projectIntelligence.analyzeUrgency(workspacePath, intelligence, actions);
+
+    return chainPlanner.proposeChains(workspacePath, intelligence);
+  } catch (err) {
+    logger.log("error", `Failed to get chain proposals: ${err.message}`, { workspacePath });
+    return [];
+  }
+});
+
+ipcMain.handle("action:run-chain", async (_event, templateId, workspacePath) => {
+  try {
+    const chain = chainPlanner.assembleChain(templateId, workspacePath);
+    if (!chain) throw new Error(`Template "${templateId}" not found.`);
+
+    executionEngine.activeChains.set(`${workspacePath}:${chain.id}`, chain);
+    return await executionEngine.runChain(chain.id, workspacePath);
+  } catch (err) {
+    logger.log("error", `Failed to run chain: ${err.message}`, { templateId, workspacePath });
+    return { ok: false, reason: err.message };
+  }
+});
+
+ipcMain.handle("action:resume-chain", async (_event, chainId, workspacePath) => {
+  try {
+    return await executionEngine.resumeChain(chainId, workspacePath);
+  } catch (err) {
+    logger.log("error", `Failed to resume chain: ${err.message}`, { chainId, workspacePath });
+    return { ok: false, reason: err.message };
+  }
+}); // end resume-chain
 
 
 

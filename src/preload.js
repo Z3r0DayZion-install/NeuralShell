@@ -81,7 +81,24 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "kernel:request",
   "recovery:repair",
   "recovery:restart",
-  "empire:scan"
+  "empire:scan",
+  "project:analyze",
+  "action:run",
+  "action:status",
+  "action:respond",
+  "action:cancel",
+  "action:run-chain",
+  "action:resume-chain",
+  "workspace:get-chain-proposals",
+  "telemetry:log",
+  "diagnostics:get-recent",
+  "diagnostics:clear",
+  "intelligence:get-signals",
+  "action:checkReady",
+  "workspace:get-all",
+  "workspace:get-active",
+  "workspace:set-active",
+  "workspace:register"
 ]);
 
 const ALLOWED_SEND_CHANNELS = new Set([]);
@@ -90,7 +107,11 @@ const ALLOWED_ON_CHANNELS = new Set([
   "daemon-status",
   "transfer-progress",
   "xp-update",
-  "ritual-triggered"
+  "ritual-triggered",
+  "action:interaction",
+  "action:log",
+  "workspace:changed",
+  "workspace:list-updated"
 ]);
 
 function assertAllowed(set, channel, type) {
@@ -111,18 +132,18 @@ contextBridge.exposeInMainWorld("api", {
    * @param {string} channel The channel name
    * @param {any} data The argument to send
    */
-  invoke: (channel, data) => {
+  invoke: (channel, ...args) => {
     assertAllowed(ALLOWED_INVOKE_CHANNELS, channel, "invoke");
-    return ipcRenderer.invoke(channel, data);
+    return ipcRenderer.invoke(channel, ...args);
   },
   /**
    * Generic IPC send wrapper for asynchronous messages.
    * @param {string} channel
    * @param {any} data
    */
-  send: (channel, data) => {
+  send: (channel, ...args) => {
     assertAllowed(ALLOWED_SEND_CHANNELS, channel, "send");
-    return ipcRenderer.send(channel, data);
+    return ipcRenderer.send(channel, ...args);
   },
   /**
    * Listen for an IPC message from the main process. The handler is
@@ -380,6 +401,30 @@ contextBridge.exposeInMainWorld("api", {
     /** Subscribe to real-time file transfer progress. */
     onTransferProgress: (fn) =>
       ipcRenderer.on("transfer-progress", (_e, data) => fn(data))
+  },
+  project: {
+    analyze: (rootPath, workflowId, sessionHistory) =>
+      ipcRenderer.invoke("project:analyze", rootPath, workflowId, sessionHistory)
+  },
+  action: {
+    run: (actionId, context) => ipcRenderer.invoke("action:run", actionId, context),
+    status: (actionId) => ipcRenderer.invoke("action:status", actionId),
+    checkReady: (actionId, context) => ipcRenderer.invoke("action:checkReady", actionId, context),
+    onLog: (fn) => ipcRenderer.on("action:log", (_e, data) => fn(data)),
+    onInteraction: (fn) => ipcRenderer.on("action:interaction", (_e, data) => fn(data)),
+    respond: (actionId, response) => ipcRenderer.invoke("action:respond", actionId, response),
+    cancel: (actionId) => ipcRenderer.invoke("action:cancel", actionId),
+    runChain: (templateId, workspacePath) => ipcRenderer.invoke("action:run-chain", templateId, workspacePath),
+    resumeChain: (chainId, workspacePath) => ipcRenderer.invoke("action:resume-chain", chainId, workspacePath)
+  },
+  workspace: {
+    getAll: () => ipcRenderer.invoke("workspace:get-all"),
+    getActive: () => ipcRenderer.invoke("workspace:get-active"),
+    setActive: (id) => ipcRenderer.invoke("workspace:set-active", id),
+    register: (path) => ipcRenderer.invoke("workspace:register", path),
+    getChainProposals: (workspacePath) => ipcRenderer.invoke("workspace:get-chain-proposals", workspacePath),
+    onChanged: (fn) => ipcRenderer.on("workspace:changed", (_e, data) => fn(data)),
+    onListUpdated: (fn) => ipcRenderer.on("workspace:list-updated", (_e, data) => fn(data))
   }
 });
 

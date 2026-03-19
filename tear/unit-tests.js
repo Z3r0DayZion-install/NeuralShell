@@ -184,8 +184,8 @@ function testWorkflowStateValidators() {
       },
       releasePacketHistory: [
         {
-          workflowId: "release_audit",
-          outputMode: "release_packet",
+          workflowId: "shipping_audit",
+          outputMode: "shipping_packet",
           content: "# Release Packet",
           generatedAt: "2026-03-11T10:05:00.000Z"
         }
@@ -399,7 +399,7 @@ function testValidatorDefaultBranches() {
       },
       releasePacketHistory: [
         {
-          outputMode: "release_packet",
+          outputMode: "shipping_packet",
           content: "# Packet"
         }
       ],
@@ -518,7 +518,7 @@ function testValidatorDefaultBranches() {
     assert.throws(() => validateImportedState({
       releasePacketHistory: [
         {
-          outputMode: "release_packet"
+          outputMode: "shipping_packet"
         }
       ]
     }), /must include content/i);
@@ -556,7 +556,7 @@ function testCatalogHelpers() {
 
   assert.equal(workflowCatalog.getWorkflow("bug_triage").id, "bug_triage");
   assert.equal(workflowCatalog.getWorkflow("missing").id, "bridge_diagnostics");
-  assert.equal(workflowCatalog.getOutputMode("release_packet").id, "release_packet");
+  assert.equal(workflowCatalog.getOutputMode("shipping_packet").id, "shipping_packet");
   assert.equal(workflowCatalog.getOutputMode("missing").id, "brief");
   assert.equal(workflowCatalog.isWorkflowId("session_handoff"), true);
   assert.equal(workflowCatalog.isWorkflowId("missing"), false);

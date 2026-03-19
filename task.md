@@ -1,0 +1,63 @@
+# Task: NeuralShell V2.0 Kickoff (Phase 8)
+
+- [x] Phase 8 Kickoff <!-- id: 70 -->
+    - [x] Create `v2-main` branch <!-- id: 71 -->
+    - [x] Create `v2.0.0-alpha.0` tag <!-- id: 72 -->
+    - [x] Draft Phase 8 Implementation Plan <!-- id: 73 -->
+- [x] Phase 8 Wave 1: Centralized Configuration <!-- id: 74 -->
+    - [x] Create `src/core/config.js` <!-- id: 75 -->
+    - [x] Refactor `renderer.js` for config usage <!-- id: 76 -->
+- [x] Phase 8 Wave 2: Automated Release Verification <!-- id: 77 -->
+    - [x] Create `scripts/release-verify.js` <!-- id: 78 -->
+    - [x] Run verification on existing Gold Master <!-- id: 79 -->
+- [x] Phase 8 Wave 3: Telemetry Foundation <!-- id: 80 -->
+    - [x] Implement `src/core/telemetry.js` <!-- id: 81 -->
+    - [x] Wire UI event listeners <!-- id: 82 -->
+- [x] Phase 8 Wave 4: V2.0 Evidence Pack <!-- id: 83 -->
+    - [x] Define `RELEASE_MANIFEST_V2.md` <!-- id: 84 -->
+    - [x] Generate Phase 8 Evidence ZIP <!-- id: 85 -->
+    - [x] Verify Phase 8 ZIP via `release-verify.js` <!-- id: 86 -->
+- [x] Phase 15: Post-Gen Resilience & Self-Healing
+- [x] Wave 15A: Self-Repairing Tactical Kernels <!-- id: 159 -->
+    - [x] Create `src/core/kernelRepair.js` with liveness watchers <!-- id: 161 -->
+    - [x] Implement service-restart recovery for IPC/watchers <!-- id: 162 -->
+- [x] Wave 15B: Hot-Reloadable Strategic Policies <!-- id: 160 -->
+    - [x] Add policy file watching to `agencyPolicy.js` <!-- id: 163 -->
+    - [x] Implement runtime policy sync from UI to core <!-- id: 164 -->
+- [x] Wave 15C: Proactive Anomaly Detection <!-- id: 165 -->
+    - [x] Integrate telemetry signals with urgency scoring <!-- id: 166 -->
+    - [x] Implement auto-run threshold scaling based on anomaly delta <!-- id: 167 -->
+- [x] Final Phase 15 "RC Final" Verification <!-- id: 168 -->
+    - [x] Generate `POST_GEN_VERIFICATION_LOG.txt` <!-- id: 169 -->
+    - [x] Verify Stage 515 system integrity via `generate-rc-manifest.js` <!-- id: 170 -->
+    - [x] V2.0 RC Finalization & Project Seal <!-- id: 171 -->
+
+- [x] Stage 16: Bridge Hardening (Adaptive Resilience)
+    - [x] Relax default local timeouts (15s -> 45s)
+    - [x] Implement jittered exponential backoff
+    - [x] Implement "Ollama Pre-flight" health check
+    - [x] Final Bridge Verification
+
+- [x] Stage 17: Aesthetic Overhaul (Stealth Tactical)
+    - [x] Implement "Dark Charcoal & Olive" palette
+    - [x] Integrate Inter/Outfit highlights
+    - [x] Refactor TerminalOverlay with Chain Timeline
+    - [x] Bold-border Workspace Switcher
+    - [x] Wave 17C: Advanced Tactical Features
+        - [x] Design and integrate "Neural Security" logo/symbol
+        - [x] Implement Intelligence Surface "Starter Actions" (large icons)
+        - [x] Create dynamic "Recovery Banner" for system pauses
+    - [x] Visual QA & Final Polish
+
+- [x] Stage 18: V2.1 Tactical UI Consolidation
+    - [x] Formalize `--ns-*` Design Token System
+    - [x] Generate SVG Branding Assets (Primary, Mark, Wordmark)
+    - [x] Hardened Icon Generation & Shell Wiring
+    - [x] "Fleet Board" Workspace Switcher Refinement
+    - [x] Tactical Documentation (Brand Guide, Handoff)
+
+- [/] Stage 19: Final Deployment & Shipping
+    - [/] Baseline Commits & Version Bump (v2.1.0)
+    - [ ] Execute `npm run ship` (Release Pipeline)
+    - [ ] Generate V2.1 Tactical Release Manifest
+    - [ ] Final Evidence Pack & Project Seal

@@ -1,0 +1,14 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mark -->
+  <rect width="200" height="200" rx="40" fill="#151816"/>
+  <path d="M100 35L35 62V113C35 152 100 172 100 172C100 172 165 152 165 113V62L100 35Z" stroke="#E3E7DC" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="100" cy="82" r="6" fill="#E3E7DC"/>
+  <circle cx="80" cy="110" r="6" fill="#E3E7DC"/>
+  <circle cx="120" cy="110" r="6" fill="#E3E7DC"/>
+  <circle cx="100" cy="138" r="6" fill="#E3E7DC"/>
+  <path d="M100 82L80 110M100 82L120 110M80 110L100 138M120 110L100 138M80 110L120 110" stroke="#E3E7DC" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Wordmark -->
+  <text x="230" y="125" font-family="Outfit, sans-serif" font-weight="700" font-size="82" fill="#E3E7DC">NeuralShell</text>
+  <text x="232" y="160" font-family="Inter, sans-serif" font-weight="600" font-size="20" letter-spacing="0.22em" fill="#AEB6A6" text-transform="uppercase">MISSION CONTROL</text>
+</svg>
