@@ -1,12 +1,12 @@
 const path = require("path");
-const fs = require("fs");
+// const fs = require("fs");
 const { PIPELINES } = require("./actionPipelines");
 const actionRegistry = require("./actionRegistry");
 const preflight = require("./preflight");
 const diagnosticsLedger = require("./diagnosticsLedger");
 const actionOutcomeStore = require("./actionOutcomeStore");
 const workflowMemory = require("./workflowMemory");
-const { analyzeProject } = require("./projectIntelligence");
+// const { analyzeProject } = require("./projectIntelligence");
 const { isAutoRunPermitted, getPolicyRationale } = require("./agencyPolicy");
 const kernelRepair = require("./kernelRepair");
 
@@ -32,7 +32,7 @@ class ExecutionEngine {
     _reapStaleWorkloads() {
         const now = Date.now();
         // 1. Reap Actions
-        for (const [id, state] of this.activeActions.entries()) {
+        for (const [_id, state] of this.activeActions.entries()) {
             if (state.status === "running" && state.startedAt && (now - state.startedAt > this.CHAIN_TIMEOUT_MS)) {
                 this.log(state.id, "Action timed out after 30 minutes of inactivity.", "error", state.workspacePath);
                 diagnosticsLedger.log(state.workspacePath, "CLEANUP", state.id, "Action timed out after 30 minutes of inactivity.");
@@ -43,7 +43,7 @@ class ExecutionEngine {
         }
 
         // 2. Reap Chains
-        for (const [id, state] of this.activeChains.entries()) {
+        for (const [_id, state] of this.activeChains.entries()) {
             const lastTouch = state.lastHeartbeat || state.startedAt || now;
             if (state.status === "running" && (now - lastTouch > this.CHAIN_TIMEOUT_MS)) {
                 this.log(state.id, "Chain timed out after 30 minutes of inactivity.", "error", state.workspacePath);

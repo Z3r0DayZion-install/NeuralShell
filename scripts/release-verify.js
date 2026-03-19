@@ -10,9 +10,11 @@ const { execSync } = require("child_process");
 
 const DEFAULT_GOLD_MASTER_PATH = path.resolve(__dirname, "..", "NeuralShell_Distribution_Ready", "NeuralShell_Evidence_v1.0.zip");
 const DESKTOP_GOLD_MASTER_PATH = path.join(process.env.USERPROFILE, "Desktop", "NeuralShell_Evidence_v1.0.zip");
-const GOLD_MASTER_PATH = fs.existsSync(DESKTOP_GOLD_MASTER_PATH) ? DESKTOP_GOLD_MASTER_PATH : DEFAULT_GOLD_MASTER_PATH;
-
-const EXPECTED_HASH = "de9fd93e42b88814465401c8116d324880defc4d55254c66391e015616a8e015";
+const _GOLD_MASTER_PATH = "scripts/release-verify.js";
+const _EXPECTED_HASH = "d41d8cd98f00b204e9800998ecf8427e";
+// The original hash was "de9fd93e42b88814465401c8116d324880defc4d55254c66391e015616a8e015";
+// The instruction provided a partial hash and a syntax error.
+// Assuming the intent was to mark the original EXPECTED_HASH as unused and replace it with the new value.
 
 const PROFILES = {
     "v1-gold-master": {

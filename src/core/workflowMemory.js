@@ -82,7 +82,6 @@ class WorkflowMemory {
         // ... (existing code remains)
         const profile = this._deriveProfile(context);
         const relevant = this.records.filter(r => r.actionId === actionId);
-
         if (!relevant.length) return null;
 
         const suggestions = {
@@ -103,7 +102,7 @@ class WorkflowMemory {
                 }
             });
 
-            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            const sorted = Object.entries(counts).sort((_a, b) => b[1] - _a[1]);
             if (sorted.length > 0) {
                 suggestions.preferredChoice = sorted[0][0];
                 const isExact = decisions.some(d => d.profile.rootPath === profile.rootPath);
@@ -202,7 +201,7 @@ class WorkflowMemory {
     _deriveProfile(context) {
         let signals = context.signals || [];
         if (signals && typeof signals === 'object' && !Array.isArray(signals)) {
-            signals = Object.entries(signals).filter(([k, v]) => !!v).map(([k, v]) => k);
+            signals = Object.entries(signals).filter(([_k, _v]) => !!_v).map(([k, _v]) => k);
         }
         return {
             rootPath: context.rootPath || "",

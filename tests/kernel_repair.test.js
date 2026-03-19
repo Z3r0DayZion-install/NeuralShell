@@ -2,7 +2,7 @@ const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 const kernelRepair = require('../src/core/kernelRepair');
-const executionEngine = require('../src/core/executionEngine');
+const _executionEngine = require("../src/core/executionEngine");
 const diagnosticsLedger = require('../src/core/diagnosticsLedger');
 
 async function testKernelRepair() {

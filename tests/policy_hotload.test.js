@@ -2,7 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const agencyPolicy = require('../src/core/agencyPolicy');
-const { ACTION_RISK } = require('../src/core/actionRegistry');
+const { _ACTION_RISK } = require("../src/core/agencyPolicy");
 
 async function testPolicyHotload() {
     console.log("Starting Policy Hot-Reload Verification...");

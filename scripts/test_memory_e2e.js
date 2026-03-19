@@ -1,7 +1,7 @@
 const executionEngine = require("../src/core/executionEngine");
 const projectIntelligence = require("../src/core/projectIntelligence");
 const workflowMemory = require("../src/core/workflowMemory");
-const { ACTION_REGISTRY } = require("../src/core/actionRegistry");
+// const { ACTION_REGISTRY } = require("../src/core/actionRegistry");
 const { PIPELINES } = require("../src/core/actionPipelines");
 const path = require("path");
 const fs = require("fs");

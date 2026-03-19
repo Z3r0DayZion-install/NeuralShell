@@ -3,8 +3,8 @@ const workspaceRegistry = require("../src/core/workspaceRegistry");
 const executionEngine = require("../src/core/executionEngine");
 
 // Mocking some dependencies
-const workflowMemory = require("../src/core/workflowMemory");
-const actionOutcomeStore = require("../src/core/actionOutcomeStore");
+// const workflowMemory = require("../src/core/workflowMemory");
+// const actionOutcomeStore = require("../src/core/actionOutcomeStore");
 const preflightModule = require("../src/core/preflight");
 preflightModule.runPreflight = async () => ({ ok: true });
 

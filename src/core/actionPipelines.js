@@ -119,7 +119,7 @@ async function reviewUncommitted(rootPath, context = {}) {
     // Step 3: Classify changes
     steps.push({ label: "Classify changes", status: "running" });
     if (logger) logger("Classifying changes via git diff...", "system");
-    const diffResult = await runShellCommand("git diff --stat", rootPath, logger);
+    const _diffResult = await runShellCommand("git diff --stat", rootPath, logger);
     steps[2].status = "succeeded";
 
     // Step 4: Optional Detailed Review

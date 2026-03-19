@@ -1,6 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-const actionOutcomeStore = require("./actionOutcomeStore");
+// const fs = require("fs");
+// const path = require("path");
+// // const { ACTION_REGISTRY } = require("./actionRegistry");
+// const actionOutcomeStore = require("./actionOutcomeStore");
 const crossChainCoordinator = require("./crossChainCoordinator");
 
 /**
@@ -147,7 +148,7 @@ function predictFailure(actionId, workspacePath, intelligence) {
                         recommendation: "Wait for background processes to finish."
                     };
                 }
-            } catch (e) {
+            } catch (_e) {
                 // Ignore stat errors for missing lockfiles
             }
         }

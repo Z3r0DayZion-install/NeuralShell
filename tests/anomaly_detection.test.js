@@ -2,7 +2,7 @@ const assert = require('assert');
 const path = require('path');
 const agencyPolicy = require('../src/core/agencyPolicy');
 const adaptiveIntelligence = require('../src/core/adaptiveIntelligence');
-const crossChainCoordinator = require('../src/core/crossChainCoordinator');
+const _crossChainCoordinator = require("../src/core/crossChainCoordinator");
 
 async function testAnomalyDetection() {
     console.log("Starting Anomaly Detection Verification...");

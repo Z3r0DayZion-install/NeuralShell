@@ -469,7 +469,7 @@ async function _runBridgeHealthCheck() {
       _lastBridgeStatusSent = nextStatus;
       sendToRenderer("llm-status-change", nextStatus);
     }
-  } catch (err) {
+  } catch (_err) {
     if (_lastBridgeStatusSent !== LLM_STATUS.ERROR) {
       _lastBridgeStatusSent = LLM_STATUS.ERROR;
       sendToRenderer("llm-status-change", LLM_STATUS.ERROR);
@@ -2067,8 +2067,8 @@ ipcMain.handle("intelligence:get-signals", async (event, { workspacePath }) => {
     });
     intelligence.urgency = projectIntelligence.analyzeUrgency(workspacePath, intelligence, actions);
     return intelligence;
-  } catch (err) {
-    logger.log("error", `Failed to get signals: ${err.message}`, { workspacePath });
+  } catch (_err) {
+    logger.log("error", `Failed to get signals: ${_err.message}`, { workspacePath });
     return { signals: [], health: {}, urgency: 0 };
   }
 });
