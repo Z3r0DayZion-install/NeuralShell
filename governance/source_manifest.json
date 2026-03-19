@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-19T17:42:00.248Z",
-  "commit": "881e24b207eb78984ffcad20959e29d89085efb6",
+  "generatedAt": "2026-03-19T17:45:37.240Z",
+  "commit": "bab48ba5949e1271582a271f94921c0b47083e38",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -585,7 +585,7 @@
     "src/plugins/manifests/recursiveAuditor.json": "4e8c997f9cdb78ec7bb706f2981e9f6b16fe21c6f0d9ce1c3bc591db3bf22b1a",
     "src/plugins/manifests/sovereign-proxy.json": "c1047bf534f4fcc406a017eaab082bffcf270e3f086071943b18867efa903b87",
     "src/plugins/manifests/swarm-consensus.json": "16069b17dd912bd1de10eb83176f035ee9bbf2ff60fab6dc10d1b36da7623abc",
-    "src/preload.js": "b8b75ec74d5b4e513058916853118ca02046c5f52aa2bd3d449b0d895b570823",
+    "src/preload.js": "5732699599596524d5c9a862b35c7f0a1841c968e9b0ea68c8cc251533e77cfb",
     "src/renderer.html": "33262ec3635f79dc9a6f0e4a15c706e6212a7b19a58e5714eb03637ebf058443",
     "src/renderer.js": "be4560fdeb8049e89052b084221990eacb0a332e0249816c68cff2d054a63afb",
     "src/security/intentFirewall.js": "dcfcbe82ebc41f73a7d4fc69854bf740c0fada3a597f68ef6861744e431ae348",
@@ -593,7 +593,7 @@
     "src/uiCommandDeckConfig.js": "ae26e37a1b1fe765d6b5ed49cb2942f04d62aa6e01f8ef37bf09e022e280f5eb",
     "src/verificationCatalog.js": "a25e0cbab41fb121d45a637d6dc63d699bf323fddf7e6a69cc4413a75b48f1a1",
     "src/workflowCatalog.js": "4d011a7d650b9875101b03ee728334148655fce559c319cdc205f9281afa720b",
-    "task.md": "0d17b3e3902563b93b1c9c64a113ba730a8ef100a5b275d8ebc31c87a54d96e5",
+    "task.md": "3e7d12d129b84fa98d450f4c905d3e92e42bd9b1f01c708e016bc1ec61f797c8",
     "tear/audit-chain.test.js": "3a626d816fffc81ed1734b1269c98faffa4716b07a4203c16f92d791e710e01a",
     "tear/benchmark-autonomy.js": "e1fc5c39c114ea6d1176d8bc49368a5159b93dfa32728ffa80e525ec7f6958b0",
     "tear/branch-protection-policy.test.js": "2236d706df8c43eb6e0c65d45986a8b75cb2b0b4b59b1f25cf913afde43ccc6f",
