@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-19T18:43:14.222Z",
-  "commit": "91b09c93864759c4ae2b2b58f41fde4726453071",
+  "generatedAt": "2026-03-19T19:25:22.930Z",
+  "commit": "493099209dbd7d7dab279bf8ca1936ff7212914d",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -585,7 +585,7 @@
     "src/plugins/manifests/recursiveAuditor.json": "4e8c997f9cdb78ec7bb706f2981e9f6b16fe21c6f0d9ce1c3bc591db3bf22b1a",
     "src/plugins/manifests/sovereign-proxy.json": "c1047bf534f4fcc406a017eaab082bffcf270e3f086071943b18867efa903b87",
     "src/plugins/manifests/swarm-consensus.json": "16069b17dd912bd1de10eb83176f035ee9bbf2ff60fab6dc10d1b36da7623abc",
-    "src/preload.js": "5732699599596524d5c9a862b35c7f0a1841c968e9b0ea68c8cc251533e77cfb",
+    "src/preload.js": "f620e9235e9b7f6e735de9c7d9174c8ac81d811c5381f9f7907e21d735f650e6",
     "src/renderer.html": "33262ec3635f79dc9a6f0e4a15c706e6212a7b19a58e5714eb03637ebf058443",
     "src/renderer.js": "be4560fdeb8049e89052b084221990eacb0a332e0249816c68cff2d054a63afb",
     "src/security/intentFirewall.js": "dcfcbe82ebc41f73a7d4fc69854bf740c0fada3a597f68ef6861744e431ae348",
