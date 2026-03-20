@@ -87,7 +87,7 @@ async function exportProof(options = {}) {
   if (fs.existsSync(latestDir)) {
     try {
       fs.rmSync(latestDir, { recursive: true, force: true });
-    } catch (err) {
+    } catch (_) {
       // Quietly continue if cleanup fails.
     }
   }
