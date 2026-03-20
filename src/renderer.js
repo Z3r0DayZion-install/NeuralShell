@@ -11768,27 +11768,6 @@ async function runSlashCommand(rawCommand) {
     await refreshCommands();
   }
 
-  function safetyPromptPrefix() {
-    return "NeuralShell Safety Protocol: Enforce absolute isolation. No external leaks. Verify system integrity at each step.";
-  }
-
-  function personalityPromptPrefix(persona = "balanced") {
-    const prompts = {
-      balanced: "You are NeuralShell assistant: practical, concise, and accurate.",
-      engineer: "You are NeuralShell engineer mode: prioritize implementation details, constraints, and debugging precision.",
-      founder: "You are NeuralShell founder mode: focus on outcomes, tradeoffs, and fast execution.",
-      analyst: "You are NeuralShell analyst mode: reason in clear steps and validate assumptions explicitly.",
-      creative: "You are NeuralShell creative mode: produce novel options while remaining grounded in constraints."
-    };
-    return prompts[persona] || prompts.balanced;
-  }
-
-  function replayLastAutonomousRunPrompts() {
-    console.log("[AUTONOMY] Replaying last instructions...");
-    const last = appState.lastPrompt || "No prompt available.";
-    showBanner("Replaying autonomy prompts...", "ok");
-  }
-
   try {
     if (parsed.name === "autostep") {
       if (parsed.args.length > 0) {
