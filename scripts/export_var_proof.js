@@ -85,33 +85,24 @@ async function exportProof(options = {}) {
   const latestSigDir = path.join(latestDir, 'signatures');
 
   if (fs.existsSync(latestDir)) {
-  } catch (err) {
-    // Quietly continue if cleanup fails.
+    const relPub = path.join(sigDir, 'ed25519.pub');
+
+    if (fs.existsSync(relSig)) {
+      fs.copyFileSync(relSig, path.join(latestSigDir, 'ed25519.sig'));
+    }
+    if (fs.existsSync(relPub)) {
+      fs.copyFileSync(relPub, path.join(latestSigDir, 'ed25519.pub'));
+    }
+
+    console.log(`[OMEGA] VAR_PROOF exported to: ${outputDir}`);
+    return outputDir;
   }
-}
 
-fs.mkdirSync(latestSigDir, { recursive: true });
-fs.writeFileSync(path.join(latestDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  if (require.main === module) {
+    exportProof().catch(err => {
+      console.error('[OMEGA] Proof export failed:', err.message);
+      process.exit(1);
+    });
+  }
 
-const relSig = path.join(sigDir, 'ed25519.sig');
-const relPub = path.join(sigDir, 'ed25519.pub');
-
-if (fs.existsSync(relSig)) {
-  fs.copyFileSync(relSig, path.join(latestSigDir, 'ed25519.sig'));
-}
-if (fs.existsSync(relPub)) {
-  fs.copyFileSync(relPub, path.join(latestSigDir, 'ed25519.pub'));
-}
-
-console.log(`[OMEGA] VAR_PROOF exported to: ${outputDir}`);
-return outputDir;
-}
-
-if (require.main === module) {
-  exportProof().catch(err => {
-    console.error('[OMEGA] Proof export failed:', err.message);
-    process.exit(1);
-  });
-}
-
-module.exports = { exportProof };
+  module.exports = { exportProof };

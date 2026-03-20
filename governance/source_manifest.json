@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-03-20T04:47:34.912Z",
-  "commit": "a43f3c47843dfe8f86af627a0f8aa760feb71c87",
+  "generatedAt": "2026-03-20T04:47:54.975Z",
+  "commit": "068d9d89b7b926e268b4368a115571b2c899836b",
   "files": {
     ".dockerignore": "6dc97195ab9e47b899923d16bb55b2f2ac94718e3ee55d064617b829d9d491e2",
     ".githooks/pre-push": "e29e08a3bf263114be9cd6876fe9c2cde6f11dff413c6efa9033db3eb1cf6e45",
@@ -324,7 +324,7 @@
     "scripts/controlled-merge-window.js": "2e9e8fd14a8b80da0026d2510b9a6684cd7e115e998409a9dc0025d71fd46b7b",
     "scripts/determinism_test.js": "6b4205fb216a112847c1ae16f1ddd29c8a35692fd9ab783743b6ee88f74ca3dd",
     "scripts/enforce-branch-protection.js": "10c6198412f6e37c09b8307b556354056c1d072e67922ee8d69f18d328f70af2",
-    "scripts/export_var_proof.js": "3e2a11a213003ef2ec219d27689d9bec28909ae975e3fc4627fdcf5a418ebd42",
+    "scripts/export_var_proof.js": "af39e367dadc73bcfe196e0f341ca4f2b9c6cedd412a4f92e7b1e7cd4ef3a5fa",
     "scripts/fetch_gmail_inbound_replies.py": "b7d9139ab097f6ae6dafecc2756283c804b49a432bbfc809d2857649341bede3",
     "scripts/flaky-test-gate.js": "880b12e71caba95b0840c3df1e164c49e63d0d3ce2988ed1666114296e03dc20",
     "scripts/generate-attestation.js": "ee623c5b53919e0a223c2471dd24a70c3f582c01f932494ca3768e09595be824",
