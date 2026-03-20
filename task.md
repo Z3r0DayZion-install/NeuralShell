@@ -1,65 +1,36 @@
-# Task: NeuralShell V2.0 Kickoff (Phase 8)
+# NeuralShell Maintenance Program Task Record
 
-- [x] Phase 8 Kickoff <!-- id: 70 -->
-    - [x] Create `v2-main` branch <!-- id: 71 -->
-    - [x] Create `v2.0.0-alpha.0` tag <!-- id: 72 -->
-    - [x] Draft Phase 8 Implementation Plan <!-- id: 73 -->
-- [x] Phase 8 Wave 1: Centralized Configuration <!-- id: 74 -->
-    - [x] Create `src/core/config.js` <!-- id: 75 -->
-    - [x] Refactor `renderer.js` for config usage <!-- id: 76 -->
-- [x] Phase 8 Wave 2: Automated Release Verification <!-- id: 77 -->
-    - [x] Create `scripts/release-verify.js` <!-- id: 78 -->
-    - [x] Run verification on existing Gold Master <!-- id: 79 -->
-- [x] Phase 8 Wave 3: Telemetry Foundation <!-- id: 80 -->
-    - [x] Implement `src/core/telemetry.js` <!-- id: 81 -->
-    - [x] Wire UI event listeners <!-- id: 82 -->
-- [x] Phase 8 Wave 4: V2.0 Evidence Pack <!-- id: 83 -->
-    - [x] Define `RELEASE_MANIFEST_V2.md` <!-- id: 84 -->
-    - [x] Generate Phase 8 Evidence ZIP <!-- id: 85 -->
-    - [x] Verify Phase 8 ZIP via `release-verify.js` <!-- id: 86 -->
-- [x] Phase 15: Post-Gen Resilience & Self-Healing
-- [x] Wave 15A: Self-Repairing Tactical Kernels <!-- id: 159 -->
-    - [x] Create `src/core/kernelRepair.js` with liveness watchers <!-- id: 161 -->
-    - [x] Implement service-restart recovery for IPC/watchers <!-- id: 162 -->
-- [x] Wave 15B: Hot-Reloadable Strategic Policies <!-- id: 160 -->
-    - [x] Add policy file watching to `agencyPolicy.js` <!-- id: 163 -->
-    - [x] Implement runtime policy sync from UI to core <!-- id: 164 -->
-- [x] Wave 15C: Proactive Anomaly Detection <!-- id: 165 -->
-    - [x] Integrate telemetry signals with urgency scoring <!-- id: 166 -->
-    - [x] Implement auto-run threshold scaling based on anomaly delta <!-- id: 167 -->
-- [x] Final Phase 15 "RC Final" Verification <!-- id: 168 -->
-    - [x] Generate `POST_GEN_VERIFICATION_LOG.txt` <!-- id: 169 -->
-    - [x] Verify Stage 515 system integrity via `generate-rc-manifest.js` <!-- id: 170 -->
-    - [x] V2.0 RC Finalization & Project Seal <!-- id: 171 -->
+## Completed Baseline History
 
-- [x] Stage 16: Bridge Hardening (Adaptive Resilience)
-    - [x] Relax default local timeouts (15s -> 45s)
-    - [x] Implement jittered exponential backoff
-    - [x] Implement "Ollama Pre-flight" health check
-    - [x] Final Bridge Verification
+- [x] Stage 19: Golden Master release hardening and seal
+  - [x] Core build/signing and evidence pack completed
+  - [x] Golden Master seal recorded as NeuralShell V2.1.4
+  - [x] GM release record and launch documentation preserved
 
-- [x] Stage 17: Aesthetic Overhaul (Stealth Tactical)
-    - [x] Implement "Dark Charcoal & Olive" palette
-    - [x] Integrate Inter/Outfit highlights
-    - [x] Refactor TerminalOverlay with Chain Timeline
-    - [x] Bold-border Workspace Switcher
-    - [x] Wave 17C: Advanced Tactical Features
-        - [x] Design and integrate "Neural Security" logo/symbol
-        - [x] Implement Intelligence Surface "Starter Actions" (large icons)
-        - [x] Create dynamic "Recovery Banner" for system pauses
-    - [x] Visual QA & Final Polish
+- [x] Stage 25: Maintenance governance and LTS stewardship
+  - [x] Maintenance governance pack completed (`docs/maintenance/`)
+  - [x] LTS policy ratified with 12-month active and 24-month security-only horizons
+  - [x] Maintenance handoff recorded (`docs/maintenance/MAINTENANCE_HANDOFF.md`)
 
-- [x] Stage 18: V2.1 Tactical UI Consolidation
-    - [x] Formalize `--ns-*` Design Token System
-    - [x] Generate SVG Branding Assets (Primary, Mark, Wordmark)
-    - [x] Hardened Icon Generation & Shell Wiring
-    - [x] "Fleet Board" Workspace Switcher Refinement
-    - [x] Tactical Documentation (Brand Guide, Handoff)
+## Maintenance Operations Activation
 
-- [ ] Stage 19: Final Deployment & Shipping [/]
-    - [x] Resolve linting blockers (0-warning baseline)
-    - [x] Neutralize OMEGA Security AST Gate violations
-    - [x] Re-stabilize Source Integrity Manifest
-    - [/] Core Build & Signing (V2.1.0)
-    - [ ] Generate V2.1 Evidence Pack
-    - [ ] Project Seal
+- [x] Stage 26: Maintenance operations activation
+  - [x] Added operations runbook/checklist/signoff for first steward cycle
+  - [x] Added routine evidence review model and health signal logging
+  - [x] Added backlog board runbook, state model, and review template
+  - [x] Added patch-watch model, trigger logic, and review template
+  - [x] Added LTS compliance, support horizon, and compatibility/deprecation reviews
+  - [x] Added maintenance operations changelog and handoff docs
+  - [x] Updated `walkthrough.md` and `task.md` for a single sealed current state
+
+- [x] Stage 27: Maintenance patch execution (Patch 1 / V2.1.10)
+  - [x] Reconciled baseline integrity and archived untracked residues
+  - [x] Regenerated `source_manifest.json` and restored Green gate status
+  - [x] Recorded patch execution signoff and updated top-level records
+
+## Current State Rules
+- Public shipping artifact remains NeuralShell V2.1.4 Golden Master.
+- Repository baseline is advanced to V2.1.10 Patch 1 (Maintenance Only).
+- No new features or Lore expansions were introduced.
+
+Project Status: SEALED (V2.1.10 Maintenance Patch 1 Applied)

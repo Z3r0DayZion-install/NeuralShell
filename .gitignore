@@ -34,3 +34,5 @@ tools/integrity/keys/*.key.pem
 # Build artifacts
 dist_fresh/
 tmp/
+artifacts/
+release/

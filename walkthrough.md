@@ -1,105 +1,69 @@
-# NeuralShell V2.0 RC Final (Post-Gen Expanded)
+# NeuralShell V2.1.4 Golden Master - Maintenance Operations Activation
 
-This walkthrough documents the successful finalization of the **NeuralShell V2.0 RC Final** release. It provides a technical record of the core hardening and post-gen resilience expansions that define the current production-ready baseline.
+This document records the activation of maintenance operations on top of the sealed NeuralShell Golden Master baseline.
 
-## ⚖️ Audit & Release Scope
-The repository contains artifacts from across the project's development history. To maintain a truthful and professional handoff, we distinguish between the **Current Public Release Surface** and **Historical Records**:
+## Baseline Authority
+- Public shipping artifact: NeuralShell V2.1.4 Golden Master
+- Artifact authority is unchanged in this pass.
+- This pass activates operations only; it does not relabel the shipping artifact.
 
-- **RC_RELEASE_SCOPE.md**: Defines the normative boundary for the V2.0 RC Final release assets.
-- **LEGACY_ARTIFACTS_AUDIT.md**: Categorizes historical residue (Beta, OMEGA) kept for traceability.
+## Preserved Release and Verification History
+- OMEGA and Golden Master verification history remains part of the sealed release record.
+- Golden Master distribution and operator enablement history remain preserved.
+- V2.1.8 maintenance governance and LTS ratification remain preserved.
 
----
+## Preserved V2.1.8 Governance and LTS Policy
+The existing maintenance governance policy remains authoritative:
+- Active Maintenance: 12 months from GM seal
+- Security-Only Support: 24 months from GM seal
+- End of Life: next major LTS baseline, or end of the 24-month security-only period
 
-## 🛡️ V2.0 RC: Operational Hardening
+## V2.1.9 Maintenance Operations Pack
+This activation adds an operational layer in `docs/maintops/` with practical runbooks, checklists, and review templates for:
+- first steward cycle execution
+- routine evidence review and signal tracking
+- backlog review board operation
+- patch-watch operation and escalation logic
+- LTS compliance and support horizon checks
+- compatibility and deprecation review
+- maintainer handoff
 
-The core Release Candidate provides a high-reliability environment with deterministic guards and optimized resource management.
+## Operating Model in Use
+### 1. Steward Cycle
+- Weekly and monthly reviews are now executable through explicit runbooks and signoff templates.
+- Each cycle produces a review summary and a recorded decision trail.
 
-### 1. Reliability Hardening
-- **Implemented**: Chain inactivity timeouts, stale workload reapers, and duplicate-run execution guards.
-- **Outcome**: The `ExecutionEngine` gracefully handles system restarts and prevents redundant action triggers in active workspaces.
-- **Verification**: `reliability_hardening.test.js` confirmed stable state transitions and duplicate suppression.
+### 2. Routine Evidence Review
+- Evidence is reviewed in weekly and monthly cadence.
+- Repeated signals are tracked; one-off noise is contained unless trend or impact changes.
 
-### 2. Performance & Load Stability
-- **Implemented**: TTL-based intelligence caching and urgency recomputation throttling.
-- **Outcome**: Disk I/O is significantly reduced by memoizing workspace scans, and UI responsiveness is preserved through debounced signal propagation.
-- **Verification**: `performance_load.test.js` demonstrated consistent latency under concurrent multi-repo load.
+### 3. Backlog Operations
+- Intake, state transitions, and closure rules are evidence-based.
+- Board decisions are recorded with owner, due date, and verification notes.
 
-### 3. Strategic Policy Depth
-- **Implemented**: Risk-tiered autonomy (SAFE, MEDIUM, HIGH) with human-readable rationales.
-- **Outcome**: `AgencyPolicy` enforces mandatory operator gating for high-risk actions and provides clear explanations for policy-based suppression.
-- **Verification**: `strategic_policy.test.js` verified that risk boundaries are correctly enforced across varied environments.
+### 4. Patch Watch
+- Patch-watch opens only on defined trigger conditions.
+- Watch can close with no action when evidence does not justify a patch.
+- Escalation to patch planning requires reproducible impact.
 
-### 4. Conflict-Safe Multi-Repo Coordination
-- **Implemented**: `ConflictModel` for workspace health tracking and cross-chain signal propagation.
-- **Outcome**: Merge conflicts or drift in a linked repository correctly escalate urgency in sibling workspaces to prevent upstream breakage.
-- **Verification**: `conflict_safe_coordination.test.js` validated signal propagation across linked mock workspaces.
+### 5. LTS Compliance
+- Monthly horizon checks operationalize the 12-month and 24-month policy windows.
+- Compatibility/deprecation reviews identify when communication is required.
 
-### 5. Audit & Diagnostics Pack
-- **Implemented**: `DiagnosticsLedger` — a centralized, append-only decision log.
-- **Outcome**: Full transparency into every `PROPOSAL`, `GATE`, `SUPPRESSION`, and `COMPLETION`.
-- **Verification**: `audit_diagnostics.test.js` confirmed accurate retrieval of diagnostic events via the IPC layer.
+## What Maintainers Use Now
+- `docs/maintops/FIRST_STEWARD_CYCLE_RUNBOOK.md`
+- `docs/maintops/STEWARD_CYCLE_CHECKLIST.md`
+- `docs/maintops/ROUTINE_EVIDENCE_REVIEW.md`
+- `docs/maintops/BACKLOG_OPERATIONS_RUNBOOK.md`
+- `docs/maintops/PATCH_WATCH_MODEL.md`
+- `docs/maintops/LTS_COMPLIANCE_REVIEW.md`
+- `docs/maintops/MAINTOPS_HANDOFF.md`
 
----
+## Maintenance Patch Record
+### Patch 1 (V2.1.10) - 2026-03-19
+- **Problem Fixed**: Baseline integrity reconciliation; 20 hash violations and untracked residues.
+- **Action Taken**: Re-baselined `source_manifest.json` post-cleanup to align with the V2.1.9 maintenance state.
+- **Verification**: All gates (`verify:ship`, `security:pass:local`, `omega_verify`) are Green.
+- **Authority**: Authoritative shipping artifact remains **NeuralShell V2.1.4 Golden Master**; repository baseline advanced to **V2.1.10 Patch 1**.
 
-## 🌀 Post-Gen Resilience Expansion
-
-Following the core hardening pass, the system entered the Post-Gen finalization stage (Internal build: Stage 515), adding advanced autonomous longevity.
-
-### 15A. Self-Repairing Tactical Kernels
-- **Implemented**: Heartbeat-based liveness monitoring via `kernelRepair.js`.
-- **Outcome**: The system detects stalled execution pipelines and automatically triggers tactical resets to restore orchestration state.
-- **Verification**: `kernel_repair.test.js` confirmed proactive recovery from simulated service stalls.
-
-### 15B. Hot-Reloadable Strategic Policies
-- **Implemented**: External `agencyPolicy.json` configuration with runtime hot-reloading.
-- **Outcome**: Approval boundaries and risk tiers can be adjusted dynamically without restarting the application.
-- **Verification**: `policy_hotload.test.js` demonstrated immediate enforcement of updated policy rules.
-
-### 15C. Proactive Anomaly Detection
-- **Implemented**: Behavioral heuristic engine in `adaptiveIntelligence.js` calculating "Anomaly Risk".
-- **Outcome**: Autonomous execution is dynamically suppressed if the system detects high failure density or abnormal coordination drift.
-- **Verification**: `anomaly_detection.test.js` verified that safety gates are intelligently applied during detected failure spikes.
-
----
-
-## 🛰️ V2.1 Update: Stealth Tactical & Bridge Resilience
-
-Following the design directive for a mission-critical command aesthetic, the system has been upgraded to the **Stealth Tactical** baseline.
-
-### 16. Adaptive Bridge Hardening
-- **Implemented**: 45s local timeouts, 3x retry limit, and jittered exponential backoff in `llmService.js`.
-- **Outcome**: Improved connection stability for slow-loading local models (e.g., Ollama under VRAM pressure).
-- **Verification**: Classified socket errors now provide clear diagnostic feedback (e.g., `service_offline`).
-
-### 17. Stealth Tactical Visual Overhaul
-- **Implemented**: Mission-inspired charcoal (#151816), deep olive (#354030), and pale stone (#E3E7DC) color palette.
-- **Branding**: Official "Neural Security" logo merging neural network and shield motifs.
-## V2.1 Tactical Consolidation Baseline
-The V2.1 suite delivers a production-grade "Stealth Tactical" environment. All branding elements have been consolidated into professional SVG vectors and the icon set has been rebuilt for mission-readiness.
-
-### Branding & Assets
-- **Primary Logo**: Integrated `assets/logo-primary.svg` into the global header.
-- **Icon Suite**: Generated `.ico`, `.icns`, and full PNG set from `logo-mark.svg`.
-- **Design Tokens**: Standardized `--ns-*` palette (Charcoal, Olive, Amber) across all surfaces.
-
-### UI Refinements
-- **Intelligence Surface**: Consolidated "Starter Actions" for Audit, Scan, and Tunneling.
-- **Fleet Board**: Workspace switcher now features real-time signal badges and urgency states.
-- **Telemetric Terminal**: High-density log layout and risk-tier visibility.
-
-### Verification Evidence
-![V2.1 Tactical Landing Surface](file:///C:/Users/KickA/.gemini/antigravity/brain/4338ac39-99d5-4a2d-8cfb-3e0e3e2cb7a5/neuralshell_landing_state_mission_control_1773939434813.png)
-*Mission Control landing state showing consolidated branding and starter actions.*
-
----
-
-## 📦 Final Packaging & Evidence
-The V2.1 RC Final package is supported by the following definitive artifacts:
-- `docs/rc/V2_RC_RELEASE_NOTES.md`
-- `POST_GEN_RC_FINAL_MANIFEST.md`
-- `POST_GEN_VERIFICATION_LOG.txt`
-- `task.md` (Stage 17 Complete)
-
----
-**Status: SEALED (V2.1 RC Final — Stealth Tactical)**
-NeuralShell V2.1 is a high-fidelity, resilient, and mission-ready baseline.
+Status: SEALED (V2.1.10 Maintenance Patch 1 Applied)

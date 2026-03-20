@@ -1,6 +1,6 @@
 {
   "name": "neuralshell-v5",
-  "version": "2.1.0",
+  "version": "2.1.4",
   "description": "NeuralShell v5 – modular chat client with model switching and session management",
   "main": "src/main.js",
   "author": "NeuralShell Team",
