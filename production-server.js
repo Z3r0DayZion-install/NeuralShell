@@ -73,7 +73,7 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4' });
     res.end(metrics);
-    requestsTotal++; 
+    requestsTotal++;
     return;
   }
 
@@ -88,7 +88,7 @@ const server = http.createServer(async (req, res) => {
   // Prompt Endpoint
   if (url.pathname === '/prompt') {
     requestsTotal++;
-    
+
     // Failure Injection
     if (req.headers['x-proof-fail'] === '1' && !dryRun) {
       failuresTotal++;
@@ -126,6 +126,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
+  // OMEGA_PROMPT: Deterministic log line for runtime_proof.cjs
   console.log(`Server listening at http://127.0.0.1:${PORT}`);
 });
 

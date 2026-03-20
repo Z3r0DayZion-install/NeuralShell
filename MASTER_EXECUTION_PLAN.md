@@ -20,19 +20,18 @@ The system produces a deterministic, cryptographically signed `VAR_PROOF` bundle
 
 *   **Location:** `artifacts/var_proof/<timestamp>/` (and `artifacts/var_proof/latest/`)
 *   **Contents:**
-    *   `manifest.json`: Contains the Git commit hash, `package-lock.json` hash, deterministic machine ID, and the exact pass/fail status of all enforcement gates (AST, Security Suite, Runtime).
-    *   `signature.sig`: An Ed25519 signature of the `manifest.json`, signed by the hardware-bound Governance Root Key.
+    *   `manifest.json`: Contains the Git commit hash, `package-lock.json` hash, deterministic machine ID, build hash, and the exact pass/fail status of all enforcement gates (AST, Security Suite, Runtime).
+    *   `signatures/ed25519.sig`: An Ed25519 signature of the `manifest.json`, signed by the OMEGA Root Key.
+    *   `signatures/ed25519.pub`: The corresponding Ed25519 public key.
 
 ## 3. Local Reproduction & Audit Commands
 
 To independently verify the OMEGA CI Gate and system integrity, an auditor must execute the following sequence:
 
 1.  **Dependency Alignment:** `npm ci`
-2.  **Comprehensive Unit Tests:** `npm test`
-3.  **OMEGA Security Suite (8 Assertions):** `node tests/omega_security.test.js`
-4.  **Deterministic Runtime & Metrics Proof:** `node scripts/runtime_proof.cjs`
-5.  **Sovereign Integrity Proof (Hardware & Swarm):** `node verifiable_proof.js`
-6.  **Seal the Build:** `node scripts/export_var_proof.js`
+2.  **Bit-for-bit Determinism Test:** `npm run determinism:test`
+3.  **OMEGA Meta-Verification:** `node scripts/omega_verify.js`
+4.  **Independent Proof Audit:** `node tools/verify_external_proof.js artifacts/var_proof/latest .`
 
 *For automated continuous integration, execute:* `.\ci-gate.ps1`
 

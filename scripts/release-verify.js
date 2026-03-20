@@ -50,6 +50,21 @@ const PROFILES = {
             "llmService.js",
             "ipcValidators.js"
         ]
+    },
+    "v2.1-gold-master": {
+        label: "NeuralShell V2.1.4 Golden Master",
+        path: path.resolve(__dirname, "..", "NeuralShell_V2.1.4_GM.zip"),
+        hash: "b4bbf6194db108d1ecd40b308c632abe40ac1d929feff94ecfb98bb82f4b468e",
+        requiredFiles: [
+            "package.json",
+            "walkthrough.md",
+            "task.md",
+            "docs/gmlaunch/GM_DISTRIBUTION_GUIDE.md",
+            "docs/gmlaunch/GM_ARTIFACT_AUTHORITY.md",
+            "artifacts/var_proof/latest/manifest.json",
+            "scripts/omega_verify.js",
+            "production-server.js"
+        ]
     }
 };
 

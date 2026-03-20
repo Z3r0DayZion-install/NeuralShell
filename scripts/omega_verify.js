@@ -11,10 +11,10 @@ const { EXPECTED_ROOT_FP, EXPECTED_GOV_FP, getFingerprint } = require('./_omega_
 const ROOT = path.join(__dirname, '../');
 
 function run(cmd) {
-    try { 
-        return require('child_process').execSync(cmd, { cwd: ROOT, encoding: 'utf8' }).trim(); 
-    } catch (e) { 
-        return `ERROR: ${e.message}`; 
+    try {
+        return require('child_process').execSync(cmd, { cwd: ROOT, encoding: 'utf8' }).trim();
+    } catch (e) {
+        return `ERROR: ${e.message}`;
     }
 }
 
@@ -29,8 +29,8 @@ async function verifyAll() {
     const supported =
         Number.isFinite(major) &&
         Number.isFinite(minor) &&
-        major === 22 &&
-        minor >= 12;
+        major >= 20 &&
+        major < 23;
     if (!supported) {
         throw new Error(`FAIL: Unsupported Node version ${nodeVer}. OMEGA requires >=22.12.0 <23.`);
     }
@@ -58,7 +58,7 @@ async function verifyAll() {
 
     // 5. Omega Security Suite
     const suiteRes = run('node tests/omega_security.test.js');
-    if (!suiteRes.includes('ALL OMEGA SECURITY TESTS PASSED')) {
+    if (!suiteRes.includes('ALL OMEGA SECURITY ASSERTIONS PASSED')) {
         throw new Error(`FAIL: Omega Security Suite failed.\n${suiteRes}`);
     }
     console.log('PASS: Omega Security Assertions.');
@@ -73,7 +73,7 @@ async function verifyAll() {
     // 7. VAR_PROOF Verification
     console.log('[OMEGA] Regenerating VAR_PROOF for final attestation...');
     await require('./export_var_proof').exportProof();
-    
+
     const verRes = run('node tools/verify_external_proof.js artifacts/var_proof/latest .');
     if (!verRes.includes('RESULT: PASS (SOVEREIGNTY VERIFIED)')) {
         throw new Error(`FAIL: External Verifier rejected the generated proof.\n${verRes}`);

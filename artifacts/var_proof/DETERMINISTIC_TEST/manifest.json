@@ -1,21 +1,19 @@
 {
+  "version": "1.0.0-OMEGA",
+  "ts": "2026-03-19T00:00:00.000Z",
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "machineId": "cb7abe7d53cb611f7db4f51851a58a444161ea024e2949ea41f3a94267d4ac7a"
+  },
   "build": {
-    "buildHash": "5d96ecfdc2d418efcd923db89f54deef278a2eb67c2b290bd038bbbbdf061666",
-    "sbomHash": "dec0aaafa5a23da9a656dfec7b5b81b18c46a58a5fa72921ca363a46fa5ba03e"
+    "commit": "5455811c9bf61c1fa0cf5ef0741d9b6e9515eebe",
+    "lockfile": "b517fcd75654d54815ccb665fbe6391ceee53c6f912faadf3052a96cec9f80e8",
+    "buildHash": "d95dd77693cfa4e657fec3ea9b06f3b3eccd23cbaa8defbe579c96141f88163b"
   },
-  "inputs": {
-    "lockfileSha256": "5e8d32755740892d0749957c83d9e2de577aebedfe488e6aee79f03f383d918b",
-    "nodeVersion": "v20.17.0"
-  },
-  "proofs": {
-    "omegaSecuritySuite": "PASS",
-    "runtimeProof": "PASS",
-    "metricsProof": "PASS",
-    "astGate": "PASS"
-  },
-  "repo": {
-    "commit": "b635242cc8b81945fc8a5722691f29b8b16c48db",
-    "branch": "master"
-  },
-  "schemaVersion": "var_proof.v1"
+  "enforcement": {
+    "ast_gate": "PASSED",
+    "omega_security_suite": "PASSED",
+    "runtime_proof": "PASSED"
+  }
 }

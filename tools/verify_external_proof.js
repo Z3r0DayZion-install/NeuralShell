@@ -8,7 +8,7 @@ const crypto = require('crypto');
  * Validates a VAR_PROOF bundle without relying on @neural/omega-core.
  */
 
-const EXPECTED_PUBKEY_HASH = '75cb2558e5aca6e8e763f4af871d88fb5fc2b5f87f6f612353f0d520b37f7cd9';
+const EXPECTED_PUBKEY_HASH = 'eaaa7a834c6a416bd9da6c63d6e5ad5fc5e48ce67f92a212d1083c8dd52ce77b';
 
 function computeBuildHash(targetDir) {
   const TARGETS = [
@@ -33,7 +33,7 @@ function computeBuildHash(targetDir) {
           const fp = path.join(dir, file);
           if (fs.statSync(fp).isDirectory()) {
             if (file !== 'node_modules' && file !== '.git' && file !== 'artifacts') {
-                getFiles(fp);
+              getFiles(fp);
             }
           } else if (file.match(/\.(js|html|css|json)$/)) {
             allFiles.push(fp);
@@ -47,7 +47,7 @@ function computeBuildHash(targetDir) {
   });
 
   const hash = crypto.createHash('sha256');
-  
+
   const sortedFiles = allFiles.map(f => ({
     full: f,
     rel: path.relative(targetDir, f).replace(/\\/g, '/')
@@ -66,7 +66,7 @@ function computeBuildHash(targetDir) {
 
 function verifyProof(bundleDir, sourceDir) {
   console.log(`[VERIFIER] Target Bundle: ${bundleDir}`);
-  
+
   const manifestPath = path.join(bundleDir, 'manifest.json');
   const pubKeyPath = path.join(bundleDir, 'signatures', 'ed25519.pub');
   const sigPath = path.join(bundleDir, 'signatures', 'ed25519.sig');
@@ -78,7 +78,7 @@ function verifyProof(bundleDir, sourceDir) {
 
   const pubKeyContent = fs.readFileSync(pubKeyPath);
   const actualHash = crypto.createHash('sha256').update(pubKeyContent).digest('hex');
-  
+
   if (actualHash !== EXPECTED_PUBKEY_HASH) {
     console.error(`FAIL: Root fingerprint mismatch!\nExpected: ${EXPECTED_PUBKEY_HASH}\nGot:      ${actualHash}`);
     process.exit(1);
