@@ -1,5 +1,7 @@
 # NeuralShell V2.1.4 Golden Master - Maintenance Operations Activation
 
+> **Document role**: This is the historical maintenance operations activation record for the sealed Golden Master. It is not the current release-status document. For current governed baseline status, see `docs/release/V2_1_28_GOVERNANCE_SNAPSHOT.md`.
+
 This document records the activation of maintenance operations on top of the sealed NeuralShell Golden Master baseline.
 
 ## Baseline Authority
