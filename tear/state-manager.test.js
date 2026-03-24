@@ -7,6 +7,7 @@ const path = require("node:path");
 const Module = require("node:module");
 
 const stateManagerPath = path.resolve(__dirname, "../src/core/stateManager.js");
+const identityKernelPath = path.resolve(__dirname, "../src/core/identityKernel.js");
 
 function withMockedElectron(userDataPath, fn, options = {}) {
   const fingerprint = String(options.fingerprint || "test-fingerprint-123");
@@ -31,7 +32,7 @@ function withMockedElectron(userDataPath, fn, options = {}) {
       };
     }
     // Mock identityKernel to return a stable fingerprint for tests
-    if (request.endsWith("identityKernel") || request === "./identityKernel") {
+    if (request.endsWith("identityKernel") || request.endsWith("identityKernel.js") || request === "./identityKernel") {
       return {
         getFingerprint: () => fingerprint,
         getHardwareFingerprint: () => hardwareFingerprint,
@@ -41,12 +42,15 @@ function withMockedElectron(userDataPath, fn, options = {}) {
     return originalLoad.call(this, request, parent, isMain);
   };
 
+  // Flush both caches to prevent stale mocks leaking between tests
   delete require.cache[stateManagerPath];
+  delete require.cache[identityKernelPath];
   try {
     return fn();
   } finally {
     Module._load = originalLoad;
     delete require.cache[stateManagerPath];
+    delete require.cache[identityKernelPath];
   }
 }
 
