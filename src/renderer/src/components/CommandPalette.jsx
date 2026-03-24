@@ -1,15 +1,18 @@
 import React from 'react';
+import { getPaletteCommands } from '../state/moduleRegistry';
 
 export function CommandPalette({ onClose }) {
     const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
     const mod = isMac ? '⌘' : 'Ctrl';
 
-    const commands = [
-        { id: 'search', label: 'Search Workspace', shortcut: `${mod} + 1` },
-        { id: 'stash', label: 'Stash Artifact', shortcut: `${mod} + 2` },
-        { id: 'purge', label: 'Purge Vault', shortcut: `${mod} + 3` },
-        { id: 'heuristics', label: 'System Heuristics', shortcut: `${mod} + 4` },
-    ];
+    // Pull commands from the module registry instead of hardcoding
+    const registeredCommands = getPaletteCommands();
+    const commands = registeredCommands.map((cmd, i) => ({
+        id: cmd.id,
+        label: cmd.title,
+        shortcut: `${mod} + ${i + 1}`,
+        action: cmd.action,
+    }));
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 backdrop-blur-md bg-black/60 animate-in fade-in duration-200" onClick={onClose}>
@@ -31,7 +34,7 @@ export function CommandPalette({ onClose }) {
                         <button
                             key={cmd.id}
                             className="w-full text-left p-3 hover:bg-cyan-400/10 rounded-xl flex items-center justify-between group transition-all"
-                            onClick={() => { console.log(`Executing ${cmd.id}`); onClose(); }}
+                            onClick={() => { if (cmd.action) cmd.action(); onClose(); }}
                         >
                             <span className="text-slate-300 group-hover:text-cyan-200">{cmd.label}</span>
                             <span className="text-[9px] text-slate-600 group-hover:text-cyan-400 font-mono uppercase">{cmd.shortcut}</span>
