@@ -1,13 +1,13 @@
-# RELEASE MANIFEST - NeuralShell Phases 2–5
+# RELEASE MANIFEST - NeuralShell V2.1.29 GA (React-Hardened)
 
 ## Handoff Package
-- **Package Name**: `NeuralShell_Evidence_v1.0.zip`
-- **Status**: GOLD MASTER
+- **Package Name**: `NeuralShell_V2.1.29_GA.zip`
+- **Status**: GENERAL AVAILABILITY (React + OMEGA Sealed)
 
 ## ZIP Contents
 | File | Purpose |
 | :--- | :--- |
-| `FINAL_HANDOFF_STATUS.md` | Final project status and portability verification summary. |
+| `FINAL_HANDOFF_STATUS.md` | Final project status and OMEGA hardening verification. |
 | `HARD_PROOF_v1.0.0-OMEGA.md` | Engineering certification for core runtime and release gates. |
 | `MANUAL_VALIDATION_CHECKLIST.md` | Comprehensive guide for manual functional verification. |
 | `MASTER_PROOF.md` | Evidence of LLM wiring, IPC handshake, and automated test passes. |
@@ -15,7 +15,8 @@
 | `RELEASE_MANIFEST.md` | This document: full manifest and portability audit record. |
 | `SHA256SUMS.txt` | Cryptographic SHA-256 checksums for all included documents. |
 | `SYSTEM_MAP.md` | Architectural breakdown of the trusted computing base and security layers. |
-| `walkthrough.md` | Technical narrative of UX polish and MVP hardening (Phases 2-5). |
+| `walkthrough.md` | Technical narrative of OMEGA security hardening and research sync. |
+| `governance/` | Source manifest and compliance registries for auditability. |
 
 ## Privacy & Portability Scrub
 The handoff package was reviewed for machine-local and session-local references, including:

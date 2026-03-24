@@ -14,6 +14,14 @@ function safeUserDataPath() {
   return path.join(process.cwd(), "state");
 }
 
+const HONEYPOT_SESSIONS = new Set(["admin_vault", "root_secret", "master_key"]);
+
+function _checkHoneypot(name) {
+  if (HONEYPOT_SESSIONS.has(name)) {
+    throw new Error(`[SECURITY BREACH] Attempted unauthorized access to sequestered honeypot: ${name}`);
+  }
+}
+
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
@@ -32,6 +40,8 @@ function validateName(name) {
     /^[a-zA-Z0-9._-]+$/.test(normalized),
     "Session name contains invalid characters."
   );
+  const reserved = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+  assert(!reserved.test(normalized), "Invalid session name (Reserved).");
   return normalized;
 }
 
@@ -226,6 +236,7 @@ function saveSession(name, payload, passphrase) {
 
 function loadSession(name, passphrase) {
   const safeName = validateName(name);
+  _checkHoneypot(safeName);
   const safePassphrase = validatePassphrase(passphrase);
   const filePath = sessionPath(safeName);
   assert(fs.existsSync(filePath), `Session not found: ${safeName}`);

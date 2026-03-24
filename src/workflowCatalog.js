@@ -89,6 +89,18 @@
       ]
     },
     {
+      id: "release_audit",
+      title: "Release Audit",
+      description: "Final verification of the release candidate, including E2E smoke and governance checks.",
+      defaultOutputMode: "checklist",
+      starterPrompt: "Run a full release audit. Verify all governance gates, check for drift, and confirm the system is ready for final seal.",
+      followUpActions: [
+        "Governance report summary",
+        "E2E smoke status",
+        "Final seal recommendation"
+      ]
+    },
+    {
       id: "bridge_diagnostics",
       title: "Bridge Diagnostics",
       description: "Inspect local model bridge health, performance status, and the minimum fix path for offline-first operation.",

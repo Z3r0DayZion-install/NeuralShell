@@ -16,7 +16,13 @@
           <img src="../assets/logo-primary.svg" class="brand-logo" alt="NeuralShell" />
           <div class="brand-copy">
             <h1 class="visually-hidden">NeuralShell</h1>
-            <span id="heroWorkflowBadge" class="header-badge">CONSOLIDATED ACCESS</span>
+            <span id="heroWorkflowBadge" class="header-badge">OMEGA CORE ACCESS</span>
+            <span id="tierBadge" class="header-badge"
+              style="cursor: pointer; background: var(--ns-panel-1); color: var(--muted); border-color: var(--ns-panel-1);"
+              title="Click to enter Operator License">PREVIEW NODE</span>
+            <span id="heroProviderBadge" class="header-badge"></span>
+            <div id="heroWorkflowSummaryText" class="header-status-value"></div>
+            <div id="heroFocusSummaryText" class="header-status-value"></div>
           </div>
         </div>
 
@@ -31,7 +37,7 @@
 
           <div class="status-group">
             <span class="stat-label">Workspace</span>
-            <div id="globalWorkspaceStatusText" class="header-status-value">No workspace attached</div>
+            <div id="globalWorkspaceStatusText" class="header-status-value">Idle Workspace</div>
           </div>
 
           <div class="status-group">
@@ -40,23 +46,29 @@
           </div>
 
           <div class="status-group">
-            <span class="stat-label">Connectivity</span>
+            <span class="stat-label">Model Bridge</span>
             <div class="row row-tight">
-              <div id="globalBridgeStatusText" class="header-status-value">Checking...</div>
+              <div id="globalBridgeStatusText" class="header-status-value">Local Connection</div>
               <label class="mode-switch-compact" for="offlineModeInput">
                 <input id="offlineModeInput" type="checkbox" role="switch" />
                 <span class="mode-switch-track"></span>
                 <span class="mode-switch-label">Offline</span>
               </label>
             </div>
+            <div id="offlineModeSummaryText" class="header-status-value">Sovereign Airgap Policy Active</div>
           </div>
         </div>
 
         <div class="header-actions">
+          <button id="criticalStopBtn" class="btn-icon hidden" title="FORCE STOP EXECUTION (ALT+C)"
+            style="background: var(--ns-bad); color: white; border-color: var(--ns-bad);">STOP</button>
+          <button id="toggleRightPaneBtn" class="btn-icon" title="Toggle Right Pane">⇔</button>
+          <button id="resetPaneLayoutBtn" class="btn-icon" title="Reset Pane Layout">⊞</button>
           <button id="commandPaletteOpenBtn" class="btn-header" title="Command Palette (Ctrl+K)">Palette</button>
+          <button id="discordSupportBtn" class="btn-header" title="Get Discord Support">Support</button>
           <button id="settingsMenuOpenBtn" class="btn-header" aria-controls="settingsMenuPanel"
             aria-expanded="false">Settings</button>
-          <button id="headerDetailsToggle" class="btn-header">Details</button>
+          <button id="headerDetailsToggle" class="btn-header" title="Toggle Overseer Diagnostics">Diagnostics</button>
         </div>
       </div>
 
@@ -82,10 +94,32 @@
       </div>
     </header>
 
+    <div id="activeProfileBar" class="active-profile-bar hidden" hidden>
+      <span id="apbProfileName"></span>
+      <span id="apbProvider"></span>
+      <span id="apbModel"></span>
+      <span id="apbTrustBadge"></span>
+      <span id="apbReconnectPolicy"></span>
+      <span id="apbLastVerified"></span>
+      <button id="apbVerifyBtn" class="btn-secondary">Verify</button>
+      <button id="apbRepairBtn" class="btn-secondary">Repair</button>
+      <button id="apbSwitchBtn" class="btn-secondary">Switch</button>
+      <button id="apbOfflineBtn" class="btn-secondary">Offline</button>
+      <button id="apbDisconnectBtn" class="btn-secondary">Disconnect</button>
+    </div>
+
     <div id="recoveryBanner" class="recovery-banner hidden">
       <span class="banner-icon">⚠️</span>
       <span class="banner-text">SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED</span>
     </div>
+
+    <div id="globalNextActionText" class="header-status-value"></div>
+    <button id="bridgeAutoDetectBtn" class="btn-secondary hidden" hidden>Auto-Detect</button>
+    <div id="modelSummary" class="hidden" hidden></div>
+    <div id="sessionSummary" class="hidden" hidden></div>
+    <div id="commandSummary" class="hidden" hidden></div>
+    <div id="tokenSummary" class="hidden" hidden></div>
+    <div id="operatorRail"></div>
 
 
     <section id="workspaceTopology" class="layout workspace-topology">
@@ -93,8 +127,8 @@
         <section class="panel panel-chat">
           <div class="panel-head">
             <div class="panel-head-copy">
-              <h2>Active Thread</h2>
-              <p class="panel-note">One active thread in focus. Support tools are docked to the left and right.</p>
+              <h2>Command Panel</h2>
+              <p class="panel-note">Real-time execution thread. Monitor every step of the local inference.</p>
             </div>
             <div class="row row-tight">
               <button id="focusInboxBtn" class="btn-secondary" type="button">Focus Inbox</button>
@@ -107,32 +141,33 @@
           <div id="starterActionsSpotlight" class="starter-actions-grid hidden">
             <div class="starter-action-card" data-action="audit">
               <div class="starter-action-visual">
-                <span class="starter-action-icon">AUDIT</span>
+                <span class="starter-action-icon">MODEL</span>
                 <div class="visual-pulse"></div>
               </div>
               <div class="starter-action-info">
-                <span class="starter-action-label">SYSTEM HEALTH</span>
-                <span class="starter-action-note">Comprehensive scan of local and remote environment health.</span>
+                <span class="starter-action-label">CONNECT LOCAL LOGIC</span>
+                <span class="starter-action-note">Select an offline provider to begin local intelligence routing.</span>
               </div>
             </div>
             <div class="starter-action-card" data-action="scan">
               <div class="starter-action-visual">
-                <span class="starter-action-icon">SCAN</span>
+                <span class="starter-action-icon">LOAD</span>
                 <div class="visual-pulse"></div>
               </div>
               <div class="starter-action-info">
-                <span class="starter-action-label">NETWORK TOPOLOGY</span>
-                <span class="starter-action-note">Discover active bridge nodes and connection latency.</span>
+                <span class="starter-action-label">RESTORE WORKSPACE</span>
+                <span class="starter-action-note">Resume a multi-step execution from an encrypted session
+                  profile.</span>
               </div>
             </div>
             <div class="starter-action-card" data-action="tunnel">
               <div class="starter-action-visual">
-                <span class="starter-action-icon">TUNNEL</span>
+                <span class="starter-action-icon">MONITOR</span>
                 <div class="visual-pulse"></div>
               </div>
               <div class="starter-action-info">
-                <span class="starter-action-label">SECURE PIPELINE</span>
-                <span class="starter-action-note">Establish direct secure pipeline for LLM routing.</span>
+                <span class="starter-action-label">OBSERVABILITY</span>
+                <span class="starter-action-note">Review active connections, memory layers, and active nodes.</span>
               </div>
             </div>
           </div>
@@ -153,17 +188,32 @@
             <div class="composer-shell">
               <div class="composer-head">
                 <div class="composer-head-copy">
-                  <span class="cluster-title">Composer</span>
-                  <span id="composerSummaryText" class="cluster-note">Bridge Diagnostics is active. Load a workflow
-                    prompt or start typing.</span>
+                  <span class="cluster-title">Modular Injector</span>
+                  <span id="composerSummaryText" class="cluster-note">Awaiting prompt input for local execution.</span>
                 </div>
                 <span id="composerMetaText" class="composer-meta-pill">Idle draft</span>
               </div>
             </div>
 
+            <!-- Thread task / workflow / mission control -->
+            <div class="thread-task-shell">
+              <div id="threadTaskFocusText"></div>
+              <div id="threadTaskCapabilityText"></div>
+              <div id="threadTaskActionText"></div>
+              <div id="workflowTitleText"></div>
+              <div id="workflowDescriptionText"></div>
+              <div id="workflowQuickActions" class="action-grid"></div>
+              <div id="workflowFollowupActions"></div>
+              <button id="workflowSeedPromptBtn" class="btn-secondary">Seed Prompt</button>
+              <select id="outputModeSelect"></select>
+              <div id="missionControlGrid" class="mission-control-grid"></div>
+            </div>
+
             <label class="field-block" for="promptInput">
-              <span>Prompt</span>
-              <textarea id="promptInput" placeholder="Type a prompt, or use slash commands like /help"></textarea>
+              <span>Prompt <small style="color: var(--muted); font-weight: 400; margin-left: 8px;">(Ctrl+Enter to send,
+                  / for commands)</small></span>
+              <textarea id="promptInput" placeholder="Type a prompt, or use slash commands like /help"
+                autofocus></textarea>
             </label>
 
             <div class="command-deck-shell">
@@ -173,8 +223,8 @@
                   <span class="cluster-note">Keep only the highest-value actions visible. Move recovery, search, and
                     archive work into trays.</span>
                 </div>
-                <span id="actionBarStatusText" class="action-bar-status">Composer is empty. Start with a prompt or
-                  restore a saved draft.</span>
+                <span id="actionBarStatusText" class="action-bar-status">Ready. Select an action or execute
+                  draft.</span>
               </div>
               <div class="command-action-bar">
                 <div class="command-action-core row row-wrap action-grid">
@@ -1175,13 +1225,17 @@
             <div id="contextPackSummaryText" class="workspace-summary-text"></div>
             <pre id="contextPackPreview" class="context-pack-preview"></pre>
           </div>
-          <div class="surface-shell intelligence-panel">
+          <section id="intelligencePanel" class="surface-shell intelligence-panel">
             <div class="surface-head">
               <span class="cluster-title">Intelligence Flow</span>
               <span class="cluster-note">Workflow insights, knowledge feed, and the safest next move for the current
                 context.</span>
             </div>
-          </div>
+            <div id="intelCapabilityText"></div>
+            <div id="intelModeText"></div>
+            <div id="intelBridgeText"></div>
+            <div id="intelSessionText"></div>
+          </section>
           <section class="surface-shell intel-command-shell">
             <div class="surface-head">
               <span class="cluster-title">What's Next</span>
@@ -1203,6 +1257,8 @@
                 aria-controls="intelBriefTray" aria-expanded="true">What's Next</button>
               <button id="intelKnowledgeTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
                 aria-controls="intelKnowledgeTray" aria-expanded="false">Knowledge Feed</button>
+              <button id="intelCapabilityTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="intelCapabilityTray" aria-expanded="false">Capability Map</button>
             </div>
             <div id="intelBriefTray" class="intel-tray-panel">
               <div class="surface-head">
@@ -1218,6 +1274,13 @@
                 <span class="cluster-note">Live context, shipping state, and operator notes.</span>
               </div>
               <div id="knowledgeFeed"></div>
+            </div>
+            <div id="intelCapabilityTray" class="intel-tray-panel hidden" hidden>
+              <div class="surface-head">
+                <span class="cluster-title">Capability Map</span>
+                <span class="cluster-note">Runtime capability graph and system surface overview.</span>
+              </div>
+              <div id="capabilityGraph"></div>
             </div>
           </section>
         </section>
@@ -1257,27 +1320,91 @@
             </div>
           </section>
           <section class="onboarding-config">
-            <div class="form-grid">
-              <label class="field-block" for="onboardingModelSelect">
-                <span>Default Model</span>
-                <select id="onboardingModelSelect"></select>
-              </label>
-              <label class="field-block" for="onboardingWorkflowSelect">
-                <span>Kickoff Workflow</span>
-                <select id="onboardingWorkflowSelect"></select>
-              </label>
-              <label class="field-inline checkbox-field" for="onboardingAutoScrollInput">
-                <input id="onboardingAutoScrollInput" type="checkbox" checked />
-                <span>Enable Auto Scroll</span>
-              </label>
-              <label class="field-inline checkbox-field" for="onboardingRememberInput">
-                <input id="onboardingRememberInput" type="checkbox" checked />
-                <span>Remember completion</span>
+            <div id="onboardingStepHome" class="onboarding-step-content">
+              <div class="onboarding-saved-profiles">
+                <p class="field-label">Previous Profiles</p>
+                <div id="onboardingSavedProfilesList" class="stack-sm"></div>
+              </div>
+              <div class="onboarding-actions row row-wrap">
+                <button id="onboardingConfigLocalBtn" class="btn-primary">Fast Local Setup</button>
+                <button id="onboardingConfigRemoteBtn" class="btn-secondary">Advanced / Remote</button>
+              </div>
+            </div>
+
+            <div id="onboardingStepProvider" class="onboarding-step-content hidden">
+              <label class="field-block" for="onboardingProviderSelect">
+                <span>Select Provider</span>
+                <select id="onboardingProviderSelect" class="header-select" style="width: 100%; height: 40px;"></select>
               </label>
             </div>
-            <div class="row row-wrap action-grid">
-              <button id="onboardingStartBtn" class="btn-primary">Start Console</button>
+
+            <div id="onboardingStepEndpoint" class="onboarding-step-content hidden">
+              <label class="field-block" for="onboardingBaseUrlInput">
+                <span>Base URL</span>
+                <input id="onboardingBaseUrlInput" type="text" placeholder="http://127.0.0.1:11434" />
+              </label>
+              <div id="onboardingApiKeyField" class="hidden">
+                <label class="field-block" for="onboardingApiKeyInput">
+                  <span>API Key</span>
+                  <input id="onboardingApiKeyInput" type="password" />
+                </label>
+              </div>
+              <div id="onboardingTestResult" class="status-note"></div>
+            </div>
+
+            <div id="onboardingStepModel" class="onboarding-step-content hidden">
+              <label class="field-block" for="onboardingModelSelect">
+                <span>Select Model</span>
+                <select id="onboardingModelSelect" class="header-select" style="width: 100%; height: 40px;"></select>
+              </label>
+              <div id="onboardingModelStatus" class="status-note"></div>
+            </div>
+
+            <div id="onboardingStepVerify" class="onboarding-step-content hidden">
+              <p class="field-label">Verifying Integrity...</p>
+              <div class="verification-checklist">
+                <div class="verification-row">
+                  <span class="verify-label">Provider</span>
+                  <span id="verifyValProvider" class="verify-val">--</span>
+                </div>
+                <div class="verification-row">
+                  <span class="verify-label">Endpoint</span>
+                  <span id="verifyValEndpoint" class="verify-val">--</span>
+                </div>
+                <div class="verification-row">
+                  <span class="verify-label">Identity</span>
+                  <span id="verifyValSecret" class="verify-val">--</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="onboardingStepSummary" class="onboarding-step-content hidden">
+              <div class="governance-summary">
+                <div class="summary-line">
+                  <strong>Profile</strong>
+                  <span id="summaryProvider">--</span>
+                </div>
+                <div class="summary-line">
+                  <strong>Model</strong>
+                  <span id="summaryModel">--</span>
+                </div>
+                <div class="summary-line">
+                  <strong>Trust</strong>
+                  <span id="summaryTrust" class="tone-good">VERIFIED</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="onboardingStepOffline" class="onboarding-step-content hidden">
+              <div id="onboardingOfflineBanner" class="status-note tone-warn">Network connectivity is restricted.</div>
+              <p class="panel-note">You are entering an Airgapped session. Local actions only.</p>
+            </div>
+
+            <div class="onboarding-footer row row-wrap action-grid">
+              <button id="onboardingBackBtn" class="btn-secondary hidden">Back</button>
+              <button id="onboardingNextBtn" class="btn-primary">Next</button>
               <button id="onboardingSkipBtn" class="btn-secondary">Skip Setup</button>
+              <button id="onboardingStartBtn" class="btn-primary hidden">Finish & Seal</button>
             </div>
           </section>
         </div>
@@ -1318,6 +1445,44 @@
         <ul id="commandPaletteList"></ul>
       </div>
     </section>
+
+
+    <div id="onboardingReconnectStartup" class="hidden" hidden></div>
+
+    <!-- Secret Recovery stubs -->
+    <div id="onboardingRecoveryGroup" class="hidden" hidden>
+      <input id="onboardingRecoverySecretInput" type="password" />
+      <button id="onboardingRecoverySubmitBtn" class="btn-primary">Submit</button>
+      <button id="onboardingRecoveryCancelBtn" class="btn-secondary">Cancel</button>
+      <button id="onboardingRecoveryClearBtn" class="btn-secondary">Clear</button>
+    </div>
+
+    <!-- Trust Report overlay -->
+    <section id="trustReportOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="panel-head">
+          <h2>Trust Verification Report</h2>
+          <button id="trustReportCloseBtn" class="btn-secondary">Close</button>
+        </div>
+        <div id="trustReportContent"></div>
+        <div class="row row-wrap action-grid">
+          <button id="trustReportExportJsonBtn" class="btn-secondary">Export JSON</button>
+          <button id="trustReportExportMdBtn" class="btn-secondary">Export Markdown</button>
+        </div>
+      </div>
+    </section>
+    <!-- Profile Switch Overlay (Phase 21) -->
+    <section id="profileSwitchOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="panel-head">
+          <h2>Switch Profile</h2>
+          <button id="profileSwitchCloseBtn" class="btn-secondary">Close</button>
+        </div>
+        <ul id="profileSwitchList"></ul>
+      </div>
+    </section>
+
+
   </main>
   <script src="core/config.js"></script>
   <script src="uiCommandDeckConfig.js"></script>

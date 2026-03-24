@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Dict, List
 
 
-DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_v1.2.1-OMEGA.csv")
+DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_V2.0-RC-Final.csv")
 DEFAULT_MD = Path("release/beta-outreach-status.md")
 DEFAULT_JSON = Path("release/beta-outreach-status.json")
 MANUAL_TASK_ACTIONS = {

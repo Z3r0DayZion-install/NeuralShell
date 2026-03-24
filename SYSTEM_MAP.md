@@ -1,4 +1,4 @@
-# SYSTEM MAP — NEURALSHELL v5.2.0
+# SYSTEM MAP — NEURALSHELL V2.1.29 GA
 
 ## Architecture Overview
 Capability-based Microkernel with strictly isolated privileged operations.

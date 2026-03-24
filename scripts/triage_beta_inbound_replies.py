@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 
-DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_v1.2.1-OMEGA.csv")
+DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_V2.0-RC-Final.csv")
 DEFAULT_INPUT = Path("release/inbound_replies.csv")
 DEFAULT_REPORT = Path("release/beta-inbound-triage-report.json")
 DEFAULT_QUEUE = Path("release/beta-inbound-action-queue.md")

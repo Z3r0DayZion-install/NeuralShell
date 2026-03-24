@@ -17,7 +17,7 @@ function sha256File(filePath) {
 
 function run() {
   console.log("[VERIFIER] Initiating Source Integrity Audit...");
-  
+
   if (!fs.existsSync(manifestPath)) {
     console.error(`[VERIFIER] Error: Manifest not found at ${manifestPath}`);
     process.exit(1);
@@ -37,7 +37,7 @@ function run() {
 
     const actualHash = sha256File(fullPath);
     if (actualHash !== expectedHash) {
-      console.error(`[VERIFIER] TAMPERED: ${file}`);
+      console.error(`[VERIFIER] SIGNATURE_TAMPERED: ${file}`);
       console.error(`  Expected: ${expectedHash}`);
       console.error(`  Actual:   ${actualHash}`);
       violations++;

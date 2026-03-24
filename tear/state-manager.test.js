@@ -132,12 +132,12 @@ test("StateManager migrates v1 state to v5 bridge profile settings", () => {
       fs.writeFileSync(stateManager.stateFile, JSON.stringify(legacy, null, 2), "utf8");
       stateManager.load();
       const settings = stateManager.get("settings");
-      assert.equal(stateManager.get("stateVersion"), 5);
+      assert.equal(stateManager.get("stateVersion"), 9);
       assert.ok(Array.isArray(settings.connectionProfiles));
       assert.equal(settings.connectionProfiles.length, 1);
       assert.equal(settings.connectionProfiles[0].baseUrl, "http://localhost:11434");
       assert.equal(settings.activeProfileId, settings.connectionProfiles[0].id);
-      assert.equal(settings.connectOnStartup, true);
+      assert.equal(settings.connectOnStartup, false);
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -199,8 +199,8 @@ test("StateManager quarantines corrupted state and regenerates defaults", () => 
       fs.writeFileSync(stateManager.stateFile, "not-valid-state", "utf8");
 
       const loaded = stateManager.load();
-      assert.equal(loaded.stateVersion, 5);
-      assert.equal(loaded.model, "llama3");
+      assert.equal(loaded.stateVersion, 9);
+      assert.equal(loaded.model, null);
       assert.ok(Array.isArray(loaded.chat));
 
       const files = fs.readdirSync(path.dirname(stateManager.stateFile));
@@ -237,7 +237,7 @@ test("StateManager upgrades v2 state with existing connectionProfiles to v5", ()
       fs.writeFileSync(stateManager.stateFile, JSON.stringify(legacyV2, null, 2), "utf8");
       const loaded = stateManager.load();
       const settings = loaded.settings;
-      assert.equal(loaded.stateVersion, 5);
+      assert.equal(loaded.stateVersion, 9);
       assert.equal(settings.activeProfileId, "profile-a");
       assert.equal(settings.connectionProfiles.length, 1);
       assert.equal(settings.connectionProfiles[0].id, "profile-a");
@@ -274,7 +274,7 @@ test("StateManager migrates legacy encrypted v3 state into the authenticated v5 
       const loaded = stateManager.load();
       const rewritten = fs.readFileSync(stateManager.stateFile, "utf8");
 
-      assert.equal(loaded.stateVersion, 5);
+      assert.equal(loaded.stateVersion, 9);
       assert.equal(loaded.model, "phi4");
       assert.equal(loaded.tokens, 42);
       assert.equal(loaded.settings.theme, "light");
@@ -300,8 +300,8 @@ test("StateManager quarantines tampered authenticated state and regenerates defa
       fs.writeFileSync(stateManager.stateFile, tampered, "utf8");
 
       const loaded = stateManager.load();
-      assert.equal(loaded.stateVersion, 5);
-      assert.equal(loaded.model, "llama3");
+      assert.equal(loaded.stateVersion, 9);
+      assert.equal(loaded.model, null);
 
       const files = fs.readdirSync(path.dirname(stateManager.stateFile));
       assert.ok(
@@ -341,7 +341,7 @@ test("StateManager migrates legacy authenticated v4 state to the stable hardware
       const loaded = stateManager.load();
       const rewritten = fs.readFileSync(stateManager.stateFile, "utf8");
 
-      assert.equal(loaded.stateVersion, 5);
+      assert.equal(loaded.stateVersion, 9);
       assert.equal(loaded.model, "llama3.2");
       assert.equal(loaded.tokens, 77);
       assert.equal(loaded.nodeId, hardwareFingerprint);
@@ -370,7 +370,7 @@ test("StateManager preserves state across identity rotation when hardware bindin
       const stateManager = require("../src/core/stateManager");
       const loaded = stateManager.load();
 
-      assert.equal(loaded.stateVersion, 5);
+      assert.equal(loaded.stateVersion, 9);
       assert.equal(loaded.tokens, 321);
       assert.equal(loaded.model, "persisted-model");
       assert.equal(loaded.nodeId, hardwareFingerprint);

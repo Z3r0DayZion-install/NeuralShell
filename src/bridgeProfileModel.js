@@ -47,7 +47,10 @@
       timeoutMs: clampNumber(profile.timeoutMs, 1000, 120000, defaultTimeoutMs),
       retryCount: clampNumber(profile.retryCount, 0, 10, defaultRetryCount),
       defaultModel: String(profile.defaultModel || fallbackModel || suggestedModel || "llama3").trim() || fallbackModel || suggestedModel || "llama3",
-      apiKey: String(profile.apiKey || "").trim()
+      apiKey: String(profile.apiKey || "").trim(),
+      lastVerifiedFingerprint: profile.lastVerifiedFingerprint || null,
+      authenticity: profile.authenticity || "UNSIGNED",
+      trustState: profile.trustState || null
     };
   }
 

@@ -9,7 +9,7 @@ module.exports = {
   name: "recursive-auditor",
   description: "Audits autonomous plugins for integrity and trust against the governance ledger",
   register({ registerCommand, kernel }) {
-    
+
     async function calculateHash(filePath) {
       const data = await kernel.request(kernel.CAP_FS, "readFile", { filePath });
       return (await kernel.request(kernel.CAP_CRYPTO, "hash", { data, algorithm: "sha256" })).toUpperCase();
@@ -17,8 +17,8 @@ module.exports = {
 
     async function loadTrustIndex() {
       // Use relative path from AppPath to get to governance directory
-      const ledgerPath = "governance/THREAT_LEDGER.jsonl"; 
-      
+      const ledgerPath = "governance/THREAT_LEDGER.jsonl";
+
       let content;
       try {
         content = await kernel.request(kernel.CAP_FS, "readFile", { filePath: ledgerPath });
@@ -27,7 +27,7 @@ module.exports = {
       }
       const lines = content.split("\n").filter(Boolean);
       const trustMap = new Map();
-      
+
       for (const line of lines) {
         try {
           const entry = JSON.parse(line);
@@ -44,7 +44,7 @@ module.exports = {
     async function verifyAllPlugins() {
       const trustMap = await loadTrustIndex();
       const pluginDir = "src/plugins/autonomous";
-      
+
       let files;
       try {
         files = await kernel.request(kernel.CAP_FS, "readdir", { dirPath: pluginDir });
@@ -65,7 +65,7 @@ module.exports = {
           results.push({ file, status: "UNTRUSTED", currentHash: hash });
           violations++;
         } else if (hash !== trustedHash.toUpperCase()) {
-          results.push({ file, status: "TAMPERED", expected: trustedHash, actual: hash });
+          results.push({ file, status: "SIGNATURE_TAMPERED", expected: trustedHash, actual: hash });
           violations++;
         } else {
           results.push({ file, status: "VERIFIED", hash });

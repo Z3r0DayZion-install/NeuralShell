@@ -1,4 +1,4 @@
-# ARCHITECTURE RISKS — NEURALSHELL v5.2.0
+# ARCHITECTURE RISKS — NEURALSHELL V2.1.29 GA
 
 ## 1. Privilege Escapes
 - **Risk:** Malicious plugin bypasses `pluginLoader` to access `process` or `require`.

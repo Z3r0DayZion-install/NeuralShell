@@ -1,0 +1,104 @@
+{
+  "baseline": {
+    "buildName": "build-1",
+    "timestamp": "2026-03-23T00:28:21.158Z",
+    "artifacts": {
+      "installer": "NeuralShell Setup 2.1.29.exe",
+      "sbom": "latest.json",
+      "manifest": "manifest.json"
+    }
+  },
+  "comparison": {
+    "buildName": "build-2",
+    "timestamp": "2026-03-23T00:28:26.969Z",
+    "artifacts": {
+      "installer": "NeuralShell Setup 2.1.29.exe",
+      "sbom": "latest.json",
+      "manifest": "manifest.json"
+    }
+  },
+  "matches": [
+    {
+      "label": "Installer EXE",
+      "path": "dist/NeuralShell Setup 2.1.29.exe",
+      "hash1": "9fe7c5cd05b7154f7a41580818ba50a5f37b3a64637ae38d82e6a57a873fb756",
+      "hash2": "9fe7c5cd05b7154f7a41580818ba50a5f37b3a64637ae38d82e6a57a873fb756",
+      "match": true
+    },
+    {
+      "label": "Provenance",
+      "path": "release/provenance.json",
+      "hash1": "e53c28de5daae4d73a9041113d440fbcec8ca54b4e1044aa4b24f88269a4e0b1",
+      "hash2": "e53c28de5daae4d73a9041113d440fbcec8ca54b4e1044aa4b24f88269a4e0b1",
+      "match": true
+    },
+    {
+      "label": "Attestation",
+      "path": "release/attestation.json",
+      "hash1": null,
+      "hash2": null,
+      "match": true
+    },
+    {
+      "label": "Public Key",
+      "path": "release/manifest.pub",
+      "hash1": "7f9556191e7b50bab97a79fb71181d2efe091c95c5e0fd2b3592961405d91907",
+      "hash2": "7f9556191e7b50bab97a79fb71181d2efe091c95c5e0fd2b3592961405d91907",
+      "match": true
+    }
+  ],
+  "mismatches": [
+    {
+      "label": "SBOM",
+      "path": "artifacts/sbom/latest.json",
+      "hash1": "6602d1f1e026e501467b3738bc0d6cd82b4b52b6c65fb2b21a2970a2fb2ac397",
+      "hash2": "d02d5d5818d58676fca34a7012d6112b17b337c4acc6e67fb8fc86ab2b5a3c56",
+      "match": false,
+      "normalizedMatch": true
+    },
+    {
+      "label": "Manifest",
+      "path": "release/manifest.json",
+      "hash1": "74692a890c51ca134c942db12493b0558d494fb1e4fdfc0d5d19929c032485b6",
+      "hash2": "c73d3bc95627efc99b2b992c19c2e6984c27af7fa2f2eadc8ca7e4674492fa7e",
+      "match": false,
+      "normalizedMatch": true
+    },
+    {
+      "label": "Signature",
+      "path": "release/manifest.sig",
+      "hash1": "c60fc1b29e3c9bc54c66399a738233735532889bed41727db089aa2b140838f1",
+      "hash2": "e8aff5cc2651607a5c5365e066165623dbed6028ca729bc730e5991b0c3faee3",
+      "match": false,
+      "normalizedMatch": false
+    },
+    {
+      "label": "Autonomy Benchmark",
+      "path": "release/autonomy-benchmark.json",
+      "hash1": "2c21de1c1f59901195b7b4e54bc58cd311e16b1f9c7fe0b59d54ec27846d476c",
+      "hash2": "2881bfe22035dd1fe346e67be606c5381392711f15db0bb66afac77f44dd9878",
+      "match": false,
+      "normalizedMatch": true
+    },
+    {
+      "label": "Checksums Metadata",
+      "path": "release/checksums.json",
+      "hash1": "62edd74995d7ee6c1353d62325b7e7b8adbce5b5f8bf0de7bdf63534e69e3092",
+      "hash2": "8e968e3bb990eb536e67ad042c21aa4eaf24bdcf948e477c0035a5ff44611086",
+      "match": false,
+      "normalizedMatch": true
+    },
+    {
+      "label": "Checksums Flat",
+      "path": "release/checksums.txt",
+      "hash1": "7d48eae7d6af010c9410f12ffc327e52cd22d39963448be992cb888f429ce986",
+      "hash2": "a69a98152fee0dbcfbb3fe1aab50c727bf9c90a6a041769df464750803880639",
+      "match": false,
+      "normalizedMatch": false
+    }
+  ],
+  "summary": {
+    "status": "REPRODUCIBLE-WITH-NORMALIZATION",
+    "driftClass": "BOUNDED_TIMESTAMP_DRIFT"
+  }
+}

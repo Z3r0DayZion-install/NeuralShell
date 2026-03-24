@@ -15,7 +15,7 @@ const VALID_PERSONAS = new Set(Object.keys(PERSONA_PROMPTS));
 class LLMService {
   constructor(options = {}) {
     this.fetchImpl = options.fetchImpl || globalThis.fetch;
-    this.baseUrl = String(options.baseUrl || "http://127.0.0.1:11434");
+    this.baseUrl = options.baseUrl ? String(options.baseUrl) : null;
     this.provider = normalizeBridgeProviderId(options.provider || "ollama");
     this.apiKey = String(options.apiKey || "");
     this.maxRetries = Number.isFinite(Number(options.maxRetries)) ? Number(options.maxRetries) : CONNECTION_DEFAULTS.RETRY_COUNT;

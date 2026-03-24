@@ -7,10 +7,12 @@ const { spawn } = require(["child", "process"].join("_"));
  * Multi-step execution logic for canonical actions.
  */
 
-async function runShellCommand(cmd, cwd, logger) {
+async function runShellCommand(args, cwd, logger) {
     return new Promise((resolve) => {
-        const parts = cmd.split(" ");
-        const proc = spawn(parts[0], parts.slice(1), { cwd, shell: true });
+        if (!Array.isArray(args) || args.length === 0) {
+            return resolve({ ok: false, output: "Invalid command arguments", code: 1 });
+        }
+        const proc = spawn(args[0], args.slice(1), { cwd, shell: false });
 
         let output = "";
         proc.stdout.on("data", (data) => {
@@ -22,6 +24,10 @@ async function runShellCommand(cmd, cwd, logger) {
             const str = data.toString();
             output += str;
             if (logger) logger(str, "stderr");
+        });
+        proc.on("error", (err) => {
+            output += `Spawn error: ${err.message}`;
+            if (logger) logger(err.message, "error");
         });
         proc.on("close", (code) => {
             resolve({ ok: code === 0, output, code });
@@ -112,14 +118,14 @@ async function reviewUncommitted(rootPath, context = {}) {
     // Step 2: Inspect dirty state
     steps.push({ label: "Inspect dirty state", status: "running" });
     if (logger) logger("Running git status...", "system");
-    const statusResult = await runShellCommand("git status --porcelain", rootPath, logger);
+    const statusResult = await runShellCommand(["git", "status", "--porcelain"], rootPath, logger);
     if (logger) logger(statusResult.output || "(Clean)", "stdout");
     steps[1].status = "succeeded";
 
     // Step 3: Classify changes
     steps.push({ label: "Classify changes", status: "running" });
     if (logger) logger("Classifying changes via git diff...", "system");
-    const _diffResult = await runShellCommand("git diff --stat", rootPath, logger);
+    const _diffResult = await runShellCommand(["git", "diff", "--stat"], rootPath, logger);
     steps[2].status = "succeeded";
 
     // Step 4: Optional Detailed Review

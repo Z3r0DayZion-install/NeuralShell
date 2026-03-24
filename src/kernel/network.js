@@ -69,11 +69,11 @@ class NetworkBroker {
     const { url, method = 'GET', headers = {}, body, timeoutMs = this.timeoutMs } = payload;
     const targetUrl = new URL(url);
 
-    if (targetUrl.protocol !== 'https:') {
-      throw new Error('OMEGA_BLOCK: Only HTTPS is allowed.');
+    if (targetUrl.protocol !== 'https:' && targetUrl.hostname !== '127.0.0.1' && targetUrl.hostname !== 'localhost') {
+      throw new Error('OMEGA_BLOCK: Only HTTPS is allowed for remote endpoints.');
     }
 
-    const agent = new https.Agent({
+    const agent = targetUrl.protocol === 'https:' ? new https.Agent({
       keepAlive: false,
       rejectUnauthorized: true,
       checkServerIdentity: (host, cert) => {
@@ -86,32 +86,49 @@ class NetworkBroker {
         }
         return undefined;
       }
-    });
+    }) : undefined;
 
     const safeHeaders = this._filterHeaders(headers);
 
-    const response = await fetch(url, {
-      method: method.toUpperCase() === 'POST' ? 'POST' : 'GET',
-      headers: safeHeaders,
-      body: body ? JSON.stringify(body) : undefined,
-      timeout: timeoutMs,
-      redirect: 'error', // Absolute denial of redirects
-      agent,
-      trustProxy: false
-    });
+    let lastError;
+    const maxRetries = 2;
 
-    const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
-    if (contentLength > this.maxResponseSize) {
-      throw new Error('OMEGA_BLOCK: Response size exceeds limit.');
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: method.toUpperCase() === 'POST' ? 'POST' : 'GET',
+          headers: safeHeaders,
+          body: body ? JSON.stringify(body) : undefined,
+          timeout: timeoutMs,
+          redirect: 'error', // Absolute denial of redirects
+          agent,
+          trustProxy: false
+        });
+
+        const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+        if (contentLength > this.maxResponseSize) {
+          throw new Error('OMEGA_BLOCK: Response size exceeds limit.');
+        }
+
+        // Return raw Buffer to prevent string-based kernel exploits
+        const buffer = await response.buffer();
+        return {
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries()),
+          data: buffer.toString('base64') 
+        };
+      } catch (error) {
+        lastError = error;
+        if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED' || error.type === 'request-timeout') {
+          if (attempt < maxRetries) {
+            await new Promise(res => setTimeout(res, 500 * (attempt + 1))); // Backoff
+            continue;
+          }
+        }
+        throw error; // Rethrow if not a retryable error or max retries reached
+      }
     }
-
-    // Return raw Buffer to prevent string-based kernel exploits
-    const buffer = await response.buffer();
-    return {
-      status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
-      data: buffer.toString('base64') 
-    };
+    throw lastError;
   }
 }
 

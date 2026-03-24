@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const bridgeProviderCatalog = require("../bridgeProviderCatalog");
 const bridgeSettingsModel = require("../bridgeSettingsModel");
 
-const STATE_VERSION = 5;
+const STATE_VERSION = 9;
 const AUTHENTICATED_STATE_PREFIX = "omega-v5";
 const LEGACY_AUTHENTICATED_STATE_PREFIX = "omega-v4";
 const AUTHENTICATED_STATE_AAD = Buffer.from("NeuralShell.state.v4", "utf8");
@@ -178,16 +178,21 @@ function defaultSettings() {
     onboardingVersion: "",
     allowRemoteBridge: false,
     activeProfileId: "local-default",
-    connectOnStartup: true,
-    autoLoadRecommendedContextProfile: false
+    connectOnStartup: false,
+    autoLoadRecommendedContextProfile: false,
+    connectionProfiles: [],
+    repairTelemetryLog: [],
+    profileTrustHistory: [],
+    tier: "PREVIEW"
   };
 }
 
 function defaultState() {
   return {
-    stateVersion: STATE_VERSION, // Version 5: stable hardware binding + authenticated encryption
+    stateVersion: STATE_VERSION,
+    setupState: "unconfigured",
     nodeId: null,
-    model: "llama3",
+    model: null,
     chat: [],
     tokens: 0,
     workflowId: "bridge_diagnostics",
@@ -226,28 +231,28 @@ function quarantineStateFile(reason = "invalid") {
   }
 }
 
-function bridgeSettingsOptions(fallbackModel = "llama3") {
+function bridgeSettingsOptions(fallbackModel = null) {
   return {
-    fallbackModel: String(fallbackModel || "llama3").trim() || "llama3",
+    fallbackModel: fallbackModel || null,
     normalizeProviderId: bridgeProviderCatalog.normalizeBridgeProviderId,
     getProvider: bridgeProviderCatalog.getBridgeProvider,
     defaultLocalBaseUrl: "http://127.0.0.1:11434",
     defaultTimeoutMs: 15000,
     defaultRetryCount: 2,
     defaultAllowRemoteBridge: false,
-    defaultConnectOnStartup: true,
+    defaultConnectOnStartup: false,
     defaultAutoLoadRecommendedContextProfile: false
   };
 }
 
-function normalizeSettingsValue(settings = {}, fallbackModel = "llama3") {
+function normalizeSettingsValue(settings = {}, fallbackModel = null) {
   return bridgeSettingsModel.normalizeBridgeSettings({
     ...defaultSettings(),
     ...(settings && typeof settings === "object" ? settings : {})
   }, bridgeSettingsOptions(fallbackModel));
 }
 
-function mergeSettingsValue(current, patch, fallbackModel = "llama3") {
+function mergeSettingsValue(current, patch, fallbackModel = null) {
   return bridgeSettingsModel.mergeBridgeSettings({
     ...defaultSettings(),
     ...(current && typeof current === "object" ? current : {})
@@ -255,12 +260,14 @@ function mergeSettingsValue(current, patch, fallbackModel = "llama3") {
 }
 
 function normalizeLoadedState(parsed) {
-  return {
-    ...defaultState(),
-    ...(parsed && typeof parsed === "object" ? parsed : {}),
-    stateVersion: STATE_VERSION,
-    settings: normalizeSettingsValue(parsed && parsed.settings, parsed && parsed.model)
-  };
+  const defaults = defaultState();
+  const raw = (parsed && typeof parsed === "object" ? parsed : {});
+  const merged = Object.assign({}, defaults, raw);
+
+  merged.stateVersion = STATE_VERSION;
+  merged.settings = normalizeSettingsValue(merged.settings || defaults.settings, merged.model);
+
+  return merged;
 }
 
 function save() {
@@ -337,8 +344,16 @@ function getState() { return deepClone(state); }
 function get(key) { return state[key]; }
 
 function set(key, value) {
-  if (key === "settings" && value && typeof value === "object" && !Array.isArray(value)) {
+  if (key === "__proto__" || key === "constructor" || key === "prototype") {
+    throw new Error(`Forbidden key: ${key}`);
+  }
+  if (key === "settings") {
     state.settings = mergeSettingsValue(state.settings, value, state.model);
+  } else if (key.startsWith("settings.")) {
+    const subKey = key.split(".")[1];
+    const patch = {};
+    patch[subKey] = value;
+    state.settings = mergeSettingsValue(state.settings, patch, state.model);
   } else {
     state[key] = value;
   }
@@ -359,15 +374,164 @@ function setState(updates) {
   return state;
 }
 
-module.exports = {
-  get,
-  getState,
-  load,
-  save,
-  set,
-  setState,
-  stateFile
+/**
+ * Phase 13.1: Canonical Trust Vocabulary
+ */
+const TRUST_STATES = {
+  VERIFIED: "VERIFIED",
+  DRIFTED: "DRIFTED",
+  NEEDS_REPAIR: "NEEDS_REPAIR",
+  OFFLINE_LOCKED: "OFFLINE_LOCKED",
+  INVALID: "INVALID",
+  MISSING_SECRET: "MISSING_SECRET",
+  MODEL_UNAVAILABLE: "MODEL_UNAVAILABLE",
+  NEEDS_REVIEW: "NEEDS_REVIEW"
 };
 
+/**
+ * Phase 13.1: Secret Custody Layer
+ */
+function secureStoreSecret(profileId, key, value) {
+  const settings = get("settings") || {};
+  const secrets = settings.secrets || {};
+  if (!secrets[profileId]) secrets[profileId] = {};
 
+  // Use electron.safeStorage if available, otherwise fallback to plain (mocked in tests)
+  let storedValue = value;
+  try {
+    const { safeStorage } = require("electron");
+    if (safeStorage.isEncryptionAvailable()) {
+      storedValue = safeStorage.encryptString(value).toString("base64");
+    }
+  } catch (e) {
+    // safeStorage not available or failed
+  }
 
+  secrets[profileId][key] = storedValue;
+  set("settings.secrets", secrets);
+  save();
+}
+
+function retrieveSecret(profileId, key) {
+  const settings = get("settings") || {};
+  const secrets = settings.secrets || {};
+  if (!secrets[profileId] || !secrets[profileId][key]) return null;
+
+  const value = secrets[profileId][key];
+  try {
+    const { safeStorage } = require("electron");
+    if (safeStorage && typeof safeStorage.isEncryptionAvailable === "function" && safeStorage.isEncryptionAvailable()) {
+      return safeStorage.decryptString(Buffer.from(value, "base64"));
+    }
+  } catch (e) {
+    // Decryption failed or not available - custody loss
+    return null;
+  }
+  return value;
+}
+
+function calculateProfileFingerprint(profile) {
+  if (!profile) return "";
+  // Sensitive fields are NOT included as values, but their presence/absence is.
+  const hasSecret = profile.apiKey ? "secret-present" : "secret-none";
+  const data = `${profile.provider}|${profile.baseUrl}|${hasSecret}`;
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
+
+function getBundleSigningKey() {
+  const identityKernel = require("./identityKernel");
+  const seed = identityKernel.getFingerprint();
+  return crypto.createHash("sha256").update(`NeuralShell.bundle.v1:${seed}`).digest("hex");
+}
+
+function clear() {
+  state = defaultState();
+  save();
+}
+
+function reset() {
+  if (fs.existsSync(stateFile)) {
+    fs.unlinkSync(stateFile);
+  }
+  state = defaultState();
+}
+
+function addRepairTelemetry(entry) {
+  const settings = get("settings") || {};
+  const log = Array.isArray(settings.repairTelemetryLog) ? settings.repairTelemetryLog : [];
+  log.unshift({
+    ts: new Date().toISOString(),
+    ...entry
+  });
+  if (log.length > 50) log.splice(50);
+  set("settings.repairTelemetryLog", log);
+  save();
+}
+
+function logProfileEvent(profileId, type, summary, context = {}) {
+  const settings = get("settings") || {};
+  const log = Array.isArray(settings.profileTrustHistory) ? settings.profileTrustHistory : [];
+
+  const event = {
+    id: `ev-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    ts: new Date().toISOString(),
+    profileId,
+    type,
+    summary,
+    ...context
+  };
+
+  log.unshift(event);
+  if (log.length > 200) log.splice(200); // Expanded for professional forensics
+  set("settings.profileTrustHistory", log);
+  save();
+}
+
+function getProfileTrustReport(profileId) {
+  const settings = get("settings") || {};
+  const profiles = settings.connectionProfiles || [];
+  const profile = profiles.find(p => p.id === profileId);
+  if (!profile) return null;
+
+  const history = (settings.profileTrustHistory || []).filter(h => h.profileId === profileId);
+  const repairLog = (settings.repairTelemetryLog || []).filter(r => r.profileId === profileId);
+
+  return {
+    metadata: {
+      id: profile.id,
+      name: profile.name,
+      provider: profile.provider,
+      baseUrl: profile.baseUrl,
+      trustState: profile.trustState,
+      authenticity: profile.authenticity || "UNSIGNED",
+      signingMethod: "HMAC-SHA256 (Machine-Bound)",
+      fingerprint: profile.lastVerifiedFingerprint,
+      secretCustody: profile.provider === "local" ? "N/A" : (retrieveSecret(profileId, "apiKey") ? "PRESENT" : "MISSING"),
+      lastSuccess: profile.lastSuccessTs
+    },
+    forensics: {
+      history,
+      repairLog
+    }
+  };
+}
+
+module.exports = {
+  load,
+  save,
+  get,
+  getState,
+  set,
+  setState,
+  clear,
+  reset,
+  calculateProfileFingerprint,
+  addRepairTelemetry,
+  secureStoreSecret,
+  retrieveSecret,
+  getBundleSigningKey,
+  logProfileEvent,
+  getProfileTrustReport,
+  stateFile,
+  TRUST_STATES
+};

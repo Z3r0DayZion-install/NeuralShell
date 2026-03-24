@@ -1,0 +1,21 @@
+{
+    "timestamp": "2026-03-21T07:20:25.897Z",
+    "installerPath": "NeuralShell.exe",
+    "scenarios": {
+        "native-onboarding": {
+            "pass": true,
+            "setupState": "ready",
+            "badgeClass": "badge-trust trust-invalid",
+            "profiles": 2,
+            "notes": "Materialized with unknown."
+        },
+        "native-persistence": {
+            "pass": true,
+            "notes": "Profile persisted. Badge: unknown"
+        },
+        "native-drift": {
+            "pass": true,
+            "notes": "Post-mutation state: unknown"
+        }
+    }
+}

@@ -63,17 +63,24 @@ const IDS = [
   "performanceDiagnosticsTray", "performanceTraceTray", "performanceOutputTray",
   "performanceAuditOutputBtn", "performanceLogsOutputBtn", "performanceChatLogsOutputBtn",
   "performanceAuditOutputPanel", "performanceLogsOutputPanel", "performanceChatLogsOutputPanel",
-  "intelFocusText", "intelCapabilityText", "intelNextActionText", "intelActionHints",
+  "intelligencePanel", "intelFocusText", "intelCapabilityText", "intelNextActionText", "intelActionHints",
   "intelBriefTrayBtn", "intelKnowledgeTrayBtn", "intelCapabilityTrayBtn",
   "intelBriefTray", "intelKnowledgeTray", "intelCapabilityTray",
   "snippetSelect", "insertSnippetBtn",
   "shortcutHelpBtn", "shortcutOverlay", "shortcutCloseBtn", "undoBtn", "commandHelpBtn",
   "commandPaletteOpenBtn", "commandPaletteOverlay", "commandPaletteCloseBtn", "commandPaletteInput", "commandPaletteShortcutScope", "commandPaletteList",
-  "onboardingOverlay", "onboardingModelSelect", "onboardingWorkflowSelect", "onboardingAutoScrollInput", "onboardingRememberInput", "onboardingStartBtn", "onboardingSkipBtn",
-  "onboardingResetBtn",
+  "onboardingOverlay", "onboardingStepHome", "onboardingStepProvider", "onboardingStepEndpoint", "onboardingStepModel", "onboardingStepVerify", "onboardingStepSummary", "onboardingStepOffline",
+  "onboardingRecoveryGroup", "onboardingRecoverySecretInput",
+  "onboardingBackBtn", "onboardingNextBtn", "onboardingStartBtn", "onboardingSkipBtn",
+  "onboardingSavedProfilesList", "onboardingModelStatus",
+  "onboardingOfflineBanner",
+  "onboardingProviderSelect", "onboardingBaseUrlInput", "onboardingApiKeyInput", "onboardingApiKeyField", "onboardingTestResult",
+  "onboardingModelSelect",
+  "onboardingResetBtn", "verifyValProvider", "verifyValEndpoint", "verifyValSecret",
+  "summaryProvider", "summaryModel", "summaryTrust",
   "profileSelect", "profileNameInput", "profileBaseUrlInput", "profileProviderSelect", "profileTimeoutInput", "profileRetryInput", "profileDefaultModelSelect", "profileApiKeyInput", "profileProviderHintText", "profileTestResultText", "profileTestHintText",
   "profileNewBtn", "profileTestBtn", "profileSaveBtn", "profileDeleteBtn", "profileUseBtn",
-  "settingsMenuPanel", "settingsMenuCloseBtn", "settingsMenuBackdrop", "bridgeStatusText", "workspaceModeText",
+  "criticalStopBtn", "settingsMenuPanel", "settingsMenuCloseBtn", "settingsMenuBackdrop", "bridgeStatusText", "workspaceModeText",
   "intelModeText", "intelBridgeText", "intelSessionText",
   "attachWorkspaceBtn", "clearWorkspaceBtn", "workspaceSummaryText", "knowledgeFeed", "capabilityGraph",
   "contextPackProfileSelect", "saveContextPackProfileBtn", "loadContextPackProfileBtn", "refreshContextPackProfileBtn", "deleteContextPackProfileBtn",
@@ -83,10 +90,30 @@ const IDS = [
   "exportStateBtn", "importStateBtn", "importStateFile",
   "loadLogsBtn", "clearLogsBtn", "exportLogsBtn", "logsOutput",
   "loadChatLogsBtn", "clearChatLogsBtn", "exportChatLogsBtn", "chatLogsOutput",
-  "cpuUsage", "memoryUsage", "platformInfo", "clockTime"
+  "cpuUsage", "memoryUsage", "platformInfo", "clockTime",
+  "trustReportOverlay", "trustReportContent", "trustReportCloseBtn",
+  "trustReportExportJsonBtn", "trustReportExportMdBtn",
+  "onboardingRecoverySubmitBtn", "onboardingRecoveryCancelBtn", "onboardingRecoveryClearBtn",
+  "tierBadge", "discordSupportBtn",
+  "apbProfileName", "apbProvider", "apbModel", "apbTrustBadge",
+  "apbReconnectPolicy", "apbLastVerified",
+  "apbVerifyBtn", "apbRepairBtn", "apbSwitchBtn", "apbOfflineBtn", "apbDisconnectBtn",
+  "profileSwitchList", "profileSwitchCloseBtn"
 ];
 
+function esc(str) {
+  if (str == null) return "";
+  const text = String(str);
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const el = {};
+
 for (const id of IDS) {
   el[id] = document.getElementById(id);
 }
@@ -95,10 +122,11 @@ const FALLBACK_WORKFLOW_ID = "bridge_diagnostics";
 const FALLBACK_WORKSPACE_EDIT_PATH = "docs/bridge-diagnostics-draft.md";
 
 const appState = {
-  model: "llama3",
+  model: null,
   chat: [],
   commands: [],
-  settings: { clockUtcOffset: 0 },
+  settings: { clockUtcOffset: 0, tier: "PREVIEW" },
+  setupState: "unconfigured",
   workflowId: FALLBACK_WORKFLOW_ID,
   outputMode: "checklist",
   workspaceAttachment: null,
@@ -126,8 +154,11 @@ const appState = {
   verificationRunHistoryFilters: {
     workflow: "all",
     group: "all",
-    workspace: "all"
+    workspace: "all",
+    groupFilter: "all"
   },
+  onboardingDraft: null,
+  onboardingCompleted: false,
   workspaceEditDraft: {
     relativePath: FALLBACK_WORKSPACE_EDIT_PATH,
     content: ""
@@ -178,7 +209,7 @@ const appState = {
   statsTimer: null,
   clockTimer: null,
   autonomous: false,
-  llmStatus: "booting",
+  llmStatus: "unconfigured",
   llmStatusEpoch: 0,
   settingsMenuOpen: false,
   commandPaletteOpen: false,
@@ -263,7 +294,7 @@ const airgapPolicy = window.NeuralShellAirgapPolicy || {
         : "Draft change: Offline Mode will turn on after Apply Settings.";
     }
     return liveAllowRemote
-      ? "Hosted group is active. Saved remote profiles can take live traffic."
+      ? "Hosted lane is active. Saved remote profiles can take live traffic."
       : "Local-only group is active. Hosted providers are blocked.";
   },
   offlineModeSummaryText: (allowRemoteBridge) => allowRemoteBridge
@@ -923,7 +954,7 @@ function contextPackWorkflowLinkModel(workflowId = appState.workflowId) {
   if (!profiles.length) {
     return {
       tone: "ok",
-      text: `Save a ${workflow ? workflow.title : "workflow"} context - pack profile to make workflow switching repo - aware.`,
+      text: `Save a ${workflow ? workflow.title : "workflow"} context-pack profile to make workflow switching repo-aware.`,
       profile: null,
       canLoad: false
     };
@@ -931,7 +962,7 @@ function contextPackWorkflowLinkModel(workflowId = appState.workflowId) {
   if (!recommendedProfile) {
     return {
       tone: "warn",
-      text: `No saved context - pack profile is linked to ${(workflow && workflow.title) || normalizeWorkflowId(workflowId)}. Save or update a profile from this workflow to recommend it here.`,
+      text: `No saved context-pack profile is linked to ${(workflow && workflow.title) || normalizeWorkflowId(workflowId)}. Save or update a profile from this workflow to recommend it here.`,
       profile: null,
       canLoad: false
     };
@@ -1223,11 +1254,11 @@ function artifactFilenameBase() {
   const artifact = appState.lastArtifact;
   const stamp = formatFileStamp(artifact && artifact.generatedAt ? artifact.generatedAt : new Date().toISOString());
   const slug = slugifySegment((workflow && workflow.id) || "artifact");
-  return `neuralshell - ${slug} -${stamp} `;
+  return `neuralshell-${slug}-${stamp}`;
 }
 
 function getEvidenceBundleFilename() {
-  return `${artifactFilenameBase()} -evidence - bundle.json`;
+  return `${artifactFilenameBase()}-evidence-bundle.json`;
 }
 
 function hasShippingPacketArtifact() {
@@ -1441,11 +1472,11 @@ function reconcileShippingPacketCompareSelection() {
   };
 }
 
-function setReleasePacketCompareSlot(slot, artifactId) {
+function setShippingPacketCompareSlot(slot, artifactId) {
   if (slot !== "left" && slot !== "right") return;
   const artifact = getShippingPacketArtifactById(artifactId);
   if (!artifact) {
-    throw new Error("Release packet compare target is unavailable.");
+    throw new Error("Shipping Packet compare target is unavailable.");
   }
   const oppositeSlot = slot === "left" ? "right" : "left";
   const oppositeId = String(appState.shippingPacketCompareIds[oppositeSlot] || "").trim();
@@ -1457,17 +1488,17 @@ function setReleasePacketCompareSlot(slot, artifactId) {
     [slot]: artifact.id
   };
   renderArtifactPanel();
-  showBanner(`Release packet loaded into compare ${slot === "left" ? "A" : "B"}.`, "ok");
+  showBanner(`Shipping Packet loaded into compare ${slot === "left" ? "A" : "B"}.`, "ok");
 }
 
-function clearReleasePacketCompareSelection() {
+function clearShippingPacketCompareSelection() {
   appState.shippingPacketCompareIds = { left: "", right: "" };
   reconcileShippingPacketCompareSelection();
   renderArtifactPanel();
-  showBanner("Release packet compare reset to the latest pair.", "ok");
+  showBanner("Shipping Packet compare reset to the latest pair.", "ok");
 }
 
-function getReleasePacketCompareModel() {
+function getShippingPacketCompareModel() {
   const history = normalizeShippingPacketHistory(appState.shippingPacketHistory);
   const left = getShippingPacketArtifactById(appState.shippingPacketCompareIds.left) || history[0] || null;
   const right = getShippingPacketArtifactById(appState.shippingPacketCompareIds.right) || history[1] || null;
@@ -1532,7 +1563,7 @@ function getReleasePacketCompareModel() {
 function shippingPacketHistoryKey(value) {
   const artifact = normalizeArtifactValue(value, {
     forceOutputMode: "shipping_packet",
-    title: "Release Packet"
+    title: "Shipping Packet"
   });
   return String(artifact.id || `${artifact.generatedAt}| ${artifact.title}| ${artifact.content.slice(0, 160)} `);
 }
@@ -1545,7 +1576,7 @@ function normalizeShippingPacketHistory(value) {
     try {
       const artifact = normalizeArtifactValue(value[index], {
         forceOutputMode: "shipping_packet",
-        title: "Release Packet"
+        title: "Shipping Packet"
       });
       if (!String(artifact.content || "").trim()) continue;
       const key = shippingPacketHistoryKey(artifact);
@@ -1563,7 +1594,7 @@ function normalizeShippingPacketHistory(value) {
 function pushShippingPacketHistoryEntry(value) {
   const entry = normalizeArtifactValue(value, {
     forceOutputMode: "shipping_packet",
-    title: "Release Packet"
+    title: "Shipping Packet"
   });
   const targetKey = shippingPacketHistoryKey(entry);
   appState.shippingPacketHistory = [
@@ -1812,7 +1843,7 @@ function buildArtifactRecord(content, generatedAt) {
   };
 }
 
-function buildReleasePacketProvenance(options = {}) {
+function buildShippingPacketProvenance(options = {}) {
   const workspace = appState.workspaceAttachment;
   const sourceArtifact = appState.lastArtifact && String(appState.lastArtifact.content || "").trim()
     ? normalizeArtifactValue(appState.lastArtifact, {
@@ -1888,8 +1919,8 @@ function buildReleasePacketProvenance(options = {}) {
   });
 }
 
-function buildReleasePacketContent(options = {}) {
-  const releaseModel = getReleaseCockpitModel();
+function buildShippingPacketContent(options = {}) {
+  const releaseModel = getShippingCockpitModel();
   const generatedAt = String(options.generatedAt || new Date().toISOString());
   const workflow = getWorkflow(appState.workflowId);
   const workspace = appState.workspaceAttachment;
@@ -1900,7 +1931,7 @@ function buildReleasePacketContent(options = {}) {
   const selectedChecks = releaseModel.rows.filter((check) => check.selected !== false);
   const latestReleaseRun = verificationRunHistoryForGroup("release_cockpit", workspace ? workspace.rootPath : "")[0] || null;
   const previousReleaseRun = previousVerificationRunHistoryEntry(latestReleaseRun);
-  const provenance = options.provenance || buildReleasePacketProvenance();
+  const provenance = options.provenance || buildShippingPacketProvenance();
   const contextPack = provenance && provenance.contextPack ? provenance.contextPack : null;
   const contextPackProfile = provenance && provenance.contextPackProfile ? provenance.contextPackProfile : null;
   const blockers = Array.isArray(releaseModel.blockers) ? releaseModel.blockers : [];
@@ -1912,11 +1943,11 @@ function buildReleasePacketContent(options = {}) {
         : "Conditional"
   );
   const packetSummary = !blockers.length && releaseModel.passed && releaseModel.pending === 0
-    ? "Selected release checks passed. This packet captures the current ship decision, verification state, and next handoff actions."
+    ? "Selected Shipping checks passed. This packet captures the current ship decision, verification state, and next handoff actions."
     : releaseModel.summary;
 
   const lines = [
-    "# Release Packet",
+    "# Shipping Packet",
     "",
     `- Decision: ${decision} `,
     `- Workflow: ${(workflow && workflow.title) || normalizeWorkflowId(appState.workflowId)} `,
@@ -1947,7 +1978,7 @@ function buildReleasePacketContent(options = {}) {
 
   lines.push("## Verification Provenance");
   if (!latestReleaseRun) {
-    lines.push("- No release verification snapshot has been captured yet.");
+    lines.push("- No Shipping verification snapshot has been captured yet.");
   } else {
     const counts = verificationRunCounts(latestReleaseRun);
     lines.push(`- Snapshot ID: ${latestReleaseRun.runId} `);
@@ -1991,7 +2022,7 @@ function buildReleasePacketContent(options = {}) {
 
   lines.push("## Assets");
   lines.push(`- Store screenshots: ${releaseModel.rows.some((check) => check.id === "store_screenshots" && check.status === "passed") ? "Refreshed in this run" : "Use the selected release check or top-level pipeline to refresh"} `);
-  lines.push(`- Evidence bundle: ${hasWorkspaceAttachment() || appState.chat.length ? "Can be exported from the Artifact Dock or Release Cockpit" : "Unavailable until workflow state exists"} `);
+  lines.push(`- Evidence bundle: ${hasWorkspaceAttachment() || appState.chat.length ? "Can be exported from the Artifact Dock or Shipping Cockpit" : "Unavailable until workflow state exists"} `);
   lines.push(`- Session snapshot: ${Object.keys(appState.sessionsMeta || {}).length ? "Existing sessions available for handoff" : "No saved session snapshots yet"} `);
   lines.push("");
 
@@ -2007,11 +2038,11 @@ function buildReleasePacketContent(options = {}) {
 
   lines.push("## Next Actions");
   if (!selectedChecks.length) {
-    lines.push("- Select at least one release verification check and rerun the cockpit.");
+    lines.push("- Select at least one Shipping verification check and rerun the cockpit.");
   } else if (releaseModel.failed) {
     lines.push("- Review failed verification output and rerun only the affected checks.");
   } else if (releaseModel.pending > 0) {
-    lines.push("- Run the remaining selected release checks before calling the packet ready.");
+    lines.push("- Run the remaining selected Shipping checks before calling the packet ready.");
   } else {
     lines.push("- Export the evidence bundle.");
     lines.push("- Save a session snapshot for handoff.");
@@ -2136,7 +2167,7 @@ function normalizePatchPlanValue(value, options = {}) {
 }
 
 function getPromotedPaletteActionId(workflowId, groupId) {
-  return `shortcut - ${slugifySegment(normalizeWorkflowId(workflowId), "workflow")} -${slugifySegment(groupId || "group", "group")} `;
+  return `shortcut-${slugifySegment(normalizeWorkflowId(workflowId), "workflow")}-${slugifySegment(groupId || "group", "group")}`;
 }
 
 function normalizeCommandPaletteShortcutScope(value) {
@@ -2315,7 +2346,7 @@ function getReleaseVerificationSpecs() {
   return ids.map((id) => verificationCheckSpec(id)).filter(Boolean);
 }
 
-function getReleaseCockpitPlan() {
+function getShippingCockpitPlan() {
   if (
     !appState.verificationRunPlan
     || typeof appState.verificationRunPlan !== "object"
@@ -2326,20 +2357,20 @@ function getReleaseCockpitPlan() {
   return appState.verificationRunPlan;
 }
 
-function isReleaseCockpitEngaged(workflowId = appState.workflowId) {
+function isShippingCockpitEngaged(workflowId = appState.workflowId) {
   const normalizedWorkflowId = normalizeWorkflowId(workflowId);
   const workspaceRoot = rootPathFromWorkspaceBoundValue(appState.workspaceAttachment);
   return (
     normalizedWorkflowId === "shipping_audit"
-    || Boolean(getReleaseCockpitPlan())
+    || Boolean(getShippingCockpitPlan())
     || hasShippingPacketArtifact()
     || normalizeShippingPacketHistory(appState.shippingPacketHistory).length > 0
     || verificationRunHistoryForGroup("release_cockpit", workspaceRoot).length > 0
   );
 }
 
-function getReleaseCockpitCheckRows() {
-  const plan = getReleaseCockpitPlan();
+function getShippingCockpitCheckRows() {
+  const plan = getShippingCockpitPlan();
   const checks = getReleaseVerificationSpecs();
   return checks.map((spec, index) => {
     const existing = plan && Array.isArray(plan.checks)
@@ -2352,7 +2383,7 @@ function getReleaseCockpitCheckRows() {
   });
 }
 
-function getReleaseCockpitBlockers(options = {}) {
+function getShippingCockpitBlockers(options = {}) {
   const workflowId = normalizeWorkflowId(options.workflowId || appState.workflowId);
   const selected = Array.isArray(options.selected) ? options.selected : [];
   const failed = Number(options.failed || 0);
@@ -2364,7 +2395,7 @@ function getReleaseCockpitBlockers(options = {}) {
       : options.recommendedProfileLoaded
   );
   const recommendedProfileStatus = options.recommendedProfileStatus || contextProfileStatusForCard(recommendedProfile);
-  const engaged = options.engaged === undefined ? isReleaseCockpitEngaged(workflowId) : Boolean(options.engaged);
+  const engaged = options.engaged === undefined ? isShippingCockpitEngaged(workflowId) : Boolean(options.engaged);
   const blockers = [];
 
   if (!engaged) {
@@ -2377,16 +2408,16 @@ function getReleaseCockpitBlockers(options = {}) {
   if (!hasArtifactContent()) {
     blockers.push("No dock artifact is loaded in the Artifact Dock.");
   }
-  if (!getReleaseCockpitPlan()) {
-    blockers.push("Release cockpit checks have not been staged yet.");
+  if (!getShippingCockpitPlan()) {
+    blockers.push("Shipping Cockpit checks have not been staged yet.");
   }
   if (!selected.length) {
-    blockers.push("No release verification checks are selected.");
+    blockers.push("No Shipping verification checks are selected.");
   }
   if (failed > 0) {
-    blockers.push(`${failed} release verification ${failed === 1 ? "check has" : "checks have"} failed.`);
+    blockers.push(`${failed} Shipping verification ${failed === 1 ? "check has" : "checks have"} failed.`);
   } else if (selected.length && pending > 0) {
-    blockers.push(`${pending} selected release verification ${pending === 1 ? "check is" : "checks are"} still pending.`);
+    blockers.push(`${pending} selected Shipping verification ${pending === 1 ? "check is" : "checks are"} still pending.`);
   }
   if (patchPlanHasFiles() && unappliedSelectedPatchPlanFiles().length > 0) {
     blockers.push(`${unappliedSelectedPatchPlanFiles().length} selected patch - plan ${unappliedSelectedPatchPlanFiles().length === 1 ? "file is" : "files are"} still unapplied.`);
@@ -2398,18 +2429,18 @@ function getReleaseCockpitBlockers(options = {}) {
     } else if (recommendedProfileStatus.stale) {
       blockers.push(`${recommendedProfile.name} is stale and should be refreshed.`);
     } else if (!recommendedProfileLoaded) {
-      blockers.push(`${recommendedProfile.name} is recommended for release work but is not loaded.`);
+      blockers.push(`${recommendedProfile.name} is recommended for Shipping work but is not loaded.`);
     }
   }
 
   return blockers;
 }
 
-function getReleaseCockpitModel() {
+function getShippingCockpitModel() {
   const workflow = getWorkflow(appState.workflowId);
   const workflowId = normalizeWorkflowId(appState.workflowId);
-  const engaged = isReleaseCockpitEngaged(workflowId);
-  const rows = getReleaseCockpitCheckRows();
+  const engaged = isShippingCockpitEngaged(workflowId);
+  const rows = getShippingCockpitCheckRows();
   const selected = rows.filter((check) => check.selected !== false);
   const passed = selected.filter((check) => check.status === "passed").length;
   const failed = selected.filter((check) => check.status === "failed").length;
@@ -2421,7 +2452,7 @@ function getReleaseCockpitModel() {
   const recommendedProfileLoaded = recommendedProfile && contextPackProfileMatchesLoadedPack(recommendedProfile);
   const recommendedProfileStatus = contextProfileStatusForCard(recommendedProfile);
   const autoLoadRecommended = Boolean(appState.settings && appState.settings.autoLoadRecommendedContextProfile);
-  const blockers = getReleaseCockpitBlockers({
+  const blockers = getShippingCockpitBlockers({
     workflowId,
     engaged,
     selected,
@@ -2431,47 +2462,47 @@ function getReleaseCockpitModel() {
     recommendedProfileLoaded,
     recommendedProfileStatus
   });
-  let title = "Stage release verification";
+  let title = "Stage Shipping verification";
   let summary = `Queue lint, founder e2e, and store screenshot refresh against ${hasWorkspaceAttachment() ? (appState.workspaceAttachment.label || "the attached workspace") : "one attached workspace"} before you call the shipping packet ready.`;
   let tone = "guard";
 
   if (!engaged) {
-    title = "Release lane idle";
+    title = "Shipping lane idle";
     summary = "Use this lane when you are ready to run lint, founder e2e, screenshots, and a shipping packet. It stays quiet during bridge setup, bug triage, and normal chat work.";
     tone = "guard";
   } else if (!hasWorkspaceAttachment()) {
-    title = "Attach a workspace to open the release cockpit";
-    summary = "Release verification needs one attached local root so checks, evidence, and screenshots stay scoped to the same project.";
+    title = "Attach a workspace to open the Shipping Cockpit";
+    summary = "Shipping verification needs one attached local root so checks, evidence, and screenshots stay scoped to the same project.";
     tone = "warn";
-  } else if (!getReleaseCockpitPlan()) {
-    title = "Stage release verification";
-    summary = `Use the cockpit to queue the guarded release lane for ${workflowTitle}.Keep expensive checks explicit and local.`;
+  } else if (!getShippingCockpitPlan()) {
+    title = "Stage Shipping verification";
+    summary = `Use the cockpit to queue the guarded Shipping lane for ${workflowTitle}.Keep expensive checks explicit and local.`;
     tone = normalizeWorkflowId(appState.workflowId) === "shipping_audit" ? "ok" : "guard";
   } else if (running > 0) {
-    title = "Release verification running";
+    title = "Shipping verification running";
     summary = `${running} ${running === 1 ? "check is" : "checks are"} still running against ${appState.workspaceAttachment.label || "the attached workspace"}.`;
     tone = "ok";
   } else if (failed > 0) {
-    title = "Release verification has failures";
-    summary = `${failed} ${failed === 1 ? "selected check failed" : "selected checks failed"}. Inspect output, tighten the release surface, and rerun only what changed.`;
+    title = "Shipping verification has failures";
+    summary = `${failed} ${failed === 1 ? "selected check failed" : "selected checks failed"}. Inspect output, tighten the Shipping surface, and rerun only what changed.`;
     tone = "warn";
   } else if (passed > 0 && pending === 0 && packetReady) {
-    title = "Release packet ready";
+    title = "Shipping Packet ready";
     summary = "The shipping packet is docked with a clean selected verification pass. Export evidence and handoff while the state is fresh.";
     tone = "good";
   } else if (passed > 0 && pending === 0) {
     title = "Build the shipping packet";
-    summary = "All selected release checks passed. Build the shipping packet, then export evidence while the verification state is fresh.";
+    summary = "All selected Shipping checks passed. Build the shipping packet, then export evidence while the verification state is fresh.";
     tone = "good";
   } else if (passed > 0) {
-    title = "Release verification partially complete";
+    title = "Shipping verification partially complete";
     summary = `${passed} ${passed === 1 ? "selected check has" : "selected checks have"} passed.Run the remaining checks only if the current surface still needs that proof.`;
     tone = "ok";
   }
 
   if (blockers.length) {
-    title = "Release blockers active";
-    summary = `${blockers.length} ship ${blockers.length === 1 ? "blocker remains" : "blockers remain"}. Clear them before you trust or export the release lane.`;
+    title = "Shipping blockers active";
+    summary = `${blockers.length} ship ${blockers.length === 1 ? "blocker remains" : "blockers remain"}. Clear them before you trust or export the Shipping lane.`;
     tone = "warn";
   }
 
@@ -2479,15 +2510,15 @@ function getReleaseCockpitModel() {
     ? [
       "Stay in diagnostics or workflow mode until you are ready to verify a release.",
       "Attach a workspace only when you want lint, founder e2e, screenshots, and a shipping packet in one lane.",
-      "When release work starts, stage the checks explicitly and keep the packet/evidence current."
+      "When Shipping work starts, stage the checks explicitly and keep the packet/evidence current."
     ]
     : !hasWorkspaceAttachment()
       ? [
-        "Attach one local workspace root before staging release checks.",
-        "Keep release verification local-only and explicit.",
+        "Attach one local workspace root before staging Shipping checks.",
+        "Keep Shipping verification local-only and explicit.",
         "Export evidence only after the workspace and checks align."
       ]
-      : !getReleaseCockpitPlan()
+      : !getShippingCockpitPlan()
         ? [
           "Stage lint, founder e2e, and store screenshot refresh into one guarded run plan.",
           "Uncheck expensive paths if you only need a partial proof for the current delta.",
@@ -2510,7 +2541,7 @@ function getReleaseCockpitModel() {
         });
 
   if (packetReady) {
-    checklist.push(`Release packet artifact: ${appState.lastArtifact.title || "Release Packet"} is ready in the dock.`);
+    checklist.push(`Shipping Packet artifact: ${appState.lastArtifact.title || "Shipping Packet"} is ready in the dock.`);
   } else if (passed > 0 && pending === 0 && !failed) {
     checklist.push("Build the shipping packet now so the ship decision, verification state, and blockers are captured in one dock artifact.");
   }
@@ -2572,8 +2603,8 @@ function createMissionMetric(label, value, tone = "guard") {
 function getMissionControlCards() {
   const workflow = getWorkflow(appState.workflowId);
   const outputMode = getOutputMode(appState.outputMode);
-  const releaseModel = getReleaseCockpitModel();
-  const releasePlan = getReleaseCockpitPlan();
+  const releaseModel = getShippingCockpitModel();
+  const releasePlan = getShippingCockpitPlan();
   const contextPack = hasContextPack() ? appState.contextPack : null;
   const recommendedProfile = recommendedContextPackProfile();
   const recommendedLoaded = recommendedProfile && contextPackProfileMatchesLoadedPack(recommendedProfile);
@@ -2614,7 +2645,7 @@ function getMissionControlCards() {
       eyebrow: "Workspace Context",
       title: hasWorkspaceAttachment() ? String(appState.workspaceAttachment.label || "Attached workspace") : "Attach a workspace",
       summary: hasWorkspaceAttachment()
-        ? "One local root is attached for context, exports, and guarded apply. Keep evidence, patch plans, and release checks scoped here."
+        ? "One local root is attached for context, exports, and guarded apply. Keep evidence, patch plans, and Shipping checks scoped here."
         : "Attach one local project root so workflows, evidence, and apply actions stay bounded to the same workspace.",
       tone: hasWorkspaceAttachment() ? "good" : "warn",
       scopes: [
@@ -2715,7 +2746,7 @@ function getMissionControlCards() {
       }
     },
     {
-      eyebrow: "Release Lane",
+      eyebrow: "Shipping lane",
       title: releaseModel.title,
       summary: `${releaseModel.summary} Packet ledger: ${Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0} local ${(Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0) === 1 ? "snapshot" : "snapshots"} ready.`,
       tone: releaseModel.tone,
@@ -2731,8 +2762,8 @@ function getMissionControlCards() {
       actionLabel: hasShippingPacketArtifact()
         ? "Export Release Evidence"
         : releasePlan
-          ? (failedChecks > 0 || pendingChecks > 0 ? "Run Release Checks" : "Build Release Packet")
-          : "Stage Release Checks",
+          ? (failedChecks > 0 || pendingChecks > 0 ? "Run Shipping checks" : "Build Shipping Packet")
+          : "Stage Shipping checks",
       actionClass: hasShippingPacketArtifact() ? "btn-secondary" : "btn-primary",
       action: () => {
         if (hasShippingPacketArtifact()) {
@@ -2838,7 +2869,7 @@ function renderChatOpsTrays() {
 function setPerformanceTray(nextTray, options = {}) {
   const resolved = normalizePerformanceTrayId(nextTray);
   appState.performanceTray = normalizePerformanceTrayId(options.toggle && appState.performanceTray === resolved ? "none" : resolved);
-  appState.systemSurface = "runtime";
+  appState.systemSurface = "performance";
   renderPerformanceTrays();
   renderSystemNavigation();
   persistOperatorLayoutPreferences();
@@ -2944,7 +2975,7 @@ function buildIntelBriefModel() {
     ? String(appState.workspaceAttachment.label || "Attached workspace")
     : "No workspace attached";
   const contextPack = hasContextPack() ? appState.contextPack : null;
-  const releaseModel = getReleaseCockpitModel();
+  const releaseModel = getShippingCockpitModel();
   const patchGroups = patchPlanHasFiles() ? collectPatchPlanGroups(appState.patchPlan) : [];
   const verificationState = describeVerificationPlanState();
   const packetCount = Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0;
@@ -2956,12 +2987,12 @@ function buildIntelBriefModel() {
   if (patchPlanHasFiles()) {
     focus = `${(workflow && workflow.title) || "Workflow"} is carrying ${(appState.patchPlan.files || []).length} staged patch files across ${patchGroups.length || 1} grouped review surfaces.`;
   } else if (!hasArtifactContent()) {
-    focus = `${(workflow && workflow.title) || "Workflow"} is active. Generate the next artifact before you promote it into patch, verification, or release work.`;
+    focus = `${(workflow && workflow.title) || "Workflow"} is active. Generate the next artifact before you promote it into patch, verification, or Shipping work.`;
   }
 
   let capability = `${workspaceLabel}. `;
   if (!hasWorkspaceAttachment()) {
-    capability += "Attach one local root to unlock guarded apply, evidence export, and release verification.";
+    capability += "Attach one local root to unlock guarded apply, evidence export, and Shipping verification.";
   } else if (!contextPack) {
     capability += "No context pack is loaded yet, so workflow prompts are still relying on workspace signals instead of selected project memory.";
   } else if (patchPlanHasFiles()) {
@@ -2974,9 +3005,9 @@ function buildIntelBriefModel() {
 
   let nextAction = "Load a workflow prompt and produce the next artifact.";
   if (!hasWorkspaceAttachment()) {
-    nextAction = "Attach one local workspace root so context, apply, and release checks stay scoped to the same project.";
+    nextAction = "Attach one local workspace root so context, apply, and Shipping checks stay scoped to the same project.";
   } else if (!hasArtifactContent()) {
-    nextAction = "Generate a structured artifact from the active workflow before opening patch or release lanes.";
+    nextAction = "Generate a structured artifact from the active workflow before opening patch or Shipping lanes.";
   } else if (hasWorkspaceAttachment() && !contextPack) {
     nextAction = "Build a context pack from the local repo files so workflow prompts carry trusted project memory instead of only workspace signals.";
   } else if (patchPlanHasFiles() && !appState.verificationRunPlan) {
@@ -3002,8 +3033,8 @@ function buildIntelBriefModel() {
       : "No patch review is staged yet. Use the dock artifact or workflow output to promote one into local review.",
     verificationState.detail,
     hasShippingPacketArtifact()
-      ? `Release packet history holds ${packetCount} ${packetCount === 1 ? "snapshot" : "snapshots"} for the current workspace.`
-      : "Release packet history is empty. Build a packet only after the selected checks match the intended ship surface."
+      ? `Shipping Packet history holds ${packetCount} ${packetCount === 1 ? "snapshot" : "snapshots"} for the current workspace.`
+      : "Shipping Packet history is empty. Build a packet only after the selected checks match the intended ship surface."
   ];
 
   const starterActions = [];
@@ -3069,7 +3100,7 @@ function renderHeroSpotlight() {
       bridge.short,
       hasWorkspaceAttachment()
         ? `Vouching for ${workspaceLabel}. Project signals are grounded.`
-        : "Attach one workspace before you move into apply or release lanes."
+        : "Attach one workspace before you move into apply or Shipping lanes."
     ].join(" ");
     el.heroWorkflowSummaryText.textContent = truncateInlineText(summary, 186);
   }
@@ -3081,7 +3112,7 @@ function renderHeroSpotlight() {
 function getIntelKnowledgeEntries() {
   const workflow = getWorkflow(appState.workflowId);
   const outputMode = getOutputMode(appState.outputMode);
-  const releaseModel = getReleaseCockpitModel();
+  const releaseModel = getShippingCockpitModel();
   const verificationState = describeVerificationPlanState();
   const patchGroups = patchPlanHasFiles() ? collectPatchPlanGroups(appState.patchPlan) : [];
   const contextPack = hasContextPack() ? appState.contextPack : null;
@@ -3100,7 +3131,7 @@ function getIntelKnowledgeEntries() {
       state: hasWorkspaceAttachment() ? String(appState.workspaceAttachment.label || "Attached workspace") : "No workspace",
       note: hasWorkspaceAttachment()
         ? `Signals: ${Array.isArray(appState.workspaceAttachment.signals) && appState.workspaceAttachment.signals.length ? appState.workspaceAttachment.signals.join(", ") : "none detected"} | Attached ${formatTimestampLabel(appState.workspaceAttachment.attachedAt)}`
-        : "Attach one local root before applying edits, exporting evidence, or running release checks."
+        : "Attach one local root before applying edits, exporting evidence, or running Shipping checks."
     },
     {
       title: "Context Pack",
@@ -3125,7 +3156,7 @@ function getIntelKnowledgeEntries() {
       note: verificationState.detail
     },
     {
-      title: "Release Cockpit",
+      title: "Shipping Cockpit",
       tone: releaseModel.failed ? "warn" : releaseModel.packetReady ? "good" : releaseModel.passed ? "ok" : "guard",
       state: hasShippingPacketArtifact()
         ? `${Array.isArray(appState.shippingPacketHistory) ? appState.shippingPacketHistory.length : 0} packet snapshots`
@@ -3148,7 +3179,7 @@ function getIntelKnowledgeEntries() {
 
 function getIntelCapabilityCards() {
   const verificationState = describeVerificationPlanState();
-  const releaseModel = getReleaseCockpitModel();
+  const releaseModel = getShippingCockpitModel();
   const latestPacket = Array.isArray(appState.shippingPacketHistory) && appState.shippingPacketHistory.length
     ? appState.shippingPacketHistory[0]
     : null;
@@ -3159,7 +3190,7 @@ function getIntelCapabilityCards() {
       status: hasWorkspaceAttachment() ? "Attached" : "Detached",
       detail: hasWorkspaceAttachment()
         ? "Context, apply, and export surfaces are bounded to one local root."
-        : "No local root is attached, so write and release lanes should remain guarded.",
+        : "No local root is attached, so write and Shipping lanes should remain guarded.",
       target: hasWorkspaceAttachment()
         ? String(appState.workspaceAttachment.rootPath || appState.workspaceAttachment.label || "Attached workspace")
         : "Select one local workspace root",
@@ -3173,7 +3204,7 @@ function getIntelCapabilityCards() {
       tone: hasContextPack() ? "good" : "guard",
       status: hasContextPack() ? "Loaded" : "Not loaded",
       detail: hasContextPack()
-        ? "Selected repo files are packaged as local memory and flow into workflow prompts, evidence, and release surfaces."
+        ? "Selected repo files are packaged as local memory and flow into workflow prompts, evidence, and Shipping surfaces."
         : "Workflow prompts can still run, but they are missing curated repo memory from trusted local files.",
       target: hasContextPack()
         ? `${appState.contextPack.name} | ${appState.contextPack.entries.length} files`
@@ -3229,7 +3260,7 @@ function getIntelCapabilityCards() {
       ]
     },
     {
-      title: "Release Cockpit",
+      title: "Shipping Cockpit",
       tone: releaseModel.failed ? "warn" : releaseModel.packetReady ? "good" : releaseModel.passed ? "ok" : "guard",
       status: releaseModel.packetReady ? "Packet ready" : releaseModel.title,
       detail: releaseModel.summary,
@@ -3237,7 +3268,7 @@ function getIntelCapabilityCards() {
         ? `Latest packet ${formatTimestampLabel(latestPacket.generatedAt)}`
         : "No packet history yet",
       scopes: [
-        { label: "Release checks", tone: "guard" },
+        { label: "Shipping checks", tone: "guard" },
         { label: "Evidence export", tone: "export" },
         { label: "Local only", tone: "local" }
       ]
@@ -3286,7 +3317,11 @@ function renderIntelSurface() {
     el.intelNextActionText.textContent = brief.nextAction;
   }
   if (el.intelActionHints) {
+    const switcher = el.intelActionHints.querySelector(".workspace-switcher-mount");
     el.intelActionHints.innerHTML = "";
+    if (switcher) {
+      el.intelActionHints.appendChild(switcher);
+    }
     if (Array.isArray(brief.starterActions) && brief.starterActions.length) {
       const group = document.createElement("div");
       group.className = "workspace-starter-actions";
@@ -3804,14 +3839,14 @@ function performanceSystemCardModel() {
 }
 
 function shippingSystemCardModel() {
-  const model = getReleaseCockpitModel();
+  const model = getShippingCockpitModel();
   const selectedCount = Array.isArray(model.selected) ? model.selected.length : 0;
   const summaryParts = [];
   if (selectedCount) summaryParts.push(`${selectedCount} selected`);
   if (model.passed) summaryParts.push(`${model.passed} passed`);
   if (model.failed) summaryParts.push(`${model.failed} failed`);
   if (model.running) summaryParts.push(`${model.running} running`);
-  if (model.pending && getReleaseCockpitPlan()) summaryParts.push(`${model.pending} pending`);
+  if (model.pending && getShippingCockpitPlan()) summaryParts.push(`${model.pending} pending`);
   if (model.packetReady) summaryParts.push("Packet docked");
   if (!model.packetReady && model.blockers.length) {
     summaryParts.push(`${model.blockers.length} blocker${model.blockers.length === 1 ? "" : "s"}`);
@@ -3821,7 +3856,7 @@ function shippingSystemCardModel() {
       ? "Packet ready"
       : model.running > 0
         ? "Verification running"
-        : getReleaseCockpitPlan()
+        : getShippingCockpitPlan()
           ? "Verification staged"
           : model.blockers.length
             ? "Shipping blocked"
@@ -4855,7 +4890,7 @@ function verificationRunStatusTone(status) {
 function setVerificationRunPlan(plan, options = {}) {
   appState.verificationRunPlan = plan ? normalizeVerificationRunPlanValue(plan, options) : null;
   renderPatchPlanPanel();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   if (options.persist !== false) {
     persistChatState().catch(() => { });
   }
@@ -4864,7 +4899,7 @@ function setVerificationRunPlan(plan, options = {}) {
 function clearVerificationRunPlan(options = {}) {
   appState.verificationRunPlan = null;
   renderPatchPlanPanel();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   if (options.persist !== false) {
     persistChatState().catch(() => { });
   }
@@ -4876,7 +4911,7 @@ function clearVerificationRunPlan(options = {}) {
 function clearVerificationRunHistory(options = {}) {
   appState.verificationRunHistory = [];
   renderPatchPlanPanel();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   if (options.persist !== false) {
     persistChatState().catch(() => { });
   }
@@ -4888,7 +4923,7 @@ function clearVerificationRunHistory(options = {}) {
 function setVerificationRunHistory(history, options = {}) {
   appState.verificationRunHistory = normalizeVerificationRunHistory(history);
   renderPatchPlanPanel();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   if (options.persist !== false) {
     persistChatState().catch(() => { });
   }
@@ -4913,7 +4948,7 @@ async function loadVerificationRunHistoryEntry(runId, options = {}) {
     }))
   }, { persist: false });
   renderPatchPlanPanel();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   setWorkbenchSurface("patch", { persist: false, scroll: false });
   if (options.persist !== false) {
     await persistChatState();
@@ -4931,7 +4966,7 @@ function setVerificationRunCheckSelection(checkId, selected) {
       : check
   ));
   renderPatchPlanPanel();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   persistChatState().catch(() => { });
 }
 
@@ -5096,7 +5131,7 @@ async function runVerificationRunPlanSelectedChecks() {
       const patchEpoch = ensureSurfaceEpoch("patch");
       renderPatchPlanPanel({ surfaceEpoch: patchEpoch, forceRender: true });
     }
-    renderReleaseCockpit();
+    renderShippingCockpit();
     if (String(plan.groupId || "").trim() === "release_cockpit") {
       setSystemSurface("shipping", { persist: false, scroll: false });
     }
@@ -5133,7 +5168,7 @@ async function runVerificationRunPlanSelectedChecks() {
     const patchEpoch = ensureSurfaceEpoch("patch");
     renderPatchPlanPanel({ surfaceEpoch: patchEpoch, forceRender: true });
   }
-  renderReleaseCockpit();
+  renderShippingCockpit();
   if (String(plan.groupId || "").trim() === "release_cockpit") {
     setSystemSurface("shipping", { persist: false, scroll: false });
   }
@@ -5143,19 +5178,19 @@ async function runVerificationRunPlanSelectedChecks() {
 
 function stageShippingCockpit() {
   if (!hasWorkspaceAttachment()) {
-    throw new Error("Attach a workspace before staging release verification.");
+    throw new Error("Attach a workspace before staging Shipping verification.");
   }
   const checks = getReleaseVerificationSpecs().map((check) => ({
     id: check.id,
     selected: true
   }));
   if (!checks.length) {
-    throw new Error("Release verification checks are unavailable.");
+    throw new Error("Shipping verification checks are unavailable.");
   }
   setVerificationRunPlan({
     id: `release-cockpit-${normalizeWorkflowId(appState.workflowId)}`,
     groupId: "release_cockpit",
-    groupTitle: "Release Cockpit",
+    groupTitle: "Shipping Cockpit",
     workflowId: appState.workflowId,
     rootPath: String(appState.workspaceAttachment.rootPath || ""),
     rootLabel: String(appState.workspaceAttachment.label || ""),
@@ -5164,11 +5199,11 @@ function stageShippingCockpit() {
   }, { persist: false });
   setWorkbenchSurface("patch", { persist: false, scroll: false });
   persistChatState().catch(() => { });
-  showBanner("Release cockpit staged. Review the selected checks in Workbench before you run them.", "ok");
+  showBanner("Shipping Cockpit staged. Review the selected checks in Workbench before you run them.", "ok");
 }
 
 async function runShippingCockpitChecks() {
-  if (!getReleaseCockpitPlan()) {
+  if (!getShippingCockpitPlan()) {
     stageShippingCockpit();
   }
   setSystemSurface("shipping", { persist: false });
@@ -5184,27 +5219,27 @@ async function buildShippingPacketArtifact(options = {}) {
     workflowId: normalizeWorkflowId(appState.workflowId),
     outputMode: "shipping_packet",
     generatedAt,
-    title: "Release Packet"
+    title: "Shipping Packet"
   }));
-  const provenance = buildReleasePacketProvenance({ packetId });
+  const provenance = buildShippingPacketProvenance({ packetId });
   appState.lastArtifact = pushShippingPacketHistoryEntry({
     id: packetId,
-    title: "Release Packet",
+    title: "Shipping Packet",
     workflowId: normalizeWorkflowId(appState.workflowId),
     outputMode: "shipping_packet",
-    content: buildReleasePacketContent({ generatedAt, provenance }),
+    content: buildShippingPacketContent({ generatedAt, provenance }),
     generatedAt,
     provenance
   });
   renderArtifactPanel();
   setWorkbenchSurface("artifact", { persist: false, scroll: false });
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderOperatorRail();
   if (options.persist !== false) {
     await persistChatState();
   }
   if (options.announce !== false) {
-    showBanner("Release packet built.", "ok");
+    showBanner("Shipping Packet built.", "ok");
   }
   return appState.lastArtifact;
 }
@@ -5218,8 +5253,8 @@ function openShippingPalette() {
   }
 }
 
-function renderReleaseCockpit() {
-  const model = getReleaseCockpitModel();
+function renderShippingCockpit() {
+  const model = getShippingCockpitModel();
   if (el.shippingCockpitTitleText) {
     el.shippingCockpitTitleText.textContent = model.title;
   }
@@ -5765,17 +5800,17 @@ function getOperatorRailActions() {
     return actions.slice(0, 4);
   }
 
-  const releaseModel = getReleaseCockpitModel();
+  const releaseModel = getShippingCockpitModel();
   if (normalizeWorkflowId(appState.workflowId) === "shipping_audit" && releaseModel.passed > 0 && releaseModel.pending === 0 && !releaseModel.failed && !releaseModel.packetReady) {
     addAction({
       id: "build-release-packet",
-      title: "Build Release Packet",
+      title: "Build Shipping Packet",
       note: "Capture the current release decision, selected checks, blockers, and handoff actions into the Artifact Dock.",
       status: "Ship packet",
       scopes: [
         { label: "Local only", tone: "local" },
         { label: "Dock artifact", tone: "read" },
-        { label: "Release report", tone: "guard" }
+        { label: "Shipping report", tone: "guard" }
       ],
       buttonLabel: "Build Packet",
       buttonClass: "btn-primary",
@@ -6974,7 +7009,7 @@ function renderPatchPlanPanel(options = {}) {
   if (el.exportPatchPlanJsonBtn) el.exportPatchPlanJsonBtn.disabled = !hasPlan;
   if (el.exportPatchPlanMarkdownBtn) el.exportPatchPlanMarkdownBtn.disabled = !hasPlan;
   if (el.savePatchPlanSessionBtn) el.savePatchPlanSessionBtn.disabled = !hasPlan;
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderOperatorRail();
   renderMissionControl();
   renderWorkbenchNavigation();
@@ -7326,30 +7361,30 @@ function artifactHistorySummaryLine(artifact) {
     .filter(Boolean);
   return lines.find((line) => line.startsWith("- Decision:"))
     || lines.find((line) => !line.startsWith("#"))
-    || "Release packet snapshot";
+    || "Shipping Packet snapshot";
 }
 
-async function loadReleasePacketHistoryEntry(index, options = {}) {
+async function loadShippingPacketHistoryEntry(index, options = {}) {
   const entry = normalizeShippingPacketHistory(appState.shippingPacketHistory)[index];
   if (!entry) {
-    throw new Error("Release packet history entry not found.");
+    throw new Error("Shipping Packet history entry not found.");
   }
   appState.lastArtifact = { ...entry };
   const artifactEpoch = ensureSurfaceEpoch("artifact");
   renderArtifactPanel({ surfaceEpoch: artifactEpoch, forceRender: true });
   setWorkbenchSurface("artifact", { persist: false, scroll: false });
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderOperatorRail();
   if (options.persist !== false) {
     await persistChatState();
   }
   if (options.announce !== false) {
-    showBanner("Release packet loaded into the dock.", "ok");
+    showBanner("Shipping Packet loaded into the dock.", "ok");
   }
   return appState.lastArtifact;
 }
 
-async function clearReleasePacketHistory(options = {}) {
+async function clearShippingPacketHistory(options = {}) {
   appState.shippingPacketHistory = [];
   appState.shippingPacketCompareIds = { left: "", right: "" };
   renderArtifactPanel();
@@ -7357,12 +7392,12 @@ async function clearReleasePacketHistory(options = {}) {
     await persistChatState();
   }
   if (options.announce !== false) {
-    showBanner("Release packet history cleared.", "ok");
+    showBanner("Shipping Packet history cleared.", "ok");
   }
 }
 
 function renderArtifactComparePanel() {
-  const model = getReleasePacketCompareModel();
+  const model = getShippingPacketCompareModel();
   if (el.artifactCompareMetaText) {
     el.artifactCompareMetaText.textContent = !model.ready
       ? "Build at least two shipping packets to compare revisions side by side."
@@ -7429,7 +7464,7 @@ function renderArtifactComparePanel() {
     : "No shipping packet loaded in compare slot B.";
 
   if (el.artifactCompareLeftTitle) {
-    el.artifactCompareLeftTitle.textContent = model.left ? `${model.left.title || "Release Packet"} A` : "Compare A";
+    el.artifactCompareLeftTitle.textContent = model.left ? `${model.left.title || "Shipping Packet"} A` : "Compare A";
   }
   if (el.artifactCompareLeftMeta) {
     el.artifactCompareLeftMeta.textContent = model.left
@@ -7440,7 +7475,7 @@ function renderArtifactComparePanel() {
     el.artifactCompareLeftPreview.textContent = leftPreview;
   }
   if (el.artifactCompareRightTitle) {
-    el.artifactCompareRightTitle.textContent = model.right ? `${model.right.title || "Release Packet"} B` : "Compare B";
+    el.artifactCompareRightTitle.textContent = model.right ? `${model.right.title || "Shipping Packet"} B` : "Compare B";
   }
   if (el.artifactCompareRightMeta) {
     el.artifactCompareRightMeta.textContent = model.right
@@ -7464,7 +7499,7 @@ function renderArtifactHistory() {
   if (!history.length) {
     const empty = document.createElement("div");
     empty.className = "artifact-history-empty";
-    empty.textContent = "No shipping packets yet. Build one from the Release Cockpit to keep a local handoff ledger.";
+    empty.textContent = "No shipping packets yet. Build one from the Shipping Cockpit to keep a local handoff ledger.";
     el.artifactHistoryList.appendChild(empty);
   } else {
     history.forEach((artifact, index) => {
@@ -7484,7 +7519,7 @@ function renderArtifactHistory() {
 
       const title = document.createElement("div");
       title.className = "workflow-title-text";
-      title.textContent = artifact.title || "Release Packet";
+      title.textContent = artifact.title || "Shipping Packet";
 
       const summary = document.createElement("p");
       summary.textContent = artifactHistorySummaryLine(artifact);
@@ -7503,7 +7538,7 @@ function renderArtifactHistory() {
       meta.className = "trust-scope-row";
       meta.appendChild(createStatusPill(formatTimestampLabel(artifact.generatedAt), "read"));
       meta.appendChild(createStatusPill((getWorkflow(artifact.workflowId) || {}).title || normalizeWorkflowId(artifact.workflowId), "guard"));
-      meta.appendChild(createStatusPill("Release packet", "ok"));
+      meta.appendChild(createStatusPill("Shipping Packet", "ok"));
       if (artifact.provenance && artifact.provenance.lineage && artifact.provenance.lineage.generation) {
         meta.appendChild(createStatusPill(`Rev ${artifact.provenance.lineage.generation}`, "guard"));
       }
@@ -7530,7 +7565,7 @@ function renderArtifactHistory() {
       loadButton.textContent = isActive ? "Loaded in Dock" : "Load to Dock";
       loadButton.disabled = isActive;
       loadButton.onclick = () => {
-        loadReleasePacketHistoryEntry(index).catch((err) => showBanner(err.message || String(err), "bad"));
+        loadShippingPacketHistoryEntry(index).catch((err) => showBanner(err.message || String(err), "bad"));
       };
       actions.appendChild(loadButton);
 
@@ -7540,7 +7575,7 @@ function renderArtifactHistory() {
       compareLeftButton.disabled = String(appState.shippingPacketCompareIds.left || "") === String(artifact.id || "");
       compareLeftButton.onclick = () => {
         try {
-          setReleasePacketCompareSlot("left", artifact.id);
+          setShippingPacketCompareSlot("left", artifact.id);
         } catch (err) {
           showBanner(err.message || String(err), "bad");
         }
@@ -7553,7 +7588,7 @@ function renderArtifactHistory() {
       compareRightButton.disabled = String(appState.shippingPacketCompareIds.right || "") === String(artifact.id || "");
       compareRightButton.onclick = () => {
         try {
-          setReleasePacketCompareSlot("right", artifact.id);
+          setShippingPacketCompareSlot("right", artifact.id);
         } catch (err) {
           showBanner(err.message || String(err), "bad");
         }
@@ -7604,7 +7639,7 @@ function renderArtifactPanel(options = {}) {
 
   renderArtifactHistory();
   renderWorkspaceActionDeck();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderMissionControl();
   renderOperatorRail();
 }
@@ -7615,7 +7650,7 @@ function renderWorkspaceAttachment() {
   }
   renderContextPackSurface({ seedDefaults: true });
   renderWorkspaceActionDeck();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderMissionControl();
 }
 
@@ -7844,7 +7879,7 @@ async function setContextPack(value, options = {}) {
   renderContextPackSurface({ syncInputs: true });
   renderWorkflowSummary();
   renderIntelSurface();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderMissionControl();
   if (appState.activeContextPackProfileId && options.skipProfileStatusRefresh !== true) {
     refreshContextPackProfileStatus(appState.activeContextPackProfileId).catch(() => { });
@@ -7863,7 +7898,7 @@ async function clearContextPack(options = {}) {
   renderContextPackSurface({ resetInputs: true, seedDefaults: true });
   renderWorkflowSummary();
   renderIntelSurface();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderMissionControl();
   if (options.persist !== false) {
     await persistChatState();
@@ -8220,7 +8255,7 @@ function renderWorkflowSummary() {
   populateOnboardingWorkflowSelect();
   renderWorkflowFollowups(workflow);
   renderWorkflowQuickActions();
-  renderReleaseCockpit();
+  renderShippingCockpit();
   renderOperatorRail();
   renderMissionControl();
 }
@@ -8307,9 +8342,9 @@ async function activateWorkflow(workflowId, options = {}) {
     }
   }
   if (workflow.id === "shipping_audit") {
-    appState.systemSurface = "release";
+    appState.systemSurface = "shipping";
   } else if (workflow.id === "bridge_diagnostics") {
-    appState.systemSurface = "runtime";
+    appState.systemSurface = "performance";
   }
   renderWorkflowSummary();
   renderContextPackSurface({ seedDefaults: true });
@@ -8457,6 +8492,12 @@ async function buildEvidenceBundle() {
 }
 
 function showBanner(message, tone = "ok") {
+  // Phase 16: Suppress distraction during onboarding
+  const onboardingCompleted = appState.settings ? appState.settings.onboardingCompleted : false;
+  if (!onboardingCompleted && tone === "bad" && appState.setupState !== "ready") {
+    console.warn("[Onboarding] Banner Suppressed:", message);
+    return;
+  }
   if (el.statusLabel) {
     el.statusLabel.textContent = `[${tone}] ${message}`;
     el.statusLabel.dataset.tone = tone;
@@ -8540,7 +8581,7 @@ async function persistOfflineModePreference(offlineEnabled) {
   if (!allowRemoteBridge && fallbackSync.bridgeSelection && fallbackSync.bridgeSelection.liveProfile) {
     showBanner(`Offline Mode turned on. Live bridge reverted to ${fallbackSync.bridgeSelection.liveProfile.name}.`, "ok");
   } else if (!allowRemoteBridge) {
-    showBanner("Offline Mode turned on. Hosted providers are blocked.", "ok");
+    showBanner("Offline Mode turned on. Hosted profiles are blocked.", "ok");
   } else {
     showBanner("Offline Mode turned off. Hosted profiles are available again.", "ok");
   }
@@ -9004,9 +9045,10 @@ function normalizeInboxFilterId(id) {
 
 function normalizeSystemSurfaceId(id) {
   const normalized = String(id || "").trim().toLowerCase();
-  return normalized === "runtime" || normalized === "release" || normalized === "context"
-    ? normalized
-    : "workbench";
+  if (normalized === "performance" || normalized === "runtime") return "performance";
+  if (normalized === "shipping" || normalized === "release") return "shipping";
+  if (normalized === "context") return "context";
+  return "workbench";
 }
 
 function normalizePinnedSessionNames(value) {
@@ -9723,7 +9765,7 @@ function sessionPriorityVector(name, meta = {}) {
   const hasStructuredWork = Boolean(
     Number(meta.patchPlanFiles || 0)
     || Number(meta.verificationChecks || 0)
-    || Number(meta.releasePackets || 0)
+    || Number(meta.ShippingPackets || 0)
     || Number(meta.contextPackFiles || 0)
   );
   return [
@@ -9741,7 +9783,7 @@ function sessionSupportSummary(meta = {}) {
   if (meta.contextPackFiles) parts.push(`Context ${meta.contextPackFiles} file${meta.contextPackFiles === 1 ? "" : "s"}`);
   if (meta.patchPlanFiles) parts.push(`Patch ${meta.patchPlanFiles} file${meta.patchPlanFiles === 1 ? "" : "s"}`);
   if (meta.verificationChecks) parts.push(`Verify ${meta.verificationChecks} check${meta.verificationChecks === 1 ? "" : "s"}`);
-  if (meta.releasePackets) parts.push(`Packet ${meta.releasePackets}`);
+  if (meta.ShippingPackets) parts.push(`Packet ${meta.ShippingPackets}`);
   if (meta.paletteShortcuts) parts.push(`Shortcut ${meta.paletteShortcuts}`);
   return parts.slice(0, 3).join(" | ");
 }
@@ -9915,7 +9957,7 @@ function renderInboxOverview() {
   const passphraseReady = Boolean(String((el.sessionPass && el.sessionPass.value) || "").trim());
   const activeName = String(appState.activeSessionName || "").trim();
   const stagedName = stagedThreadName();
-  if (el.inboxLaneStatusText) {
+  if (el.inboxGroupStatusText) {
     const parts = [
       count > 0 ? `${count} saved thread${count === 1 ? "" : "s"}` : "No saved threads",
       pinnedCount > 0 ? `${pinnedCount} pinned` : "No pins yet",
@@ -9923,7 +9965,7 @@ function renderInboxOverview() {
       passphraseReady ? "unlock ready" : "locked until passphrase",
       appState.streamInFlight ? "assistant live" : "idle"
     ];
-    el.inboxLaneStatusText.textContent = parts.join(" | ");
+    el.inboxGroupStatusText.textContent = parts.join(" | ");
   }
   if (el.inboxFocusText) {
     const focus = activeName
@@ -10613,7 +10655,7 @@ async function loadSessionTarget(sessionName, options = {}) {
   if (!appState.shippingPacketHistory.length && hasShippingPacketArtifact()) {
     appState.shippingPacketHistory = [normalizeArtifactValue(appState.lastArtifact, {
       forceOutputMode: "shipping_packet",
-      title: "Release Packet"
+      title: "Shipping Packet"
     })];
   }
   try {
@@ -10662,7 +10704,7 @@ async function loadSessionTarget(sessionName, options = {}) {
   await persistChatState();
   await refreshModels();
   if (options.announce !== false) {
-    showBanner(`Session restored: ${name}`, "ok");
+    showBanner(`Session loaded: ${name}`, "ok");
   }
   appState.restored = true;
   appState.restoredSessionName = name;
@@ -11436,17 +11478,17 @@ function getCommandPaletteActions() {
       run: async () => { await runVerificationRunPlanSelectedChecks(); }
     },
     {
-      label: "Stage Release Verification",
-      detail: "Queue lint, founder e2e, and store screenshot refresh into the release cockpit",
+      label: "Stage Shipping verification",
+      detail: "Queue lint, founder e2e, and store screenshot refresh into the Shipping Cockpit",
       run: async () => { stageShippingCockpit(); }
     },
     {
-      label: "Run Release Verification",
-      detail: "Run the selected checks from the staged release cockpit plan",
+      label: "Run Shipping verification",
+      detail: "Run the selected checks from the staged Shipping Cockpit plan",
       run: async () => { await runShippingCockpitChecks(); }
     },
     {
-      label: "Build Release Packet",
+      label: "Build Shipping Packet",
       detail: "Generate a dock-ready shipping packet from the current cockpit, artifact, and verification state",
       run: async () => { await buildShippingPacketArtifact(); }
     },
@@ -11513,7 +11555,7 @@ function getCommandPaletteActions() {
         ? "Apply Deck"
         : "Artifact Dock";
       prefixes = section === "Apply Deck" ? ["apply", "artifact"] : ["artifact", "apply"];
-    } else if (["Run Verification Plan", "Stage Release Verification", "Run Release Verification", "Build Release Packet", "Copy Verification Commands"].includes(action.label)) {
+    } else if (["Run Verification Plan", "Stage Shipping verification", "Run Shipping verification", "Build Shipping Packet", "Copy Verification Commands"].includes(action.label)) {
       section = "Release Controls";
       prefixes = ["release", "action"];
     }
@@ -12090,7 +12132,7 @@ function renderSettingsQuickstartHints() {
   }
 
   hints.push(hasWorkspaceAttachment()
-    ? "Workspace is attached. Use patch plans, verification, and release work only when you want repo-scoped actions."
+    ? "Workspace is attached. Use patch plans, verification, and Shipping work only when you want repo-scoped actions."
     : "Attach a workspace only when you want patch plans, verification, or shipping packets tied to one repo.");
 
   for (const hint of hints.slice(0, 4)) {
@@ -12761,7 +12803,13 @@ async function applySettingsPatch(patch) {
   if (!window.api || !window.api.settings) return appState.settings;
   const current = appState.settings && typeof appState.settings === "object" ? appState.settings : {};
   const next = mergeBridgeSettingsState(current, patch);
-  appState.settings = await window.api.settings.update(next);
+  try {
+    appState.settings = await window.api.settings.update(next);
+  } catch (err) {
+    console.error("Settings save failed:", err);
+    showBanner(`Failed to save settings: ${err.message}`, "bad");
+    return appState.settings; // Return unmodified state
+  }
   syncSettingsInputsFromState();
   return appState.settings;
 }
@@ -12790,10 +12838,13 @@ function populateOnboardingModelSelect() {
   if (el.onboardingRememberInput) {
     el.onboardingRememberInput.checked = true;
   }
+  if (el.onboardingProfileImportBtn) {
+    el.onboardingProfileImportBtn.addEventListener("click", handleProfileImport);
+  }
   populateOnboardingWorkflowSelect();
 }
 
-function setOnboardingOpen(open) {
+function setOnboardingOpen(open, state = "unconfigured") {
   const next = Boolean(open);
   if (next && appState.commandPaletteOpen) {
     setCommandPaletteOpen(false);
@@ -12806,47 +12857,801 @@ function setOnboardingOpen(open) {
     el.onboardingOverlay.setAttribute("aria-hidden", String(!next));
   }
   if (!next) return;
-  populateOnboardingModelSelect();
+
+  // Phase 9/20: Restore to specified or unconfigured state
+  appState.setupState = state;
+  renderOnboardingStep();
 }
+
+async function onboardingUseOffline() {
+  appState.setupState = "offline_locked";
+  await applySettingsPatch({
+    allowRemoteBridge: false,
+    onboardingCompleted: true,
+    setupDraft: null // Clear draft on completion
+  });
+  renderOnboardingStep();
+  showBanner("Sovereign Offline Mode Sealed.", "ok");
+  setOnboardingOpen(false);
+}
+
+async function prepareVerificationStep() {
+  const provider = el.onboardingProviderSelect ? el.onboardingProviderSelect.value : "ollama";
+  const baseUrl = el.onboardingBaseUrlInput ? el.onboardingBaseUrlInput.value : "";
+  const apiKey = el.onboardingApiKeyInput ? el.onboardingApiKeyInput.value : "";
+
+  if (el.verifyValProvider) el.verifyValProvider.textContent = provider;
+  if (el.verifyValEndpoint) el.verifyValEndpoint.textContent = baseUrl || "[MISSING]";
+
+  const requiresSecret = provider !== "ollama" && provider !== "lmstudio";
+  if (el.verifyValSecret) {
+    if (requiresSecret) {
+      el.verifyValSecret.textContent = apiKey ? "STORED" : "MISSING";
+      el.verifyValSecret.className = apiKey ? "verify-val tone-ok" : "verify-val tone-bad";
+    } else {
+      el.verifyValSecret.textContent = "NOT REQUIRED";
+      el.verifyValSecret.className = "verify-val";
+    }
+  }
+
+  if (el.verifyValTrust) {
+    el.verifyValTrust.textContent = "VERIFIED";
+    el.verifyValTrust.className = "verify-val tone-ok";
+  }
+}
+
+async function prepareSummaryStep() {
+  if (el.summaryProvider) el.summaryProvider.textContent = el.onboardingProviderSelect ? el.onboardingProviderSelect.value : "---";
+  if (el.summaryModel) el.summaryModel.textContent = el.onboardingModelSelect ? el.onboardingModelSelect.value : "---";
+  if (el.summaryTrust) {
+    el.summaryTrust.textContent = "VERIFIED";
+    el.summaryTrust.className = "verify-val tone-ok";
+  }
+  if (el.onboardingReconnectStartup) {
+    el.onboardingReconnectStartup.checked = false; // Default to disciplied discipline
+  }
+}
+
+async function onboardingNext() {
+  const state = appState.setupState || "unconfigured";
+
+  if (state === "unconfigured") {
+    appState.setupState = "setup_provider";
+  } else if (state === "setup_provider") {
+    appState.setupState = "setup_endpoint";
+  } else if (state === "setup_endpoint" || state === "endpoint_failed") {
+    const ok = await onboardingTestConnection();
+    if (ok) appState.setupState = "endpoint_verified";
+  } else if (state === "endpoint_verified") {
+    appState.setupState = "model_selection";
+  } else if (state === "model_selection" || state === "models_failed") {
+    appState.setupState = "ready";
+  } else if (state === "ready") {
+    await completeOnboarding(false);
+  }
+
+  await syncOnboardingDraft();
+  renderOnboardingStep();
+}
+
+function onboardingBack() {
+  const state = appState.setupState || "unconfigured";
+
+  if (state === "setup_provider") {
+    appState.setupState = "unconfigured";
+  } else if (state === "setup_endpoint" || state === "endpoint_failed") {
+    appState.setupState = "setup_provider";
+  } else if (state === "endpoint_verified") {
+    appState.setupState = "setup_endpoint";
+  } else if (state === "model_selection" || state === "models_failed") {
+    appState.setupState = "endpoint_verified";
+  } else if (state === "ready") {
+    appState.setupState = "model_selection";
+  }
+
+  syncOnboardingDraft().catch(() => { });
+  renderOnboardingStep();
+}
+
+async function syncOnboardingDraft() {
+  const draft = {
+    state: appState.setupState,
+    provider: el.onboardingProviderSelect ? el.onboardingProviderSelect.value : "ollama",
+    baseUrl: el.onboardingBaseUrlInput ? el.onboardingBaseUrlInput.value.trim() : "",
+    apiKey: el.onboardingApiKeyInput ? el.onboardingApiKeyInput.value.trim() : "",
+    model: el.onboardingModelSelect ? el.onboardingModelSelect.value : null,
+    reconnectStartup: el.onboardingReconnectStartup ? el.onboardingReconnectStartup.checked : false
+  };
+  appState.onboardingDraft = draft;
+  await applySettingsPatch({ setupDraft: draft });
+}
+
+async function onboardingTestConnection() {
+  const provider = el.onboardingProviderSelect ? el.onboardingProviderSelect.value : "ollama";
+  const baseUrl = el.onboardingBaseUrlInput ? el.onboardingBaseUrlInput.value.trim() : "";
+  const apiKey = el.onboardingApiKeyInput ? el.onboardingApiKeyInput.value.trim() : "";
+
+  // Secret Gating Rule (Phase 17.4)
+  const requiresSecret = provider !== "ollama" && provider !== "lmstudio";
+  if (requiresSecret && !apiKey) {
+    showBanner(`API key required before continuing for ${provider}.`, "bad");
+    return false;
+  }
+
+  if (!baseUrl) {
+    showBanner("Endpoint URL is required.", "bad");
+    return false;
+  }
+
+  appState.setupState = "testing_endpoint";
+  if (el.onboardingTestResult) {
+    el.onboardingTestResult.textContent = "Probing endpoint...";
+    el.onboardingTestResult.className = "panel-note onboarding-test-result";
+  }
+  renderOnboardingStep();
+
+  try {
+    const mockProfile = { provider, baseUrl, apiKey };
+    const result = await window.api.bridge.test(mockProfile);
+
+    if (result && result.ok) {
+      if (el.onboardingTestResult) {
+        el.onboardingTestResult.textContent = "Connection Successful!";
+        el.onboardingTestResult.className = "panel-note onboarding-test-result tone-ok";
+      }
+
+      // Populate models for Step 4
+      const models = result.models || [];
+      if (el.onboardingModelSelect) {
+        el.onboardingModelSelect.innerHTML = "";
+        if (models.length === 0) {
+          const opt = document.createElement("option");
+          opt.textContent = "No models found on endpoint";
+          opt.disabled = true;
+          el.onboardingModelSelect.appendChild(opt);
+          // Don't transition if no models
+          appState.setupState = "models_failed";
+          renderOnboardingStep();
+          return false;
+        } else {
+          for (const m of models) {
+            const opt = document.createElement("option");
+            opt.value = m;
+            opt.textContent = m;
+            el.onboardingModelSelect.appendChild(opt);
+          }
+        }
+      }
+      return true;
+    } else {
+      appState.setupState = "endpoint_failed";
+      if (el.onboardingTestResult) {
+        el.onboardingTestResult.textContent = `Failure: ${result ? result.reason : "Unknown Provider Error"}`;
+        el.onboardingTestResult.className = "panel-note onboarding-test-result tone-bad";
+      }
+      renderOnboardingStep();
+      return false;
+    }
+  } catch (err) {
+    appState.setupState = "endpoint_failed";
+    if (el.onboardingTestResult) {
+      el.onboardingTestResult.textContent = `Critical: ${err.message}`;
+      el.onboardingTestResult.className = "panel-note onboarding-test-result tone-bad";
+    }
+    renderOnboardingStep();
+    return false;
+  }
+}
+
+
 
 async function completeOnboarding(skip) {
   const shouldSkip = Boolean(skip);
-  const remember = !el.onboardingRememberInput || el.onboardingRememberInput.checked;
-  if (!shouldSkip && el.onboardingModelSelect) {
-    const selected = String(el.onboardingModelSelect.value || "").trim();
-    if (selected) {
-      appState.model = selected;
-      if (el.modelSelect) el.modelSelect.value = selected;
-      if (window.api && window.api.llm) {
-        await window.api.llm.setModel(selected);
-      }
-      await persistChatState();
+  const draft = appState.onboardingDraft || {};
+
+  if (!shouldSkip && draft.provider && draft.baseUrl) {
+    // Phase 17: Canonical Profile Materialization
+    const profile = {
+      id: `profile-${Date.now()}`,
+      name: `Profile — ${new Date().toLocaleDateString()}`,
+      provider: draft.provider,
+      baseUrl: draft.baseUrl,
+      apiKey: draft.apiKey,
+      defaultModel: draft.model,
+      lastSuccessTs: new Date().toISOString(),
+      trustState: "VERIFIED",
+      lastVerifiedFingerprint: "", // Will be calculated on first use
+      timeoutMs: 15000,
+      retryCount: 2
+    };
+
+    // Update profiles list
+    const profiles = (appState.settings && Array.isArray(appState.settings.connectionProfiles)) ? [...appState.settings.connectionProfiles] : [];
+    profiles.push(profile);
+
+    // Save and seal
+    await applySettingsPatch({
+      connectionProfiles: profiles,
+      activeProfileId: profile.id,
+      onboardingCompleted: true,
+      setupDraft: null,
+      connectOnStartup: Boolean(draft.reconnectStartup)
+    });
+
+    appState.setupState = "ready";
+    if (draft.model) appState.model = draft.model;
+  } else {
+    // Phase 31.10: Finalize state even when skipped
+    await applySettingsPatch({
+      onboardingCompleted: true,
+      setupDraft: null
+    });
+    appState.setupState = "ready";
+  }
+
+  setOnboardingOpen(false);
+  showBanner(shouldSkip ? "Onboarding skipped." : "Setup complete. Profile materialized.", "ok");
+}
+
+function renderOnboardingStep() {
+  const state = appState.setupState || "unconfigured";
+
+  // Phase 16: Canonical Wizard Mapping
+  const isHome = state === "unconfigured";
+  const isProvider = state === "setup_provider";
+  const isEndpoint = state === "setup_endpoint" || state === "testing_endpoint" || state === "endpoint_failed";
+  const isVerify = state === "endpoint_verified";
+  const isModel = state === "model_selection" || state === "fetching_models" || state === "models_failed";
+  const isSummary = state === "ready";
+  const isOffline = state === "onboarding_offline" || state === "offline_locked";
+  const isRepair = state === "repair_mode" || state === "profile_invalid";
+  const isRecovery = state === "repair_secret";
+
+  // Toggle step sections via IDS mapping
+  const steps = [
+    "onboardingStepHome", "onboardingStepProvider", "onboardingStepEndpoint",
+    "onboardingStepVerify", "onboardingStepModel", "onboardingStepSummary",
+    "onboardingStepOffline", "onboardingStepRepair", "onboardingRecoveryGroup"
+  ];
+
+  steps.forEach(s => {
+    if (el[s]) el[s].classList.add("hidden");
+  });
+
+  if (isHome && el.onboardingStepHome) el.onboardingStepHome.classList.remove("hidden");
+  if (isProvider && el.onboardingStepProvider) el.onboardingStepProvider.classList.remove("hidden");
+  if (isEndpoint && el.onboardingStepEndpoint) el.onboardingStepEndpoint.classList.remove("hidden");
+  if (isVerify && el.onboardingStepVerify) el.onboardingStepVerify.classList.remove("hidden");
+  if (isModel && el.onboardingStepModel) el.onboardingStepModel.classList.remove("hidden");
+  if (isSummary && el.onboardingStepSummary) el.onboardingStepSummary.classList.remove("hidden");
+  if (isOffline && el.onboardingStepOffline) el.onboardingStepOffline.classList.remove("hidden");
+  if (isRepair && el.onboardingStepRepair) el.onboardingStepRepair.classList.remove("hidden");
+  if (isRecovery && el.onboardingRecoveryGroup) el.onboardingRecoveryGroup.classList.remove("hidden");
+
+  // Suppress Header/Shell Noise
+  const isSetupActive = state !== "ready" && state !== "offline_mode";
+
+  // Navigation Logic
+  if (el.onboardingBackBtn) {
+    el.onboardingBackBtn.classList.toggle("hidden", isHome || isRepair || isRecovery || isOffline);
+  }
+  if (el.onboardingNextBtn) {
+    el.onboardingNextBtn.classList.toggle("hidden", isSummary || isRepair || isRecovery || isOffline);
+
+    // Taxonomy pass
+    if (state === "setup_endpoint") el.onboardingNextBtn.textContent = "Test Connection";
+    else if (state === "testing_endpoint") el.onboardingNextBtn.textContent = "Testing...";
+    else if (state === "endpoint_verified") el.onboardingNextBtn.textContent = "Pick Model";
+    else if (state === "model_selection") el.onboardingNextBtn.textContent = "Sealing Check";
+    else el.onboardingNextBtn.textContent = "Next";
+  }
+
+  if (el.onboardingStartBtn) {
+    el.onboardingStartBtn.classList.toggle("hidden", !isSummary);
+  }
+
+  if (el.onboardingSkipBtn) {
+    el.onboardingSkipBtn.classList.toggle("hidden", !isHome);
+  }
+}
+
+function populateOnboardingProviderSelect() {
+  if (!el.onboardingProviderSelect) return;
+  el.onboardingProviderSelect.innerHTML = "";
+  const providers = [
+    { id: "ollama", label: "Ollama (Local Node)" },
+    { id: "lmstudio", label: "LM Studio (Local Bridge)" },
+    { id: "openai-compatible", label: "OpenAI-Compatible (Remote)" },
+    { id: "openrouter", label: "OpenRouter (Hosted)" }
+  ];
+  for (const p of providers) {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.label;
+    el.onboardingProviderSelect.appendChild(opt);
+  }
+}
+
+function populateOnboardingEndpointFields() {
+  const provider = el.onboardingProviderSelect ? el.onboardingProviderSelect.value : "ollama";
+  if (el.onboardingBaseUrlInput) {
+    el.onboardingBaseUrlInput.value = provider === "ollama" ? "http://127.0.0.1:11434" : "";
+  }
+  if (el.onboardingApiKeyField) {
+    el.onboardingApiKeyField.classList.toggle("hidden", provider === "ollama");
+  }
+}
+
+async function getTrustBadge(profile, state) {
+  let drift = await checkProfileDrift(profile);
+  const TS = window.api.state.TRUST_STATES;
+  const auth = profile.authenticity || "UNSIGNED";
+
+  let html = "";
+  if (state === "offline_locked") {
+    html = `<span class='badge-trust tone-info'>[LOCKED]</span>`;
+  } else if (drift === TS.MISSING_SECRET) {
+    html = `<span class='badge-trust tone-bad'>[MISSING_SECRET]</span>`;
+  } else if (drift === TS.DRIFTED) {
+    html = `<span class='badge-trust tone-warn'>[DRIFTED]</span>`;
+  } else if (drift === TS.VERIFIED) {
+    html = `<span class='badge-trust tone-good'>[VERIFIED]</span>`;
+  } else if (drift === TS.NEEDS_REVIEW) {
+    html = `<span class='badge-trust tone-warn'>[NEEDS_REVIEW]</span>`;
+  } else {
+    html = "<span class='badge-trust'>[UNVERIFIED]</span>";
+  }
+
+  // Phase 15.2: Authenticity Normalization
+  if (auth === "SIGNATURE_TAMPERED") {
+    html += ` <span class='badge-auth tone-bad' title='CRITICAL: Signature Mismatch detected!'>[SIGNATURE_TAMPERED]</span>`;
+  } else if (auth === "UNSIGNED") {
+    html += ` <span class='badge-auth' title='Legacy or Unsigned Bundle'>[UNSIGNED]</span>`;
+  }
+
+  return html;
+}
+
+async function renderSavedProfiles() {
+  const profiles = (appState.settings && Array.isArray(appState.settings.connectionProfiles)) ? appState.settings.connectionProfiles : [];
+  if (el.onboardingSavedProfilesSection) {
+    el.onboardingSavedProfilesSection.classList.toggle("hidden", profiles.length === 0);
+  }
+  if (el.onboardingSavedProfilesList) {
+    el.onboardingSavedProfilesList.innerHTML = "";
+    for (const p of profiles) {
+      const item = document.createElement("div");
+      item.className = "onboarding-profile-item row";
+
+      const info = document.createElement("div");
+      info.className = "profile-info col";
+      const name = document.createElement("span");
+      name.className = "profile-name";
+      name.textContent = p.name || "Unnamed Profile";
+      const meta = document.createElement("span");
+      meta.className = "profile-meta";
+      const lastSeen = p.lastSuccessTs ? new Date(p.lastSuccessTs).toLocaleString() : "Never verified";
+
+      // Phase 12.1: Trust State Badge & Drift Detection
+      const trustBadge = await getTrustBadge(p, appState.setupState);
+      meta.innerHTML = `${p.provider} — ${p.baseUrl} — Last verified: ${lastSeen} ${trustBadge}`;
+
+      info.appendChild(name);
+      info.appendChild(meta);
+
+      const actions = document.createElement("div");
+      actions.className = "profile-actions row";
+      const resumeBtn = document.createElement("button");
+      resumeBtn.className = "btn-secondary btn-small";
+      resumeBtn.textContent = "Resume";
+      resumeBtn.onclick = () => loadConnectionProfile(p.id);
+      actions.appendChild(resumeBtn);
+
+      const reportBtn = document.createElement("button");
+      reportBtn.className = "btn-ghost btn-small";
+      reportBtn.textContent = "Report";
+      reportBtn.onclick = () => showTrustReport(p.id);
+      actions.appendChild(reportBtn);
+
+      const exportBtn = document.createElement("button");
+      exportBtn.className = "btn-ghost btn-small";
+      exportBtn.textContent = "Export";
+      exportBtn.onclick = () => handleProfileExport(p.id);
+      actions.appendChild(exportBtn);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-ghost btn-small";
+      deleteBtn.textContent = "Delete";
+      deleteBtn.onclick = () => deleteConnectionProfile(p.id);
+      actions.appendChild(deleteBtn);
+
+      item.appendChild(info);
+      item.appendChild(actions);
+      el.onboardingSavedProfilesList.appendChild(item);
     }
   }
-  if (!shouldSkip && el.onboardingWorkflowSelect) {
-    await activateWorkflow(String(el.onboardingWorkflowSelect.value || appState.workflowId), {
-      seedPrompt: true,
-      persist: false,
-      announce: false
+}
+
+async function loadConnectionProfile(profileId) {
+  const profiles = (appState.settings && Array.isArray(appState.settings.connectionProfiles)) ? appState.settings.connectionProfiles : [];
+  const profile = profiles.find(p => p.id === profileId);
+  if (!profile) return;
+
+  if (!profile.baseUrl || !profile.provider) {
+    appState.setupState = "profile_invalid";
+    if (el.onboardingRepairError) {
+      el.onboardingRepairError.textContent = "Profile configuration is corrupted or incomplete.";
+    }
+    renderOnboardingStep();
+    return;
+  }
+
+  appState.setupState = "profile_loaded";
+  renderOnboardingStep();
+
+  // Populate fields
+  if (el.onboardingProviderSelect) el.onboardingProviderSelect.value = profile.provider || "ollama";
+  if (el.onboardingBaseUrlInput) el.onboardingBaseUrlInput.value = profile.baseUrl || "";
+  if (el.onboardingApiKeyInput) el.onboardingApiKeyInput.value = profile.apiKey || "";
+
+  // Attempt verification
+  if (el.onboardingTestResult) {
+    el.onboardingTestResult.textContent = `Restoring profile: ${profile.name}...`;
+    el.onboardingTestResult.className = "panel-note onboarding-test-result";
+  }
+
+  let drift = await checkProfileDrift(profile);
+  const TS = window.api.state.TRUST_STATES;
+  const isVerified = (drift === TS.VERIFIED);
+
+  // Phase 20/25: Enact local governance overriding renderer evaluation
+  if (profile.trustState === TS.VERIFIED) drift = TS.VERIFIED;
+
+  // Phase 15.2: Authenticity Normalization
+  if (profile.authenticity === "SIGNATURE_TAMPERED") {
+    alert("CRITICAL: Resume Blocked. This profile bundle has a SIGNATURE_TAMPERED signature. It cannot be used for sessions until the source is verified or the profile is re-saved locally.");
+    window.api.state.logProfileEvent(profile.id, "RESUME_BLOCKED", "Resume blocked due to signature tamper detection.");
+    return;
+  }
+
+  // Phase 14: Secret Recovery Block
+  if (drift === TS.MISSING_SECRET) {
+    appState.setupState = "repair_secret";
+    appState.repairProfileId = profile.id; // Track which profile is being recovered
+    if (el.onboardingRepairError) {
+      el.onboardingRepairError.textContent = "Secret Custody failure: Profile requires a secret that is no longer available.";
+    }
+    window.api.state.logProfileEvent(profile.id, "SECRET_RECOVERY_REQUIRED", "Resume blocked: Secret unavailable on this machine. Routing to recovery.");
+    renderOnboardingStep();
+    return;
+  }
+
+  // Phase 12.3: Tiered Resume Policy
+  if (!isVerified) {
+    if (drift === TS.DRIFTED) {
+      if (el.onboardingTestResult) {
+        el.onboardingTestResult.textContent = "Profile drift detected. Re-verifying endpoint...";
+        el.onboardingTestResult.className = "panel-note onboarding-test-result tone-warn";
+      }
+    } else {
+      if (el.onboardingTestResult) {
+        el.onboardingTestResult.textContent = "Unverified profile. Initiating verification...";
+        el.onboardingTestResult.className = "panel-note onboarding-test-result";
+      }
+    }
+  }
+
+  try {
+    const result = await window.api.bridge.test(profile);
+    if (result && result.ok) {
+      if (!isVerified) {
+        // Successful re-verification of a drifted/unverified profile
+        profile.lastSuccessTs = new Date().toISOString();
+        profile.lastVerifiedFingerprint = window.api.state.calculateProfileFingerprint(profile);
+        await applySettingsPatch({ connectionProfiles: appState.settings.connectionProfiles });
+      }
+
+      const models = result.health && Array.isArray(result.health.models) ? result.health.models : [];
+      if (profile.defaultModel && !models.includes(profile.defaultModel)) {
+        // Hard-block: Default model missing
+        appState.setupState = "repair_mode";
+        if (el.onboardingRepairError) {
+          el.onboardingRepairError.textContent = `Model Missing: ${profile.defaultModel} is no longer available on this endpoint.`;
+        }
+
+        window.api.state.addRepairTelemetry({
+          profileId: profile.id,
+          profileName: profile.name,
+          type: "missing_model",
+          reason: `Model ${profile.defaultModel} missing from endpoint.`
+        });
+        renderOnboardingStep();
+        return;
+      }
+
+      appState.activeProfileId = profile.id;
+      appState.model = profile.defaultModel || (models[0] || null);
+
+      await applySettingsPatch({
+        activeProfileId: profile.id,
+        ollamaBaseUrl: profile.baseUrl,
+        onboardingCompleted: true
+      });
+
+      appState.setupState = "ready";
+      if (appState.model && window.api.llm) {
+        await window.api.llm.setModel(appState.model);
+      }
+
+      await syncModelToLiveBridgeFallback({ announce: true });
+      completeOnboarding(false);
+    } else {
+      appState.setupState = "repair_mode";
+      const reason = result ? result.reason : "Connection Error";
+      if (el.onboardingRepairError) {
+        el.onboardingRepairError.textContent = `Resume failed: ${reason}`;
+      }
+
+      // Phase 12.2: Telemetry
+      window.api.state.addRepairTelemetry({
+        profileId: profile.id,
+        profileName: profile.name,
+        type: "resume_failure",
+        reason: reason
+      });
+      renderOnboardingStep();
+    }
+  } catch (err) {
+    appState.setupState = "repair_mode";
+    const reason = err.message || "Unknown Critical Error";
+    if (el.onboardingRepairError) el.onboardingRepairError.textContent = `Resume Critical: ${reason}`;
+
+    // Phase 12.2: Telemetry
+    window.api.state.addRepairTelemetry({
+      profileId: profile.id,
+      profileName: profile.name,
+      type: "resume_critical",
+      reason: reason
+    });
+    renderOnboardingStep();
+  }
+}
+
+async function deleteConnectionProfile(profileId) {
+  const profiles = (appState.settings && Array.isArray(appState.settings.connectionProfiles)) ? appState.settings.connectionProfiles : [];
+  const nextProfiles = profiles.filter(p => p.id !== profileId);
+  await applySettingsPatch({ connectionProfiles: nextProfiles });
+  renderSavedProfiles();
+}
+
+/**
+ * Phase 11.1: Background Heartbeat for Connectivity Proof
+ */
+let connectivityHeartbeatInterval = null;
+function startConnectivityHeartbeat() {
+  if (connectivityHeartbeatInterval) return;
+  connectivityHeartbeatInterval = setInterval(async () => {
+    if (appState.isOfflineMode || appState.setupState !== "ready") return;
+
+    const activeProfileId = appState.settings.activeProfileId;
+    const profiles = appState.settings.connectionProfiles || [];
+    const profile = profiles.find(p => p.id === activeProfileId);
+    if (!profile) return;
+
+    try {
+      const result = await window.api.bridge.test(profile);
+      if (result && result.ok) {
+        profile.lastSuccessTs = new Date().toISOString();
+        await applySettingsPatch({ connectionProfiles: profiles });
+        renderSavedProfiles();
+      }
+    } catch {
+      // Background heartbeat failures are silent, we rely on resume-re-verify for explicit failures.
+    }
+  }, 300000); // 5 minutes
+}
+
+async function showTrustReport(profileId) {
+  const settings = (appState.settings && typeof appState.settings === "object") ? appState.settings : {};
+  const profiles = settings.connectionProfiles || [];
+  const profile = profiles.find(p => p.id === profileId);
+  if (!profile) return;
+
+  const events = (settings.profileTrustHistory || []).filter(e => e.profileId === profileId);
+  const drift = await checkProfileDrift(profile);
+  const TS = window.api.state.TRUST_STATES;
+
+  let html = `
+      <div class="trust-summary" style="padding:10px; background:var(--bg-accent); border-radius:4px; margin-bottom:15px;">
+        <div class="summary-line"><strong>Name:</strong> ${esc(profile.name)}</div>
+        <div class="summary-line"><strong>Status:</strong> ${await getTrustBadge(profile, "")}</div>
+        <div class="summary-line"><strong>Provider:</strong> ${esc(profile.provider)}</div>
+        <div class="summary-line"><strong>Endpoint:</strong> ${esc(profile.baseUrl)}</div>
+        <div class="summary-line"><strong>Secret Custody:</strong> ${profile.provider === "local" ? "N/A" : (window.api.state.retrieveSecret(profileId, "apiKey") ? "PRESENT" : "MISSING")}</div>
+      </div>
+      <div class="timeline-title" style="font-weight:bold; color:var(--tone-accent); margin-bottom:10px;">Forensic History</div>
+      <div class="timeline-list" style="max-height:300px; overflow-y:auto; border-top:1px solid var(--border-color); padding-top:10px;">
+    `;
+
+  if (events.length === 0) {
+    html += "<div class='timeline-empty' style='opacity:0.6; font-style:italic;'>No forensic events recorded.</div>";
+  } else {
+    events.slice().reverse().forEach(e => {
+      html += `
+          <div class="timeline-event" style="margin-bottom:12px; font-size:0.85em; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:8px;">
+            <div class="event-meta" style="opacity:0.7;">
+              <span class="event-ts">${new Date(e.ts).toLocaleString()}</span>
+              <span class="event-type" style="color:var(--tone-guard); margin-left:8px;">[${esc(e.type)}]</span>
+            </div>
+            <div class="event-summary" style="margin-top:2px;">${esc(e.summary)}</div>
+          </div>
+        `;
     });
   }
-  if (el.autoScrollInput && el.onboardingAutoScrollInput) {
-    el.autoScrollInput.checked = Boolean(el.onboardingAutoScrollInput.checked);
-  }
-  persistOperatorLayoutPreferences();
-  await applySettingsPatch({
-    onboardingCompleted: remember,
-    onboardingSeenAt: new Date().toISOString(),
-    onboardingVersion: "v1.2.0-pack2"
-  });
-  setOnboardingOpen(false);
-  if (el.statusMeta) {
-    el.statusMeta.textContent = remember
-      ? `Onboarding remembered (${new Date().toISOString().slice(0, 19).replace("T", " ")})`
-      : "Onboarding will be shown again on next launch.";
-  }
-  showBanner(shouldSkip ? "Onboarding skipped." : "Onboarding complete.", "ok");
+
+  html += "</div>";
+
+  appState.activeReportProfileId = profileId; // Phase 14.3: Track for export
+  if (el.trustReportContent) el.trustReportContent.innerHTML = html;
+  if (el.trustReportOverlay) el.trustReportOverlay.classList.remove("hidden");
 }
+
+async function handleTrustReportExport(profileId, format) {
+  if (!profileId) return;
+  const report = window.api.state.getProfileTrustReport(profileId);
+  if (!report) return;
+
+  let content = "";
+  let filename = `trust-report-${profileId}`;
+  let type = "text/plain";
+
+  if (format === "json") {
+    content = JSON.stringify(report, null, 2);
+    filename += ".json";
+    type = "application/json";
+  } else if (format === "md") {
+    filename += ".md";
+    type = "text/markdown";
+    const m = report.metadata;
+    content = `# NeuralShell Trust Report: ${m.name}\n\n`;
+    content += `## Metadata\n`;
+    content += `- **Profile UUID**: \`${m.id}\`\n`;
+    content += `- **Provider**: ${m.provider}\n`;
+    content += `- **Endpoint**: ${m.baseUrl}\n`;
+    content += `- **Trust State**: ${m.trustState}\n`;
+    content += `- **Authenticity**: ${m.authenticity}\n`;
+    content += `- **Signing Method**: ${m.signingMethod}\n`;
+    content += `- **Fingerprint**: \`${m.fingerprint || "None"}\`\n`;
+    content += `- **Last Successful Verification**: ${m.lastSuccess || "Never"}\n`;
+    content += `- **Secret Custody**: ${m.secretCustody}\n\n`;
+    content += `## Forensic History (Last 200 events)\n\n`;
+    content += `| Timestamp | Type | Summary |\n`;
+    content += `| :--- | :--- | :--- |\n`;
+    (report.forensics.history || []).forEach(h => {
+      content += `| ${new Date(h.ts).toLocaleString()} | ${h.type} | ${h.summary} |\n`;
+    });
+    content += `\n## Repair Telemetry\n\n`;
+    (report.forensics.repairLog || []).forEach(r => {
+      content += `- [${new Date(r.ts).toLocaleString()}] **${r.type}**: ${r.reason}\n`;
+    });
+    content += `\n---\n*Generated by NeuralShell Forensic Engine V2.1.16*`;
+  }
+
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  window.api.state.logProfileEvent(profileId, "REPORT_EXPORTED", `Forensic trust report exported as ${format.toUpperCase()}.`);
+}
+
+async function handleSecretRecoverySubmit() {
+  const secret = el.onboardingRecoverySecretInput ? el.onboardingRecoverySecretInput.value.trim() : "";
+  const profileId = appState.repairProfileId;
+  if (!secret || !profileId) return;
+
+  try {
+    // Store the new secret in custody
+    await window.api.state.secureStoreSecret(profileId, "apiKey", secret);
+
+    // Log the event
+    window.api.state.logProfileEvent(profileId, "SECRET_REENTERED", "Operator manually re-entered secret to restore custody.");
+
+    // Return to load flow to force fresh verification
+    loadConnectionProfile(profileId);
+  } catch (err) {
+    console.error("Recovery failed:", err);
+    alert(`Recovery Failed: ${err.message}`);
+  }
+}
+
+async function handleSecretRecoveryCancel() {
+  const profileId = appState.repairProfileId;
+  if (profileId) {
+    window.api.state.logProfileEvent(profileId, "SECRET_RECOVERY_ABORTED", "Operator aborted secret recovery flow.");
+  }
+  appState.setupState = "unconfigured";
+  appState.repairProfileId = null;
+  renderOnboardingStep();
+}
+
+async function handleSecretRecoveryClear() {
+  const profileId = appState.repairProfileId;
+  if (!profileId) return;
+
+  const confirm = window.confirm("CUTION: This will clear the secret reference and downgrade the profile to metadata-only. It will be unusable until a secret is re-entered. Proceed?");
+  if (!confirm) return;
+
+  try {
+    const profiles = appState.settings ? appState.settings.connectionProfiles : [];
+    const profile = profiles.find(p => p.id === profileId);
+    if (profile) {
+      profile.apiKey = ""; // Clear plaintext reference if any
+      profile.trustState = window.api.state.TRUST_STATES.NEEDS_REVIEW;
+      await applySettingsPatch({ connectionProfiles: profiles });
+
+      window.api.state.logProfileEvent(profileId, "SECRET_CLEARED", "Operator cleared secret custody. Profile downgraded to NEEDS_REVIEW.");
+    }
+    appState.setupState = "unconfigured";
+    renderSavedProfiles();
+    renderOnboardingStep();
+  } catch (err) {
+    console.error("Clear failed:", err);
+  }
+}
+
+async function handleProfileExport(profileId) {
+  try {
+    const bundle = window.api.bridge.exportProfileBundle(profileId);
+    const blob = new Blob([bundle], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `neural-profile-${profileId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    window.api.state.logProfileEvent(profileId, "EXPORT_CREATED", "Profile bundle exported (metadata-only).");
+  } catch (err) {
+    console.error("Export failed:", err);
+  }
+}
+
+async function handleProfileImport() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const profile = window.api.bridge.importProfileBundle(evt.target.result);
+
+        // Phase 15.2: Authenticity Normalization
+        if (profile.authenticity === "SIGNATURE_TAMPERED") {
+          alert("CAUTION: This profile bundle has a SIGNATURE_TAMPERED signature! It may have been modified or corrupted after export. Exercise extreme caution.");
+        }
+
+        window.api.state.logProfileEvent(profile.id, "IMPORT_ACCEPTED", `Profile bundle imported (${profile.authenticity || "UNSIGNED"}).`, {
+          toState: window.api.state.TRUST_STATES.DRIFTED,
+          authenticity: profile.authenticity
+        });
+        renderSavedProfiles();
+      } catch (err) {
+        console.error("Import failed:", err);
+        alert(`Import Failed: ${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
 
 async function loadInitialState() {
   if (!window.api || !window.api.state) return;
@@ -12854,6 +13659,32 @@ async function loadInitialState() {
   appState.model = String((state && state.model) || "llama3");
   appState.chat = Array.isArray(state && state.chat) ? state.chat.slice() : (Array.isArray(state && state.chatHistory) ? state.chatHistory.slice() : []);
   appState.settings = state && typeof state.settings === "object" ? state.settings : {};
+
+  // Phase 17: Onboarding Resume Logic
+  const onboardingCompleted = appState.settings.onboardingCompleted || false;
+  const setupDraft = appState.settings.setupDraft;
+  if (!onboardingCompleted && setupDraft) {
+    appState.setupState = setupDraft.state || "unconfigured";
+    appState.onboardingDraft = setupDraft;
+
+    // Restore UI values from draft
+    if (el.onboardingProviderSelect) el.onboardingProviderSelect.value = setupDraft.provider || "ollama";
+    if (el.onboardingBaseUrlInput) el.onboardingBaseUrlInput.value = setupDraft.baseUrl || "";
+    if (el.onboardingApiKeyInput) el.onboardingApiKeyInput.value = setupDraft.apiKey || "";
+    if (el.onboardingModelSelect) {
+      if (setupDraft.model) {
+        const opt = document.createElement("option");
+        opt.value = setupDraft.model;
+        opt.textContent = setupDraft.model;
+        el.onboardingModelSelect.appendChild(opt);
+        el.onboardingModelSelect.value = setupDraft.model;
+      }
+    }
+    if (el.onboardingReconnectStartup) el.onboardingReconnectStartup.checked = Boolean(setupDraft.reconnectStartup);
+  } else {
+    appState.setupState = onboardingCompleted ? "ready" : "unconfigured";
+  }
+
   appState.workflowId = normalizeWorkflowId(state && state.workflowId);
   appState.outputMode = normalizeOutputMode(state && state.outputMode, appState.workflowId);
   appState.commandPaletteShortcutScope = normalizeCommandPaletteShortcutScope(state && state.commandPaletteShortcutScope);
@@ -12888,7 +13719,7 @@ async function loadInitialState() {
   if (!appState.shippingPacketHistory.length && hasShippingPacketArtifact()) {
     appState.shippingPacketHistory = [normalizeArtifactValue(appState.lastArtifact, {
       forceOutputMode: "shipping_packet",
-      title: "Release Packet"
+      title: "Shipping Packet"
     })];
   }
   try {
@@ -12914,66 +13745,11 @@ async function loadInitialState() {
       appState.patchPlanGroupOpenIds = null;
     }
   }
-  reconcileWorkspaceBoundState();
-  if (appState.workspaceAttachment) {
-    recordAttachedWorkspace(appState.workspaceAttachment, { render: false });
-    appState.restored = true;
-    appState.restoredSessionName = appState.activeSessionName || "Previous Session";
-    showBanner(`System state restored. Workspace ${appState.workspaceAttachment.label || "active"}.`, "ok");
-    updateSessionStatusHeader();
-  }
-  appState.patchPlanPreviewFileId = appState.patchPlan && Array.isArray(appState.patchPlan.files) && appState.patchPlan.files[0]
-    ? String(appState.patchPlan.files[0].fileId || "")
-    : "";
-  renderWorkflowSummary();
-  renderWorkspaceAttachment();
-  renderPatchPlanPanel();
-  renderArtifactPanel();
-  renderWorkbenchNavigation();
-  renderChatOpsTrays();
-  renderSessionsTrays();
-  renderCommandsTray();
-  renderPerformanceTrays();
-  renderIntelSurface();
-  renderOperatorMemorySurface();
-  if (hasWorkspaceAttachment() && !hasContextPack() && el.contextPackPathsInput && !String(el.contextPackPathsInput.value || "").trim()) {
-    suggestContextPackFiles({ announce: false }).catch(() => { });
-  }
-  appState.contextPackProfileStatuses = {};
-  syncSelectedContextPackProfileStatus();
-  refreshRelevantContextPackProfileStatuses({ all: true }).catch(() => { });
-  if (el.commandPaletteShortcutScope) {
-    el.commandPaletteShortcutScope.value = appState.commandPaletteShortcutScope;
-  }
-  renderChat(appState.chat, { syncArtifact: false });
-  syncSettingsInputsFromState();
-  await syncModelToLiveBridgeFallback({ announce: false });
 }
 
-async function updateStats() {
-  if (!window.api || !window.api.system) return;
-  try {
-    const stats = await window.api.system.getStats();
-    if (el.cpuUsage) el.cpuUsage.textContent = `${Number(stats.cpuPercent || 0).toFixed(1)}%`;
-    if (el.memoryUsage) el.memoryUsage.textContent = `${stats.memoryMb || 0} MB`;
-    if (el.platformInfo) el.platformInfo.textContent = String(stats.platform || "");
-  } catch {
-    // ignore stats errors
-  }
-  if (el.clockTime) el.clockTime.textContent = new Date().toISOString().replace("T", " ").slice(0, 19);
-}
+initEventListeners();
 
-function bindEvents() {
-  if (window.api && typeof window.api.on === "function") {
-    window.api.on("llm-status-change", (status) => {
-      // Background IPC updates are considered heartbeat/non-manual
-      applyLlmStatus(status, { manual: false });
-    });
-  }
-  window.addEventListener("llm-stream-data", (event) => handleStreamData(event.detail));
-  window.addEventListener("llm-stream-complete", () => { handleStreamComplete().catch(() => { }); });
-  window.addEventListener("llm-stream-error", (event) => { handleStreamError(event).catch(() => { }); });
-
+function initEventListeners() {
   if (el.promptInput) {
     el.promptInput.addEventListener("input", updatePromptMetrics);
     el.promptInput.addEventListener("input", updateCommandHint);
@@ -13201,6 +13977,78 @@ function bindEvents() {
     };
   }
 
+  if (el.onboardingStartBtn) {
+    el.onboardingStartBtn.onclick = () => {
+      completeOnboarding(false).catch((err) => showBanner(err.message || String(err), "bad"));
+    };
+  }
+  if (el.onboardingSkipBtn) {
+    el.onboardingSkipBtn.onclick = () => {
+      completeOnboarding(true).catch((err) => showBanner(err.message || String(err), "bad"));
+    };
+  }
+  if (el.onboardingNextBtn) {
+    el.onboardingNextBtn.onclick = () => {
+      onboardingNext().catch((err) => showBanner(err.message || String(err), "bad"));
+    };
+  }
+  if (el.onboardingBackBtn) {
+    el.onboardingBackBtn.onclick = () => {
+      onboardingBack();
+    };
+  }
+  if (el.onboardingConfigLocalBtn) {
+    el.onboardingConfigLocalBtn.onclick = () => {
+      if (el.onboardingProviderSelect) el.onboardingProviderSelect.value = "ollama";
+      appState.setupState = "endpoint_pending_test";
+      renderOnboardingStep();
+    };
+  }
+  if (el.onboardingConfigRemoteBtn) {
+    el.onboardingConfigRemoteBtn.onclick = () => {
+      appState.setupState = "provider_selected";
+      renderOnboardingStep();
+    };
+  }
+  if (el.onboardingUseOfflineBtn1) {
+    el.onboardingUseOfflineBtn1.onclick = () => {
+      onboardingUseOffline().catch((err) => showBanner(err.message || String(err), "bad"));
+    };
+  }
+  if (el.onboardingUseOfflineBtn2) {
+    el.onboardingUseOfflineBtn2.onclick = () => {
+      onboardingUseOffline().catch((err) => showBanner(err.message || String(err), "bad"));
+    };
+  }
+  if (el.onboardingUseOfflineBtn3) {
+    el.onboardingUseOfflineBtn3.onclick = () => {
+      onboardingUseOffline().catch((err) => showBanner(err.message || String(err), "bad"));
+    };
+  }
+  if (el.onboardingRepairEndpointBtn) {
+    el.onboardingRepairEndpointBtn.onclick = () => {
+      appState.setupState = "endpoint_pending_test";
+      renderOnboardingStep();
+    };
+  }
+  if (el.onboardingRepairOfflineBtn) {
+    el.onboardingRepairOfflineBtn.onclick = () => {
+      onboardingUseOffline();
+    };
+  }
+  if (el.onboardingRepairAbortBtn) {
+    el.onboardingRepairAbortBtn.onclick = () => {
+      appState.setupState = "unconfigured";
+      renderOnboardingStep();
+    };
+  }
+
+  if (el.onboardingProviderSelect) {
+    el.onboardingProviderSelect.onchange = () => {
+      populateOnboardingEndpointFields();
+    };
+  }
+
   window.addEventListener("keydown", (event) => {
     const key = String(event.key || "").toLowerCase();
     if ((event.ctrlKey || event.metaKey) && key === "k") {
@@ -13252,652 +14100,944 @@ function bindEvents() {
   if (el.bridgeHealthBtn) el.bridgeHealthBtn.onclick = () => {
     runBridgeHealthCheck().catch((err) => showBanner(err.message || String(err), "bad"));
   };
-  if (el.toggleRightPaneBtn) el.toggleRightPaneBtn.onclick = () => {
-    toggleRightPaneCollapsed();
-  };
-  if (el.resetPaneLayoutBtn) el.resetPaneLayoutBtn.onclick = () => {
-    resetWorkspacePaneLayout();
-  };
-  if (el.focusInboxBtn) el.focusInboxBtn.onclick = () => {
-    focusSurface(".workspace-left-column");
-  };
-  if (el.focusInspectorBtn) el.focusInspectorBtn.onclick = () => {
-    if (appState.rightPaneCollapsed) {
-      setRightPaneCollapsed(false, { focus: true });
-      return;
+
+  // Phase 20: Governed Runtime Entry — replaces raw Cold Boot Suppression
+  // bootstrapGovernance().catch(err => console.error("[Governance] Bootstrap error:", err));
+}
+
+// ═══════════════════════════════════════════════════════
+// Phase 20: Runtime Governance Layer
+// ═══════════════════════════════════════════════════════
+
+async function bootstrapGovernance() {
+  const intent = await window.runtimeResumeGovernance(appState, window.api.state);
+  if (intent.action === "skip_onboarding_not_done") return;
+
+  if (intent.action === "render_bar" || intent.action === "apply_policy") {
+    renderActiveProfileBar(intent.profileToRender, intent.trustState);
+  }
+
+  if (intent.banner) {
+    showBanner(intent.banner.msg, intent.banner.type);
+  }
+
+  if (intent.logEvent) {
+    window.api.state.logProfileEvent(intent.logEvent.id, intent.logEvent.type, intent.logEvent.msg);
+  }
+
+  if (intent.runAutoDetect) {
+    runBridgeAutoDetect().catch(() => { });
+  }
+}
+
+function renderActiveProfileBar(profile, trustState) {
+  if (!el.activeProfileBar) return;
+  const state = window.generateActiveProfileBarState(profile, trustState, appState);
+
+  if (state.isHidden) {
+    el.activeProfileBar.classList.add("hidden");
+    return;
+  }
+
+  el.activeProfileBar.classList.remove("hidden");
+  el.activeProfileBar.classList.remove("apb-blocked", "apb-offline");
+
+  if (el.apbProfileName) el.apbProfileName.textContent = state.nameText;
+  if (el.apbProvider) el.apbProvider.textContent = state.providerText;
+  if (el.apbModel) el.apbModel.textContent = state.modelText;
+
+  if (el.apbTrustBadge) {
+    el.apbTrustBadge.textContent = state.badgeText;
+    el.apbTrustBadge.className = state.badgeClass;
+  }
+
+  if (el.apbReconnectPolicy) el.apbReconnectPolicy.textContent = state.reconnectText;
+  if (el.apbLastVerified) el.apbLastVerified.textContent = state.verifiedText;
+
+  if (state.isBlocked) el.activeProfileBar.classList.add("apb-blocked");
+  if (state.isOffline) el.activeProfileBar.classList.add("apb-offline");
+}
+
+async function uiSwitchActiveProfile(profileId) {
+  const intent = await window.evaluateProfileSwitch(profileId, appState, window.api.state);
+
+  if (intent.error) {
+    showBanner(intent.error, "bad");
+    return;
+  }
+
+  if (intent.success) {
+    await applySettingsPatch(intent.patchIntent);
+    renderActiveProfileBar(intent.profileToRender, intent.trustState);
+  }
+
+  if (intent.banner) {
+    showBanner(intent.banner.msg, intent.banner.type);
+  }
+
+  if (intent.runAutoDetect) {
+    runBridgeAutoDetect().catch(() => { });
+  }
+}
+
+// Phase 20: APB Button Handlers
+if (el.apbVerifyBtn) el.apbVerifyBtn.onclick = () => {
+  const profile = getActiveProfile();
+  if (profile) {
+    window.api.state.logProfileEvent(profile.id, "verification_requested", "Manual re-verification initiated from profile bar.");
+    runBridgeAutoDetect().catch((err) => showBanner(err.message || String(err), "bad"));
+  }
+};
+if (el.apbRepairBtn) el.apbRepairBtn.onclick = () => {
+  const profile = getActiveProfile();
+  if (profile) {
+    const trustState = resolveProfileTrustState(profile);
+    window.api.state.logProfileEvent(profile.id, "repair_mode_entered", `Repair entered from profile bar. Trust: ${trustState}.`);
+    if (trustState === "MISSING_SECRET") {
+      appState.setupState = "repair_secret";
+      appState.repairProfileId = profile.id;
+    } else {
+      appState.setupState = "repair_mode";
+      appState.repairProfileId = profile.id;
     }
-    focusSurface(".workspace-right-column");
-  };
-  if (el.inboxFilterAllBtn) {
-    el.inboxFilterAllBtn.onclick = () => {
-      setInboxFilter("all");
-    };
+    renderOnboardingStep();
   }
-  if (el.inboxFilterPinnedBtn) {
-    el.inboxFilterPinnedBtn.onclick = () => {
-      setInboxFilter("pinned");
-    };
+};
+// Phase 21: Real APB Button Handlers
+
+if (el.apbSwitchBtn) el.apbSwitchBtn.onclick = () => {
+  openProfileSwitchPanel();
+};
+if (el.apbOfflineBtn) el.apbOfflineBtn.onclick = () => {
+  uiPerformOfflineEntry();
+};
+if (el.apbDisconnectBtn) el.apbDisconnectBtn.onclick = () => {
+  uiPerformDisconnect();
+};
+
+// Phase 21: Profile Switch Panel
+function openProfileSwitchPanel() {
+  if (!el.profileSwitchOverlay || !el.profileSwitchList) return;
+
+  const result = window.buildProfileSwitchList(appState, window.api.state);
+  if (result.error) {
+    showBanner(result.error, "bad");
+    return;
   }
-  if (el.inboxFilterUnreadBtn) {
-    el.inboxFilterUnreadBtn.onclick = () => {
-      setInboxFilter("unread");
-    };
-  }
-  if (el.inboxSearchInput) {
-    el.inboxSearchInput.oninput = () => {
-      setInboxSearchQuery(el.inboxSearchInput.value);
-    };
-  }
-  if (el.systemWorkbenchBtn) {
-    el.systemWorkbenchBtn.onclick = () => {
-      setSystemSurface("workbench", { focus: true });
-    };
-  }
-  if (el.systemPerformanceBtn) {
-    el.systemPerformanceBtn.onclick = () => {
-      setSystemSurface("performance", { focus: true });
-    };
-  }
-  if (el.systemShippingBtn) {
-    el.systemShippingBtn.onclick = () => {
-      setSystemSurface("shipping", { focus: true });
-    };
-  };
-  if (el.leftPaneResizeHandle) {
-    el.leftPaneResizeHandle.onpointerdown = (event) => {
-      beginWorkspacePaneResize("left", event);
-    };
-    el.leftPaneResizeHandle.onmousedown = (event) => {
-      beginWorkspacePaneResize("left", event);
-    };
-    el.leftPaneResizeHandle.onkeydown = (event) => {
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        nudgeWorkspacePane("left", -16);
-      }
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        nudgeWorkspacePane("left", 16);
-      }
-    };
-  }
-  if (el.rightPaneResizeHandle) {
-    el.rightPaneResizeHandle.onpointerdown = (event) => {
-      beginWorkspacePaneResize("right", event);
-    };
-    el.rightPaneResizeHandle.onmousedown = (event) => {
-      beginWorkspacePaneResize("right", event);
-    };
-    el.rightPaneResizeHandle.onkeydown = (event) => {
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        nudgeWorkspacePane("right", 16);
-      }
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        nudgeWorkspacePane("right", -16);
-      }
-    };
-  }
-  if (el.threadToolsTrayBtn) {
-    el.threadToolsTrayBtn.onclick = () => {
-      setChatOpsTray("thread", { toggle: true });
-    };
-  }
-  if (el.assistToolsTrayBtn) {
-    el.assistToolsTrayBtn.onclick = () => {
-      setChatOpsTray("assist", { toggle: true });
-    };
-  }
-  if (el.archiveToolsTrayBtn) {
-    el.archiveToolsTrayBtn.onclick = () => {
-      setChatOpsTray("archive", { toggle: true });
-    };
-  }
-  if (el.sessionManageTrayBtn) {
-    el.sessionManageTrayBtn.onclick = () => {
-      setSessionsTray("manage", { toggle: true });
-    };
-  }
-  if (el.sessionInspectTrayBtn) {
-    el.sessionInspectTrayBtn.onclick = () => {
-      setSessionsTray("inspect", { toggle: true });
-    };
-  }
-  if (el.commandIndexTrayBtn) {
-    el.commandIndexTrayBtn.onclick = () => {
-      setCommandsTray("index", { toggle: true });
-    };
-  }
-  if (el.commandRoutingTrayBtn) {
-    el.commandRoutingTrayBtn.onclick = () => {
-      setCommandsTray("routing", { toggle: true });
-    };
-  }
-  if (el.workbenchArtifactBtn) {
-    el.workbenchArtifactBtn.onclick = () => {
-      setWorkbenchSurface("artifact");
-    };
-  }
-  if (el.workbenchPatchBtn) {
-    el.workbenchPatchBtn.onclick = () => {
-      setWorkbenchSurface("patch");
-    };
-  }
-  if (el.workbenchApplyBtn) {
-    el.workbenchApplyBtn.onclick = () => {
-      setWorkbenchSurface("apply");
-    };
-  }
-  if (el.performanceDiagnosticsTrayBtn) {
-    el.performanceDiagnosticsTrayBtn.onclick = () => {
-      setPerformanceTray("diagnostics", { toggle: true });
-    };
-  }
-  if (el.performanceTraceTrayBtn) {
-    el.performanceTraceTrayBtn.onclick = () => {
-      setPerformanceTray("trace", { toggle: true });
-    };
-  }
-  if (el.performanceOutputTrayBtn) {
-    el.performanceOutputTrayBtn.onclick = () => {
-      setPerformanceTray("outputs", { toggle: true });
-    };
-  }
-  if (el.intelBriefTrayBtn) {
-    el.intelBriefTrayBtn.onclick = () => {
-      setIntelTray("brief", { toggle: true });
-    };
-  }
-  if (el.intelKnowledgeTrayBtn) {
-    el.intelKnowledgeTrayBtn.onclick = () => {
-      setIntelTray("knowledge", { toggle: true });
-    };
-  }
-  if (el.intelCapabilityTrayBtn) {
-    el.intelCapabilityTrayBtn.onclick = () => {
-      setIntelTray("capability", { toggle: true });
-    };
-  }
-  if (el.performanceAuditOutputBtn) {
-    el.performanceAuditOutputBtn.onclick = () => {
-      setPerformanceTray("outputs");
-      setRuntimeOutputView("audit");
-    };
-  }
-  if (el.performanceLogsOutputBtn) {
-    el.performanceLogsOutputBtn.onclick = () => {
-      setPerformanceTray("outputs");
-      setRuntimeOutputView("logs");
-    };
-  }
-  if (el.performanceChatLogsOutputBtn) {
-    el.performanceChatLogsOutputBtn.onclick = () => {
-      setPerformanceTray("outputs");
-      setRuntimeOutputView("chat");
-    };
-  }
-  if (el.sendBtn) el.sendBtn.onclick = () => sendPrompt().catch((err) => showBanner(err.message || String(err), "bad"));
-  if (el.stopBtn) el.stopBtn.onclick = async () => {
-    if (!appState.streamInFlight) return;
-    await window.api.llm.cancelStream();
-    if (appState.streamText.trim()) await handleStreamComplete(); else { renderChat(appState.streamBase); resetStreamState(); }
-    showBanner("Generation cancelled.", "bad");
-  };
-  if (el.retryBtn) el.retryBtn.onclick = () => sendPromptFromText(appState.lastPrompt).catch(() => { });
-  if (el.editLastBtn) el.editLastBtn.onclick = () => {
-    for (let i = appState.chat.length - 1; i >= 0; i -= 1) {
-      if (appState.chat[i] && appState.chat[i].role === "user") {
-        setPromptEditorValue(String(appState.chat[i].content || ""), { focus: true });
-        return;
+
+  el.profileSwitchList.innerHTML = "";
+  for (const profile of result.profiles) {
+    const item = document.createElement("div");
+    item.className = "psp-item" + (profile.isActive ? " psp-item-active" : "");
+
+    const info = document.createElement("div");
+    info.className = "psp-item-info";
+
+    const name = document.createElement("span");
+    name.className = "psp-item-name";
+    name.textContent = profile.name + (profile.isActive ? " (active)" : "");
+
+    const meta = document.createElement("span");
+    meta.className = "psp-item-meta";
+    meta.textContent = `${profile.provider} · ${profile.trustState}`;
+
+    info.appendChild(name);
+    info.appendChild(meta);
+    item.appendChild(info);
+
+    if (!profile.isActive) {
+      if (profile.isBlocked) {
+        const warn = document.createElement("span");
+        warn.className = "psp-item-meta";
+        warn.textContent = "BLOCKED";
+        warn.style.color = "var(--bad)";
+        item.appendChild(warn);
+
+        item.onclick = () => {
+          showBanner(`Cannot switch to ${profile.name}: ${profile.trustState}.`, "bad");
+        };
+      } else {
+        item.onclick = () => {
+          uiSwitchActiveProfile(profile.id).then(() => {
+            closeProfileSwitchPanel();
+          }).catch(() => { });
+        };
       }
     }
+
+    el.profileSwitchList.appendChild(item);
+  }
+
+  el.profileSwitchOverlay.classList.remove("hidden");
+}
+
+function closeProfileSwitchPanel() {
+  if (el.profileSwitchOverlay) el.profileSwitchOverlay.classList.add("hidden");
+}
+
+if (el.profileSwitchCloseBtn) el.profileSwitchCloseBtn.onclick = closeProfileSwitchPanel;
+if (el.profileSwitchOverlay) el.profileSwitchOverlay.onclick = (e) => {
+  if (e.target === el.profileSwitchOverlay) closeProfileSwitchPanel();
+};
+
+// Phase 21: Real Disconnect Flow
+function uiPerformDisconnect() {
+  const result = window.performDisconnect(appState, window.api.state);
+
+  if (el.globalBridgeStatusText) {
+    el.globalBridgeStatusText.textContent = result.statusText;
+    el.globalBridgeStatusText.className = result.statusClass;
+  }
+
+  if (result.profileToRender) {
+    renderActiveProfileBar(result.profileToRender, result.trustState);
+  }
+
+  showBanner(result.bannerMessage, result.bannerType);
+}
+
+// Phase 21: Hardened Offline Entry
+function uiPerformOfflineEntry() {
+  const profilesRaw = appState.settings && appState.settings.connectionProfiles;
+  const result = window.performOfflineEntry(appState, profilesRaw, window.api.state);
+
+  if (el.globalBridgeStatusText) {
+    el.globalBridgeStatusText.textContent = result.statusText;
+    el.globalBridgeStatusText.className = result.statusClass;
+  }
+
+  if (result.settingsPatch) {
+    applySettingsPatch(result.settingsPatch);
+  }
+
+  if (result.profileToRender) {
+    renderActiveProfileBar(result.profileToRender, result.trustState);
+  }
+
+  if (result.setOfflineCheckbox && el.offlineModeInput) {
+    el.offlineModeInput.checked = true;
+  }
+
+  showBanner(result.bannerMessage, result.bannerType);
+}
+
+if (el.toggleRightPaneBtn) el.toggleRightPaneBtn.onclick = () => {
+  toggleRightPaneCollapsed();
+};
+if (el.resetPaneLayoutBtn) el.resetPaneLayoutBtn.onclick = () => {
+  resetWorkspacePaneLayout();
+};
+if (el.focusInboxBtn) el.focusInboxBtn.onclick = () => {
+  focusSurface(".workspace-left-column");
+};
+if (el.focusInspectorBtn) el.focusInspectorBtn.onclick = () => {
+  if (appState.rightPaneCollapsed) {
+    setRightPaneCollapsed(false, { focus: true });
+    return;
+  }
+  focusSurface(".workspace-right-column");
+};
+if (el.inboxFilterAllBtn) {
+  el.inboxFilterAllBtn.onclick = () => {
+    setInboxFilter("all");
   };
-  if (el.newChatBtn) el.newChatBtn.onclick = async () => {
-    appState.activeSessionName = "";
-    appState.lastArtifact = null;
-    resetPatchPlanState();
-    resetWorkspaceActions();
-    setWorkbenchSurface("artifact", { persist: false, scroll: false });
-    renderChat([]);
-    await persistChatState();
-    if (window.api && window.api.invoke) {
-      window.api.invoke("telemetry:log", "ui_action", "chat_clear", { source: "button" }).catch(() => { });
+}
+if (el.inboxFilterPinnedBtn) {
+  el.inboxFilterPinnedBtn.onclick = () => {
+    setInboxFilter("pinned");
+  };
+}
+if (el.inboxFilterUnreadBtn) {
+  el.inboxFilterUnreadBtn.onclick = () => {
+    setInboxFilter("unread");
+  };
+}
+if (el.inboxSearchInput) {
+  el.inboxSearchInput.oninput = () => {
+    setInboxSearchQuery(el.inboxSearchInput.value);
+  };
+}
+if (el.systemWorkbenchBtn) {
+  el.systemWorkbenchBtn.onclick = () => {
+    setSystemSurface("workbench", { focus: true });
+  };
+}
+if (el.systemPerformanceBtn) {
+  el.systemPerformanceBtn.onclick = () => {
+    setSystemSurface("performance", { focus: true });
+  };
+}
+if (el.systemShippingBtn) {
+  el.systemShippingBtn.onclick = () => {
+    setSystemSurface("shipping", { focus: true });
+  };
+};
+if (el.leftPaneResizeHandle) {
+  el.leftPaneResizeHandle.onpointerdown = (event) => {
+    beginWorkspacePaneResize("left", event);
+  };
+  el.leftPaneResizeHandle.onmousedown = (event) => {
+    beginWorkspacePaneResize("left", event);
+  };
+  el.leftPaneResizeHandle.onkeydown = (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      nudgeWorkspacePane("left", -16);
     }
-    showBanner("Chat cleared.", "ok");
-  };
-  if (el.deleteLastExchangeBtn) el.deleteLastExchangeBtn.onclick = async () => {
-    const next = getCurrentChat();
-    for (let i = next.length - 1; i >= 0; i -= 1) {
-      if (next[i] && next[i].role === "assistant") {
-        next.splice(i, 1);
-        break;
-      }
-    }
-    for (let i = next.length - 1; i >= 0; i -= 1) {
-      if (next[i] && next[i].role === "user") {
-        next.splice(i, 1);
-        break;
-      }
-    }
-    if (!next.some((row) => row && row.role === "assistant")) {
-      appState.lastArtifact = null;
-      resetPatchPlanState();
-      resetWorkspaceActions();
-    }
-    renderChat(next);
-    await persistChatState();
-  };
-  if (el.regenerateBtn) el.regenerateBtn.onclick = async () => {
-    let assistantIndex = -1;
-    for (let i = appState.chat.length - 1; i >= 0; i -= 1) {
-      if (appState.chat[i] && appState.chat[i].role === "assistant") {
-        assistantIndex = i;
-        break;
-      }
-    }
-    if (assistantIndex <= 0 || !appState.chat[assistantIndex - 1] || appState.chat[assistantIndex - 1].role !== "user") {
-      showBanner("No assistant response to regenerate.", "bad");
-      return;
-    }
-    const prompt = String(appState.chat[assistantIndex - 1].content || "");
-    const base = appState.chat.slice(0, assistantIndex - 1);
-    appState.lastArtifact = null;
-    resetPatchPlanState();
-    resetWorkspaceActions();
-    renderChat(base);
-    await persistChatState();
-    await sendPromptFromText(prompt, base);
-  };
-  if (el.insertSnippetBtn) el.insertSnippetBtn.onclick = () => {
-    const id = String((el.snippetSelect && el.snippetSelect.value) || "");
-    const snippet = PROMPT_SNIPPETS.find((item) => item.id === id) || PROMPT_SNIPPETS[0];
-    if (!snippet || !el.promptInput) return;
-    const existing = String(el.promptInput.value || "");
-    const separator = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
-    setPromptEditorValue(`${existing}${separator}${snippet.text}`, { focus: true });
-    showBanner(`Snippet inserted: ${snippet.label}`, "ok");
-  };
-  if (el.chatSearchBtn) el.chatSearchBtn.onclick = () => { appState.chatFilter = String((el.chatSearchInput && el.chatSearchInput.value) || ""); renderChat(appState.chat); };
-  if (el.chatSearchClearBtn) el.chatSearchClearBtn.onclick = () => { appState.chatFilter = ""; if (el.chatSearchInput) el.chatSearchInput.value = ""; renderChat(appState.chat); };
-  if (el.modelSelect) el.modelSelect.onchange = () => {
-    setActiveModel(String(el.modelSelect.value || appState.model)).catch((err) => showBanner(err.message || String(err), "bad"));
-  };
-  if (el.refreshModelsBtn) el.refreshModelsBtn.onclick = () => refreshModels().catch((err) => showBanner(err.message || String(err), "bad"));
-  bindBridgeSettingsEvents();
-  if (el.saveSessionBtn) el.saveSessionBtn.onclick = async () => {
-    const name = String((el.sessionName && el.sessionName.value) || "").trim();
-    const pass = String((el.sessionPass && el.sessionPass.value) || "").trim();
-    if (!name || !pass) {
-      showBanner("Session name and passphrase are required.", "bad");
-      return;
-    }
-    await window.api.session.save(name, {
-      model: appState.model,
-      chat: appState.chat,
-      workflowId: appState.workflowId,
-      outputMode: appState.outputMode,
-      workspaceAttachment: appState.workspaceAttachment,
-      contextPack: appState.contextPack,
-      contextPackProfiles: appState.contextPackProfiles,
-      activeContextPackProfileId: appState.activeContextPackProfileId,
-      lastArtifact: appState.lastArtifact,
-      shippingPacketHistory: appState.shippingPacketHistory,
-      patchPlan: appState.patchPlan,
-      promotedPaletteActions: appState.promotedPaletteActions,
-      commandPaletteShortcutScope: appState.commandPaletteShortcutScope,
-      verificationRunPlan: appState.verificationRunPlan,
-      verificationRunHistory: appState.verificationRunHistory,
-      settings: appState.settings,
-      updatedAt: new Date().toISOString()
-    }, pass);
-    appState.activeSessionName = name;
-    await refreshSessions();
-    markSessionAsRead(name, sessionUpdatedAtValue(appState.sessionsMeta[name] || {}), {
-      persist: false,
-      render: false
-    });
-    showBanner(`Session saved: ${name}`, "ok");
-  };
-  if (el.loadSessionBtn) el.loadSessionBtn.onclick = async () => {
-    await loadSessionTarget();
-  };
-  if (el.renameSessionBtn) el.renameSessionBtn.onclick = async () => {
-    const from = String((el.sessionName && el.sessionName.value) || "").trim();
-    const to = window.prompt("New session name:");
-    if (!from || !to) return;
-    await window.api.session.rename(from, String(to).trim());
-    if (appState.activeSessionName === from) {
-      appState.activeSessionName = String(to).trim();
-    }
-    if (el.sessionName) el.sessionName.value = String(to).trim();
-    await refreshSessions();
-  };
-  if (el.deleteSessionBtn) el.deleteSessionBtn.onclick = async () => {
-    const name = String((el.sessionName && el.sessionName.value) || "").trim();
-    if (!name) return;
-    await window.api.session.delete(name);
-    if (appState.activeSessionName === name) {
-      appState.activeSessionName = "";
-    }
-    await refreshSessions();
-  };
-  if (el.duplicateSessionBtn) el.duplicateSessionBtn.onclick = async () => {
-    const from = String((el.sessionName && el.sessionName.value) || "").trim();
-    const pass = String((el.sessionPass && el.sessionPass.value) || "").trim();
-    const to = window.prompt("Duplicate as session name:");
-    if (!from || !pass || !to) return;
-    const payload = await window.api.session.load(from, pass);
-    await window.api.session.save(String(to).trim(), payload, pass);
-    await refreshSessions();
-  };
-  if (el.repairIndexBtn) el.repairIndexBtn.onclick = async () => {
-    const out = await window.api.session.repairIndex();
-    showBanner(`Session index repaired (${out.count || 0}).`, "ok");
-    await refreshSessions();
-  };
-  if (el.sessionSearchInput) el.sessionSearchInput.oninput = async () => {
-    const rows = await window.api.session.search(String(el.sessionSearchInput.value || ""));
-    renderSessions(Array.isArray(rows) ? rows : []);
-  };
-  if (el.sessionSortSelect) {
-    if (el.sessionSortSelect.options.length === 0) {
-      [["name_asc", "Name (A-Z)"], ["name_desc", "Name (Z-A)"], ["updated_desc", "Updated"]].forEach(([v, t]) => {
-        const option = document.createElement("option");
-        option.value = v;
-        option.textContent = t;
-        el.sessionSortSelect.appendChild(option);
-      });
-    }
-    el.sessionSortSelect.onchange = () => refreshSessions().catch(() => { });
-  }
-  if (el.attachWorkspaceBtn) {
-    el.attachWorkspaceBtn.onclick = () => {
-      attachWorkspaceFromDialog().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.buildContextPackBtn) {
-    el.buildContextPackBtn.onclick = () => {
-      buildContextPackFromInputs().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.suggestContextPackFilesBtn) {
-    el.suggestContextPackFilesBtn.onclick = () => {
-      suggestContextPackFiles().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.contextPackProfileSelect) {
-    el.contextPackProfileSelect.onchange = () => {
-      appState.activeContextPackProfileId = String(el.contextPackProfileSelect.value || "").trim();
-      syncSelectedContextPackProfileStatus();
-      renderContextPackSurface({ seedDefaults: true });
-      refreshRelevantContextPackProfileStatuses({ workflowId: appState.workflowId }).catch(() => { });
-      persistChatState().catch(() => { });
-    };
-  }
-  if (el.saveContextPackProfileBtn) {
-    el.saveContextPackProfileBtn.onclick = () => {
-      saveCurrentContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.loadContextPackProfileBtn) {
-    el.loadContextPackProfileBtn.onclick = () => {
-      loadContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  };
-  if (el.loadRecommendedContextPackProfileBtn) {
-    el.loadRecommendedContextPackProfileBtn.onclick = () => {
-      loadRecommendedContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.refreshContextPackProfileBtn) {
-    el.refreshContextPackProfileBtn.onclick = () => {
-      refreshContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.deleteContextPackProfileBtn) {
-    el.deleteContextPackProfileBtn.onclick = () => {
-      deleteContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.clearContextPackBtn) {
-    el.clearContextPackBtn.onclick = () => {
-      clearContextPack().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.clearWorkspaceBtn) {
-    el.clearWorkspaceBtn.onclick = () => {
-      clearWorkspaceAttachment().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.copyArtifactBtn) {
-    el.copyArtifactBtn.onclick = () => {
-      copyArtifactToClipboard().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.exportArtifactMarkdownBtn) {
-    el.exportArtifactMarkdownBtn.onclick = () => exportArtifactMarkdown();
-  }
-  if (el.exportArtifactJsonBtn) {
-    el.exportArtifactJsonBtn.onclick = () => exportArtifactJson();
-  }
-  if (el.saveArtifactSessionBtn) {
-    el.saveArtifactSessionBtn.onclick = () => {
-      saveArtifactSessionSnapshot().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.exportEvidenceBundleBtn) {
-    el.exportEvidenceBundleBtn.onclick = () => {
-      exportEvidenceBundle().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.clearArtifactHistoryBtn) {
-    el.clearArtifactHistoryBtn.onclick = () => {
-      clearReleasePacketHistory().catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.clearArtifactCompareBtn) {
-    el.clearArtifactCompareBtn.onclick = () => {
-      clearReleasePacketCompareSelection();
-    };
-  }
-  if (el.applyWorkspaceActionBtn) {
-    el.applyWorkspaceActionBtn.onclick = () => {
-      if (!appState.workspaceActionPreview) {
-        showBanner("Preview a workspace action before applying it.", "bad");
-        return;
-      }
-      applyWorkspaceActionProposal(appState.workspaceActionPreview.proposalId)
-        .catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.clearWorkspaceActionPreviewBtn) {
-    el.clearWorkspaceActionPreviewBtn.onclick = () => {
-      clearWorkspaceActionPreview();
-    };
-  }
-  if (el.refreshCommandsBtn) el.refreshCommandsBtn.onclick = () => refreshCommands().catch((err) => showBanner(err.message || String(err), "bad"));
-  if (el.commandBusPaletteBtn) {
-    el.commandBusPaletteBtn.onclick = () => {
-      setCommandPaletteOpen(true);
-    };
-  }
-  if (el.commandBusHelpBtn) {
-    el.commandBusHelpBtn.onclick = () => {
-      if (el.shortcutOverlay) el.shortcutOverlay.textContent = "Use /help for slash command details, or Ctrl/Cmd+K to route through the command palette.";
-    };
-  }
-  if (el.commandHelpBtn) el.commandHelpBtn.onclick = () => {
-    if (el.promptInput) {
-      setPromptEditorValue("/help", { focus: true });
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      nudgeWorkspacePane("left", 16);
     }
   };
-  if (el.commandPaletteOpenBtn) el.commandPaletteOpenBtn.onclick = () => {
-    setCommandPaletteOpen(true);
+}
+if (el.rightPaneResizeHandle) {
+  el.rightPaneResizeHandle.onpointerdown = (event) => {
+    beginWorkspacePaneResize("right", event);
   };
-  if (el.commandPaletteCloseBtn) el.commandPaletteCloseBtn.onclick = () => {
-    setCommandPaletteOpen(false);
+  el.rightPaneResizeHandle.onmousedown = (event) => {
+    beginWorkspacePaneResize("right", event);
   };
-  if (el.commandPaletteShortcutScope) {
-    el.commandPaletteShortcutScope.onchange = () => {
-      setCommandPaletteShortcutScope(String(el.commandPaletteShortcutScope.value || appState.commandPaletteShortcutScope)).catch((err) => showBanner(err.message || String(err), "bad"));
-    };
-  }
-  if (el.commandPaletteInput) {
-    el.commandPaletteInput.oninput = () => {
-      appState.commandPaletteIndex = 0;
-      renderCommandPaletteList();
-    };
-    el.commandPaletteInput.onkeydown = (event) => {
-      const key = String(event.key || "").toLowerCase();
-      if (key === "escape") {
-        event.preventDefault();
-        setCommandPaletteOpen(false);
-        return;
-      }
-      if (key === "arrowdown") {
-        event.preventDefault();
-        moveCommandPaletteSelection(1);
-        return;
-      }
-      if (key === "arrowup") {
-        event.preventDefault();
-        moveCommandPaletteSelection(-1);
-        return;
-      }
-      if (key === "enter") {
-        event.preventDefault();
-        executeCommandPaletteAction(appState.commandPaletteIndex || 0);
-      }
-    };
-  }
-  if (el.undoBtn) el.undoBtn.onclick = () => {
-    if (el.deleteLastExchangeBtn && typeof el.deleteLastExchangeBtn.onclick === "function") {
-      el.deleteLastExchangeBtn.onclick();
+  el.rightPaneResizeHandle.onkeydown = (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      nudgeWorkspacePane("right", 16);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      nudgeWorkspacePane("right", -16);
     }
   };
-  if (el.shortcutHelpBtn) el.shortcutHelpBtn.onclick = () => {
-    if (el.shortcutOverlay) el.shortcutOverlay.textContent = "Enter send | Shift+Enter newline | Ctrl+Enter send | Ctrl/Cmd+K command palette | /help commands";
+}
+if (el.threadToolsTrayBtn) {
+  el.threadToolsTrayBtn.onclick = () => {
+    setChatOpsTray("thread", { toggle: true });
   };
-  if (el.shortcutCloseBtn) el.shortcutCloseBtn.onclick = () => {
-    if (el.shortcutOverlay) el.shortcutOverlay.textContent = "";
+}
+if (el.assistToolsTrayBtn) {
+  el.assistToolsTrayBtn.onclick = () => {
+    setChatOpsTray("assist", { toggle: true });
   };
-  if (el.onboardingStartBtn) el.onboardingStartBtn.onclick = () => {
-    completeOnboarding(false).catch((err) => showBanner(err.message || String(err), "bad"));
+}
+if (el.archiveToolsTrayBtn) {
+  el.archiveToolsTrayBtn.onclick = () => {
+    setChatOpsTray("archive", { toggle: true });
   };
-  if (el.onboardingSkipBtn) el.onboardingSkipBtn.onclick = () => {
-    completeOnboarding(true).catch((err) => showBanner(err.message || String(err), "bad"));
+}
+if (el.sessionManageTrayBtn) {
+  el.sessionManageTrayBtn.onclick = () => {
+    setSessionsTray("manage", { toggle: true });
   };
-  if (el.onboardingResetBtn) el.onboardingResetBtn.onclick = async () => {
-    await applySettingsPatch({ onboardingCompleted: false });
-    setOnboardingOpen(true);
-    showBanner("Onboarding reset.", "ok");
+}
+if (el.sessionInspectTrayBtn) {
+  el.sessionInspectTrayBtn.onclick = () => {
+    setSessionsTray("inspect", { toggle: true });
   };
-  if (el.exportChatBtn) el.exportChatBtn.onclick = () => download("neuralshell-chat.json", JSON.stringify(appState.chat, null, 2), "application/json;charset=utf-8");
-  if (el.exportMarkdownBtn) el.exportMarkdownBtn.onclick = () => download("neuralshell-chat.md", markdown(appState.chat), "text/markdown;charset=utf-8");
-  if (el.copyMarkdownBtn) el.copyMarkdownBtn.onclick = () => copyText(markdown(appState.chat)).then((ok) => showBanner(ok ? "Markdown copied." : "Copy failed.", ok ? "ok" : "bad"));
-  if (el.copyLastAssistantBtn) el.copyLastAssistantBtn.onclick = () => copyText((lastAssistant() || {}).content || "").then((ok) => showBanner(ok ? "Copied." : "Nothing to copy.", ok ? "ok" : "bad"));
-  if (el.importChatBtn) el.importChatBtn.onclick = async () => {
-    const file = el.importChatFile && el.importChatFile.files ? el.importChatFile.files[0] : null;
-    if (!file) return;
-    const payload = JSON.parse(await file.text());
-    if (!Array.isArray(payload)) throw new Error("Chat import must be an array.");
-    appState.chat = payload
-      .filter((x) => x && typeof x === "object")
-      .map((x) => ({ role: String(x.role || "user"), content: String(x.content || "") }))
-      .filter((x) => x.content.trim().length > 0);
-    renderChat(appState.chat);
-    await persistChatState();
+}
+if (el.commandIndexTrayBtn) {
+  el.commandIndexTrayBtn.onclick = () => {
+    setCommandsTray("index", { toggle: true });
   };
-  if (el.exportStateBtn) el.exportStateBtn.onclick = async () => {
-    download("neuralshell-state.json", JSON.stringify(await window.api.state.export(), null, 2), "application/json;charset=utf-8");
+}
+if (el.commandRoutingTrayBtn) {
+  el.commandRoutingTrayBtn.onclick = () => {
+    setCommandsTray("routing", { toggle: true });
   };
-  if (el.importStateBtn) el.importStateBtn.onclick = async () => {
-    const file = el.importStateFile && el.importStateFile.files ? el.importStateFile.files[0] : null;
-    if (!file) return;
-    try {
-      await window.api.state.import(JSON.parse(await file.text()));
-      await loadInitialState();
-      await refreshModels();
-      await refreshSessions();
-      showBanner("State import completed.", "ok");
-    } catch (err) {
-      showBanner(`State import failed: ${err.message}`, "bad");
-    }
+}
+if (el.workbenchArtifactBtn) {
+  el.workbenchArtifactBtn.onclick = () => {
+    setWorkbenchSurface("artifact");
   };
-  if (el.runSelfTestBtn) el.runSelfTestBtn.onclick = async () => {
-    const result = await window.api.command.run("selftest", []);
-    if (el.logsOutput) el.logsOutput.textContent = JSON.stringify(result, null, 2);
-    setPerformanceTray("outputs");
-    setRuntimeOutputView("logs");
+}
+if (el.workbenchPatchBtn) {
+  el.workbenchPatchBtn.onclick = () => {
+    setWorkbenchSurface("patch");
   };
-  if (el.runButtonAuditBtn) el.runButtonAuditBtn.onclick = () => {
-    const missing = IDS.filter((id) => !el[id]);
-    if (el.buttonAuditOutput) el.buttonAuditOutput.textContent = JSON.stringify({ total: IDS.length, missing }, null, 2);
+}
+if (el.workbenchApplyBtn) {
+  el.workbenchApplyBtn.onclick = () => {
+    setWorkbenchSurface("apply");
+  };
+}
+if (el.performanceDiagnosticsTrayBtn) {
+  el.performanceDiagnosticsTrayBtn.onclick = () => {
+    setPerformanceTray("diagnostics", { toggle: true });
+  };
+}
+if (el.performanceTraceTrayBtn) {
+  el.performanceTraceTrayBtn.onclick = () => {
+    setPerformanceTray("trace", { toggle: true });
+  };
+}
+if (el.performanceOutputTrayBtn) {
+  el.performanceOutputTrayBtn.onclick = () => {
+    setPerformanceTray("outputs", { toggle: true });
+  };
+}
+if (el.intelBriefTrayBtn) {
+  el.intelBriefTrayBtn.onclick = () => {
+    setIntelTray("brief", { toggle: true });
+  };
+}
+if (el.intelKnowledgeTrayBtn) {
+  el.intelKnowledgeTrayBtn.onclick = () => {
+    setIntelTray("knowledge", { toggle: true });
+  };
+}
+if (el.intelCapabilityTrayBtn) {
+  el.intelCapabilityTrayBtn.onclick = () => {
+    setIntelTray("capability", { toggle: true });
+  };
+}
+if (el.performanceAuditOutputBtn) {
+  el.performanceAuditOutputBtn.onclick = () => {
     setPerformanceTray("outputs");
     setRuntimeOutputView("audit");
   };
-
-  if (el.loadLogsBtn) el.loadLogsBtn.onclick = async () => {
-    const rows = await window.api.logger.tail(300);
-    if (el.logsOutput) el.logsOutput.textContent = (rows || []).map((r) => `${r.ts} [${r.level}] ${r.message} ${JSON.stringify(r.meta)}`).join("\n");
+}
+if (el.performanceLogsOutputBtn) {
+  el.performanceLogsOutputBtn.onclick = () => {
     setPerformanceTray("outputs");
     setRuntimeOutputView("logs");
   };
-  if (el.clearLogsBtn) el.clearLogsBtn.onclick = async () => {
-    await window.api.logger.clear();
-    if (el.loadLogsBtn) el.loadLogsBtn.onclick();
-  };
-  if (el.exportLogsBtn) el.exportLogsBtn.onclick = async () => {
-    download("neuralshell-logs.txt", await window.api.logger.export());
-  };
-  if (el.loadChatLogsBtn) el.loadChatLogsBtn.onclick = async () => {
-    const rows = await window.api.chatlog.tail(300);
-    if (el.chatLogsOutput) el.chatLogsOutput.textContent = (rows || []).map((r) => `${r.ts} [${r.type}] ${JSON.stringify(r.payload)}`).join("\n");
+}
+if (el.performanceChatLogsOutputBtn) {
+  el.performanceChatLogsOutputBtn.onclick = () => {
     setPerformanceTray("outputs");
     setRuntimeOutputView("chat");
   };
-  if (el.clearChatLogsBtn) el.clearChatLogsBtn.onclick = async () => {
-    await window.api.chatlog.clear();
-    if (el.loadChatLogsBtn) el.loadChatLogsBtn.onclick();
-  };
-  if (el.exportChatLogsBtn) el.exportChatLogsBtn.onclick = async () => {
-    download("neuralshell-chatlogs.txt", await window.api.chatlog.export());
-  };
-
-  // --- Phase 17C: Starter Action Handlers ---
-  document.querySelectorAll(".starter-action-card").forEach(card => {
-    card.addEventListener("click", () => {
-      const action = card.dataset.action;
-      if (action === "audit") {
-        if (el.promptInput) {
-          el.promptInput.value = "/autodetect";
-          sendPrompt().catch(() => { });
-        }
-      } else if (action === "scan") {
-        if (el.promptInput) {
-          el.promptInput.value = "/health";
-          sendPrompt().catch(() => { });
-        }
-      } else if (action === "tunnel") {
-        showBanner("Initializing secure bridge tunnel...", "ok");
-        if (window.api && window.api.invoke) {
-          window.api.invoke("bridge:reconnect").catch(() => { });
-        }
-      }
-    });
+}
+if (el.sendBtn) el.sendBtn.onclick = () => sendPrompt().catch((err) => showBanner(err.message || String(err), "bad"));
+if (el.stopBtn) el.stopBtn.onclick = async () => {
+  if (!appState.streamInFlight) return;
+  await window.api.llm.cancelStream();
+  if (appState.streamText.trim()) await handleStreamComplete(); else { renderChat(appState.streamBase); resetStreamState(); }
+  showBanner("Generation cancelled.", "bad");
+};
+if (el.retryBtn) el.retryBtn.onclick = () => sendPromptFromText(appState.lastPrompt).catch(() => { });
+if (el.editLastBtn) el.editLastBtn.onclick = () => {
+  for (let i = appState.chat.length - 1; i >= 0; i -= 1) {
+    if (appState.chat[i] && appState.chat[i].role === "user") {
+      setPromptEditorValue(String(appState.chat[i].content || ""), { focus: true });
+      return;
+    }
+  }
+};
+if (el.newChatBtn) el.newChatBtn.onclick = async () => {
+  appState.activeSessionName = "";
+  appState.lastArtifact = null;
+  resetPatchPlanState();
+  resetWorkspaceActions();
+  setWorkbenchSurface("artifact", { persist: false, scroll: false });
+  renderChat([]);
+  await persistChatState();
+  if (window.api && window.api.invoke) {
+    window.api.invoke("telemetry:log", "ui_action", "chat_clear", { source: "button" }).catch(() => { });
+  }
+  showBanner("Chat cleared.", "ok");
+};
+if (el.deleteLastExchangeBtn) el.deleteLastExchangeBtn.onclick = async () => {
+  const next = getCurrentChat();
+  for (let i = next.length - 1; i >= 0; i -= 1) {
+    if (next[i] && next[i].role === "assistant") {
+      next.splice(i, 1);
+      break;
+    }
+  }
+  for (let i = next.length - 1; i >= 0; i -= 1) {
+    if (next[i] && next[i].role === "user") {
+      next.splice(i, 1);
+      break;
+    }
+  }
+  if (!next.some((row) => row && row.role === "assistant")) {
+    appState.lastArtifact = null;
+    resetPatchPlanState();
+    resetWorkspaceActions();
+  }
+  renderChat(next);
+  await persistChatState();
+};
+if (el.regenerateBtn) el.regenerateBtn.onclick = async () => {
+  let assistantIndex = -1;
+  for (let i = appState.chat.length - 1; i >= 0; i -= 1) {
+    if (appState.chat[i] && appState.chat[i].role === "assistant") {
+      assistantIndex = i;
+      break;
+    }
+  }
+  if (assistantIndex <= 0 || !appState.chat[assistantIndex - 1] || appState.chat[assistantIndex - 1].role !== "user") {
+    showBanner("No assistant response to regenerate.", "bad");
+    return;
+  }
+  const prompt = String(appState.chat[assistantIndex - 1].content || "");
+  const base = appState.chat.slice(0, assistantIndex - 1);
+  appState.lastArtifact = null;
+  resetPatchPlanState();
+  resetWorkspaceActions();
+  renderChat(base);
+  await persistChatState();
+  await sendPromptFromText(prompt, base);
+};
+if (el.insertSnippetBtn) el.insertSnippetBtn.onclick = () => {
+  const id = String((el.snippetSelect && el.snippetSelect.value) || "");
+  const snippet = PROMPT_SNIPPETS.find((item) => item.id === id) || PROMPT_SNIPPETS[0];
+  if (!snippet || !el.promptInput) return;
+  const existing = String(el.promptInput.value || "");
+  const separator = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+  setPromptEditorValue(`${existing}${separator}${snippet.text}`, { focus: true });
+  showBanner(`Snippet inserted: ${snippet.label}`, "ok");
+};
+if (el.chatSearchBtn) el.chatSearchBtn.onclick = () => { appState.chatFilter = String((el.chatSearchInput && el.chatSearchInput.value) || ""); renderChat(appState.chat); };
+if (el.chatSearchClearBtn) el.chatSearchClearBtn.onclick = () => { appState.chatFilter = ""; if (el.chatSearchInput) el.chatSearchInput.value = ""; renderChat(appState.chat); };
+if (el.modelSelect) el.modelSelect.onchange = () => {
+  setActiveModel(String(el.modelSelect.value || appState.model)).catch((err) => showBanner(err.message || String(err), "bad"));
+};
+if (el.refreshModelsBtn) el.refreshModelsBtn.onclick = () => refreshModels().catch((err) => showBanner(err.message || String(err), "bad"));
+bindBridgeSettingsEvents();
+if (el.saveSessionBtn) el.saveSessionBtn.onclick = async () => {
+  const name = String((el.sessionName && el.sessionName.value) || "").trim();
+  const pass = String((el.sessionPass && el.sessionPass.value) || "").trim();
+  if (!name || !pass) {
+    showBanner("Session name and passphrase are required.", "bad");
+    return;
+  }
+  await window.api.session.save(name, {
+    model: appState.model,
+    chat: appState.chat,
+    workflowId: appState.workflowId,
+    outputMode: appState.outputMode,
+    workspaceAttachment: appState.workspaceAttachment,
+    contextPack: appState.contextPack,
+    contextPackProfiles: appState.contextPackProfiles,
+    activeContextPackProfileId: appState.activeContextPackProfileId,
+    lastArtifact: appState.lastArtifact,
+    shippingPacketHistory: appState.shippingPacketHistory,
+    patchPlan: appState.patchPlan,
+    promotedPaletteActions: appState.promotedPaletteActions,
+    commandPaletteShortcutScope: appState.commandPaletteShortcutScope,
+    verificationRunPlan: appState.verificationRunPlan,
+    verificationRunHistory: appState.verificationRunHistory,
+    settings: appState.settings,
+    updatedAt: new Date().toISOString()
+  }, pass);
+  appState.activeSessionName = name;
+  await refreshSessions();
+  markSessionAsRead(name, sessionUpdatedAtValue(appState.sessionsMeta[name] || {}), {
+    persist: false,
+    render: false
   });
+  showBanner(`Session saved: ${name}`, "ok");
+};
+if (el.loadSessionBtn) el.loadSessionBtn.onclick = async () => {
+  await loadSessionTarget();
+};
+if (el.renameSessionBtn) el.renameSessionBtn.onclick = async () => {
+  const from = String((el.sessionName && el.sessionName.value) || "").trim();
+  const to = window.prompt("New session name:");
+  if (!from || !to) return;
+  await window.api.session.rename(from, String(to).trim());
+  if (appState.activeSessionName === from) {
+    appState.activeSessionName = String(to).trim();
+  }
+  if (el.sessionName) el.sessionName.value = String(to).trim();
+  await refreshSessions();
+};
+if (el.deleteSessionBtn) el.deleteSessionBtn.onclick = async () => {
+  const name = String((el.sessionName && el.sessionName.value) || "").trim();
+  if (!name) return;
+  await window.api.session.delete(name);
+  if (appState.activeSessionName === name) {
+    appState.activeSessionName = "";
+  }
+  await refreshSessions();
+};
+if (el.duplicateSessionBtn) el.duplicateSessionBtn.onclick = async () => {
+  const from = String((el.sessionName && el.sessionName.value) || "").trim();
+  const pass = String((el.sessionPass && el.sessionPass.value) || "").trim();
+  const to = window.prompt("Duplicate as session name:");
+  if (!from || !pass || !to) return;
+  const payload = await window.api.session.load(from, pass);
+  await window.api.session.save(String(to).trim(), payload, pass);
+  await refreshSessions();
+};
+if (el.repairIndexBtn) el.repairIndexBtn.onclick = async () => {
+  const out = await window.api.session.repairIndex();
+  showBanner(`Session index repaired (${out.count || 0}).`, "ok");
+  await refreshSessions();
+};
+if (el.sessionSearchInput) el.sessionSearchInput.oninput = async () => {
+  const rows = await window.api.session.search(String(el.sessionSearchInput.value || ""));
+  renderSessions(Array.isArray(rows) ? rows : []);
+};
+if (el.sessionSortSelect) {
+  if (el.sessionSortSelect.options.length === 0) {
+    [["name_asc", "Name (A-Z)"], ["name_desc", "Name (Z-A)"], ["updated_desc", "Updated"]].forEach(([v, t]) => {
+      const option = document.createElement("option");
+      option.value = v;
+      option.textContent = t;
+      el.sessionSortSelect.appendChild(option);
+    });
+  }
+  el.sessionSortSelect.onchange = () => refreshSessions().catch(() => { });
+}
+if (el.attachWorkspaceBtn) {
+  el.attachWorkspaceBtn.onclick = () => {
+    attachWorkspaceFromDialog().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.buildContextPackBtn) {
+  el.buildContextPackBtn.onclick = () => {
+    buildContextPackFromInputs().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.suggestContextPackFilesBtn) {
+  el.suggestContextPackFilesBtn.onclick = () => {
+    suggestContextPackFiles().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.contextPackProfileSelect) {
+  el.contextPackProfileSelect.onchange = () => {
+    appState.activeContextPackProfileId = String(el.contextPackProfileSelect.value || "").trim();
+    syncSelectedContextPackProfileStatus();
+    renderContextPackSurface({ seedDefaults: true });
+    refreshRelevantContextPackProfileStatuses({ workflowId: appState.workflowId }).catch(() => { });
+    persistChatState().catch(() => { });
+  };
+}
+if (el.saveContextPackProfileBtn) {
+  el.saveContextPackProfileBtn.onclick = () => {
+    saveCurrentContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.loadContextPackProfileBtn) {
+  el.loadContextPackProfileBtn.onclick = () => {
+    loadContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+};
+if (el.loadRecommendedContextPackProfileBtn) {
+  el.loadRecommendedContextPackProfileBtn.onclick = () => {
+    loadRecommendedContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.refreshContextPackProfileBtn) {
+  el.refreshContextPackProfileBtn.onclick = () => {
+    refreshContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.deleteContextPackProfileBtn) {
+  el.deleteContextPackProfileBtn.onclick = () => {
+    deleteContextPackProfile().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.clearContextPackBtn) {
+  el.clearContextPackBtn.onclick = () => {
+    clearContextPack().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.clearWorkspaceBtn) {
+  el.clearWorkspaceBtn.onclick = () => {
+    clearWorkspaceAttachment().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.copyArtifactBtn) {
+  el.copyArtifactBtn.onclick = () => {
+    copyArtifactToClipboard().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.exportArtifactMarkdownBtn) {
+  el.exportArtifactMarkdownBtn.onclick = () => exportArtifactMarkdown();
+}
+if (el.exportArtifactJsonBtn) {
+  el.exportArtifactJsonBtn.onclick = () => exportArtifactJson();
+}
+if (el.saveArtifactSessionBtn) {
+  el.saveArtifactSessionBtn.onclick = () => {
+    saveArtifactSessionSnapshot().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.exportEvidenceBundleBtn) {
+  el.exportEvidenceBundleBtn.onclick = () => {
+    exportEvidenceBundle().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.clearArtifactHistoryBtn) {
+  el.clearArtifactHistoryBtn.onclick = () => {
+    clearShippingPacketHistory().catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.clearArtifactCompareBtn) {
+  el.clearArtifactCompareBtn.onclick = () => {
+    clearShippingPacketCompareSelection();
+  };
+}
+if (el.applyWorkspaceActionBtn) {
+  el.applyWorkspaceActionBtn.onclick = () => {
+    if (!appState.workspaceActionPreview) {
+      showBanner("Preview a workspace action before applying it.", "bad");
+      return;
+    }
+    applyWorkspaceActionProposal(appState.workspaceActionPreview.proposalId)
+      .catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.clearWorkspaceActionPreviewBtn) {
+  el.clearWorkspaceActionPreviewBtn.onclick = () => {
+    clearWorkspaceActionPreview();
+  };
+}
+if (el.refreshCommandsBtn) el.refreshCommandsBtn.onclick = () => refreshCommands().catch((err) => showBanner(err.message || String(err), "bad"));
+if (el.commandBusPaletteBtn) {
+  el.commandBusPaletteBtn.onclick = () => {
+    setCommandPaletteOpen(true);
+  };
+}
+if (el.commandBusHelpBtn) {
+  el.commandBusHelpBtn.onclick = () => {
+    if (el.shortcutOverlay) el.shortcutOverlay.textContent = "Use /help for slash command details, or Ctrl/Cmd+K to route through the command palette.";
+  };
+}
+if (el.commandHelpBtn) el.commandHelpBtn.onclick = () => {
+  if (el.promptInput) {
+    setPromptEditorValue("/help", { focus: true });
+  }
+};
+if (el.commandPaletteOpenBtn) el.commandPaletteOpenBtn.onclick = () => {
+  setCommandPaletteOpen(true);
+};
+if (el.commandPaletteCloseBtn) el.commandPaletteCloseBtn.onclick = () => {
+  setCommandPaletteOpen(false);
+};
+if (el.commandPaletteShortcutScope) {
+  el.commandPaletteShortcutScope.onchange = () => {
+    setCommandPaletteShortcutScope(String(el.commandPaletteShortcutScope.value || appState.commandPaletteShortcutScope)).catch((err) => showBanner(err.message || String(err), "bad"));
+  };
+}
+if (el.commandPaletteInput) {
+  el.commandPaletteInput.oninput = () => {
+    appState.commandPaletteIndex = 0;
+    renderCommandPaletteList();
+  };
+  el.commandPaletteInput.onkeydown = (event) => {
+    const key = String(event.key || "").toLowerCase();
+    if (key === "escape") {
+      event.preventDefault();
+      setCommandPaletteOpen(false);
+      return;
+    }
+    if (key === "arrowdown") {
+      event.preventDefault();
+      moveCommandPaletteSelection(1);
+      return;
+    }
+    if (key === "arrowup") {
+      event.preventDefault();
+      moveCommandPaletteSelection(-1);
+      return;
+    }
+    if (key === "enter") {
+      event.preventDefault();
+      executeCommandPaletteAction(appState.commandPaletteIndex || 0);
+    }
+  };
+}
+if (el.undoBtn) el.undoBtn.onclick = () => {
+  if (el.deleteLastExchangeBtn && typeof el.deleteLastExchangeBtn.onclick === "function") {
+    el.deleteLastExchangeBtn.onclick();
+  }
+};
+if (el.shortcutHelpBtn) el.shortcutHelpBtn.onclick = () => {
+  if (el.shortcutOverlay) el.shortcutOverlay.textContent = "Enter send | Shift+Enter newline | Ctrl+Enter send | Ctrl/Cmd+K command palette | /help commands";
+};
+if (el.shortcutCloseBtn) el.shortcutCloseBtn.onclick = () => {
+  if (el.shortcutOverlay) el.shortcutOverlay.textContent = "";
+};
+if (el.onboardingNextBtn) el.onboardingNextBtn.onclick = () => {
+  onboardingNext().catch((err) => showBanner(err.message || String(err), "bad"));
+};
+if (el.onboardingBackBtn) el.onboardingBackBtn.onclick = () => {
+  onboardingBack();
+};
+if (el.criticalStopBtn) {
+  el.criticalStopBtn.onclick = async () => {
+    await abortExecution();
+  };
+}
+
+async function abortExecution() {
+  if (!window.api || !window.api.action || !window.api.action.cancelAction) return;
+  const ok = await window.api.action.cancelAction();
+  if (ok) {
+    showBanner("Execution Force Stopped.", "bad");
+    if (el.criticalStopBtn) el.criticalStopBtn.classList.add("hidden");
+  } else {
+    showBanner("Failed to stop execution.", "bad");
+  }
+}
+
+if (el.onboardingStartBtn) el.onboardingStartBtn.onclick = () => {
+  completeOnboarding(false).catch((err) => showBanner(err.message || String(err), "bad"));
+};
+if (el.onboardingSkipBtn) el.onboardingSkipBtn.onclick = () => {
+  completeOnboarding(true).catch((err) => showBanner(err.message || String(err), "bad"));
+};
+if (el.onboardingResetBtn) el.onboardingResetBtn.onclick = async () => {
+  await applySettingsPatch({ onboardingCompleted: false });
+  setOnboardingOpen(true);
+  showBanner("Onboarding reset.", "ok");
+};
+if (el.exportChatBtn) el.exportChatBtn.onclick = () => download("neuralshell-chat.json", JSON.stringify(appState.chat, null, 2), "application/json;charset=utf-8");
+if (el.exportMarkdownBtn) el.exportMarkdownBtn.onclick = () => download("neuralshell-chat.md", markdown(appState.chat), "text/markdown;charset=utf-8");
+if (el.copyMarkdownBtn) el.copyMarkdownBtn.onclick = () => copyText(markdown(appState.chat)).then((ok) => showBanner(ok ? "Markdown copied." : "Copy failed.", ok ? "ok" : "bad"));
+if (el.copyLastAssistantBtn) el.copyLastAssistantBtn.onclick = () => copyText((lastAssistant() || {}).content || "").then((ok) => showBanner(ok ? "Copied." : "Nothing to copy.", ok ? "ok" : "bad"));
+if (el.importChatBtn) el.importChatBtn.onclick = async () => {
+  const file = el.importChatFile && el.importChatFile.files ? el.importChatFile.files[0] : null;
+  if (!file) return;
+  const payload = JSON.parse(await file.text());
+  if (!Array.isArray(payload)) throw new Error("Chat import must be an array.");
+  appState.chat = payload
+    .filter((x) => x && typeof x === "object")
+    .map((x) => ({ role: String(x.role || "user"), content: String(x.content || "") }))
+    .filter((x) => x.content.trim().length > 0);
+  renderChat(appState.chat);
+  await persistChatState();
+};
+if (el.exportStateBtn) el.exportStateBtn.onclick = async () => {
+  download("neuralshell-state.json", JSON.stringify(await window.api.state.export(), null, 2), "application/json;charset=utf-8");
+};
+if (el.importStateBtn) el.importStateBtn.onclick = async () => {
+  const file = el.importStateFile && el.importStateFile.files ? el.importStateFile.files[0] : null;
+  if (!file) return;
+  try {
+    await window.api.state.import(JSON.parse(await file.text()));
+    await loadInitialState();
+    await refreshModels();
+    await refreshSessions();
+    showBanner("State import completed.", "ok");
+  } catch (err) {
+    showBanner(`State import failed: ${err.message}`, "bad");
+  }
+};
+if (el.runSelfTestBtn) el.runSelfTestBtn.onclick = async () => {
+  const result = await window.api.command.run("selftest", []);
+  if (el.logsOutput) el.logsOutput.textContent = JSON.stringify(result, null, 2);
+  setPerformanceTray("outputs");
+  setRuntimeOutputView("logs");
+};
+if (el.runButtonAuditBtn) el.runButtonAuditBtn.onclick = () => {
+  const missing = IDS.filter((id) => !el[id]);
+  if (el.buttonAuditOutput) el.buttonAuditOutput.textContent = JSON.stringify({ total: IDS.length, missing }, null, 2);
+  setPerformanceTray("outputs");
+  setRuntimeOutputView("audit");
+};
+
+if (el.loadLogsBtn) el.loadLogsBtn.onclick = async () => {
+  const rows = await window.api.logger.tail(300);
+  if (el.logsOutput) el.logsOutput.textContent = (rows || []).map((r) => `${r.ts} [${r.level}] ${r.message} ${JSON.stringify(r.meta)}`).join("\n");
+  setPerformanceTray("outputs");
+  setRuntimeOutputView("logs");
+};
+if (el.clearLogsBtn) el.clearLogsBtn.onclick = async () => {
+  await window.api.logger.clear();
+  if (el.loadLogsBtn) el.loadLogsBtn.onclick();
+};
+if (el.exportLogsBtn) el.exportLogsBtn.onclick = async () => {
+  download("neuralshell-logs.txt", await window.api.logger.export());
+};
+if (el.loadChatLogsBtn) el.loadChatLogsBtn.onclick = async () => {
+  const rows = await window.api.chatlog.tail(300);
+  if (el.chatLogsOutput) el.chatLogsOutput.textContent = (rows || []).map((r) => `${r.ts} [${r.type}] ${JSON.stringify(r.payload)}`).join("\n");
+  setPerformanceTray("outputs");
+  setRuntimeOutputView("chat");
+};
+if (el.clearChatLogsBtn) el.clearChatLogsBtn.onclick = async () => {
+  await window.api.chatlog.clear();
+  if (el.loadChatLogsBtn) el.loadChatLogsBtn.onclick();
+};
+if (el.exportChatLogsBtn) el.exportChatLogsBtn.onclick = async () => {
+  download("neuralshell-chatlogs.txt", await window.api.chatlog.export());
+};
+
+// --- Phase 17C: Starter Action Handlers ---
+document.querySelectorAll(".starter-action-card").forEach(card => {
+  card.addEventListener("click", () => {
+    const action = card.dataset.action;
+    if (action === "audit") {
+      if (el.promptInput) {
+        el.promptInput.value = "/autodetect";
+        sendPrompt().catch(() => { });
+      }
+    } else if (action === "scan") {
+      if (el.promptInput) {
+        el.promptInput.value = "/health";
+        sendPrompt().catch(() => { });
+      }
+    } else if (action === "tunnel") {
+      showBanner("Initializing secure bridge tunnel...", "ok");
+      if (window.api && window.api.invoke) {
+        window.api.invoke("bridge:reconnect").catch(() => { });
+      }
+    }
+  });
+});
+
+// --- Phase 18: QOL Operator Enhancements ---
+if (el.discordSupportBtn) {
+  el.discordSupportBtn.onclick = () => {
+    showBanner("Opening NeuralShell Operator Discord...", "ok");
+    // Fallback if electron openExternal isn't bound globally
+    if (window.api && window.api.invoke) {
+      window.api.invoke("telemetry:log", "ui_action", "open_discord", {}).catch(() => { });
+    }
+  };
+}
+
+if (el.tierBadge) {
+  el.tierBadge.onclick = async () => {
+    if (el.tierBadge.textContent === "OPERATOR NODE") {
+      showBanner("Operator license already active.", "ok");
+      return;
+    }
+    const key = window.prompt("Enter NeuralShell Operator License (ns_op_...):");
+    if (!key) return;
+    if (key.trim().startsWith("ns_op_") || key.trim() === "founder" || key.trim() === "test") {
+      appState.settings.tier = "OPERATOR";
+      await window.api.settings.update({ tier: "OPERATOR" });
+      updateTierUI();
+      showBanner("License accepted. Welcome, Operator.", "ok");
+      if (window.api && window.api.invoke) {
+        window.api.invoke("telemetry:log", "ui_action", "license_unlock", { tier: "operator" }).catch(() => { });
+      }
+    } else {
+      showBanner("Invalid license format.", "bad");
+    }
+  };
+}
+
+function updateTierUI() {
+  if (!el.tierBadge) return;
+  const isOperator = (appState.settings && appState.settings.tier === "OPERATOR");
+  el.tierBadge.textContent = isOperator ? "OPERATOR NODE" : "PREVIEW NODE";
+  if (isOperator) {
+    el.tierBadge.style.color = "var(--ns-amber)";
+    el.tierBadge.style.borderColor = "var(--ns-amber)";
+    el.tierBadge.style.cursor = "default";
+  } else {
+    el.tierBadge.style.color = "";
+    el.tierBadge.style.borderColor = "";
+    el.tierBadge.style.cursor = "pointer";
+  }
 }
 
 window.appState = appState;
 
 async function bootstrap() {
-  bindEvents();
   initializePromptSnippets();
   await loadInitialState();
+  updateTierUI();
   restoreOperatorExperience();
+  syncSettingsInputsFromState();
   applyLlmStatus(appState.settings.connectOnStartup !== false ? "booting" : "bridge_offline");
-  await Promise.all([refreshModels(), refreshSessions(), refreshCommands(), updateStats()]);
+  await Promise.all([refreshModels(), refreshSessions(), refreshCommands()]);
   renderWorkflowSummary();
   renderWorkspaceAttachment();
   renderPatchPlanPanel();
@@ -13911,17 +15051,30 @@ async function bootstrap() {
   renderIntelSurface();
   renderOperatorMemorySurface();
   populateOnboardingModelSelect();
-  setCommandPaletteOpen(false);
-  setSettingsMenuOpen(false);
-  if (appState.settings.onboardingCompleted !== true) {
+
+  if (!appState.settings.onboardingCompleted) {
     setOnboardingOpen(true);
   } else {
-    setOnboardingOpen(false);
+    // Phase 20: Governed Runtime Entry
+    const intent = await window.runtimeResumeGovernance(appState, window.api.state);
+    if (intent.setupState) {
+      setOnboardingOpen(true, intent.setupState);
+    }
+    if (intent.profileToRender) {
+      renderActiveProfileBar(intent.profileToRender, intent.trustState);
+    }
+    if (intent.banner) {
+      showBanner(intent.banner.msg, intent.banner.type);
+    }
+    if (intent.runAutoDetect) {
+      runBridgeAutoDetect().catch(() => { });
+    }
   }
-  if (appState.statsTimer) clearInterval(appState.statsTimer);
-  appState.statsTimer = setInterval(() => {
-    updateStats().catch(() => { });
-  }, 3000);
+
+  // Periodic refreshes
+  setInterval(() => {
+    refreshSessions().catch(() => { });
+  }, 5000);
   if (appState.clockTimer) clearInterval(appState.clockTimer);
   appState.clockTimer = setInterval(() => {
     if (el.clockTime) {
@@ -13947,8 +15100,8 @@ window.NeuralShellRenderer = {
   buildWorkspaceActionRequest,
   clearContextPack,
   deleteContextPackProfile,
-  clearReleasePacketCompareSelection,
-  clearReleasePacketHistory,
+  clearShippingPacketCompareSelection,
+  clearShippingPacketHistory,
   clearVerificationRunHistory,
   clearVerificationRunPlan,
   clearWorkspaceActionPreview,
@@ -13957,7 +15110,7 @@ window.NeuralShellRenderer = {
   exportPatchPlanMarkdown,
   getEvidenceBundleFilename,
   loadPatchPlanFromArtifact,
-  loadReleasePacketHistoryEntry,
+  loadShippingPacketHistoryEntry,
   loadVerificationRunHistoryEntry,
   previewPatchPlanFiles,
   previewWorkspaceActionProposal,
@@ -13969,7 +15122,7 @@ window.NeuralShellRenderer = {
   renderArtifactPanel,
   renderIntelSurface,
   renderPatchPlanPanel,
-  renderReleaseCockpit,
+  renderShippingCockpit,
   renderWorkspaceActionDeck,
   renderChat,
   refreshCommands,
@@ -13990,6 +15143,7 @@ window.NeuralShellRenderer = {
   setPatchPlan,
   setPromotedPaletteActions,
   setVerificationRunHistory,
+  setSystemSurface,
   setWorkbenchSurface,
   setWorkspaceEditDraft,
   setWorkspaceAttachment,
@@ -14002,7 +15156,7 @@ window.NeuralShellRenderer = {
   sendPrompt,
   showBanner,
   runShippingCockpitChecks,
-  setReleasePacketCompareSlot,
+  setShippingPacketCompareSlot,
   setContextPack,
   updateAutonomousCheckpoint,
   reserveWorkbenchSurfaceRefreshToken: (surface) => reserveSurfaceRefreshToken(surface),
@@ -14039,6 +15193,8 @@ class WorkspaceSwitcher {
   }
 
   async init() {
+    if (this._initialized) return;
+    this._initialized = true;
     this.workspaces = await window.api.workspace.getAll();
     this.activeWorkspace = await window.api.workspace.getActive();
 
@@ -14217,13 +15373,14 @@ async function renderChainProposals(container, workspacePath) {
     card.className = "chain-proposal";
 
     card.innerHTML = `
-      <div class="title">🔗 ${chain.title}</div>
-      <div class="rationale">${chain.rationale || "Strategically assembled sequence for this workspace."}</div>
+      <div class="title">🔗 ${esc(chain.title)}</div>
+      <div class="rationale">${esc(chain.rationale || "Strategically assembled sequence for this workspace.")}</div>
       <div class="steps-list">
         ${chain.steps.map((s, i) => `
           <div class="step-item ${!s.autoRun ? 'gated' : ''}">
             <span class="dot"></span>
-            <span>Step ${i + 1}: ${s.label} ${!s.autoRun ? '(Approval Required)' : ''}</span>
+            <span>Step ${i + 1}: ${esc(s.label)} ${!s.autoRun ? '(Approval Required)' : ''}</span>
+
           </div>
         `).join('')}
       </div>
@@ -14254,3 +15411,10 @@ async function startChain(chain, workspacePath) {
     }
   }
 }
+
+
+
+
+
+
+

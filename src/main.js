@@ -82,9 +82,32 @@ if (process.env.NEURAL_USER_DATA_DIR) {
     const overrideDir = path.resolve(process.env.NEURAL_USER_DATA_DIR);
     fs.mkdirSync(overrideDir, { recursive: true });
     app.setPath("userData", overrideDir);
-    console.log(`[BOOT] Using overridden userData path: ${overrideDir}`);
+    console.log(`[BOOT] Using overridden userData path (env): ${overrideDir}`);
   } catch (err) {
     console.warn(`[BOOT] Failed to apply NEURAL_USER_DATA_DIR override: ${err.message || err}`);
+  }
+} else {
+  // Check for smoke-override.json next to the executable
+  try {
+    const exeDir = path.dirname(app.getPath("exe"));
+    const overrideFile = path.join(exeDir, "smoke-override.json");
+    const fallbackOverrideFile = process.env.APPDATA ? path.join(process.env.APPDATA, "neuralshell-v5", "smoke-override.json") : null;
+
+    let targetFile = null;
+    if (fs.existsSync(overrideFile)) targetFile = overrideFile;
+    else if (fallbackOverrideFile && fs.existsSync(fallbackOverrideFile)) targetFile = fallbackOverrideFile;
+
+    if (targetFile) {
+      const overrideData = JSON.parse(fs.readFileSync(targetFile, "utf8"));
+      if (overrideData.NEURAL_USER_DATA_DIR) {
+        const overrideDir = path.resolve(overrideData.NEURAL_USER_DATA_DIR);
+        fs.mkdirSync(overrideDir, { recursive: true });
+        app.setPath("userData", overrideDir);
+        console.log(`[BOOT] Using overridden userData path (file=${targetFile}): ${overrideDir}`);
+      }
+    }
+  } catch (err) {
+    console.warn(`[BOOT] Failed to parse smoke-override.json: ${err.message || err}`);
   }
 }
 
@@ -1043,7 +1066,11 @@ function createWindow() {
     fitWindowToDisplay(mainWindow, { force: true });
   });
 
-  mainWindow.loadFile(path.join(__dirname, "renderer.html"));
+  if (process.env.NODE_ENV === "development") {
+    mainWindow.loadURL("http://localhost:5173");
+  } else {
+    mainWindow.loadFile(path.join(__dirname, "..", "dist-renderer", "index.html"));
+  }
 }
 
 app.whenReady().then(async () => {
@@ -1327,7 +1354,20 @@ ipcMain.handle("state:set", async (_event, key, value) => {
     return true;
   }
   stateManager.set(safeKey, value);
+  sendToRenderer("state-updated", { [safeKey]: value });
   return true;
+});
+
+ipcMain.handle("state:calculateProfileFingerprint", async (_event, profile) => {
+  return stateManager.calculateProfileFingerprint(profile);
+});
+
+ipcMain.handle("state:retrieveSecret", async (_event, profileId, key) => {
+  return stateManager.retrieveSecret(profileId, key);
+});
+
+ipcMain.handle("state:logProfileEvent", async (_event, profileId, type, msg) => {
+  return stateManager.logProfileEvent(profileId, type, msg);
 });
 
 ipcMain.handle("state:update", async (_event, updates) => {
@@ -1349,6 +1389,7 @@ ipcMain.handle("state:update", async (_event, updates) => {
     safeUpdates.tokens = countChatTokens(safeUpdates.chat);
   }
   stateManager.setState(safeUpdates);
+  sendToRenderer("state-updated", safeUpdates);
   return true;
 });
 

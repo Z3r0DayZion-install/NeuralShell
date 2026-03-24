@@ -25,7 +25,7 @@ function mkWorkspaceDir(label) {
   fs.mkdirSync(path.join(dir, "src"), { recursive: true });
   fs.writeFileSync(
     path.join(dir, "docs", "release-audit.md"),
-    "# Release Audit\n\n- Pending verification\n- Pending packaging\n",
+    "# Shipping Audit\n\n- Pending verification\n- Pending packaging\n",
     "utf8"
   );
   fs.writeFileSync(
@@ -35,7 +35,7 @@ function mkWorkspaceDir(label) {
   );
   fs.writeFileSync(
     path.join(dir, "scripts", "release-checks.js"),
-    "console.log('release checks');\n",
+    "console.log('Shipping checks');\n",
     "utf8"
   );
   fs.writeFileSync(
@@ -121,8 +121,11 @@ async function readTheme(page) {
 }
 
 async function seedWorkflowWorkspaceAndArtifact(page, workspaceRoot = repoRoot) {
-  await page.click('#workflowQuickActions button[data-workflow-id="release_audit"]');
-  await expect(page.locator("#workflowTitleText")).toContainText("Release Audit");
+  // Use direct evaluate for robust workflow activation in seeding helper
+  await page.evaluate(async () => {
+    await window.NeuralShellRenderer.activateWorkflow("shipping_audit");
+  });
+  await expect(page.locator("#workflowTitleText")).toContainText("Shipping Audit");
   await page.selectOption("#outputModeSelect", "checklist");
   await page.evaluate(async ({ workspaceRoot }) => {
     const summary = await window.api.workspace.summarize(workspaceRoot);
@@ -131,14 +134,14 @@ async function seedWorkflowWorkspaceAndArtifact(page, workspaceRoot = repoRoot) 
       announce: false
     });
     window.appState.lastArtifact = {
-      workflowId: "release_audit",
+      workflowId: "shipping_audit",
       outputMode: "artifact",
       title: "Seeded artifact",
       generatedAt: new Date().toISOString(),
       content: "Seeded artifact content.\n- Line 1\n- Line 2"
     };
     window.NeuralShellRenderer.renderChat([
-      { role: "user", content: "Audit the current release state." },
+      { role: "user", content: "Audit the current shipping state." },
       { role: "assistant", content: "1. Verify runtime logs.\n2. Verify checksums.\n3. Verify offline bridge posture." }
     ]);
   }, { workspaceRoot });
@@ -148,8 +151,8 @@ async function seedWorkflowWorkspaceAndArtifact(page, workspaceRoot = repoRoot) 
   await expect(page.locator("#operatorRail")).toContainText("Export Evidence Bundle");
   await expect(page.locator("#missionControlGrid")).toContainText("Workflow Lane");
   await expect(page.locator("#missionControlGrid")).toContainText("Context Lane");
-  await expect(page.locator("#missionControlGrid")).toContainText("Release Lane");
-  await page.click("#inspectorWorkbenchBtn");
+  await expect(page.locator("#missionControlGrid")).toContainText("Shipping lane");
+  await page.click("#systemWorkbenchBtn");
   await expect(page.locator("#workbenchApplyBtn")).toBeVisible();
   await expect(page.locator("#workbenchApplyBtn")).toBeEnabled();
   await page.click("#workbenchApplyBtn");
@@ -202,20 +205,20 @@ test("runtime trays stage diagnostics and focus the active output surface", asyn
     app = runningApp;
     await closeOnboardingViaSkip(page);
 
-    await page.click("#inspectorRuntimeBtn");
-    await expect(page.locator("#inspectorRuntimeSection")).toBeVisible();
-    await expect(page.locator("#inspectorWorkbenchSection")).toBeHidden();
-    await page.click("#runtimeTraceTrayBtn");
-    await expect(page.locator("#runtimeTraceTray")).toBeVisible();
+    await page.click("#systemPerformanceBtn");
+    await expect(page.locator("#systemPerformanceSection")).toBeVisible();
+    await expect(page.locator("#systemWorkbenchSection")).toBeHidden();
+    await page.click("#performanceTraceTrayBtn");
+    await expect(page.locator("#performanceTraceTray")).toBeVisible();
 
-    await page.click("#runtimeDiagnosticsTrayBtn");
+    await page.click("#performanceDiagnosticsTrayBtn");
     await page.click("#runButtonAuditBtn");
-    await expect(page.locator("#runtimeOutputTray")).toBeVisible();
-    await expect(page.locator("#runtimeAuditOutputPanel")).toBeVisible();
+    await expect(page.locator("#performanceOutputTray")).toBeVisible();
+    await expect(page.locator("#performanceAuditOutputPanel")).toBeVisible();
     await expect(page.locator("#buttonAuditOutput")).toContainText("\"total\"");
 
-    await page.click("#runtimeChatLogsOutputBtn");
-    await expect(page.locator("#runtimeChatLogsOutputPanel")).toBeVisible();
+    await page.click("#performanceChatLogsOutputBtn");
+    await expect(page.locator("#performanceChatLogsOutputPanel")).toBeVisible();
   } finally {
     if (app) await app.close();
     rmUserDataDir(userDataDir);
@@ -352,8 +355,8 @@ test("intel trays keep the operator brief visible while staging feed and capabil
       }
     });
 
-    await page.click("#inspectorContextBtn");
-    await expect(page.locator("#inspectorContextSection")).toBeVisible();
+    await page.click("#systemContextBtn");
+    await expect(page.locator("#systemContextSection")).toBeVisible();
     await expect(page.locator("#intelBriefTray")).toBeVisible();
     await expect(page.locator("#intelFocusText")).toContainText("Bridge Diagnostics");
 
@@ -390,8 +393,8 @@ test("repo context pack profiles build, reload, persist through session load, an
 
     await page.click('#workflowQuickActions button[data-workflow-id="bridge_diagnostics"]');
     await expect(page.locator("#workflowTitleText")).toContainText("Bridge Diagnostics");
-    await page.click("#inspectorContextBtn");
-    await expect(page.locator("#inspectorContextSection")).toBeVisible();
+    await page.click("#systemContextBtn");
+    await expect(page.locator("#systemContextSection")).toBeVisible();
     await page.click("#suggestContextPackFilesBtn");
     await expect(page.locator("#contextPackPathsInput")).toHaveValue(/README\.md/);
     await expect(page.locator("#contextPackPathsInput")).toHaveValue(/package\.json/);
@@ -404,7 +407,7 @@ test("repo context pack profiles build, reload, persist through session load, an
 
     await expect(page.locator("#contextPackSummaryText")).toContainText("Founder Workspace Pack");
     await expect(page.locator("#contextPackPreview")).toContainText("README.md");
-    await expect(page.locator("#contextPackPreview")).toContainText("Release Audit");
+    await expect(page.locator("#contextPackPreview")).toContainText("Shipping Audit");
     await expect(page.locator("#knowledgeFeed")).toContainText("Context Pack");
 
     await page.click("#saveContextPackProfileBtn");
@@ -421,11 +424,11 @@ test("repo context pack profiles build, reload, persist through session load, an
 
     fs.writeFileSync(path.join(workspaceDir, "README.md"), "# context-pack\n\nUpdated after profile save.\n", "utf8");
 
-    await page.click('#workflowQuickActions button[data-workflow-id="release_audit"]');
+    await page.click('#workflowQuickActions button[data-workflow-id="shipping_audit"]');
     await page.click('#workflowQuickActions button[data-workflow-id="bridge_diagnostics"]');
     await expect(page.locator("#missionControlGrid")).toContainText("Stale");
 
-    await page.click("#inspectorContextBtn");
+    await page.click("#systemContextBtn");
     await page.click("#clearContextPackBtn");
     await expect(page.locator("#contextPackSummaryText")).toContainText("No context pack loaded");
     await page.click("#refreshContextPackProfileBtn");
@@ -437,22 +440,22 @@ test("repo context pack profiles build, reload, persist through session load, an
     await page.click("#loadContextPackProfileBtn");
     await expect(page.locator("#contextPackProfileStatusText")).toContainText("Selected profile is current");
 
-    await page.click('#workflowQuickActions button[data-workflow-id="release_audit"]');
-    await page.click("#inspectorContextBtn");
-    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("No saved context-pack profile is linked to Release Audit");
+    await page.click('#workflowQuickActions button[data-workflow-id="shipping_audit"]');
+    await page.click("#systemContextBtn");
+    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("No saved context-pack profile is linked to Shipping Audit");
     await expect(page.locator("#loadRecommendedContextPackProfileBtn")).toBeDisabled();
 
     await page.selectOption("#contextPackProfileSelect", "");
-    await page.fill("#contextPackNameInput", "Release Workflow Pack");
+    await page.fill("#contextPackNameInput", "Shipping workflow Pack");
     await page.click("#buildContextPackBtn");
     await page.click("#saveContextPackProfileBtn");
-    await expect(page.locator("#contextPackProfileSelect")).toContainText("Release Workflow Pack");
-    await expect(page.locator("#contextPackProfileSelect")).toContainText("Release Audit");
-    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Release Audit recommends Release Workflow Pack");
+    await expect(page.locator("#contextPackProfileSelect")).toContainText("Shipping workflow Pack");
+    await expect(page.locator("#contextPackProfileSelect")).toContainText("Shipping Audit");
+    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Shipping Audit recommends Shipping workflow Pack");
     await expect(page.locator("#loadRecommendedContextPackProfileBtn")).toBeDisabled();
 
     await page.click('#workflowQuickActions button[data-workflow-id="bridge_diagnostics"]');
-    await page.click("#inspectorContextBtn");
+    await page.click("#systemContextBtn");
     await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Bridge Diagnostics recommends Founder Workspace Pack");
 
     await page.click("#clearContextPackBtn");
@@ -468,14 +471,14 @@ test("repo context pack profiles build, reload, persist through session load, an
     await closeSettingsMenu(page);
 
     await page.click("#clearContextPackBtn");
-    await page.click('#workflowQuickActions button[data-workflow-id="release_audit"]');
-    await expect(page.locator("#contextPackSummaryText")).toContainText("Release Workflow Pack");
+    await page.click('#workflowQuickActions button[data-workflow-id="shipping_audit"]');
+    await expect(page.locator("#contextPackSummaryText")).toContainText("Shipping workflow Pack");
     await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("already loaded");
-    await expect(page.locator("#statusLabel")).toContainText("Auto-loaded context profile: Release Workflow Pack");
+    await expect(page.locator("#statusLabel")).toContainText("Auto-loaded context profile: Shipping workflow Pack");
     await expect(page.locator("#missionControlGrid")).toContainText("Auto-load on");
-    await expect(page.locator("#missionControlGrid")).toContainText("Release Workflow Pack");
+    await expect(page.locator("#missionControlGrid")).toContainText("Shipping workflow Pack");
 
-    await page.click("#inspectorContextBtn");
+    await page.click("#systemContextBtn");
     await page.click("#clearContextPackBtn");
     await page.click('#workflowQuickActions button[data-workflow-id="bridge_diagnostics"]');
     await expect(page.locator("#contextPackSummaryText")).toContainText("Founder Workspace Pack");
@@ -495,7 +498,7 @@ test("repo context pack profiles build, reload, persist through session load, an
           {
             path: "docs/release-audit.md",
             rationale: "Add a context-linked verification note.",
-            content: "# Release Audit\n\n- Pending verification\n- Pending packaging\n- Context-linked patch review active\n"
+            content: "# Shipping Audit\n\n- Pending verification\n- Pending packaging\n- Context-linked patch review active\n"
           }
         ]
       }, {
@@ -513,21 +516,22 @@ test("repo context pack profiles build, reload, persist through session load, an
     expect(bundle.contextPackProfiles).toHaveLength(2);
     expect(bundle.activeContextPackProfileId).toBeTruthy();
     expect(bundle.contextPackProfiles.some((profile) => profile.workflowId === "bridge_diagnostics")).toBeTruthy();
-    expect(bundle.contextPackProfiles.some((profile) => profile.workflowId === "release_audit")).toBeTruthy();
+    expect(bundle.contextPackProfiles.some((profile) => profile.workflowId === "shipping_audit")).toBeTruthy();
 
     await page.fill("#sessionName", "Context-Pack-Session");
     await page.fill("#sessionPass", "ContextPackPass1!");
     await page.click("#saveSessionBtn");
 
-    await page.click("#inspectorContextBtn");
+    await page.click("#systemContextBtn");
     await page.click("#deleteContextPackProfileBtn");
     await expect(page.locator("#contextPackProfileSelect")).not.toContainText("Founder Workspace Pack | 2 files | Bridge Diagnostics");
 
     await page.click("#loadSessionBtn");
+    await expect(page.locator("#statusLabel")).toContainText("Session loaded");
     await expect(page.locator("#contextPackProfileSelect")).toContainText("Founder Workspace Pack");
-    await expect(page.locator("#contextPackProfileSelect")).toContainText("Release Workflow Pack");
+    await expect(page.locator("#contextPackProfileSelect")).toContainText("Shipping workflow Pack");
     await expect(page.locator("#contextPackSummaryText")).toContainText("Founder Workspace Pack");
-    await expect(page.locator("#contextPackPreview")).toContainText("Release Audit");
+    await expect(page.locator("#contextPackPreview")).toContainText("Shipping Audit");
     await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Bridge Diagnostics recommends Founder Workspace Pack");
   } finally {
     if (app) await app.close();
@@ -596,8 +600,8 @@ test("command palette routes workflow-linked context actions", async () => {
   });
   const releaseProfile = buildContextPackProfileFixture(workspaceDir, {
     id: "context-pack-profile-release",
-    workflowId: "release_audit",
-    name: "Release Workflow Pack",
+    workflowId: "shipping_audit",
+    name: "Shipping workflow Pack",
     filePaths: ["README.md", "package.json"],
     savedAt: "2026-03-10T08:25:00.000Z"
   });
@@ -674,7 +678,7 @@ test("command palette routes workflow-linked context actions", async () => {
     await expect(page.locator("#contextPackPreview")).toContainText("Updated after palette refresh");
     await expect(page.locator("#missionControlGrid")).toContainText("Fresh");
 
-    await page.click('#workflowQuickActions button[data-workflow-id="release_audit"]');
+    await page.click('#workflowQuickActions button[data-workflow-id="shipping_audit"]');
     await page.keyboard.press(paletteShortcut);
     await page.fill("#commandPaletteInput", "profile: founder workspace");
     await expect(page.locator("#commandPaletteList")).toContainText("Context Profiles");
@@ -682,23 +686,23 @@ test("command palette routes workflow-linked context actions", async () => {
     await expect(page.locator("#commandPaletteList .palette-match").first()).toBeVisible();
     await page.locator("#commandPaletteList .palette-item").filter({ hasText: "Select Context Profile: Founder Workspace Pack" }).first().click();
     await expect(page.locator("#statusLabel")).toContainText("Context profile selected: Founder Workspace Pack");
-    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Release Audit recommends Release Workflow Pack");
+    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Shipping Audit recommends Shipping workflow Pack");
 
     await page.keyboard.press(paletteShortcut);
     await page.fill("#commandPaletteInput", "Re-link Selected Context Profile to Current Workflow");
     await expect(page.locator("#commandPaletteList")).toContainText("Re-link Selected Context Profile to Current Workflow");
     await page.locator("#commandPaletteList .palette-item").filter({ hasText: "Re-link Selected Context Profile to Current Workflow" }).click();
-    await expect(page.locator("#statusLabel")).toContainText("Context pack profile linked to Release Audit: Founder Workspace Pack");
-    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Release Audit recommends Founder Workspace Pack");
-    await expect(page.locator("#contextPackProfileSelect")).toContainText("Founder Workspace Pack | 2 files | Release Audit");
+    await expect(page.locator("#statusLabel")).toContainText("Context pack profile linked to Shipping Audit: Founder Workspace Pack");
+    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Shipping Audit recommends Founder Workspace Pack");
+    await expect(page.locator("#contextPackProfileSelect")).toContainText("Founder Workspace Pack | 2 files | Shipping Audit");
 
     await page.keyboard.press(paletteShortcut);
-    await page.fill("#commandPaletteInput", "profile: release workflow");
-    await expect(page.locator("#commandPaletteList")).toContainText("Delete Context Profile: Release Workflow Pack");
-    await page.locator("#commandPaletteList .palette-item").filter({ hasText: "Delete Context Profile: Release Workflow Pack" }).click();
-    await expect(page.locator("#statusLabel")).toContainText("Context pack profile removed: Release Workflow Pack");
-    await expect(page.locator("#contextPackProfileSelect")).not.toContainText("Release Workflow Pack");
-    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Release Audit recommends Founder Workspace Pack");
+    await page.fill("#commandPaletteInput", "profile: Shipping workflow");
+    await expect(page.locator("#commandPaletteList")).toContainText("Delete Context Profile: Shipping workflow Pack");
+    await page.locator("#commandPaletteList .palette-item").filter({ hasText: "Delete Context Profile: Shipping workflow Pack" }).click();
+    await expect(page.locator("#statusLabel")).toContainText("Context pack profile removed: Shipping workflow Pack");
+    await expect(page.locator("#contextPackProfileSelect")).not.toContainText("Shipping workflow Pack");
+    await expect(page.locator("#contextPackWorkflowLinkText")).toContainText("Shipping Audit recommends Founder Workspace Pack");
   } finally {
     if (app) await app.close();
     rmUserDataDir(userDataDir);
@@ -870,7 +874,7 @@ test("thread rail surfaces recent encrypted sessions and loads them from chat op
     await expect(rail).toContainText("Current Draft");
     await expect(rail).toContainText("alpha-thread");
     await expect(rail).toContainText("beta-thread");
-    await expect(page.locator("#inboxLaneStatusText")).toContainText("2 saved threads");
+    await expect(page.locator("#inboxGroupStatusText")).toContainText("2 saved threads");
     await expect(page.locator("#threadTaskFocusText")).toContainText("beta-thread");
     await rail.locator(".thread-head-card").filter({ hasText: "alpha-thread" }).locator(".thread-head-pin").click();
     await page.click("#inboxFilterPinnedBtn");
@@ -911,12 +915,13 @@ test("workflow state, workspace attachment, evidence export, and guarded apply d
     await expect(page.locator("#artifactPreview")).toContainText("No artifact yet");
 
     await page.click("#loadSessionBtn");
-    await expect(page.locator("#workflowTitleText")).toContainText("Release Audit");
+    await expect(page.locator("#statusLabel")).toContainText("Session loaded");
+    await expect(page.locator("#workflowTitleText")).toContainText("Shipping Audit");
     await expect(page.locator("#workspaceSummaryText")).toContainText(path.basename(workspaceDir));
     await expect(page.locator("#artifactPreview")).toContainText("Verify runtime logs");
 
-    await page.click("#inspectorWorkbenchBtn");
-    await expect(page.locator("#inspectorWorkbenchSection")).toBeVisible();
+    await page.click("#systemWorkbenchBtn");
+    await expect(page.locator("#systemWorkbenchSection")).toBeVisible();
     await page.click("#exportEvidenceBundleBtn");
     await expect(page.locator("#statusLabel")).toContainText("Evidence bundle exported");
 
@@ -924,7 +929,7 @@ test("workflow state, workspace attachment, evidence export, and guarded apply d
     await page.fill("#workspaceEditPathInput", "docs/release-audit.md");
     await page.fill(
       "#workspaceEditContentInput",
-      "# Release Audit\n\n- Renderer and IPC guards verified\n- Offline bridge posture healthy\n"
+      "# Shipping Audit\n\n- Renderer and IPC guards verified\n- Offline bridge posture healthy\n"
     );
     await page.click("#previewWorkspaceEditBtn");
     await expect(page.locator("#workspaceActionPreviewMeta")).toContainText("Diff preview");
@@ -951,7 +956,7 @@ test("workflow state, workspace attachment, evidence export, and guarded apply d
     });
 
     expect(bundle.filename).toContain("evidence-bundle");
-    expect(bundle.payload.workflowId).toBe("release_audit");
+    expect(bundle.payload.workflowId).toBe("shipping_audit");
     expect(bundle.payload.outputMode).toBe("checklist");
     expect(bundle.payload.workspaceAttachment.label).toContain(path.basename(workspaceDir));
     expect(Array.isArray(bundle.payload.chat)).toBeTruthy();
@@ -968,7 +973,7 @@ test("workflow state, workspace attachment, evidence export, and guarded apply d
 test("workspace edits support filenames with spaces", async () => {
   const userDataDir = mkUserDataDir("workspace-spaces");
   const workspaceDir = mkWorkspaceDir("workspace-spaces");
-  const notesPath = path.join(workspaceDir, "docs", "Release Audit Notes.md");
+  const notesPath = path.join(workspaceDir, "docs", "Shipping Audit Notes.md");
   let app = null;
   try {
     const { app: runningApp, page } = await launchApp(userDataDir);
@@ -983,17 +988,17 @@ test("workspace edits support filenames with spaces", async () => {
       });
     }, { workspaceDir });
 
-    await page.click("#inspectorWorkbenchBtn");
+    await page.click("#systemWorkbenchBtn");
     await page.click("#workbenchApplyBtn");
 
-    await page.fill("#workspaceEditPathInput", "docs/Release Audit Notes.md");
+    await page.fill("#workspaceEditPathInput", "docs/Shipping Audit Notes.md");
     await page.fill(
       "#workspaceEditContentInput",
-      "# Release Audit Notes\n\n- Allow spaces in guarded file edits.\n"
+      "# Shipping Audit Notes\n\n- Allow spaces in guarded file edits.\n"
     );
     await page.click("#previewWorkspaceEditBtn");
     await expect(page.locator("#workspaceActionPreviewMeta")).toContainText("Diff preview");
-    await expect(page.locator("#workspaceActionPreview")).toContainText("Release Audit Notes.md");
+    await expect(page.locator("#workspaceActionPreview")).toContainText("Shipping Audit Notes.md");
 
     await page.click("#applyWorkspaceActionBtn");
     await expect(page.locator("#statusLabel")).toContainText("Workspace write applied");
@@ -1006,15 +1011,21 @@ test("workspace edits support filenames with spaces", async () => {
   }
 });
 
-test("release cockpit stages guarded release checks and reflects partial verification", async () => {
-  const userDataDir = mkUserDataDir("release-cockpit");
+test("Shipping Cockpit stages guarded Shipping checks and reflects partial verification", async () => {
+  test.setTimeout(300000);
+  const userDataDir = mkUserDataDir("shipping-cockpit");
   let app = null;
   try {
     const { app: runningApp, page } = await launchApp(userDataDir);
     app = runningApp;
+    page.on('console', msg => console.log('BROWSER:', msg.text()));
+    console.log('Test 17: App launched');
     await closeOnboardingViaSkip(page);
+    console.log('Test 17: Onboarding closed');
     await seedWorkflowWorkspaceAndArtifact(page, repoRoot);
+    console.log('Test 17: Seeding complete');
     await page.evaluate(async ({ workspaceRoot }) => {
+      console.log('Test 17: evaluate: Setting context profiles');
       const summary = await window.api.workspace.summarize(workspaceRoot);
       const filePaths = ["README.md", "package.json"];
       const stats = await window.api.workspace.statFiles(workspaceRoot, filePaths);
@@ -1026,11 +1037,11 @@ test("release cockpit stages guarded release checks and reflects partial verific
         }));
       await window.NeuralShellRenderer.setContextPackProfiles([
         {
-          id: "release-packet-context-profile",
+          id: "shipping-packet-context-profile",
           workspaceRoot,
           workspaceLabel: summary.label,
-          workflowId: "release_audit",
-          name: "Release Packet Context Pack",
+          workflowId: "shipping_audit",
+          name: "Shipping Packet Context Pack",
           filePaths,
           fileSnapshots,
           savedAt: "2026-03-10T08:29:10.000Z"
@@ -1038,22 +1049,36 @@ test("release cockpit stages guarded release checks and reflects partial verific
       ], {
         persist: false
       });
-      await window.NeuralShellRenderer.loadContextPackProfile("release-packet-context-profile", {
+      console.log('Test 17: evaluate: Loading context profile');
+      await window.NeuralShellRenderer.loadContextPackProfile("shipping-packet-context-profile", {
         persist: false,
         announce: false
       });
+      await window.NeuralShellRenderer.setSystemSurface("shipping");
+      await window.NeuralShellRenderer.renderShippingCockpit();
+      console.log('Test 17: evaluate: Setup complete');
     }, { workspaceRoot: repoRoot });
 
-    await page.click("#inspectorReleaseBtn");
-    await expect(page.locator("#releaseCockpitTitleText")).toContainText("Release blockers active");
-    await expect(page.locator("#releaseCockpitMetaRow")).toContainText("Release Audit");
-    await expect(page.locator("#releaseCockpitMetaRow")).toContainText("Blocked");
-    await expect(page.locator("#releaseCockpitChecklist")).toContainText("Stage lint, founder e2e, and store screenshot refresh");
-    await expect(page.locator("#releaseCockpitBlockerList")).toContainText("Release cockpit checks have not been staged yet.");
+    console.log('Test 17: Waiting for cockpit title');
+    const actualTitle = await page.evaluate(() => document.querySelector("#shippingCockpitTitleText")?.innerText);
+    const workflowTitle = await page.evaluate(() => document.querySelector("#workflowTitleText")?.innerText);
+    console.log('Test 17: Verifying cockpit state');
+    const titleText = await page.evaluate(() => document.querySelector("#shippingCockpitTitleText")?.innerText || "");
+    const metaText = await page.evaluate(() => document.querySelector("#shippingCockpitMetaRow")?.innerText || "");
+    const blockerText = await page.evaluate(() => document.querySelector("#shippingCockpitBlockerList")?.innerText || "");
 
-    await page.click("#stageReleaseCockpitBtn");
-    await expect(page.locator("#inspectorWorkbenchBtn")).toHaveClass(/is-active/);
-    await expect(page.locator("#verificationRunTitleText")).toContainText("Release Cockpit Verification");
+    console.log(`Test 17: Title: "${titleText}"`);
+    console.log(`Test 17: Meta: "${metaText}"`);
+    console.log(`Test 17: Blockers: "${blockerText}"`);
+
+    expect(titleText.toLowerCase()).toContain("shipping blockers active");
+    expect(metaText.toLowerCase()).toContain("shipping audit");
+    expect(metaText.toLowerCase()).toContain("blocked");
+    expect(blockerText.toLowerCase()).toContain("shipping cockpit checks have not been staged yet.");
+
+    await page.click("#stageShippingCockpitBtn");
+    await expect(page.locator("#systemWorkbenchBtn")).toHaveClass(/is-active/);
+    await expect(page.locator("#verificationRunTitleText")).toContainText("Shipping Cockpit Verification");
     await expect(page.locator("#verificationRunList")).toContainText("Run lint");
     await expect(page.locator("#verificationRunList")).toContainText("Run founder e2e");
     await expect(page.locator("#verificationRunList")).toContainText("Refresh store screenshots");
@@ -1065,46 +1090,51 @@ test("release cockpit stages guarded release checks and reflects partial verific
 
     await page.click("#runVerificationPlanBtn");
     await expect(page.locator("#statusLabel")).toContainText("Verification run complete", { timeout: 240000 });
-    await expect(page.locator("#inspectorReleaseBtn")).toHaveClass(/is-active/);
-    await expect(page.locator("#releaseCockpitTitleText")).toContainText("Build the release packet", { timeout: 240000 });
-    await expect(page.locator("#releaseCockpitMetaRow")).toContainText("Ready");
-    await expect(page.locator("#releaseCockpitMetaRow")).toContainText("1 passed");
-    await expect(page.locator("#releaseCockpitBlockerList")).toContainText("No active ship blockers");
-    await page.click("#inspectorWorkbenchBtn");
+    console.log('Test 17: Verification run complete');
+    const titleAfter = await page.evaluate(() => document.querySelector("#shippingCockpitTitleText")?.innerText || "");
+    const blockersAfter = await page.evaluate(() => document.querySelector("#shippingCockpitBlockerList")?.innerText || "");
+    console.log(`Test 17: Title After: "${titleAfter}"`);
+    console.log(`Test 17: Blockers After: "${blockersAfter}"`);
+    await expect(page.locator("#systemShippingBtn")).toHaveClass(/is-active/);
+    await expect(page.locator("#shippingCockpitTitleText")).toContainText("Build the shipping packet", { timeout: 240000 });
+    await expect(page.locator("#shippingCockpitMetaRow")).toContainText("Ready");
+    await expect(page.locator("#shippingCockpitMetaRow")).toContainText("1 passed");
+    await expect(page.locator("#shippingCockpitBlockerList")).toContainText("No active ship blockers");
+    await page.click("#systemWorkbenchBtn");
     await expect(page.locator("#verificationRunOutput")).toContainText("Command: npm run lint");
     await expect(page.locator("#verificationRunOutput")).not.toContainText("npm run test:e2e");
     await expect(page.locator("#verificationRunOutput")).not.toContainText("npm run channel:store:screenshots");
 
-    await page.click("#inspectorReleaseBtn");
-    await page.click("#buildReleasePacketBtn");
-    await expect(page.locator("#statusLabel")).toContainText("Release packet built");
-    await expect(page.locator("#artifactTitleText")).toContainText("Release Packet");
-    await expect(page.locator("#artifactMetaText")).toContainText("Release Packet");
+    await page.click("#systemShippingBtn");
+    await page.click("#buildShippingPacketBtn");
+    await expect(page.locator("#statusLabel")).toContainText("Shipping Packet built");
+    await expect(page.locator("#artifactTitleText")).toContainText("Shipping Packet");
+    await expect(page.locator("#artifactMetaText")).toContainText("Shipping Packet");
     await expect(page.locator("#artifactMetaText")).toContainText("linked run");
     await expect(page.locator("#artifactPreview")).toContainText("Decision: Ready");
     await expect(page.locator("#artifactPreview")).toContainText("## Verification");
     await expect(page.locator("#artifactPreview")).toContainText("## Verification Provenance");
     await expect(page.locator("#artifactPreview")).toContainText("[PASSED] Run lint");
-    await expect(page.locator("#artifactPreview")).toContainText("Context Pack Snapshot: Release Packet Context Pack | 2 files");
-    await expect(page.locator("#artifactPreview")).toContainText("Context Pack Profile: Release Packet Context Pack | 2 files | saved 2026-03-10T08:29:10.000Z");
-    await expect(page.locator("#releaseCockpitTitleText")).toContainText("Release packet ready");
-    await expect(page.locator("#releaseCockpitMetaRow")).toContainText("Packet built");
+    await expect(page.locator("#artifactPreview")).toContainText("Context Pack Snapshot: Shipping Packet Context Pack | 2 files");
+    await expect(page.locator("#artifactPreview")).toContainText("Context Pack Profile: Shipping Packet Context Pack | 2 files | saved 2026-03-10T08:29:10.000Z");
+    await expect(page.locator("#shippingCockpitTitleText")).toContainText("Shipping Packet ready");
+    await expect(page.locator("#shippingCockpitMetaRow")).toContainText("Packet built");
 
     const bundle = await page.evaluate(async () => {
       return window.NeuralShellRenderer.buildEvidenceBundle();
     });
     expect(bundle.verificationRunPlan.groupId).toBe("release_cockpit");
     expect(bundle.verificationRunPlan.rootPath).toBe(repoRoot);
-    expect(bundle.artifact.outputMode).toBe("release_packet");
+    expect(bundle.artifact.outputMode).toBe("shipping_packet");
     expect(Array.isArray(bundle.verificationRunHistory)).toBeTruthy();
     expect(bundle.verificationRunHistory[0].groupId).toBe("release_cockpit");
     expect(bundle.artifact.provenance).toBeTruthy();
     expect(bundle.artifact.provenance.verification.runIds[0]).toBe(bundle.verificationRunHistory[0].runId);
     expect(bundle.artifact.provenance.workspaceRoot).toBe(repoRoot);
-    expect(bundle.artifact.provenance.contextPack.name).toBe("Release Packet Context Pack");
+    expect(bundle.artifact.provenance.contextPack.name).toBe("Shipping Packet Context Pack");
     expect(bundle.artifact.provenance.contextPack.fileCount).toBe(2);
     expect(bundle.artifact.provenance.contextPack.filePaths).toEqual(expect.arrayContaining(["README.md", "package.json"]));
-    expect(bundle.artifact.provenance.contextPackProfile.name).toBe("Release Packet Context Pack");
+    expect(bundle.artifact.provenance.contextPackProfile.name).toBe("Shipping Packet Context Pack");
     expect(bundle.artifact.provenance.contextPackProfile.fileCount).toBe(2);
     expect(bundle.artifact.id).toBeTruthy();
     expect(bundle.artifact.provenance.lineage.packetId).toBe(bundle.artifact.id);
@@ -1118,19 +1148,19 @@ test("release cockpit stages guarded release checks and reflects partial verific
     expect(screenshotCheck.selected).toBe(false);
 
     await page.evaluate(async () => {
-      await window.NeuralShellRenderer.buildReleasePacketArtifact({
+      await window.NeuralShellRenderer.buildShippingPacketArtifact({
         generatedAt: "2026-03-10T08:31:20.000Z"
       });
     });
     await expect(page.locator("#artifactHistoryList .artifact-history-card")).toHaveCount(2);
     await expect(page.locator("#artifactCompareDiffList")).toContainText("Revision");
-    await expect(page.locator("#artifactCompareLeftPreview")).toContainText("# Release Packet");
-    await expect(page.locator("#artifactCompareRightPreview")).toContainText("# Release Packet");
+    await expect(page.locator("#artifactCompareLeftPreview")).toContainText("# Shipping Packet");
+    await expect(page.locator("#artifactCompareRightPreview")).toContainText("# Shipping Packet");
     const lineage = await page.evaluate(async () => {
       const currentBundle = await window.NeuralShellRenderer.buildEvidenceBundle();
       return {
         current: currentBundle.artifact.provenance.lineage,
-        history: currentBundle.releasePacketHistory.map((item) => ({
+        history: currentBundle.shippingPacketHistory.map((item) => ({
           id: item.id,
           lineage: item.provenance ? item.provenance.lineage : null
         }))
@@ -1142,7 +1172,7 @@ test("release cockpit stages guarded release checks and reflects partial verific
     expect(lineage.history.some((item) => item.id === lineage.current.packetId)).toBeTruthy();
 
     await page.evaluate(async () => {
-      await window.NeuralShellRenderer.buildReleasePacketArtifact({
+      await window.NeuralShellRenderer.buildShippingPacketArtifact({
         generatedAt: "2026-03-10T08:29:20.000Z"
       });
     });
@@ -1150,33 +1180,33 @@ test("release cockpit stages guarded release checks and reflects partial verific
     const firstHistoryCard = page.locator("#artifactHistoryList .artifact-history-card").first();
     const thirdHistoryCard = page.locator("#artifactHistoryList .artifact-history-card").nth(2);
     await thirdHistoryCard.locator("button", { hasText: "Set Compare A" }).click();
-    await expect(page.locator("#statusLabel")).toContainText("Release packet loaded into compare A.");
+    await expect(page.locator("#statusLabel")).toContainText("Shipping Packet loaded into compare A.");
     await firstHistoryCard.locator("button", { hasText: "Set Compare B" }).click();
-    await expect(page.locator("#statusLabel")).toContainText("Release packet loaded into compare B.");
+    await expect(page.locator("#statusLabel")).toContainText("Shipping Packet loaded into compare B.");
     await expect(page.locator("#artifactCompareMetaText")).toContainText("Revision");
 
     const loadToDockButton = page.locator("#artifactHistoryList .artifact-history-card button", { hasText: "Load to Dock" }).first();
     await loadToDockButton.click();
-    await expect(page.locator("#statusLabel")).toContainText("Release packet loaded into the dock.");
+    await expect(page.locator("#statusLabel")).toContainText("Shipping Packet loaded into the dock.");
     await expect(page.locator("#artifactHistoryList .artifact-history-card button", { hasText: "Loaded in Dock" })).toHaveCount(1);
 
-    await page.fill("#sessionName", "ReleasePacketHistory");
+    await page.fill("#sessionName", "shippingPacketHistory");
     await page.fill("#sessionPass", "PacketHistoryPassphrase1!");
     await page.click("#saveSessionBtn");
-    await expect(page.locator("#statusLabel")).toContainText("Session saved: ReleasePacketHistory");
+    await expect(page.locator("#statusLabel")).toContainText("Session saved: shippingPacketHistory");
 
     await page.click("#clearArtifactHistoryBtn");
-    await expect(page.locator("#artifactHistoryList")).toContainText("No release packets yet.");
+    await expect(page.locator("#artifactHistoryList")).toContainText("No shipping packets yet.");
 
     await page.click("#loadSessionBtn");
-    await expect(page.locator("#statusLabel")).toContainText("Session loaded: ReleasePacketHistory");
+    await expect(page.locator("#statusLabel")).toContainText("Session loaded: shippingPacketHistory");
     await page.waitForFunction(() => (
-      Array.isArray(window.appState.releasePacketHistory) &&
-      window.appState.releasePacketHistory.length === 3
+      Array.isArray(window.appState.shippingPacketHistory) &&
+      window.appState.shippingPacketHistory.length === 3
     ));
-    await page.click("#inspectorReleaseBtn");
+    await page.click("#systemShippingBtn");
     await page.evaluate(() => {
-      window.NeuralShellRenderer.renderReleaseCockpit();
+      window.NeuralShellRenderer.renderShippingCockpit();
       if (typeof window.renderArtifactHistory === "function") {
         window.renderArtifactHistory();
       }
@@ -1271,7 +1301,7 @@ test("patch plans preview, apply selected files, and persist across session relo
   fs.writeFileSync(
     notesPath,
     [
-      "# Release Audit",
+      "# Shipping Audit",
       "",
       "- Pending verification",
       "- Pending packaging",
@@ -1312,7 +1342,7 @@ test("patch plans preview, apply selected files, and persist across session relo
             path: "docs/release-audit.md",
             rationale: "Reflect the verified renderer and bridge posture.",
             content: [
-              "# Release Audit",
+              "# Shipping Audit",
               "",
               "- Renderer guardrails verified",
               "- Pending packaging",
@@ -1404,11 +1434,11 @@ test("patch plans preview, apply selected files, and persist across session relo
         },
         {
           id: "shortcut-release-audit-interface",
-          workflowId: "release_audit",
+          workflowId: "shipping_audit",
           groupId: "interface",
           groupTitle: "Interface Surface",
           label: "Verify Release Interface Surface",
-          detail: "Release Audit shortcut | 2 files | Run lint and founder e2e after apply.",
+          detail: "Shipping Audit shortcut | 2 files | Run lint and founder e2e after apply.",
           promptLead: "Verify the interface changes for layout quality, interaction safety, and visual regressions.",
           checks: [
             "Run lint and founder e2e after apply.",
@@ -1672,7 +1702,7 @@ test("verification run history filters by workflow, group, and workspace", async
 
     await page.evaluate(async ({ repoRoot, otherWorkspace }) => {
       const currentSummary = await window.api.workspace.summarize(repoRoot);
-      await window.NeuralShellRenderer.activateWorkflow("release_audit", {
+      await window.NeuralShellRenderer.activateWorkflow("shipping_audit", {
         seedPrompt: false,
         persist: false,
         announce: false
@@ -1687,7 +1717,7 @@ test("verification run history filters by workflow, group, and workspace", async
           planId: "runtime-a",
           groupId: "runtime",
           groupTitle: "Runtime Surface",
-          workflowId: "release_audit",
+          workflowId: "shipping_audit",
           rootPath: repoRoot,
           rootLabel: currentSummary.label,
           preparedAt: "2026-03-10T08:20:00.000Z",
@@ -1701,7 +1731,7 @@ test("verification run history filters by workflow, group, and workspace", async
           planId: "interface-a",
           groupId: "interface",
           groupTitle: "Interface Surface",
-          workflowId: "release_audit",
+          workflowId: "shipping_audit",
           rootPath: repoRoot,
           rootLabel: currentSummary.label,
           preparedAt: "2026-03-10T08:22:00.000Z",
@@ -1732,7 +1762,7 @@ test("verification run history filters by workflow, group, and workspace", async
           planId: "runtime-b",
           groupId: "runtime",
           groupTitle: "Runtime Surface",
-          workflowId: "release_audit",
+          workflowId: "shipping_audit",
           rootPath: otherWorkspace,
           rootLabel: "verification-history-filters-other",
           preparedAt: "2026-03-10T08:26:00.000Z",
@@ -1746,7 +1776,7 @@ test("verification run history filters by workflow, group, and workspace", async
       });
     }, { repoRoot, otherWorkspace });
 
-    await page.click("#inspectorWorkbenchBtn");
+    await page.click("#systemWorkbenchBtn");
     await page.click("#workbenchPatchBtn");
     await expect(page.locator("#verificationRunHistoryList .artifact-history-card")).toHaveCount(4);
 
@@ -1780,7 +1810,7 @@ test("workbench visibility remains deterministic under rapid tab switching", asy
     const { app: runningApp, page } = await launchApp(userDataDir);
     app = runningApp;
     await closeOnboardingViaSkip(page);
-    await page.click("#inspectorWorkbenchBtn");
+    await page.click("#systemWorkbenchBtn");
     const buttons = [
       "#workbenchArtifactBtn",
       "#workbenchPatchBtn",
@@ -1819,7 +1849,7 @@ test("session load and workspace edits reset the active surface", async () => {
     app = runningApp;
     await closeOnboardingViaSkip(page);
     await seedWorkflowWorkspaceAndArtifact(page, workspaceDir);
-    await page.click("#inspectorWorkbenchBtn");
+    await page.click("#systemWorkbenchBtn");
     await page.click("#workbenchApplyBtn");
     await page.fill("#workspaceEditPathInput", "docs/bridge-diagnostics-draft.md");
     await page.fill("#workspaceEditContentInput", "# Draft\n");
@@ -1905,7 +1935,7 @@ test("apply surface only renders latest payload when active", async () => {
     const { app: runningApp, page } = await launchApp(userDataDir);
     app = runningApp;
     await closeOnboardingViaSkip(page);
-    await page.click("#inspectorWorkbenchBtn");
+    await page.click("#systemWorkbenchBtn");
     await page.click("#workbenchApplyBtn");
     const epoch = await page.evaluate(() => window.NeuralShellRenderer.reserveWorkbenchSurfaceEpoch("apply"));
     await page.evaluate((stale) => {
@@ -1963,25 +1993,25 @@ test("hidden patch surface waits to rerender for async updates", async () => {
         workflowId: "bug_triage",
         rootPath: summary.rootPath
       });
-      let previewPlanResolve = () => {};
+      let previewPlanResolve = () => { };
       const previewPlanPromise = new Promise((resolve) => {
         previewPlanResolve = resolve;
       });
       window.previewPlanRequested = false;
       window.pendingPatchPlan = null;
       window.previewPlanResolver = (plan) => {
-      window.previewPlanRequested = true;
-      window.pendingPatchPlan = {
-        ...plan,
-        rootPath: summary.rootPath
+        window.previewPlanRequested = true;
+        window.pendingPatchPlan = {
+          ...plan,
+          rootPath: summary.rootPath
+        };
+        previewPlanResolve(plan);
       };
-      previewPlanResolve(plan);
-    };
-    window.NeuralShellRenderer.previewPatchPlanFiles = () => {
-      window.previewPlanRequested = true;
-      return previewPlanPromise;
-    };
-  }, { workspaceDir });
+      window.NeuralShellRenderer.previewPatchPlanFiles = () => {
+        window.previewPlanRequested = true;
+        return previewPlanPromise;
+      };
+    }, { workspaceDir });
 
     const baselineTitle = (await page.locator("#patchPlanTitleText").textContent())?.trim();
 
@@ -2040,7 +2070,7 @@ test("patch preview drops stale async results", async () => {
     const { app: runningApp, page } = await launchApp(userDataDir);
     app = runningApp;
     await closeOnboardingViaSkip(page);
-    await page.click("#inspectorWorkbenchBtn");
+    await page.click("#systemWorkbenchBtn");
     await page.click("#workbenchPatchBtn");
     await page.evaluate(() => {
       window.appState.patchPlan = {
@@ -2088,7 +2118,7 @@ test("workspace action preview prefers the latest async response", async () => {
     const { app: runningApp, page } = await launchApp(userDataDir);
     app = runningApp;
     await closeOnboardingViaSkip(page);
-    await page.click("#inspectorWorkbenchBtn");
+    await page.click("#systemWorkbenchBtn");
     await page.click("#workbenchApplyBtn");
     await page.evaluate(() => {
       window.appState.workspaceActionPreview = { previewText: "seed preview" };

@@ -94,7 +94,7 @@ def build_body(contact: Contact) -> str:
 
 
 def smtp_connect(host: str, port: int, user: str, password: str) -> smtplib.SMTP:
-    client = smtplib.SMTP(host, port, timeout=30)
+    client = smtplib.SMTP(host, port, local_hostname="localhost", timeout=30)
     client.ehlo()
     if port == 465:
         # Caller should use SMTP_SSL for port 465; fallback handled below.

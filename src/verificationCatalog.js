@@ -52,6 +52,7 @@
     interface: ["lint", "founder_e2e"],
     performance: ["lint", "founder_e2e"],
     automation: ["lint", "founder_e2e", "store_screenshots"],
+    runtime: ["lint", "founder_e2e"],
     project: ["lint"]
   };
 

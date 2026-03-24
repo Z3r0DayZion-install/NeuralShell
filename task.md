@@ -28,9 +28,16 @@
   - [x] Regenerated `source_manifest.json` and restored Green gate status
   - [x] Recorded patch execution signoff and updated top-level records
 
+- [x] Phase 10: Reproducible build parity & release repeatability proof
+  - [x] Built repeatability harness (`scripts/rebuild-compare-omegapak.js`)
+  - [x] Proved bit-for-bit parity of installer EXE
+  - [x] Classified drift as bounded timestamp drift
+  - [x] Integrated results into OMEGA_RELEASE_LEDGER.md
+  - [x] Created `proof/latest/phase10-reproducibility-proof.md`
+
 ## Current State Rules
-- Public shipping artifact remains NeuralShell V2.1.4 Golden Master.
-- Repository baseline is advanced to V2.1.10 Patch 1 (Maintenance Only).
+- Public shipping artifact remains NeuralShell V2.1.4 Golden Master (Repository Baseline: V2.1.29).
+- Repository baseline is advanced to V2.1.29 with Reproducibility Proof.
 - No new features or Lore expansions were introduced.
 
-Project Status: SEALED (V2.1.10 Maintenance Patch 1 Applied)
+Project Status: SEALED (V2.1.29 Reproducibility Proof Applied)

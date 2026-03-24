@@ -7,17 +7,19 @@ const success = runAstGate({
   sourceRoot: SOURCE_ROOT,
   logger: (msg) => console.log(`[AST GATE] ${msg}`),
   whitelistedPaths: [
-    'kernel', 
-    'main.js', 
-    'core', 
-    'plugins', 
-    'main/', 
-    'router', 
-    'intelligence', 
-    'swarm', 
-    'hive', 
-    'economy', 
-    'forge'
+    'kernel',
+    'main.js',
+    'core',
+    'plugins',
+    'main/',
+    'router',
+    'intelligence',
+    'swarm',
+    'hive',
+    'economy',
+    'forge',
+    'renderer/node_modules',
+    'renderer/dist'
   ]
 });
 

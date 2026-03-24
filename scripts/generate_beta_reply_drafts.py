@@ -15,13 +15,13 @@ from typing import Dict, List, Tuple
 
 
 DEFAULT_REPORT = Path("release/beta-inbound-triage-report.json")
-DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_v1.2.1-OMEGA.csv")
+DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_V2.0-RC-Final.csv")
 DEFAULT_INBOUND = Path("release/inbound_replies.csv")
 DEFAULT_DRAFTS_MD = Path("release/beta-reply-drafts.md")
 DEFAULT_OUTBOX_CSV = Path("release/beta-reply-outbox.csv")
 
-RELEASE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v1.2.1-OMEGA"
-CHECKLIST_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/docs/pilots/BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md"
+RELEASE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.28"
+CHECKLIST_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/blob/master/docs/pilots/BETA_TESTER_CHECKLIST_V2.0-RC-Final.md"
 INTAKE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose"
 REPO_URL = "https://github.com/Z3r0DayZion-install/NeuralShell"
 BETA_ISSUE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/issues/34"

@@ -21,6 +21,7 @@ const VALID_PERSONALITY_PROFILES = new Set([
 const VALID_RGB_PROVIDERS = new Set(["openrgb", "none"]);
 const VALID_LOG_LEVELS = new Set(["debug", "info", "warn", "error"]);
 const VALID_TELEMETRY_TYPES = new Set(["ui_action", "bridge_status", "session_event", "performance", "error"]);
+const VALID_TIERS = new Set(["PREVIEW", "OPERATOR"]);
 const DEFAULT_WORKFLOW_ID =
   workflowCatalog && typeof workflowCatalog.DEFAULT_WORKFLOW_ID === "string"
     ? String(workflowCatalog.DEFAULT_WORKFLOW_ID).trim() || "bridge_diagnostics"
@@ -90,7 +91,14 @@ function validateStateUpdates(updates) {
     updates && typeof updates === "object" && !Array.isArray(updates),
     "State updates must be an object."
   );
-  return updates;
+
+  const safe = {};
+  for (const key of Object.keys(updates)) {
+    if (!BLOCKED_STATE_KEYS.has(key)) {
+      safe[key] = updates[key];
+    }
+  }
+  return safe;
 }
 
 function validateSessionName(name, label = "Session name") {
@@ -158,7 +166,10 @@ function normalizeConnectionProfile(profile, index) {
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 15000,
     retryCount: Number.isFinite(retryCount) && retryCount >= 0 ? retryCount : 2,
     defaultModel: String(raw.defaultModel || "llama3"),
-    apiKey
+    apiKey,
+    lastVerifiedFingerprint: raw.lastVerifiedFingerprint || null,
+    authenticity: raw.authenticity || "UNSIGNED",
+    trustState: raw.trustState || null
   };
 }
 
@@ -235,7 +246,8 @@ function validateSettings(input) {
     connectOnStartup:
       input.connectOnStartup == null ? true : Boolean(input.connectOnStartup),
     autoLoadRecommendedContextProfile:
-      input.autoLoadRecommendedContextProfile == null ? false : Boolean(input.autoLoadRecommendedContextProfile)
+      input.autoLoadRecommendedContextProfile == null ? false : Boolean(input.autoLoadRecommendedContextProfile),
+    tier: VALID_TIERS.has(String(input.tier).toUpperCase()) ? String(input.tier).toUpperCase() : "PREVIEW"
   };
 
   assert(
@@ -981,6 +993,17 @@ function validateVerificationRunRequest(value) {
   };
 }
 
+function validateProfileImport(payload) {
+  return toTrimmedString(payload, "Profile bundle JSON");
+}
+
+function validateProfileExport(payload) {
+  assert(payload && typeof payload === "object", "Profile export payload must be an object.");
+  const profileId = toTrimmedString(payload.profileId, "profileId");
+  const includeSecrets = Boolean(payload.includeSecrets);
+  return { profileId, includeSecrets };
+}
+
 module.exports = {
   validateCommandArgs,
   validateCommandName,
@@ -997,5 +1020,7 @@ module.exports = {
   validateWorkspaceActionRequest,
   validateStateKey,
   validateStateUpdates,
-  validateTelemetry
+  validateTelemetry,
+  validateProfileImport,
+  validateProfileExport
 };

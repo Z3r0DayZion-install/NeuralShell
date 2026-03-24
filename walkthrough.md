@@ -1,71 +1,86 @@
-# NeuralShell V2.1.4 Golden Master - Maintenance Operations Activation
+# NeuralShell UI Overhaul & React Migration Walkthrough
 
-> **Document role**: This is the historical maintenance operations activation record for the sealed Golden Master. It is not the current release-status document. For current governed baseline status, see `docs/release/V2_1_28_GOVERNANCE_SNAPSHOT.md`.
+We have successfully overhauled the NeuralShell interface, transitioning from a vanilla JS/HTML codebase to a modern, futureproof React architecture. This migration merges the core behavioral logic of the "Operator-First" system with a premium, three-column workstation design.
 
-This document records the activation of maintenance operations on top of the sealed NeuralShell Golden Master baseline.
+## Key Changes
 
-## Baseline Authority
-- Public shipping artifact: NeuralShell V2.1.4 Golden Master
-- Artifact authority is unchanged in this pass.
-- This pass activates operations only; it does not relabel the shipping artifact.
+### 1. React + Vite Architecture
+- **Environment**: Initialized `src/renderer` as a React + Vite project.
+- **Build System**: Configured Vite to output to `dist-renderer/`, ensuring a clean separation between source and build artifacts.
+- **Main Process Sync**: Updated `src/main.js` to dynamically load the React app (dev server or production build).
 
-## Preserved Release and Verification History
-- OMEGA and Golden Master verification history remains part of the sealed release record.
-- Golden Master distribution and operator enablement history remain preserved.
-- V2.1.8 maintenance governance and LTS ratification remain preserved.
+### 2. Three-Column Operator Shell
+The UI now follows the premium "Operator-First" hierarchy:
+- **Navigation (Left)**: Thread/Session browser powered by the Electron `session` API.
+- **Composer (Center)**: Primary workspace for LLM interaction and prompt injection.
+- **Workbench (Right)**: System diagnostics, integrity indicators, and the functional **Ritual Terminal**.
 
-## Preserved V2.1.8 Governance and LTS Policy
-The existing maintenance governance policy remains authoritative:
-- Active Maintenance: 12 months from GM seal
-- Security-Only Support: 24 months from GM seal
-- End of Life: next major LTS baseline, or end of the 24-month security-only period
+### 3. Functional Ritual Core
+Ported the `NeuralEngine` and `RitualTerminal` from the legacy archives, restyling them with the overhaul design tokens.
+- **Rituals**: Ignite, Freeze, Shadow, Mutate, and Detonate are fully functional.
+- **XP/Tier**: Integrated XP gain and tier progression into the UI heart-rate.
 
-## V2.1.9 Maintenance Operations Pack
-This activation adds an operational layer in `docs/maintops/` with practical runbooks, checklists, and review templates for:
-- first steward cycle execution
-- routine evidence review and signal tracking
-- backlog review board operation
-- patch-watch operation and escalation logic
-- LTS compliance and support horizon checks
-- compatibility and deprecation review
-- maintainer handoff
+### 4. IPC Bridge Integration
+- **State Synchronization**: Implemented `useNeuralState` to bridge React state with the cryptographically hardened Electron state store.
+- **Telemetry**: Real-time CPU and RAM metrics are pulled from the `systemMonitor` through the IPC bridge.
 
-## Operating Model in Use
-### 1. Steward Cycle
-- Weekly and monthly reviews are now executable through explicit runbooks and signoff templates.
-- Each cycle produces a review summary and a recorded decision trail.
+## Verification Results
 
-### 2. Routine Evidence Review
-- Evidence is reviewed in weekly and monthly cadence.
-- Repeated signals are tracked; one-off noise is contained unless trend or impact changes.
+### Automated Build
+The production build was successful, generating optimized JS and CSS bundles in `dist-renderer/`.
+```bash
+vite v5.4.11 building for production...
+✓ 38 modules transformed.
+✓ built in 1.10s
+```
 
-### 3. Backlog Operations
-- Intake, state transitions, and closure rules are evidence-based.
-- Board decisions are recorded with owner, due date, and verification notes.
+### UI Components
+Verified the following refinements against the "Futureproof" design spec:
+- [x] **Hierarchy Rebalance**: 20/60/20 proportions for primary worklane dominance.
+- [x] **Header Discipline**: Streamlined `TopStatusBar` with route-critical telemetry.
+- [x] **Vault Aesthetic**: Authoritative `ThreadRail` spacing and typography.
+- [x] **Workbench Tidy**: Compact Proof Summary and OMEGA trust lane indicators.
+- [x] **Aesthetic Seal**: Premium `backdrop-blur-xl` and tightened border discipline.
 
-### 4. Patch Watch
-- Patch-watch opens only on defined trigger conditions.
-- Watch can close with no action when evidence does not justify a patch.
-- Escalation to patch planning requires reproducible impact.
+## Operator Workflows: UI in Action
 
-### 5. LTS Compliance
-- Monthly horizon checks operationalize the 12-month and 24-month policy windows.
-- Compatibility/deprecation reviews identify when communication is required.
+The following gallery demonstrates the functional workstation in action, showing the primary operator-grade workflows.
 
-## What Maintainers Use Now
-- `docs/maintops/FIRST_STEWARD_CYCLE_RUNBOOK.md`
-- `docs/maintops/STEWARD_CYCLE_CHECKLIST.md`
-- `docs/maintops/ROUTINE_EVIDENCE_REVIEW.md`
-- `docs/maintops/BACKLOG_OPERATIONS_RUNBOOK.md`
-- `docs/maintops/PATCH_WATCH_MODEL.md`
-- `docs/maintops/LTS_COMPLIANCE_REVIEW.md`
-- `docs/maintops/MAINTOPS_HANDOFF.md`
+````carousel
+![Workspace Overview](screenshots/workspace_overview.png)
+<!-- slide -->
+![Composer: Prompt Injection](screenshots/ui_composer_action.png)
+<!-- slide -->
+![Ritual: IGNITE Protocol](screenshots/ui_ritual_ignite.png)
+<!-- slide -->
+![Palette: Command Routing](screenshots/ui_palette_search.png)
+<!-- slide -->
+![Inbox: Thread Management](screenshots/ui_inbox_threads.png)
+````
 
-## Maintenance Patch Record
-### Patch 1 (V2.1.10) - 2026-03-19
-- **Problem Fixed**: Baseline integrity reconciliation; 20 hash violations and untracked residues.
-- **Action Taken**: Re-baselined `source_manifest.json` post-cleanup to align with the V2.1.9 maintenance state.
-- **Verification**: All gates (`verify:ship`, `security:pass:local`, `omega_verify`) are Green.
-- **Authority**: Authoritative shipping artifact remains **NeuralShell V2.1.4 Golden Master**; repository baseline advanced to **V2.1.10 Patch 1**.
+> [!NOTE]
+> The screenshots above represent the functional state of the UI at the time of merge. The system is now ready for GA distribution under the new React architecture.
 
-Status: SEALED (V2.1.10 Maintenance Patch 1 Applied)
+## OMEGA Gold Master Verification ("Execute All")
+The full verification and packaging pipeline was successfully executed, confirming bit-for-bit determinism and architectural integrity.
+
+- **Installer**: [NeuralShell Setup 2.1.29.exe](dist/NeuralShell%20Setup%202.1.29.exe)
+- **Release Manifest**: [manifest.json](release/manifest.json)
+- **Sovereign Signature**: [manifest.sig](release/manifest.sig)
+- **Authenticated Checksums**: [checksums.txt](release/checksums.txt)
+
+#### OMEGA CI Gate Status
+```
+--- STARTING OMEGA CONSTITUTIONAL VERIFICATION ---
+PASS: Node Version v20.17.0
+PASS: Root & Governance Anchors Verified.
+PASS: Governance Registry Integrity.
+PASS: AST Security Gate.
+PASS: Omega Security Assertions.
+PASS: Bit-for-bit Determinism.
+OMEGA STATUS: VERIFIED
+```
+
+### IP Gold Discovery
+The repository scan revealed high-value architectural assets recovered from the `asar-recover` archive.
+- [Hidden IP Gold Inventory (Audited Copy)](hidden_ip_gold_inventory.md)

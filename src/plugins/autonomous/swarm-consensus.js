@@ -16,15 +16,15 @@ module.exports = {
         console.log("[SWARM] Initiating consensus protocol over sovereign proxy...");
 
         try {
-          const ledgerPath = "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\governance\\THREAT_LEDGER.jsonl";
-          
+          const ledgerPath = require('path').join(process.cwd(), 'governance', 'THREAT_LEDGER.jsonl');
+
           // Simulation of network sync delay
           await new Promise(r => setTimeout(r, 1000));
-          
+
           let localEntries = 0;
           if (await kernel.request(kernel.CAP_FS, "exists", { filePath: ledgerPath })) {
-             const content = await kernel.request(kernel.CAP_FS, "readFile", { filePath: ledgerPath });
-             localEntries = content.split("\n").filter(Boolean).length;
+            const content = await kernel.request(kernel.CAP_FS, "readFile", { filePath: ledgerPath });
+            localEntries = content.split("\n").filter(Boolean).length;
           }
 
           return {

@@ -13,6 +13,9 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "state:update",
   "state:export",
   "state:import",
+  "state:calculateProfileFingerprint",
+  "state:retrieveSecret",
+  "state:logProfileEvent",
   "settings:get",
   "settings:update",
   "session:list",
@@ -246,7 +249,20 @@ contextBridge.exposeInMainWorld("api", {
      */
     update: (updates) => ipcRenderer.invoke("state:update", updates),
     export: () => ipcRenderer.invoke("state:export"),
-    import: (payload) => ipcRenderer.invoke("state:import", payload)
+    import: (payload) => ipcRenderer.invoke("state:import", payload),
+    calculateProfileFingerprint: (profile) => ipcRenderer.invoke("state:calculateProfileFingerprint", profile),
+    retrieveSecret: (profileId, key) => ipcRenderer.invoke("state:retrieveSecret", profileId, key),
+    logProfileEvent: (profileId, type, msg) => ipcRenderer.invoke("state:logProfileEvent", profileId, type, msg),
+    TRUST_STATES: {
+      VERIFIED: "VERIFIED",
+      DRIFTED: "DRIFTED",
+      MISSING_SECRET: "MISSING_SECRET",
+      SIGNATURE_TAMPERED: "SIGNATURE_TAMPERED",
+      OFFLINE_LOCKED: "OFFLINE_LOCKED",
+      INVALID: "INVALID",
+      UNKNOWN: "UNKNOWN",
+      NEEDS_REVIEW: "NEEDS_REVIEW"
+    }
   },
   settings: {
     get: () => ipcRenderer.invoke("settings:get"),

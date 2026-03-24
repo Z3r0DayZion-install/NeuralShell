@@ -6,9 +6,7 @@ const requiredFiles = [
   "package.json",
   "src/main.js",
   "src/preload.js",
-  "src/renderer.html",
-  "src/renderer.js",
-  "src/style.css"
+  "dist-renderer/index.html"
 ];
 
 function assert(condition, message) {
@@ -34,8 +32,8 @@ function validateRequiredFiles() {
 function validateMainWindowTarget() {
   const mainJs = read("src/main.js");
   assert(
-    mainJs.includes('loadFile(path.join(__dirname, "renderer.html"))'),
-    "main.js does not load src/renderer.html"
+    mainJs.includes('mainWindow.loadFile(path.join(__dirname, "..", "dist-renderer", "index.html"))'),
+    "main.js does not load dist-renderer/index.html"
   );
 }
 
@@ -136,9 +134,9 @@ function validateScripts() {
 function run() {
   validateRequiredFiles();
   validateMainWindowTarget();
-  validateRendererTargets();
+  // Legacy DOM ID checks are skipped for the componentized React renderer
   validateScripts();
-  console.log("Smoke test passed.");
+  console.log("Smoke test passed (React Architecture).");
 }
 
 run();

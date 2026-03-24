@@ -26,9 +26,9 @@ from pathlib import Path
 from typing import Dict, List
 
 
-DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_v1.2.1-OMEGA.csv")
+DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_V2.0-RC-Final.csv")
 DEFAULT_REPORT = Path("release/beta-followup-send-report.json")
-RELEASE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v1.2.1-OMEGA"
+RELEASE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.28"
 BETA_ISSUE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/issues/34"
 INTAKE_URL = "https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose"
 

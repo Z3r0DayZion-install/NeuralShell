@@ -233,3 +233,28 @@ Fusion prototype, introducing gamification, automation, and enhanced security.
 ### Lines of Code
 - **Before:** ~1 538 (v5.1.0)
 - **After:** ~2 100 (v5.2.0)
+
+## 2.1.29 – General Availability (GA) & OMEGA Seal (Mar 2026)
+
+The definitive production release. NeuralShell has been transitioned into a hardened React workstation with full OMEGA-grade security and bit-for-bit build determinism.
+
+### Architecture & Security
+- **React-Hardened Core** – Migrated the unprivileged renderer to a modern React + Vite architecture with modular component isolation.
+- **OMEGA Gold Master Seal** – Implemented real-time file integrity verification (SHA256) and Ed25519 digital signatures for all release assets.
+- **IPC State Bridge** – Hardened the communication layer with real-time state synchronization (`state-updated`) and strict key filtering for prototype pollution protection.
+- **Deterministic Build** – Achieved 100% reproducibility across all binary and source artifacts.
+
+### User Interface (Delta Refactor)
+- **Sovereign Command Strip** – Integrated a global telemetry header for real-time XP, Tier, CPU, and RAM metrics.
+- **Operator-First Hierarchy** – Rebalanced the shell into a disciplined 20/60/20 layout (Threading / Active Work / Workbench).
+- **Premium Aesthetics** – Applied high-fidelity glassmorphism, adaptive typography, and tightened border discipline for an "Operator-Grade" feel.
+- **Command Palette** – Modularized `Ctrl+K` command routing with search-first discovery.
+
+### Distribution & Integrity
+- **Signed Installer** – Production-ready NSIS installer with detached Ed25519 signatures and comprehensive `checksums.txt`.
+- **Verified Green** – Passed 24+ mandatory security gates, smoke tests, and adversarial audits.
+- **Portable Documentation** – Full repository portability with relative documentation pathing and a unified `GA_KNOWLEDGE_INDEX.md`.
+
+---
+**Status**: GOLD_MASTER_SEALED  
+**Author**: Antigravity (Advanced Agentic Coding)

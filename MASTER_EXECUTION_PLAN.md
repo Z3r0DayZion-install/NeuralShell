@@ -46,8 +46,8 @@ The following missions are authorized for the Autonomous Evolution ritual:
 1.  **Mission: "Sovereign Proxy"**
     *   **Goal:** Build a plugin that implements a secure, local HTTPS proxy using the `Neural-SDK`.
     *   **Requirement:** It must scrub all `User-Agent` and `Cookie` headers from outbound requests to ensure total anonymity.
-    *   **Status:** OPEN
+    *   **Status:** ACHIEVED
 
 2.  **Mission: "Recursive Auditor"**
     *   **Goal:** Build a plugin that performs a daily scan of `src/plugins/autonomous/` and verifies the SHA256 of every file against the `THREAT_LEDGER`.
-    *   **Status:** OPEN
+    *   **Status:** ACHIEVED

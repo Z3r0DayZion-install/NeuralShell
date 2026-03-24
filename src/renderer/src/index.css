@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg-canvas: #020812;
+    --bg-shell: #05101b;
+    --bg-panel: #071423;
+    --cyan-accent: rgba(34, 211, 238, 0.4);
+    --gold-accent: rgba(245, 158, 11, 0.4);
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-canvas);
+    color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+}
+
+@layer base {
+    * {
+        border-color: rgba(14, 37, 60, 0.2);
+    }
+}
+
+/* Custom scrollbars for the operator look */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(34, 211, 238, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 211, 238, 0.3);
+}

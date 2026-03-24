@@ -26,24 +26,30 @@ function sha256File(filePath) {
 }
 
 function buildTaskRegistry() {
-  const defaultOllamaPath = process.platform === 'win32'
-    ? path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Ollama', 'ollama.exe')
-    : (process.env.NEURALSHELL_OLLAMA_PATH || '');
+  const isWin = process.platform === 'win32';
+  const binExt = isWin ? '.exe' : '';
+  
+  const defaultOllamaPath = isWin
+    ? path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Ollama', 'ollama' + binExt)
+    : (process.platform === 'darwin' 
+        ? '/usr/local/bin/ollama' 
+        : '/usr/bin/ollama');
+
   const specs = {
     'neural-link:devices': {
-      path: path.join(__dirname, '../../bin/neural-link.exe'),
+      path: path.join(__dirname, '../../bin/neural-link' + binExt),
       args: ['devices']
     },
     'neural-link:send': {
-      path: path.join(__dirname, '../../bin/neural-link.exe'),
+      path: path.join(__dirname, '../../bin/neural-link' + binExt),
       args: ['send']
     },
     'neural-linkd:start': {
-      path: path.join(__dirname, '../../bin/neural-linkd.exe'),
+      path: path.join(__dirname, '../../bin/neural-linkd' + binExt),
       args: []
     },
     'ollama:list': {
-      path: defaultOllamaPath,
+      path: process.env.NEURALSHELL_OLLAMA_PATH || defaultOllamaPath,
       args: ['list']
     },
     'agent:node': {
