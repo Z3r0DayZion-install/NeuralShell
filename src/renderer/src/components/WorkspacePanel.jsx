@@ -81,7 +81,7 @@ export function WorkspacePanel({ chatLog, activeSession, prompt, setPrompt, onSe
                                     </button>
 
                                     {/* Card 2: Load Repo */}
-                                    <button data-testid="card-context" onClick={() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true })) }} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
+                                    <button data-testid="card-context" onClick={() => { window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'k', ctrlKey: true })) }} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
                                         <div className="text-emerald-400 mb-3 opacity-60 group-hover:opacity-100 transition-opacity">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                                         </div>

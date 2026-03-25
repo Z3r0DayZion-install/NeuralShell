@@ -43,14 +43,14 @@ export function WorkbenchRail({ stats, activeSession }) {
                 <div className="space-y-2">
                     <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600 mb-3 px-1">Route Suggestions</div>
                     <button
-                        onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+                        onClick={() => window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
                         className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-black/40 hover:bg-white/[0.04] text-slate-300 transition-all group"
                     >
                         <span className="text-[10px] font-bold uppercase tracking-widest group-hover:text-cyan-300 transition-colors">Load Repository Data</span>
                         <span className="text-cyan-500/30 group-hover:text-cyan-400 transition-colors">→</span>
                     </button>
                     <button
-                        onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+                        onClick={() => window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
                         className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-black/40 hover:bg-white/[0.04] text-slate-300 transition-all group"
                     >
                         <span className="text-[10px] font-bold uppercase tracking-widest group-hover:text-amber-300 transition-colors">Start Network Scan</span>
