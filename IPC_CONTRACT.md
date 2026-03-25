@@ -1,3 +1,7 @@
+# [SUPPORTING] IPC Contract
+> [!NOTE]
+> This document defines the normative IPC channel surface and security gating.
+
 # IPC Contract Registry — NeuralShell V2.1.29+
 
 > Every IPC channel must be documented here.

@@ -5,7 +5,7 @@ const adaptiveIntelligence = require('../src/core/adaptiveIntelligence');
 async function testPerformanceLoad() {
     console.log("Starting Performance & Load Stability Verification...");
 
-    const workspace = "c:\\Users\\KickA\\Documents\\GitHub\\NeuralShell";
+    const workspace = process.cwd();
 
     // 1. Intelligence Caching
     console.log("Testing Intelligence Caching...");

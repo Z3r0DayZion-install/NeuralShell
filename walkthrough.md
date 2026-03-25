@@ -84,3 +84,27 @@ OMEGA STATUS: VERIFIED
 ### IP Gold Discovery
 The repository scan revealed high-value architectural assets recovered from the `asar-recover` archive.
 - [Hidden IP Gold Inventory (Audited Copy)](hidden_ip_gold_inventory.md)
+
+## V2.1.29 Final Prelaunch Hardening (Checklist Complete)
+
+As part of the final push for V2.1.29 GA, a rigorous 4-phase Prelaunch Checklist was executed to ensure absolute honesty and system hardening before public launch:
+
+### Phase 1: Honesty Cleanup
+- Eradicated all machine-local paths (`C:\Users\...`, `file:///...`) from distribution artifacts like `MASTER_PROOF.md` and `RC_HANDOFF.md`.
+- Consolidated `walkthrough.md` as the definitive, canonical proof-of-work artifact alongside `docs/CANON.md`.
+
+### Phase 2: Registry Scaffolding Solidified
+- Purged all fake affordances from `moduleRegistry.js`.
+- The `purge` command is now fully wired to the backend ritual execution engine.
+- Experimental dummy commands (`search`, `stash`, `heuristics`) have been appropriately flagged and hidden from production view.
+
+### Phase 3: Automated Rule Enforcement
+- Introduced `tear/architecture-enforcement.test.js` to strictly audit shell layout regression and configuration validity.
+- Enforces tailwind design token usage across all new `.jsx` components, preventing UI drift.
+- Asserts strict module schemas for future registry additions, and mandates `stateVersion` tracking in core state endpoints.
+
+### Phase 4: Sellability & Operational Integrity
+- Re-architected the `WorkspacePanel.jsx` empty state away from a cryptic barrier to an inviting onboarding guide with explicit shortcut tips (`Ctrl+K`).
+- **LLM Honesty**: Replaced the previous `setTimeout` response stub in `App.jsx` with a real `window.api.llm.chat` IPC implementation.
+- **Packaged Sanity**: Verified the production executable (`NeuralShell.exe`) via the `diagnose:packaged` harness, achieving a stable 6.02s boot sequence with real UI telemetry enabled via `NEURAL_IGNORE_INTEGRITY`.
+- Re-wrote the project's high-level pitch in `README.md` to center around its true nature: a *local-first operator shell* leveraging a *trust lane model*.

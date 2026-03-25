@@ -1,4 +1,6 @@
-# NeuralShell V2.0 Alpha: Advanced Agency
+# [HISTORICAL / SUPERSEDED] V2.0 Alpha Release Notes
+> [!NOTE]
+> This document is from an earlier alpha phase. For the current General Availability (GA) state, see [walkthrough.md](walkthrough.md).
 
 We are proud to announce the **NeuralShell V2.0 Alpha** release, a major milestone in autonomous system agency and operator transparency. This release focuses on the "Advanced Agency" (Stage 12) phase, transitioning from individual action pipelines to high-level, multi-step autonomous chains.
 

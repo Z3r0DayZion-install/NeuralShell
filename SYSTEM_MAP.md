@@ -1,6 +1,9 @@
-# SYSTEM MAP — NEURALSHELL V2.1.29 GA
+# [SUPPORTING] System Map
+> [!NOTE]
+> This document maps architectural components and the Trusted Computing Base (TCB).
 
-## Architecture Overview
+# System Map - NeuralShell Architecture
+## Overview
 Capability-based Microkernel with strictly isolated privileged operations.
 
 ## Component Breakdown

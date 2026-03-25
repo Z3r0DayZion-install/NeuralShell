@@ -1,4 +1,8 @@
-# Persisted State Architecture — NeuralShell V2.1.29+
+# [SUPPORTING] State Architecture
+> [!NOTE]
+> This document defines the formal renderer state management architecture.
+
+# State Architecture — NeuralShell V2.1.29+
 
 > Documents all persisted data domains, their schema versions, migration paths,
 > and corruption recovery behavior.

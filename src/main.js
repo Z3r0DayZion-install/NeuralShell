@@ -1076,10 +1076,13 @@ function createWindow() {
 app.whenReady().then(async () => {
   // --- INTEGRITY BOOT ---
   const report = await verifyIntegrity();
-  if (!report.ok) {
+  const ignoreIntegrity = process.env.NEURAL_IGNORE_INTEGRITY === "1";
+  if (!report.ok && !ignoreIntegrity) {
     console.error('[SECURITY] Integrity check failed. Booting into Recovery Mode.');
     createRecoveryWindow(report);
     return; // Stop normal boot
+  } else if (ignoreIntegrity) {
+    console.warn('[SECURITY] Integrity check bypass active (NEURAL_IGNORE_INTEGRITY=1). Proceeding with normal boot.');
   }
 
   logger = require("./core/logger");

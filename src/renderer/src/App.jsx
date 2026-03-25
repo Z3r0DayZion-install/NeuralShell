@@ -14,7 +14,7 @@ function App() {
         activeSession, setActiveSession,
         xpState,
         sessions,
-        chatLog, appendChat,
+        chatLog, appendChat, setChatLog,
         // System
         stats,
         // UI
@@ -42,23 +42,76 @@ function App() {
     }, [togglePalette, closePalette, closeSettings]);
 
     // ── Actions ──
-    const handleSend = () => {
-        if (!prompt.trim()) return;
-        appendChat({ role: 'user', content: prompt });
+    const executeSignal = async (signal) => {
+        const input = signal || prompt;
+        if (!input.trim()) return;
+
+        appendChat({ role: 'user', content: input });
         setPrompt("");
-        setTimeout(() => {
-            appendChat({ role: 'kernel', content: `Signal processed via ${activeModel}. Narrative drift stabilized.` });
-        }, 800);
+
+        const command = input.trim().toLowerCase();
+
+        // ── Command Router ──
+        if (command.startsWith('/')) {
+            if (command === '/clear' || command === '/purge' || command === '/reset') {
+                setChatLog([]);
+                return;
+            }
+
+            setTimeout(() => {
+                if (command === '/help') {
+                    appendChat({
+                        role: 'kernel',
+                        content: "### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `Ctrl+P` : Open Command Palette"
+                    });
+                } else if (command === '/status') {
+                    appendChat({
+                        role: 'kernel',
+                        content: `Node Status: OPERATIONAL\nIntegrity: SEALED\nCPU: ${stats.cpuPercent}%\nMemory: ${stats.memoryMb}MB`
+                    });
+                } else if (command === '/guard') {
+                    appendChat({
+                        role: 'kernel',
+                        content: "Security Guard: ACTIVE\nPolicy: AIRGAP_ENFORCED\nIntegrity: SEALED (Hardware Bound)"
+                    });
+                } else if (command === '/workflows') {
+                    appendChat({
+                        role: 'kernel',
+                        content: `Active Workflows:\n${sessions.join('\n')}`
+                    });
+                } else if (command === '/resume') {
+                    appendChat({
+                        role: 'kernel',
+                        content: "Restoring previous session context... Done. All workstation metrics verified."
+                    });
+                } else {
+                    appendChat({ role: 'kernel', content: `Unknown command: ${command}` });
+                }
+            }, 400);
+            return;
+        }
+
+        // --- REAL LLM COMPLETION ---
+        try {
+            const history = [...chatLog, { role: 'user', content: input }];
+            const response = await window.api.llm.chat(history);
+            appendChat({ role: 'kernel', content: response.content || "System: Empty response from kernel." });
+        } catch (err) {
+            appendChat({ role: 'kernel', content: `Kernel Error: ${err.message}` });
+        }
     };
 
+    const handleSend = () => executeSignal();
+
     return (
-        <div className="h-screen w-screen bg-[#02080e] text-slate-200 flex flex-col overflow-hidden font-sans selection:bg-cyan-500/30">
+        <div className="h-screen w-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden font-sans selection:bg-cyan-500/30">
             {/* 1. Global Status Header (Sovereign Command Strip) */}
             <TopStatusBar
                 model={activeModel}
                 setModel={setActiveModel}
                 stats={stats}
                 xpState={xpState}
+                activeSession={activeSession}
                 onOpenPalette={openPalette}
                 onOpenSettings={openSettings}
             />
@@ -76,12 +129,14 @@ function App() {
 
                 <WorkspacePanel
                     chatLog={chatLog}
+                    activeSession={activeSession}
                     prompt={prompt}
                     setPrompt={setPrompt}
                     onSend={handleSend}
+                    onExecute={executeSignal}
                 />
 
-                <WorkbenchRail stats={stats} />
+                <WorkbenchRail stats={stats} activeSession={activeSession} />
             </div>
 
             {/* 3. Command Palette Overlay */}

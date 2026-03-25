@@ -92,6 +92,8 @@
       hasOwn(delta, "ollamaBaseUrl")
       || hasOwn(delta, "timeoutMs")
       || hasOwn(delta, "retryCount")
+      || hasOwn(delta, "provider")
+      || hasOwn(delta, "apiKey")
     );
 
     if (shouldProjectLegacyBridgeFields) {
@@ -101,6 +103,10 @@
       const targetIndex = activeIndex >= 0 ? activeIndex : 0;
       if (targetIndex >= 0 && seededProfiles[targetIndex]) {
         const targetProfile = seededProfiles[targetIndex];
+        const normalizeProviderId = typeof options.normalizeProviderId === "function"
+          ? options.normalizeProviderId
+          : fallbackNormalizeProviderId;
+
         if (hasOwn(delta, "ollamaBaseUrl")) {
           targetProfile.baseUrl = String(delta.ollamaBaseUrl || targetProfile.baseUrl).trim() || targetProfile.baseUrl;
         }
@@ -109,6 +115,12 @@
         }
         if (hasOwn(delta, "retryCount")) {
           targetProfile.retryCount = delta.retryCount;
+        }
+        if (hasOwn(delta, "provider")) {
+          targetProfile.provider = normalizeProviderId(delta.provider);
+        }
+        if (hasOwn(delta, "apiKey")) {
+          targetProfile.apiKey = String(delta.apiKey == null ? "" : delta.apiKey).trim();
         }
         merged.connectionProfiles = seededProfiles;
         merged.activeProfileId = targetProfile.id;

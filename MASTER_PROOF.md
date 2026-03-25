@@ -1,7 +1,7 @@
 # MASTER PROOF - NeuralShell
 
 Generated: 2026-03-03 (America/Los_Angeles)
-Repository: `C:\Users\KickA\repo_fixes_20260304\NeuralShell`
+Repository: `NeuralShell`
 Branch: `devin/1772585778-security-fixes`
 HEAD: `baa9c543eb0e031f9c43e3e9d7ad189fbda83cd0`
 

@@ -1,4 +1,8 @@
-# HARD PROOF: NeuralShell v1.0.0-OMEGA
+# [HISTORICAL / SUPERSEDED] HARD PROOF - v1.0.0-OMEGA
+> [!NOTE]
+> This proof dossier is for the v1.0.0 OMEGA release. For the V2.1.29 GA release, see [MASTER_PROOF.md](MASTER_PROOF.md).
+
+# HARD PROOF - v1.0.0-OMEGA
 
 Status: ENGINEERING VERIFIED  
 Release Tag: `v1.0.0-OMEGA` (target)  

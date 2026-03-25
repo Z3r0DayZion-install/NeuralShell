@@ -1,3 +1,7 @@
+# [SUPPORTING] Adversarial Audit Report
+> [!NOTE]
+> This report provides background verification evidence for the NeuralShell security posture.
+
 # Adversarial Audit Report: Hardening v1.0
 
 This report documents attempts to reverse engineer or bypass the security measures implemented in Phase 11 & 12.

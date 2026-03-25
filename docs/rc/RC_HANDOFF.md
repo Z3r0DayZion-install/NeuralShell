@@ -1,7 +1,7 @@
 # NeuralShell V2.0 RC Final Handoff Guide
 
 ## Objectives
-This handoff guide facilitates the final transition of NeuralShell V2.0 to its definitive **Release Candidate Final (Post-Gen Expanded)** state. For the definitive boundary of this release and a classification of historical artifacts, refer to the **[RC_RELEASE_SCOPE.md](file:///c:/Users/KickA/Documents/GitHub/NeuralShell/docs/rc/RC_RELEASE_SCOPE.md)**.
+This handoff guide facilitates the final transition of NeuralShell V2.0 to its definitive **Release Candidate Final (Post-Gen Expanded)** state. For the definitive boundary of this release and a classification of historical artifacts, refer to the **[RC_RELEASE_SCOPE.md](RC_RELEASE_SCOPE.md)**.
 
 ## Hardened Architecture Components
 

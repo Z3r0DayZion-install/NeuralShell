@@ -114,7 +114,8 @@ const ALLOWED_ON_CHANNELS = new Set([
   "action:interaction",
   "action:log",
   "workspace:changed",
-  "workspace:list-updated"
+  "workspace:list-updated",
+  "state-updated"
 ]);
 
 function assertAllowed(set, channel, type) {

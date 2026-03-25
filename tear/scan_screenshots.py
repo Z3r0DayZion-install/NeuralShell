@@ -39,7 +39,7 @@ def main():
     folder = (
         sys.argv[1]
         if len(sys.argv) > 1
-        else r"C:\Users\KickA\Downloads\New Folder"
+        else os.path.join(os.getcwd(), "screenshots")
     )
     report = scan_pngs(folder)
     out_path = os.path.join(os.getcwd(), "neuralshell_screenshot_scan.json")

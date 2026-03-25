@@ -1,4 +1,8 @@
-# Whitepaper: NeuralShell Security and Provenance Architecture
+# [SUPPORTING] NeuralShell Whitepaper
+> [!NOTE]
+> This document defines the conceptual security model and provenance flow.
+
+# NeuralShell Whitepaper: Sovereign Autonomy & Provenance Flow
 
 Version: draft v1  
 Date: 2026-03-04

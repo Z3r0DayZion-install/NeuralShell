@@ -1,21 +1,20 @@
-# ARCHITECTURE RISKS — NEURALSHELL V2.1.29 GA
+# [CANONICAL] ARCHITECTURE_RISKS — NeuralShell V2.1.29 GA
 
-## 1. Privilege Escapes
-- **Risk:** Malicious plugin bypasses `pluginLoader` to access `process` or `require`.
-- **Mitigation:** AST Gate blocks `require` outside kernel; `sandbox: true` on renderer.
+This document balances architectural excellence with the practical realities of the GA release surface.
 
-## 2. SPKI Pinning Maintenance
-- **Risk:** Certificate rotation on `updates.neuralshell.app` breaks auto-updates.
-- **Mitigation:** Implement multi-pin rotation support in `network.js`.
+## 1. Known Risks & Mitigations
 
-## 3. Intent Firewall Completeness
-- **Risk:** IPC channel missing from `intentFirewall.js` allows unvalidated payload.
-- **Mitigation:** AST Gate checks for IPC handlers without corresponding schema.
+| Risk | Impact | Mitigation Strategy |
+| :--- | :--- | :--- |
+| **Integrity Bypass** | High | The `NEURAL_IGNORE_INTEGRITY` environment variable is the only way to boot the React-hardened UI in diagnostic environments until EV signing is finalized. Avoid using in publicly exposed workstations. |
+| **IPC Context Leaks** | Medium | Large payloads across the `llm:chat` channel could potentially exceed Electron's IPC limits. Mitigated by state synchronization in `ShellContext`. |
+| **Legacy Stubs** | Low | Some legacy `renderer.js` logic remains for backward compatibility with secondary utilities. Mitigated by strict separation of the React `App.jsx` lifecycle. |
+| **Hardware Binding Drift** | Medium | Moving the installation to a different physical machine will invalidate the OMEGA seal. Mitigated by the documented re-profiling flow. |
 
-## 4. Performance Overhead
-- **Risk:** Deep validation of every IPC intent increases latency.
-- **Mitigation:** Ajv schema pre-compilation; keep schemas minimal.
+## 2. Unresolved Technical Debt
+- **Automated Signature Validation**: The `verify-release-signature.js` script is currently manual and requires operator execution.
+- **Diagnostic Log Volume**: Sanitized diagnostic JSONs are large (40k+) and could benefit from future truncation.
 
-## 5. TCB Surface Area
-- **Risk:** Kernel modules grow too complex, increasing the attack surface.
-- **Mitigation:** Strict LOC limits and audit requirements for `src/kernel/`.
+## 3. Strategic Recommendations
+- **Phase 12 Goal**: Prioritize the acquisition of a production certificate to remove the integrity-bypass requirement.
+- **Documentation Hygiene**: Maintain the relative-pathing discipline established in Phase 11.

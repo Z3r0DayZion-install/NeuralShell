@@ -55,7 +55,7 @@ export function RitualTerminal() {
             )}
 
             <div className="flex justify-between items-center mb-3">
-                <div className="text-[10px] uppercase tracking-widest text-cyan-400 opacity-60">Ritual Console // Input required</div>
+                <div className="text-[10px] uppercase tracking-widest text-cyan-400 opacity-60">Protocol Console // Input required</div>
                 <div className="flex gap-3 text-[10px]">
                     <span className="text-amber-300">XP: {xpState.xp}</span>
                     <span className="text-cyan-300">TIER: {xpState.tier}</span>
@@ -78,7 +78,7 @@ export function RitualTerminal() {
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     className="w-full bg-black/30 border border-cyan-400/20 rounded-lg pl-6 py-1.5 text-cyan-300 text-xs font-mono focus:outline-none focus:border-cyan-400/50 transition-colors"
-                    placeholder="ENTER_RITUAL_COMMAND"
+                    placeholder="ENTER_PROTOCOL_COMMAND"
                     autoComplete="off"
                 />
             </form>

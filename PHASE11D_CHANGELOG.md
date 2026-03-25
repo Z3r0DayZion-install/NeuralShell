@@ -1,3 +1,7 @@
+# [CONVERSATION ARTIFACT] Phase 11D Changelog
+> [!IMPORTANT]
+> This is a raw conversation artifact and does not represent canonical release truth.
+
 # PHASE 11D CHANGELOG: Multi-Workspace Orchestration
 
 ## Core Implementation

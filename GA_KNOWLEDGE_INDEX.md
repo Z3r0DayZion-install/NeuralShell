@@ -1,4 +1,8 @@
-# GA KNOWLEDGE INDEX: NeuralShell V2.1.29
+# [CANONICAL] GA Knowledge Index
+> [!IMPORTANT]
+> This is a canonical release-track document for NeuralShell V2.1.29 GA.
+
+# GA Knowledge Index: NeuralShell V2.1.29
 
 Master repository of all high-value documentation, audit reports, and release artifacts.
 
@@ -30,7 +34,7 @@ Master repository of all high-value documentation, audit reports, and release ar
 | Document | Purpose |
 | :--- | :--- |
 | [CHANGELOG.md](./CHANGELOG.md) | Iterative development history. |
-| [NEXT_CYCLE_PLAN.md](./NEXT_CYCLE_PLAN.md) | Post-GA roadmap and maintenance targets. |
+| [docs/vnext_planning/VNEXT_BRANCH_PLAN.md](./docs/vnext_planning/VNEXT_BRANCH_PLAN.md) | Post-GA roadmap and maintenance targets. |
 | [MANUAL_VALIDATION_CHECKLIST.md](./MANUAL_VALIDATION_CHECKLIST.md) | Human-in-the-loop verification protocol. |
 
 ## 5. Install Guides (Per-Platform)

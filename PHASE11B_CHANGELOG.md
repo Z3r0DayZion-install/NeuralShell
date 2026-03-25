@@ -1,3 +1,7 @@
+# [CONVERSATION ARTIFACT] Phase 11B Changelog
+> [!IMPORTANT]
+> This is a raw conversation artifact and does not represent canonical release truth.
+
 # Phase 11B Changelog: Interactive Pipelines
 
 ## [1.2.1-OMEGA-11B] - 2026-03-18

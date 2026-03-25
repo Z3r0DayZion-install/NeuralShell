@@ -1,4 +1,8 @@
-# NeuralShell V2.0 RC Final (Post-Gen Expanded) — Integrity Manifest
+# [HISTORICAL / SUPERSEDED] Post-Gen RC Final Manifest
+> [!NOTE]
+> This document is for a previous generation release candidate. For V2.1.29 GA, see [RELEASE_MANIFEST.md](RELEASE_MANIFEST.md).
+
+# Post-Gen RC Final Manifest
 
 This manifest categorizes all repository artifacts into a truthful classification. It distinguishes between the core release surface and historical residue maintained for traceability.
 

@@ -1,6 +1,13 @@
 # NeuralShell
 
-NeuralShell is an Electron workstation with strict IPC validation, offline-first defaults, and release provenance gates.
+NeuralShell is a **local-first operator shell** designed for autonomous execution and workflow coordination. Built on a hardened **React/Electron desktop workflow**, it combines an intuitive **command palette as the control plane** with a robust **workbench and trust lane model**. Under the hood, it enforces strict **hardened state and contract discipline**, ensuring stability and security before speed.
+
+> [!TIP]
+> **Source of Truth**: See the [GA Knowledge Index](./GA_KNOWLEDGE_INDEX.md) for the authoritative release documentation and audit dossier.
+
+
+## Demo Walkthrough
+![60-Second Proof Video](release/proof-video-walkthrough.webm)
 
 ## Beta Program (Live)
 

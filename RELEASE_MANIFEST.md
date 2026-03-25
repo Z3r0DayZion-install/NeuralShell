@@ -7,16 +7,17 @@
 ## ZIP Contents
 | File | Purpose |
 | :--- | :--- |
-| `FINAL_HANDOFF_STATUS.md` | Final project status and OMEGA hardening verification. |
-| `HARD_PROOF_v1.0.0-OMEGA.md` | Engineering certification for core runtime and release gates. |
-| `MANUAL_VALIDATION_CHECKLIST.md` | Comprehensive guide for manual functional verification. |
-| `MASTER_PROOF.md` | Evidence of LLM wiring, IPC handshake, and automated test passes. |
-| `README.md` | Project overview, quick start, and release flow documentation. |
-| `RELEASE_MANIFEST.md` | This document: full manifest and portability audit record. |
-| `SHA256SUMS.txt` | Cryptographic SHA-256 checksums for all included documents. |
-| `SYSTEM_MAP.md` | Architectural breakdown of the trusted computing base and security layers. |
-| `walkthrough.md` | Technical narrative of OMEGA security hardening and research sync. |
-| `governance/` | Source manifest and compliance registries for auditability. |
+| `ARCHITECTURE_RISKS.md` | Documented architectural risks and mitigations. |
+| `FINAL_HANDOFF_STATUS.md` | Final executive summary of release readiness. |
+| `GA_KNOWLEDGE_INDEX.md` | Master index for all GA release documentation. |
+| `MANUAL_VALIDATION_CHECKLIST.md` | Guide for manual verification procedures. |
+| `MASTER_PROOF.md` | Evidence of LLM wiring and IPC handshake. |
+| `README.md` | Project overview and quick start. |
+| `RELEASE_MANIFEST.md` | This document: full manifest. |
+| `SHA256SUMS.txt` | Cryptographic checksums for the package. |
+| `SYSTEM_MAP.md` | Architectural breakdown of the security layers. |
+| `walkthrough.md` | Technical narrative and UI gallery. |
+| `governance/` | Source manifest and compliance registries. |
 
 ## Privacy & Portability Scrub
 The handoff package was reviewed for machine-local and session-local references, including:

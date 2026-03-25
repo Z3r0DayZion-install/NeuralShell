@@ -1,3 +1,7 @@
+# [CONVERSATION ARTIFACT] Phase 11D Handoff
+> [!IMPORTANT]
+> This is a raw conversation artifact and does not represent canonical release truth.
+
 # PHASE 11D HANDOFF: Multi-Workspace Orchestration
 
 ## Core Outcomes

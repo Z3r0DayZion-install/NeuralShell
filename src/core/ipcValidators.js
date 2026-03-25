@@ -247,6 +247,8 @@ function validateSettings(input) {
       input.connectOnStartup == null ? true : Boolean(input.connectOnStartup),
     autoLoadRecommendedContextProfile:
       input.autoLoadRecommendedContextProfile == null ? false : Boolean(input.autoLoadRecommendedContextProfile),
+    provider: normalizeBridgeProviderId(input.provider),
+    apiKey: input.apiKey == null ? "" : String(input.apiKey).trim(),
     tier: VALID_TIERS.has(String(input.tier).toUpperCase()) ? String(input.tier).toUpperCase() : "PREVIEW"
   };
 

@@ -1,3 +1,7 @@
+# [CONVERSATION ARTIFACT] Phase 11B Handoff
+> [!IMPORTANT]
+> This is a raw conversation artifact and does not represent canonical release truth.
+
 # Phase 11B Handoff: Interactive Pipelines
 
 ## Status: RELEASE READY ✅
