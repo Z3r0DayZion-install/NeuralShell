@@ -390,3 +390,32 @@ test("StateManager preserves state across identity rotation when hardware bindin
   }
 });
 
+test('StateManager handles deeply nested status updates and edge cases', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ns5-state-coverage-'));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require('../src/core/stateManager');
+      stateManager.load();
+
+      const complexObj = { a: 1, b: { c: 2 } };
+      stateManager.set('complexRecord', complexObj);
+      assert.deepEqual(stateManager.get('complexRecord'), complexObj);
+
+      const newComplexObj = { a: 1, b: { c: 2, d: 3 } };
+      stateManager.set('complexRecord', newComplexObj);
+      const updated = stateManager.get('complexRecord');
+      assert.equal(updated.a, 1);
+      assert.equal(updated.b.c, 2);
+      assert.equal(updated.b.d, 3);
+
+      stateManager.set('complexRecord', null);
+      assert.equal(stateManager.get('complexRecord'), null);
+
+      const exported = stateManager.getState();
+      assert.ok(exported !== null);
+      assert.equal(typeof exported, 'object');
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
