@@ -1,7 +1,7 @@
 {
   "name": "neuralshell-v5",
   "version": "2.1.29",
-  "description": "NeuralShell v5 \u2013 modular chat client with model switching and session management",
+  "description": "NeuralShell v5 - modular chat client with model switching and session management",
   "main": "src/main.js",
   "author": "NeuralShell Team",
   "license": "MIT",
@@ -87,7 +87,12 @@
     "channel:store:screenshots": "node scripts/capture_store_screenshots.js",
     "channel:site:prepare": "node scripts/prepare_public_site_assets.js && electron scripts/render_marketing_assets.js",
     "outreach:autopilot": "python scripts/run_beta_inbound_autopilot.py --skip-fetch",
-    "outreach:autopilot:full": "python scripts/run_beta_inbound_autopilot.py"
+    "outreach:autopilot:full": "python scripts/run_beta_inbound_autopilot.py",
+    "proof:relay": "node scripts/proofRelay.cjs",
+    "share:image": "node scripts/genShareImage.cjs",
+    "proof:bundle": "node scripts/proof_bundle.cjs",
+    "test:e2e:keyvault": "playwright test e2e/keyvault.spec.js -c playwright.e2e.config.js",
+    "test:e2e:proofRelay": "playwright test e2e/proofRelay.spec.js -c playwright.e2e.config.js"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",

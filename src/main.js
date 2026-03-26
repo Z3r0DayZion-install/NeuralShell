@@ -64,6 +64,7 @@ let pluginLoader;
 let sessionManager;
 let stateManager;
 let systemMonitor;
+let analyticsStore;
 let rgbController;
 let auditChain;
 let daemonWatchdog;
@@ -71,20 +72,119 @@ let xpManager;
 let ritualManager;
 let historyLoader;
 let secretVault;
+let autoUpdateLane;
 let _agentController;
 
 let mainWindow = null;
 let bridgeHealthTimer = null;
 let smokeFinalized = false;
 
-if (process.env.NEURAL_USER_DATA_DIR) {
+function parseRuntimeEnvFile(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return {};
+  const text = fs.readFileSync(filePath, "utf8");
+  const out = {};
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = String(line || "").trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (!key) continue;
+    out[key] = value;
+  }
+  return out;
+}
+
+function loadRuntimeEnvOverrides() {
+  const candidates = [path.join(process.cwd(), "NeuralShell.runtime.env")];
   try {
-    const overrideDir = path.resolve(process.env.NEURAL_USER_DATA_DIR);
-    fs.mkdirSync(overrideDir, { recursive: true });
-    app.setPath("userData", overrideDir);
-    console.log(`[BOOT] Using overridden userData path (env): ${overrideDir}`);
+    const exeDir = path.dirname(app.getPath("exe"));
+    candidates.push(path.join(exeDir, "NeuralShell.runtime.env"));
+  } catch {
+    // ignore pre-ready path failures
+  }
+  for (const candidate of candidates) {
+    const vars = parseRuntimeEnvFile(candidate);
+    for (const [key, value] of Object.entries(vars)) {
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  }
+}
+
+function normalizeLicenseMode(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "auditor" || raw === "audit") return "auditor";
+  if (raw === "operator" || raw === "pro") return "operator";
+  return "preview";
+}
+
+function forcedTierFromLicenseMode(mode) {
+  if (mode === "auditor") return "AUDITOR";
+  if (mode === "operator") return "OPERATOR";
+  return null;
+}
+
+loadRuntimeEnvOverrides();
+const RUNTIME_LICENSE_MODE = normalizeLicenseMode(process.env.LICENSE_MODE);
+const FORCED_RUNTIME_TIER = forcedTierFromLicenseMode(RUNTIME_LICENSE_MODE);
+
+function withRuntimeTier(settings = {}) {
+  const next = settings && typeof settings === "object" ? { ...settings } : {};
+  if (FORCED_RUNTIME_TIER) {
+    next.tier = FORCED_RUNTIME_TIER;
+  }
+  return next;
+}
+
+function applyUserDataOverride(dirPath, sourceLabel) {
+  try {
+    const resolved = path.resolve(String(dirPath || "").trim());
+    if (!resolved) return false;
+    fs.mkdirSync(resolved, { recursive: true });
+    app.setPath("userData", resolved);
+    console.log(`[BOOT] Using overridden userData path (${sourceLabel}): ${resolved}`);
+    return true;
   } catch (err) {
-    console.warn(`[BOOT] Failed to apply NEURAL_USER_DATA_DIR override: ${err.message || err}`);
+    console.warn(`[BOOT] Failed to apply userData override (${sourceLabel}): ${err.message || err}`);
+    return false;
+  }
+}
+
+function resolvePortableUserDataCandidates() {
+  const candidates = [];
+  if (process.env.NEURAL_PORTABLE_DATA_DIR) {
+    candidates.push(path.resolve(process.env.NEURAL_PORTABLE_DATA_DIR));
+  }
+  try {
+    const exeDir = path.dirname(app.getPath("exe"));
+    candidates.push(path.join(exeDir, "portable-data"));
+  } catch {
+    // ignore
+  }
+  candidates.push(path.resolve(process.cwd(), "portable-data"));
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+const PORTABLE_MODE =
+  process.argv.includes("--portable-mode") ||
+  process.env.NEURAL_PORTABLE_MODE === "1";
+
+if (process.env.NEURAL_USER_DATA_DIR) {
+  applyUserDataOverride(process.env.NEURAL_USER_DATA_DIR, "env:NEURAL_USER_DATA_DIR");
+} else if (PORTABLE_MODE) {
+  const candidates = resolvePortableUserDataCandidates();
+  let applied = false;
+  for (const candidate of candidates) {
+    if (applyUserDataOverride(candidate, `portable-mode:${candidate}`)) {
+      applied = true;
+      break;
+    }
+  }
+  if (!applied) {
+    console.warn("[BOOT] Portable mode requested but no writable portable userData directory could be established.");
   }
 } else {
   // Check for smoke-override.json next to the executable
@@ -100,10 +200,7 @@ if (process.env.NEURAL_USER_DATA_DIR) {
     if (targetFile) {
       const overrideData = JSON.parse(fs.readFileSync(targetFile, "utf8"));
       if (overrideData.NEURAL_USER_DATA_DIR) {
-        const overrideDir = path.resolve(overrideData.NEURAL_USER_DATA_DIR);
-        fs.mkdirSync(overrideDir, { recursive: true });
-        app.setPath("userData", overrideDir);
-        console.log(`[BOOT] Using overridden userData path (file=${targetFile}): ${overrideDir}`);
+        applyUserDataOverride(overrideData.NEURAL_USER_DATA_DIR, `file:${targetFile}`);
       }
     }
   } catch (err) {
@@ -115,6 +212,53 @@ const SMOKE_MODE =
   process.argv.includes("--smoke-mode") ||
   process.env.NEURAL_SMOKE_MODE === "1";
 const SMOKE_REPORT_PATH = process.env.NEURAL_SMOKE_REPORT || null;
+const REACT_RENDERER_DEV_URL = String(process.env.NEURAL_RENDERER_DEV_URL || "http://localhost:5173").replace(/\/+$/, "");
+const PROOF_RELAY_CONFIG_PATH = process.env.NEURAL_PROOF_RELAY_CONFIG
+  ? path.resolve(String(process.env.NEURAL_PROOF_RELAY_CONFIG))
+  : path.join(process.cwd(), "release", "proof-relay-settings.json");
+
+function readProofRelayConfig() {
+  if (!fs.existsSync(PROOF_RELAY_CONFIG_PATH)) {
+    return {
+      enabled: false,
+      channel: "auto"
+    };
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(PROOF_RELAY_CONFIG_PATH, "utf8"));
+    const base = {
+      enabled: Boolean(parsed && parsed.enabled),
+      channel: String(parsed && parsed.channel ? parsed.channel : "auto")
+    };
+    if (RUNTIME_LICENSE_MODE === "auditor") {
+      return {
+        ...base,
+        enabled: false,
+        forcedOff: true
+      };
+    }
+    return base;
+  } catch {
+    return {
+      enabled: false,
+      channel: "auto"
+    };
+  }
+}
+
+function writeProofRelayConfig(config = {}) {
+  const next = {
+    enabled: Boolean(config.enabled),
+    channel: String(config.channel || "auto")
+  };
+  if (RUNTIME_LICENSE_MODE === "auditor") {
+    next.enabled = false;
+    next.forcedOff = true;
+  }
+  fs.mkdirSync(path.dirname(PROOF_RELAY_CONFIG_PATH), { recursive: true });
+  fs.writeFileSync(PROOF_RELAY_CONFIG_PATH, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+  return next;
+}
 
 const BUILT_IN_COMMANDS = [
   { name: "help", description: "List available commands.", args: [], source: "core" },
@@ -206,6 +350,7 @@ async function runSmokeProbe() {
   const report = {
     generatedAt: new Date().toISOString(),
     mode: "smoke",
+    userDataPath: app.getPath("userData"),
     checks: {
       rendererLoad: false,
       rendererDom: false,
@@ -218,7 +363,23 @@ async function runSmokeProbe() {
     report.checks.rendererLoad = true;
 
     const domReady = await mainWindow.webContents.executeJavaScript(
-      "Boolean(document.getElementById('sendBtn'))",
+      `(async () => {
+        const startedAt = Date.now();
+        const timeoutMs = 15000;
+        while (Date.now() - startedAt < timeoutMs) {
+          const hasRoot = Boolean(document.getElementById("root"));
+          const hasTopStatus = Boolean(document.querySelector('[data-testid="top-status-bar"]'));
+          const ready = document.readyState === "complete" || document.readyState === "interactive";
+          if (ready && (hasTopStatus || hasRoot)) {
+            return true;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 80));
+        }
+        return Boolean(
+          document.querySelector('[data-testid="top-status-bar"]')
+          || document.getElementById("root")
+        );
+      })()`,
       true
     );
     report.checks.rendererDom = Boolean(domReady);
@@ -340,6 +501,151 @@ function normalizeBridgeProfiles(settings = {}) {
   return normalizeBridgeSettings(settings).connectionProfiles;
 }
 
+function providerRequiresApiKey(providerId) {
+  const provider = bridgeProviderCatalog && typeof bridgeProviderCatalog.getBridgeProvider === "function"
+    ? bridgeProviderCatalog.getBridgeProvider(providerId)
+    : { requiresApiKey: providerId !== "ollama" };
+  return Boolean(provider && provider.requiresApiKey);
+}
+
+function buildTransientProfileId(profile = {}) {
+  const provider = String(profile.provider || "ollama").trim().toLowerCase() || "ollama";
+  const baseUrl = String(profile.baseUrl || "").trim().toLowerCase();
+  return `transient:${provider}:${baseUrl}`;
+}
+
+async function resolveStoredApiKey(profileId) {
+  if (!secretVault || typeof secretVault.getSecret !== "function") return "";
+  try {
+    return String(await secretVault.getSecret(profileId, "apiKey") || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+async function resolveProfileApiKey(profile = {}, settings = {}) {
+  const inline = String(profile.apiKey || "").trim();
+  if (inline) return inline;
+
+  const profileId = String(profile.id || "").trim();
+  if (profileId) {
+    return resolveStoredApiKey(profileId);
+  }
+
+  const profiles = normalizeBridgeProfiles(settings);
+  const provider = String(profile.provider || "").trim().toLowerCase();
+  const baseUrl = String(profile.baseUrl || "").trim();
+  const matched = profiles.find((candidate) => (
+    String(candidate && candidate.provider || "").trim().toLowerCase() === provider
+    && String(candidate && candidate.baseUrl || "").trim() === baseUrl
+  ));
+
+  if (matched && matched.id) {
+    return resolveStoredApiKey(matched.id);
+  }
+
+  const activeProfileId = String(settings.activeProfileId || "").trim();
+  if (activeProfileId) {
+    return resolveStoredApiKey(activeProfileId);
+  }
+
+  return "";
+}
+
+async function sanitizeBridgeSettingsSecrets(settings = {}) {
+  const normalized = normalizeBridgeSettings(settings);
+  const profiles = Array.isArray(normalized.connectionProfiles)
+    ? normalized.connectionProfiles.map((profile) => ({ ...profile }))
+    : [];
+
+  const sanitizedProfiles = [];
+  for (const profile of profiles) {
+    const providerId = String(profile.provider || "ollama").trim().toLowerCase() || "ollama";
+    const profileId = String(profile.id || buildTransientProfileId(profile)).trim();
+    const requiresKey = providerRequiresApiKey(providerId);
+    const inlineKey = String(profile.apiKey || "").trim();
+
+    if (requiresKey && inlineKey) {
+      try {
+        if (secretVault && typeof secretVault.setSecret === "function") {
+          await secretVault.setSecret(profileId, "apiKey", inlineKey);
+        }
+      } catch (err) {
+        logger && logger.log("warn", "vault secret persist failed", {
+          profileId,
+          providerId,
+          reason: err && err.message ? err.message : String(err)
+        });
+      }
+    }
+
+    let present = false;
+    if (requiresKey) {
+      present = inlineKey.length > 0 || Boolean(await resolveStoredApiKey(profileId));
+    }
+
+    sanitizedProfiles.push({
+      ...profile,
+      id: profileId,
+      apiKey: "",
+      apiKeyPresent: present
+    });
+  }
+
+  const activeProfileId = String(
+    normalized.activeProfileId
+    || (sanitizedProfiles[0] && sanitizedProfiles[0].id)
+    || ""
+  ).trim();
+
+  const legacyApiKey = String(normalized.apiKey || "").trim();
+  if (legacyApiKey && activeProfileId) {
+    try {
+      if (secretVault && typeof secretVault.setSecret === "function") {
+        await secretVault.setSecret(activeProfileId, "apiKey", legacyApiKey);
+      }
+    } catch (err) {
+      logger && logger.log("warn", "vault legacy apiKey persist failed", {
+        profileId: activeProfileId,
+        reason: err && err.message ? err.message : String(err)
+      });
+    }
+  }
+
+  const activeProfile = sanitizedProfiles.find((item) => item.id === activeProfileId) || null;
+
+  return {
+    ...normalized,
+    connectionProfiles: sanitizedProfiles,
+    activeProfileId,
+    apiKey: "",
+    apiKeyPresent: Boolean(activeProfile && activeProfile.apiKeyPresent)
+  };
+}
+
+async function decorateBridgeProfiles(settings = {}) {
+  const normalized = normalizeBridgeSettings(settings);
+  const profiles = Array.isArray(normalized.connectionProfiles)
+    ? normalized.connectionProfiles
+    : [];
+  const out = [];
+
+  for (const profile of profiles) {
+    const providerId = String(profile.provider || "ollama").trim().toLowerCase() || "ollama";
+    const requiresKey = providerRequiresApiKey(providerId);
+    const profileId = String(profile.id || buildTransientProfileId(profile)).trim();
+    const storedApiKey = requiresKey ? await resolveStoredApiKey(profileId) : "";
+    out.push({
+      ...profile,
+      id: profileId,
+      apiKey: "",
+      apiKeyPresent: Boolean(storedApiKey)
+    });
+  }
+
+  return out;
+}
+
 function providerEnvStatusEntries(settings = {}) {
   const profiles = normalizeBridgeProfiles(settings);
   return ENV_BRIDGE_PROVIDER_BINDINGS.map((binding) => {
@@ -432,17 +738,22 @@ function pickActiveBridgeProfile(settings = {}) {
   return selection.liveProfile || null;
 }
 
-function applyBridgeSettings(settings = {}) {
+async function applyBridgeSettings(settings = {}) {
   const active = pickActiveBridgeProfile(settings);
   if (active) {
+    const resolvedApiKey = await resolveProfileApiKey(active, settings);
     llmService.configure({
       baseUrl: active.baseUrl,
       provider: active.provider,
-      apiKey: active.apiKey,
+      apiKey: resolvedApiKey,
       requestTimeoutMs: active.timeoutMs,
       maxRetries: active.retryCount
     });
-    return active;
+    return {
+      ...active,
+      apiKey: "",
+      apiKeyPresent: Boolean(resolvedApiKey)
+    };
   }
   llmService.configure({
     baseUrl: settings.ollamaBaseUrl,
@@ -452,6 +763,45 @@ function applyBridgeSettings(settings = {}) {
     maxRetries: settings.retryCount
   });
   return null;
+}
+
+async function persistBridgeSettings(nextSettings = {}) {
+  const guarded = validateSettings(withRuntimeTier(nextSettings));
+  const vaulted = await sanitizeBridgeSettingsSecrets(guarded);
+  stateManager.set("settings", vaulted);
+  const saved = stateManager.get("settings") || vaulted;
+
+  if (analyticsStore) {
+    analyticsStore.setEnabled(Boolean(saved.analyticsEnabled));
+  }
+
+  writeProofRelayConfig({
+    enabled: Boolean(saved.proofRelayEnabled),
+    channel: readProofRelayConfig().channel || "auto"
+  });
+
+  if (autoUpdateLane) {
+    const currentPolicy = autoUpdateLane.getPolicy();
+    autoUpdateLane.setPolicy({
+      enabled: Boolean(saved.autoUpdateEnabled),
+      channel: currentPolicy.channel || "stable"
+    });
+  }
+
+  await applyBridgeSettings(saved);
+  return saved;
+}
+
+async function settingsForRenderer(settings = {}) {
+  const profiles = await decorateBridgeProfiles(settings);
+  const activeProfileId = String(settings.activeProfileId || "").trim();
+  const active = profiles.find((profile) => profile.id === activeProfileId) || null;
+  return {
+    ...settings,
+    connectionProfiles: profiles,
+    apiKey: "",
+    apiKeyPresent: Boolean(active && active.apiKeyPresent)
+  };
 }
 
 let _isBridgeHealthCheckInProgress = false;
@@ -483,7 +833,7 @@ async function _runBridgeHealthCheck() {
     } else if (settings.connectOnStartup) {
       // Only attempt configuration if we aren't already trying or if we're definitively offline
       if (_lastBridgeStatusSent !== LLM_STATUS.RECONNECTING) {
-        applyBridgeSettings(settings);
+        await applyBridgeSettings(settings);
       }
       nextStatus = LLM_STATUS.RECONNECTING;
     }
@@ -1026,10 +1376,18 @@ function createWindow() {
   // Zero-Renderer Network Lockdown
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     const url = details.url;
+    const isDev = process.env.NODE_ENV === "development";
+    
     // Allow internal file loading and devtools
     if (url.startsWith('file://') || url.startsWith('devtools://')) {
       return callback({ cancel: false });
     }
+    
+    // Allow localhost in dev mode for Vite/HMR
+    if (isDev && url.startsWith(REACT_RENDERER_DEV_URL)) {
+      return callback({ cancel: false });
+    }
+
     // Block ALL other outbound requests from renderer
     console.warn(`[SECURITY] Blocked renderer network request: ${url}`);
     callback({ cancel: true });
@@ -1037,7 +1395,8 @@ function createWindow() {
 
   // Navigation Guards
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('file://')) {
+    const isDev = process.env.NODE_ENV === "development";
+    if (!url.startsWith('file://') && !(isDev && url.startsWith(REACT_RENDERER_DEV_URL))) {
       event.preventDefault();
       console.warn(`[SECURITY] Blocked navigation to: ${url}`);
     }
@@ -1050,10 +1409,18 @@ function createWindow() {
 
   // Strict CSP
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    const isDev = process.env.NODE_ENV === "development";
+    const connectSrc = isDev
+      ? `connect-src 'self' ws://localhost:5173 ${REACT_RENDERER_DEV_URL};`
+      : "connect-src 'none';";
+    const scriptSrc = isDev
+      ? `script-src 'self' 'unsafe-eval' ${REACT_RENDERER_DEV_URL};`
+      : "script-src 'self';";
+    
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none';"]
+        'Content-Security-Policy': [`default-src 'none'; ${scriptSrc} style-src 'self' 'unsafe-inline'; img-src 'self' data:; ${connectSrc}`]
       }
     });
   });
@@ -1067,7 +1434,7 @@ function createWindow() {
   });
 
   if (process.env.NODE_ENV === "development") {
-    mainWindow.loadURL("http://localhost:5173");
+    mainWindow.loadURL(REACT_RENDERER_DEV_URL);
   } else {
     mainWindow.loadFile(path.join(__dirname, "..", "dist-renderer", "index.html"));
   }
@@ -1091,11 +1458,18 @@ app.whenReady().then(async () => {
   sessionManager = require("./core/sessionManager");
   stateManager = require("./core/stateManager");
   systemMonitor = require("./core/systemMonitor");
+  const { createAnalyticsStore } = require("./core/analyticsStore");
+  analyticsStore = createAnalyticsStore();
   rgbController = require("./core/rgbController");
   xpManager = require("./core/xpManager");
   ritualManager = require("./core/ritualManager");
   historyLoader = require("./core/historyLoader");
   secretVault = require("./core/secretVault");
+  const { createAutoUpdateLane } = require("../auto_update/lane");
+  autoUpdateLane = createAutoUpdateLane({
+    userDataPath: app.getPath("userData"),
+    logger
+  });
   const AgentController = require("./core/agentController");
   _agentController = new AgentController({ llmService, sessionManager });
   auditChain = new AuditChain(
@@ -1106,6 +1480,19 @@ app.whenReady().then(async () => {
   workflowMemory.init(app.getPath("userData"));
   const workspaceRegistry = require("./core/workspaceRegistry");
   workspaceRegistry.init(app.getPath("userData"));
+
+  if (autoUpdateLane) {
+    try {
+      const swapResult = autoUpdateLane.applyPendingSwap();
+      if (swapResult && swapResult.applied) {
+        logger.log("info", "auto update swap applied", swapResult);
+      }
+    } catch (err) {
+      logger.log("warn", "auto update pending swap failed", {
+        reason: err && err.message ? err.message : String(err)
+      });
+    }
+  }
 
   // --- ORCHESTRATION HARDENING (Phase 10B) ---
   const savedActionStatus = stateManager.get("actionStatus");
@@ -1131,10 +1518,14 @@ app.whenReady().then(async () => {
   await identityKernel.init();
   stateManager.load();
   auditChain.init();
-  const settings = stateManager.get("settings") || {};
-  applyBridgeSettings(settings);
+  const settings = await persistBridgeSettings(
+    validateSettings(withRuntimeTier(stateManager.get("settings") || {}))
+  );
   llmService.setModel(stateManager.get("model") || "llama3");
   llmService.setPersona(settings.personalityProfile || "balanced");
+  if (analyticsStore) {
+    analyticsStore.setEnabled(Boolean(settings.analyticsEnabled));
+  }
   rgbController.configure(settings);
   await rgbController.applyMood("idle", settings.personalityProfile || "balanced");
 
@@ -1256,6 +1647,7 @@ ipcMain.handle("llm:chat", async (_event, messages) => {
     });
   }
 
+  const chatStartedAt = Date.now();
   const response = await llmService.chat(payload, false);
   const assistantContent = response && response.message ? response.message.content || "" : "";
   const assistantMessage = {
@@ -1269,6 +1661,23 @@ ipcMain.handle("llm:chat", async (_event, messages) => {
     model: stateManager.get("model") || "unknown",
     content: assistantContent
   });
+
+  if (analyticsStore) {
+    const settings = stateManager.get("settings") || {};
+    const activeProfile = pickActiveBridgeProfile(settings);
+    const latestPromptTokens = latestMessage ? countWords(latestMessage.content) : 0;
+    const completionTokens = countWords(assistantContent);
+    analyticsStore.recordEvent({
+      ts: new Date().toISOString(),
+      provider: activeProfile ? activeProfile.provider : "ollama",
+      model: stateManager.get("model") || "unknown",
+      latencyMs: Date.now() - chatStartedAt,
+      promptTokens: latestPromptTokens,
+      completionTokens,
+      totalTokens: latestPromptTokens + completionTokens
+    });
+  }
+
   return response;
 });
 
@@ -1291,6 +1700,7 @@ ipcMain.handle("llm:stream", async (_event, messages) => {
   }
 
   try {
+    const streamStartedAt = Date.now();
     let assistantBuffer = "";
     const iterator = await llmService.chat(payload, true);
     for await (const chunk of iterator) {
@@ -1308,6 +1718,23 @@ ipcMain.handle("llm:stream", async (_event, messages) => {
       model: stateManager.get("model") || "unknown",
       content: assistantBuffer
     });
+
+    if (analyticsStore) {
+      const settings = stateManager.get("settings") || {};
+      const activeProfile = pickActiveBridgeProfile(settings);
+      const latestPromptTokens = latestMessage ? countWords(latestMessage.content) : 0;
+      const completionTokens = countWords(assistantBuffer);
+      analyticsStore.recordEvent({
+        ts: new Date().toISOString(),
+        provider: activeProfile ? activeProfile.provider : "ollama",
+        model: stateManager.get("model") || "unknown",
+        latencyMs: Date.now() - streamStartedAt,
+        promptTokens: latestPromptTokens,
+        completionTokens,
+        totalTokens: latestPromptTokens + completionTokens
+      });
+    }
+
     sendToRenderer("llm-stream-complete");
     return true;
   } catch (err) {
@@ -1342,13 +1769,15 @@ ipcMain.handle("state:set", async (_event, key, value) => {
     return true;
   }
   if (safeKey === "settings") {
-    const merged = {
-      ...(stateManager.get("settings") || {}),
-      ...validateSettings(value)
-    };
-    stateManager.set("settings", merged);
-    llmService.setPersona(merged.personalityProfile || "balanced");
-    applyBridgeSettings(merged);
+    const merged = mergeBridgeSettings(
+      stateManager.get("settings") || {},
+      validateSettings(value)
+    );
+    const savedSettings = await persistBridgeSettings(merged);
+    llmService.setPersona(savedSettings.personalityProfile || "balanced");
+    if (rgbController) {
+      rgbController.configure(savedSettings);
+    }
     return true;
   }
   if (safeKey === "chat") {
@@ -1379,13 +1808,16 @@ ipcMain.handle("state:update", async (_event, updates) => {
     llmService.setModel(validateModel(safeUpdates.model));
   }
   if (safeUpdates.settings != null) {
-    const merged = {
-      ...(stateManager.get("settings") || {}),
-      ...validateSettings(safeUpdates.settings)
-    };
-    safeUpdates.settings = merged;
-    llmService.setPersona(merged.personalityProfile || "balanced");
-    applyBridgeSettings(merged);
+    const merged = mergeBridgeSettings(
+      stateManager.get("settings") || {},
+      validateSettings(safeUpdates.settings)
+    );
+    const savedSettings = await persistBridgeSettings(merged);
+    safeUpdates.settings = await settingsForRenderer(savedSettings);
+    llmService.setPersona(savedSettings.personalityProfile || "balanced");
+    if (rgbController) {
+      rgbController.configure(savedSettings);
+    }
   }
   if (safeUpdates.chat != null) {
     safeUpdates.chat = validateMessages(safeUpdates.chat);
@@ -1407,11 +1839,11 @@ ipcMain.handle("state:import", async (_event, payload) => {
   }
   if (safeState.settings) {
     const mergedSettings = mergeBridgeSettings(stateManager.get("settings") || {}, safeState.settings);
-    safeState.settings = mergedSettings;
-    llmService.setPersona(mergedSettings.personalityProfile || "balanced");
-    applyBridgeSettings(mergedSettings);
+    const savedSettings = await persistBridgeSettings(mergedSettings);
+    safeState.settings = await settingsForRenderer(savedSettings);
+    llmService.setPersona(savedSettings.personalityProfile || "balanced");
     if (rgbController) {
-      rgbController.configure(mergedSettings);
+      rgbController.configure(savedSettings);
     }
   }
   if (safeState.chat) {
@@ -1425,27 +1857,196 @@ ipcMain.handle("state:import", async (_event, payload) => {
 // ---------------- SETTINGS IPC ----------------
 
 ipcMain.handle("settings:get", async () => {
-  return stateManager.get("settings") || {};
+  const current = validateSettings(withRuntimeTier(stateManager.get("settings") || {}));
+  const vaulted = await sanitizeBridgeSettingsSecrets(current);
+  stateManager.set("settings", vaulted);
+  const rendererSettings = await settingsForRenderer(stateManager.get("settings") || vaulted);
+  return {
+    ...rendererSettings,
+    licenseMode: RUNTIME_LICENSE_MODE
+  };
 });
 
 ipcMain.handle("settings:update", async (_event, settings) => {
   const safeSettings = validateSettings(settings);
   const merged = mergeBridgeSettings(stateManager.get("settings") || {}, safeSettings);
-  stateManager.set("settings", merged);
-  const savedSettings = stateManager.get("settings") || merged;
+  const savedSettings = await persistBridgeSettings(merged);
   llmService.setPersona(savedSettings.personalityProfile || "balanced");
-  applyBridgeSettings(savedSettings);
   if (rgbController) {
     rgbController.configure(savedSettings);
     await rgbController.applyMood("idle", savedSettings.personalityProfile || "balanced");
   }
-  return savedSettings;
+  const rendererSettings = await settingsForRenderer(savedSettings);
+  return {
+    ...rendererSettings,
+    licenseMode: RUNTIME_LICENSE_MODE
+  };
+});
+
+ipcMain.handle("proofRelay:getConfig", async () => {
+  return readProofRelayConfig();
+});
+
+ipcMain.handle("proofRelay:setConfig", async (_event, payload) => {
+  const input = payload && typeof payload === "object" ? payload : {};
+  const next = writeProofRelayConfig({
+    enabled: Boolean(input.enabled),
+    channel: String(input.channel || "auto")
+  });
+  const currentSettings = stateManager.get("settings") || {};
+  await persistBridgeSettings({
+    ...currentSettings,
+    proofRelayEnabled: Boolean(next.enabled)
+  });
+  return {
+    ok: true,
+    ...next
+  };
+});
+
+ipcMain.handle("autoUpdate:getPolicy", async () => {
+  if (!autoUpdateLane) {
+    return {
+      enabled: false,
+      channel: "stable",
+      available: false
+    };
+  }
+  return {
+    ...autoUpdateLane.getPolicy(),
+    available: true
+  };
+});
+
+ipcMain.handle("autoUpdate:setPolicy", async (_event, payload) => {
+  if (!autoUpdateLane) {
+    return {
+      ok: false,
+      reason: "auto_update_lane_unavailable"
+    };
+  }
+  const input = payload && typeof payload === "object" ? payload : {};
+  const next = autoUpdateLane.setPolicy({
+    enabled: input.enabled,
+    channel: input.channel
+  });
+  const currentSettings = stateManager.get("settings") || {};
+  await persistBridgeSettings({
+    ...currentSettings,
+    autoUpdateEnabled: Boolean(next.enabled)
+  });
+  return {
+    ok: true,
+    ...autoUpdateLane.getPolicy(),
+    available: true
+  };
+});
+
+ipcMain.handle("autoUpdate:pending", async () => {
+  if (!autoUpdateLane) {
+    return {
+      pending: false,
+      available: false
+    };
+  }
+  return {
+    ...autoUpdateLane.pendingSwapStatus(),
+    available: true
+  };
+});
+
+ipcMain.handle("autoUpdate:verifyPackage", async (_event, payload) => {
+  if (!autoUpdateLane) {
+    return {
+      ok: false,
+      reason: "auto_update_lane_unavailable"
+    };
+  }
+  const input = payload && typeof payload === "object" ? payload : {};
+  return autoUpdateLane.verifyLatestYmlAndPackage(
+    input.latestYmlPath,
+    input.packagePath,
+    {
+      expectedSha256: input.expectedSha256,
+      signaturePath: input.signaturePath,
+      signatureBase64: input.signatureBase64,
+      publicKeyPath: input.publicKeyPath,
+      publicKeyPem: input.publicKeyPem,
+      algorithm: input.algorithm
+    }
+  );
+});
+
+ipcMain.handle("autoUpdate:scheduleSwap", async (_event, payload) => {
+  if (!autoUpdateLane) {
+    return {
+      ok: false,
+      reason: "auto_update_lane_unavailable"
+    };
+  }
+  const input = payload && typeof payload === "object" ? payload : {};
+  return autoUpdateLane.scheduleSwapOnRestart({
+    packagePath: input.packagePath,
+    expectedSha256: input.expectedSha256,
+    targetPath: input.targetPath,
+    signaturePath: input.signaturePath,
+    signatureBase64: input.signatureBase64,
+    publicKeyPath: input.publicKeyPath,
+    publicKeyPem: input.publicKeyPem,
+    algorithm: input.algorithm,
+    requireSignature: input.requireSignature
+  });
+});
+
+ipcMain.handle("analytics:getDashboard", async (_event, days) => {
+  if (!analyticsStore) {
+    return {
+      enabled: false,
+      eventCount: 0,
+      totalTokens: 0,
+      medianLatencyMs: 0,
+      modelMix: [],
+      providerMix: [],
+      latencySeries: []
+    };
+  }
+  return analyticsStore.getDashboard(days);
+});
+
+ipcMain.handle("analytics:setEnabled", async (_event, enabled) => {
+  if (!analyticsStore) {
+    return {
+      ok: false,
+      reason: "analytics_store_unavailable"
+    };
+  }
+  const nextEnabled = analyticsStore.setEnabled(Boolean(enabled));
+  const currentSettings = stateManager.get("settings") || {};
+  await persistBridgeSettings({
+    ...currentSettings,
+    analyticsEnabled: nextEnabled
+  });
+  return {
+    ok: true,
+    enabled: nextEnabled
+  };
+});
+
+ipcMain.handle("analytics:clear", async () => {
+  if (!analyticsStore) {
+    return {
+      ok: false,
+      reason: "analytics_store_unavailable"
+    };
+  }
+  return analyticsStore.clear();
 });
 
 ipcMain.handle("llm:bridge:get", async () => {
   const normalizedSettings = normalizeBridgeSettings(stateManager.get("settings") || {});
+  const profiles = await decorateBridgeProfiles(normalizedSettings);
   return {
-    profiles: normalizedSettings.connectionProfiles,
+    profiles,
     activeProfileId: normalizedSettings.activeProfileId,
     connectOnStartup: normalizedSettings.connectOnStartup !== false,
     allowRemoteBridge: Boolean(normalizedSettings.allowRemoteBridge)
@@ -1485,7 +2086,7 @@ ipcMain.handle("llm:bridge:test", async (_event, rawProfile) => {
   const timeoutMs = Number(profile.timeoutMs) || 15000;
   const retryCount = Number(profile.retryCount) || 2;
   const model = String(profile.defaultModel || stateManager.get("model") || "llama3");
-  const apiKey = String(profile.apiKey || "").trim();
+  const apiKey = String(profile.apiKey || "").trim() || await resolveProfileApiKey({ ...profile, provider: providerId, baseUrl }, settings);
   if (provider.requiresApiKey && !apiKey) {
     throw new Error(`${provider.label} requires an API key.`);
   }
@@ -1524,19 +2125,14 @@ ipcMain.handle("llm:bridge:save", async (_event, payload) => {
     connectOnStartup: data.connectOnStartup == null ? settings.connectOnStartup !== false : Boolean(data.connectOnStartup),
     allowRemoteBridge: data.allowRemoteBridge == null ? Boolean(settings.allowRemoteBridge) : Boolean(data.allowRemoteBridge)
   });
-  const safeSettings = validateSettings(next);
-  stateManager.set("settings", safeSettings);
-  applyBridgeSettings(stateManager.get("settings") || safeSettings);
+  await persistBridgeSettings(next);
   return true;
 });
 
 ipcMain.handle("llm:bridge:importEnvProfiles", async () => {
   const settings = stateManager.get("settings") || {};
   const imported = importEnvBackedBridgeProfiles(settings);
-  const safeSettings = validateSettings(normalizeBridgeSettings(imported.settings));
-  stateManager.set("settings", safeSettings);
-  const savedSettings = stateManager.get("settings") || safeSettings;
-  applyBridgeSettings(savedSettings);
+  const savedSettings = await persistBridgeSettings(normalizeBridgeSettings(imported.settings));
   return {
     ok: true,
     importedProfiles: imported.importedProfiles,
@@ -2010,6 +2606,41 @@ ipcMain.handle("vault:compact", async (_event, data, format) => {
   return secretVault.compact(data, format);
 });
 
+ipcMain.handle("vault:setSecret", async (_event, profileId, key, value) => {
+  return secretVault.setSecret(profileId, key, value);
+});
+
+ipcMain.handle("vault:getSecret", async (_event, profileId, key) => {
+  const value = await secretVault.getSecret(profileId, key);
+  return {
+    ok: true,
+    profileId: String(profileId || ""),
+    key: String(key || "apiKey"),
+    value
+  };
+});
+
+ipcMain.handle("vault:hasSecret", async (_event, profileId, key) => {
+  return {
+    ok: true,
+    profileId: String(profileId || ""),
+    key: String(key || "apiKey"),
+    present: await secretVault.hasSecret(profileId, key)
+  };
+});
+
+ipcMain.handle("vault:deleteSecret", async (_event, profileId, key) => {
+  return secretVault.deleteSecret(profileId, key);
+});
+
+ipcMain.handle("vault:export", async (_event, passphrase) => {
+  return secretVault.exportVault(passphrase);
+});
+
+ipcMain.handle("vault:import", async (_event, blob, passphrase, options) => {
+  return secretVault.importVault(blob, passphrase, options && typeof options === "object" ? options : {});
+});
+
 // ---------------- ENHANCED LLM IPC ----------------
 
 ipcMain.handle("llm:autoDetect", async () => {
@@ -2157,6 +2788,31 @@ ipcMain.handle("action:resume-chain", async (_event, chainId, workspacePath) => 
     return { ok: false, reason: err.message };
   }
 }); // end resume-chain
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

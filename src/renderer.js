@@ -55,7 +55,7 @@ const IDS = [
   "saveSessionBtn", "loadSessionBtn", "renameSessionBtn", "deleteSessionBtn", "duplicateSessionBtn", "repairIndexBtn",
   "refreshCommandsBtn", "commandList", "commandBusSummary", "commandBusPaletteBtn", "commandBusHelpBtn",
   "commandIndexTrayBtn", "commandRoutingTrayBtn", "commandIndexTray", "commandRoutingTray",
-  "settingsModelSelect", "settingsProviderSummaryText", "settingsConnectionModeText", "refreshSettingsModelsBtn", "settingsDetectBridgeBtn", "providerPresetList", "importEnvProfilesBtn", "envProfileSummaryText", "settingsQuickstartList",
+  "settingsModelSelect", "settingsProviderSummaryText", "settingsConnectionModeText", "refreshSettingsModelsBtn", "settingsDetectBridgeBtn", "providerPresetList", "importEnvProfilesBtn", "runProviderSweepBtn", "providerSweepSummaryText", "providerSweepList", "envProfileSummaryText", "settingsQuickstartList",
   "baseUrlInput", "timeoutInput", "retryInput", "themeSelect", "tokenBudgetInput",
   "autosaveNameInput", "autosaveIntervalInput", "autosaveEnabledInput", "applySettingsBtn",
   "runSelfTestBtn", "runButtonAuditBtn", "buttonAuditOutput",
@@ -12054,6 +12054,7 @@ function getBridgeSettingsFeature() {
       updateWorkspaceModeText,
       renderMissionControl,
       updateDynamicChrome,
+      bridgeProviders: BRIDGE_PROVIDERS,
       getBridgeProvider,
       applySettingsPatch,
       setActiveModel,
@@ -14967,10 +14968,8 @@ document.querySelectorAll(".starter-action-card").forEach(card => {
         sendPrompt().catch(() => { });
       }
     } else if (action === "scan") {
-      if (el.promptInput) {
-        el.promptInput.value = "/health";
-        sendPrompt().catch(() => { });
-      }
+      showBanner("Opening Workbench for local extraction...", "ok");
+      setSystemSurface("workbench", { focus: true });
     } else if (action === "tunnel") {
       showBanner("Initializing secure bridge tunnel...", "ok");
       if (window.api && window.api.invoke) {
@@ -15411,10 +15410,4 @@ async function startChain(chain, workspacePath) {
     }
   }
 }
-
-
-
-
-
-
 
