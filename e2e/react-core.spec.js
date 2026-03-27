@@ -81,6 +81,11 @@ test.describe("NeuralShell React Core UI", () => {
         page = await app.firstWindow({ timeout: 120000 });
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.waitForTimeout(180);
+        await page.waitForLoadState("domcontentloaded");
+        await page.evaluate(() => {
+            globalThis.localStorage.setItem("neuralshell_onboarding_dismissed_v1", "1");
+        });
+        await page.reload();
     });
 
     test.afterAll(async () => {
