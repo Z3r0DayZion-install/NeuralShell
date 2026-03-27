@@ -864,6 +864,20 @@ function testAirgapPolicy() {
   ok("airgap policy");
 }
 
+async function testVoiceRttBadgeThresholds() {
+  const { classifyVoiceRtt, computeMedianRtt } = await import("../src/renderer/src/utils/voiceStats.js");
+  assert.equal(classifyVoiceRtt(null), "neutral");
+  assert.equal(classifyVoiceRtt(-1), "neutral");
+  assert.equal(classifyVoiceRtt(149), "green");
+  assert.equal(classifyVoiceRtt(150), "amber");
+  assert.equal(classifyVoiceRtt(250), "amber");
+  assert.equal(classifyVoiceRtt(251), "red");
+  assert.equal(computeMedianRtt([100, 150, 200]), 150);
+  assert.equal(computeMedianRtt([100, 200]), 150);
+  assert.equal(computeMedianRtt([]), null);
+  ok("voice rtt badge thresholds");
+}
+
 async function testLlmServiceRetry() {
   let calls = 0;
   const service = new LLMService({
@@ -1109,6 +1123,7 @@ async function run() {
   testBridgeSettingsFeatureModule();
   testBridgeSettingsModel();
   testAirgapPolicy();
+  await testVoiceRttBadgeThresholds();
   await testLlmServiceRetry();
   await testLlmServiceOffline();
   await testLlmServiceCancel();
@@ -1123,7 +1138,5 @@ run().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
-
 
 

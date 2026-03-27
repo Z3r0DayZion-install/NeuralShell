@@ -2,6 +2,7 @@ import React from 'react';
 import { Moon, Sun, SunMoon } from 'lucide-react';
 import { useLatencyHistory } from '../hooks/useLatencyHistory.ts';
 import { useUIPreferences } from '../state/useUIPreferences';
+import CollabBadge from './CollabBadge';
 
 function estimateCostPer1k(providerId) {
     const provider = String(providerId || '').trim().toLowerCase();
@@ -36,9 +37,17 @@ export function TopStatusBar({
     workflowId,
     onOpenPalette,
     onOpenSettings,
+    onOpenAnalytics,
+    onToggleScratchpad,
     runtimeTier,
     connectionInfo,
     tokensRemaining,
+    collabConnected,
+    collabRoomId,
+    collabPeerCount,
+    accelStatus,
+    feedbackDisabled,
+    feedbackUrl,
 }) {
     const tierName = ['INITIATE', 'OPERATOR', 'ANALYST', 'EXECUTOR', 'WARLORD', 'EXECUTIONER', 'APEX', 'GOD_MODE', 'PHASE_24_MUTANT'][Math.min((xpState?.tier || 1) - 1, 8)];
     const safeRuntimeTier = String(runtimeTier || 'PREVIEW').toUpperCase();
@@ -66,6 +75,16 @@ export function TopStatusBar({
     }, [theme]);
 
     const tooltip = `${providerId}/${modelLabel} | ${latencyMs}ms live (${avgLatencyMs}ms avg) | $${costPer1k.toFixed(2)}/1K tokens`;
+    const resolvedFeedbackUrl = String(
+        feedbackUrl
+        || 'https://github.com/Z3r0DayZion-install/NeuralShell/issues/new?template=bug_report.md&title=Feedback%3A+'
+    );
+    const canOpenFeedback = !feedbackDisabled
+        && Boolean(window.api && window.api.system && typeof window.api.system.openExternal === 'function');
+    const handleOpenFeedback = React.useCallback(() => {
+        if (!canOpenFeedback) return;
+        window.api.system.openExternal(resolvedFeedbackUrl).catch(() => undefined);
+    }, [canOpenFeedback, resolvedFeedbackUrl]);
 
     return (
         <header data-testid="top-status-bar" className="h-14 border-b border-white/5 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-6 z-30 shrink-0">
@@ -161,6 +180,24 @@ export function TopStatusBar({
                     </svg>
                 </div>
 
+                <CollabBadge
+                    connected={Boolean(collabConnected)}
+                    roomId={String(collabRoomId || 'default')}
+                    peerCount={Number(collabPeerCount || 0)}
+                />
+
+                <div
+                    data-testid="gpu-badge"
+                    title={String((accelStatus && accelStatus.device) || '')}
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[9px] font-mono uppercase tracking-[0.14em] ${
+                        accelStatus && accelStatus.enabled
+                            ? 'border-emerald-300/30 bg-emerald-500/10 text-emerald-200'
+                            : 'border-slate-300/20 bg-slate-500/10 text-slate-300'
+                    }`}
+                >
+                    <span>{accelStatus && accelStatus.enabled ? `GPU ${String(accelStatus.backend || '').toUpperCase()}` : 'CPU'}</span>
+                </div>
+
                 <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden">
                     <button
                         type="button"
@@ -202,6 +239,24 @@ export function TopStatusBar({
                     EXEC
                 </button>
                 <button
+                    data-testid="analytics-open-btn"
+                    onClick={onOpenAnalytics}
+                    className="p-2 rounded-lg border border-white/10 bg-white/[0.04] text-slate-400 hover:text-slate-100 hover:bg-white/10 hover:border-white/20 transition-all"
+                    title="Analytics"
+                >
+                    <span className="inline-block text-[11px] font-mono tracking-wide">Δ</span>
+                </button>
+                <button
+                    type="button"
+                    data-testid="scratchpad-open-btn"
+                    onClick={onToggleScratchpad}
+                    className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-mono text-slate-300 hover:text-cyan-100 hover:border-cyan-300/35 hover:bg-cyan-500/10 transition-all"
+                    title="Toggle scratchpad"
+                >
+                    +Scratchpad
+                </button>
+
+                <button
                     data-testid="settings-open-btn"
                     onClick={onOpenSettings}
                     className="p-2 rounded-lg border border-white/10 bg-white/[0.04] text-slate-400 hover:text-slate-100 hover:bg-white/10 hover:border-white/20 transition-all group"
@@ -209,9 +264,25 @@ export function TopStatusBar({
                 >
                     <span className="group-hover:rotate-90 transition-transform duration-500 inline-block text-[14px]">⚙</span>
                 </button>
+
+                <button
+                    type="button"
+                    data-testid="feedback-btn"
+                    onClick={handleOpenFeedback}
+                    disabled={!canOpenFeedback}
+                    className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono transition-all ${
+                        canOpenFeedback
+                            ? 'border-cyan-300/30 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/20'
+                            : 'border-white/10 bg-white/[0.03] text-slate-500 cursor-not-allowed'
+                    }`}
+                    title={canOpenFeedback ? 'Send feedback' : 'Send feedback (disabled in offline mode)'}
+                >
+                    Feedback
+                </button>
             </div>
         </header>
     );
 }
 
 export default TopStatusBar;
+

@@ -6,15 +6,23 @@ import WorkspacePanel from './components/WorkspacePanel';
 import WorkbenchRail from './components/WorkbenchRail';
 import CommandPalette from './components/CommandPalette';
 import SettingsDrawer from './components/SettingsDrawer';
+import AnalyticsDrawer from './components/AnalyticsDrawer';
+import ScratchpadTab from './components/ScratchpadTab';
+import { useAccent } from './hooks/useAccent.ts';
+import { useCollabRoom } from './hooks/useCollabRoom.ts';
 
 const QUICKSTART_SESSION = 'NeuralShell_QuickStart';
 const AUDIT_ALLOWED_COMMANDS = new Set(['/help', '/proof', '/roi', '/status', '/workflows', '/guard', '/clear']);
+const PRO_UPGRADE_URL = 'https://gumroad.com/l/neuralshell-operator';
+const FEEDBACK_URL = 'https://github.com/Z3r0DayZion-install/NeuralShell/issues/new?template=bug_report.md&title=Feedback%3A+';
 
 function buildDefaultSessionName() {
     return `Workflow_${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 }
 
 function App() {
+    useAccent();
+
     const {
         // Domain
         model,
@@ -64,6 +72,12 @@ function App() {
         reason: '',
     });
     const [isThinking, setIsThinking] = React.useState(false);
+    const [accelStatus, setAccelStatus] = React.useState({ enabled: false, backend: 'cpu', device: '' });
+    const [showAnalytics, setShowAnalytics] = React.useState(false);
+    const [showScratchpad, setShowScratchpad] = React.useState(() => (
+        typeof window !== 'undefined'
+        && (window.location.pathname === '/scratchpad' || window.location.hash === '#/scratchpad')
+    ));
     const [lastFreeformPrompt, setLastFreeformPrompt] = React.useState('');
     const [sessionNameDraft, setSessionNameDraft] = React.useState(buildDefaultSessionName());
     const [sessionPassphraseDraft, setSessionPassphraseDraft] = React.useState('');
@@ -75,6 +89,8 @@ function App() {
     const lastFocusedElementRef = React.useRef(null);
     const sessionDialogTitleId = React.useId();
     const sessionDialogDescriptionId = React.useId();
+    const messageSequenceRef = React.useRef(0);
+    const proofSessionToMessageRef = React.useRef(new Map());
     const auditOnly = String(runtimeTier || '').toUpperCase() === 'AUDITOR';
     const tokensRemaining = React.useMemo(() => {
         const budget = 128000;
@@ -84,6 +100,59 @@ function App() {
         }, 0);
         return Math.max(0, budget - usedTokens);
     }, [chatLog]);
+    const collab = useCollabRoom(String(workflowId || 'default'));
+
+    const nextMessageId = React.useCallback(() => {
+        messageSequenceRef.current += 1;
+        return `msg-${Date.now()}-${messageSequenceRef.current}`;
+    }, []);
+
+    const appendKernelMessage = React.useCallback((content, extra = {}) => {
+        const id = nextMessageId();
+        appendChat({
+            id,
+            role: 'kernel',
+            content: String(content || ''),
+            ...extra,
+        });
+        return id;
+    }, [appendChat, nextMessageId]);
+
+    const updateMessageStdout = React.useCallback((messageId, patch) => {
+        const safeId = String(messageId || '').trim();
+        if (!safeId) return;
+        const payload = patch && typeof patch === 'object' ? patch : {};
+        setChatLog((prev) => (Array.isArray(prev) ? prev.map((entry) => {
+            if (String(entry && entry.id ? entry.id : '') !== safeId) return entry;
+            const lines = Array.isArray(entry.stdoutLines) ? [...entry.stdoutLines] : [];
+            const nextLine = String(payload.line || '').trim();
+            if (nextLine) {
+                lines.push(nextLine);
+            }
+            return {
+                ...entry,
+                stdoutLines: lines.slice(-240),
+                stdoutDone: Boolean(payload.done) || Boolean(entry.stdoutDone),
+            };
+        }) : prev));
+    }, [setChatLog]);
+
+    const launchStdoutStream = React.useCallback(async (command, messageId) => {
+        if (!(window.api && window.api.proof && typeof window.api.proof.exec === 'function')) {
+            return;
+        }
+        try {
+            const response = await window.api.proof.exec({ command });
+            const sessionId = String(response && response.sessionId ? response.sessionId : '').trim();
+            if (!sessionId) return;
+            proofSessionToMessageRef.current.set(sessionId, String(messageId || '').trim());
+        } catch (err) {
+            updateMessageStdout(messageId, {
+                line: `[${command}] stream failed: ${err && err.message ? err.message : String(err)}`,
+                done: true,
+            });
+        }
+    }, [updateMessageStdout]);
 
     const refreshRuntimeContext = React.useCallback(async () => {
         try {
@@ -111,6 +180,32 @@ function App() {
     }, [refreshRuntimeContext]);
 
     React.useEffect(() => {
+        let mounted = true;
+        const refreshAccel = async () => {
+            try {
+                if (!(window.api && window.api.accel && typeof window.api.accel.status === 'function')) return;
+                const status = await window.api.accel.status();
+                if (!mounted) return;
+                setAccelStatus(status && typeof status === 'object'
+                    ? {
+                        enabled: Boolean(status.enabled),
+                        backend: String(status.backend || 'cpu'),
+                        device: String(status.device || ''),
+                    }
+                    : { enabled: false, backend: 'cpu', device: '' });
+            } catch {
+                // ignore transient status probes
+            }
+        };
+        refreshAccel();
+        const timer = window.setInterval(refreshAccel, 20000);
+        return () => {
+            mounted = false;
+            window.clearInterval(timer);
+        };
+    }, []);
+
+    React.useEffect(() => {
         const interval = window.setInterval(() => {
             refreshRuntimeContext();
         }, 12000);
@@ -118,6 +213,26 @@ function App() {
             window.clearInterval(interval);
         };
     }, [refreshRuntimeContext]);
+
+    React.useEffect(() => {
+        if (!(window.api && window.api.proof && typeof window.api.proof.onStdout === 'function')) {
+            return undefined;
+        }
+        return window.api.proof.onStdout((payload) => {
+            const data = payload && typeof payload === 'object' ? payload : {};
+            const sessionId = String(data.sessionId || '').trim();
+            if (!sessionId) return;
+            const messageId = proofSessionToMessageRef.current.get(sessionId);
+            if (!messageId) return;
+            updateMessageStdout(messageId, {
+                line: String(data.line || ''),
+                done: Boolean(data.done),
+            });
+            if (data.done) {
+                proofSessionToMessageRef.current.delete(sessionId);
+            }
+        });
+    }, [updateMessageStdout]);
 
     const openCreateDialog = React.useCallback(() => {
         if (auditOnly) {
@@ -326,7 +441,7 @@ function App() {
         const input = signal || prompt;
         if (!input.trim()) return;
 
-        appendChat({ role: 'user', content: input });
+        appendChat({ id: nextMessageId(), role: 'user', content: input });
         setPrompt('');
 
         const command = input.trim().toLowerCase();
@@ -385,9 +500,7 @@ function App() {
                         content: 'Restoring previous session context... Done. All workstation metrics verified.',
                     });
                 } else if (command === '/proof' || command === '/demo') {
-                    appendChat({
-                        role: 'kernel',
-                        content: [
+                    const messageId = appendKernelMessage([
                             '### 90-Second Value Proof',
                             '',
                             '1. **Trust + Locality**',
@@ -407,8 +520,22 @@ function App() {
                             '- Create a workflow in the left rail',
                             '- Run `/guard` and `/status`',
                             '- Save, lock, unlock, and verify restore in under 2 minutes',
-                        ].join('\n'),
+                        ].join('\n'), {
+                        stdoutLines: [],
+                        stdoutDone: false,
                     });
+                    launchStdoutStream('proof', messageId);
+                } else if (command === '/unit-test') {
+                    const messageId = appendKernelMessage([
+                        '### Unit Test Probe',
+                        '',
+                        '- Triggered local test routine from inline command lane.',
+                        '- Streaming stdout is attached below for live verification output.',
+                    ].join('\n'), {
+                        stdoutLines: [],
+                        stdoutDone: false,
+                    });
+                    launchStdoutStream('unit-test', messageId);
                 } else if (command === '/roi' || command === '/pitch') {
                     const savedMinutesPerDay = 45;
                     const loadedCostPerHour = 120;
@@ -450,9 +577,9 @@ function App() {
             const content = response && response.message && typeof response.message.content === 'string'
                 ? response.message.content
                 : (response && typeof response.content === 'string' ? response.content : '');
-            appendChat({ role: 'kernel', content: content || 'System: Empty response from kernel.' });
+            appendChat({ id: nextMessageId(), role: 'kernel', content: content || 'System: Empty response from kernel.' });
         } catch (err) {
-            appendChat({ role: 'kernel', content: `Kernel Error: ${err.message}` });
+            appendChat({ id: nextMessageId(), role: 'kernel', content: `Kernel Error: ${err.message}` });
         } finally {
             setIsThinking(false);
         }
@@ -493,10 +620,47 @@ function App() {
         }
     }, [appendChat, auditOnly, refreshRuntimeContext]);
 
+    const handleUpgradeToPro = React.useCallback(async () => {
+        const opener = window.api && window.api.system && typeof window.api.system.openExternal === 'function'
+            ? window.api.system.openExternal
+            : null;
+        if (!opener) {
+            appendChat({
+                role: 'kernel',
+                content: `Upgrade link: ${PRO_UPGRADE_URL}`,
+            });
+            return;
+        }
+        try {
+            await opener(PRO_UPGRADE_URL);
+            appendChat({
+                role: 'kernel',
+                content: 'Opening Pro upgrade page in your browser.',
+            });
+        } catch (err) {
+            appendChat({
+                role: 'kernel',
+                content: `Unable to open upgrade page automatically. Use: ${PRO_UPGRADE_URL}`,
+            });
+            if (window.api && window.api.logger && typeof window.api.logger.log === 'function') {
+                window.api.logger.log('warn', 'upgrade-link-open-failed', {
+                    reason: err && err.message ? err.message : String(err),
+                }).catch(() => undefined);
+            }
+        }
+    }, [appendChat]);
+
     const handleSend = () => executeSignal();
     const showLockBanner = workflowId
         && workflowId !== QUICKSTART_SESSION
         && sessionHydrationStatus === 'locked';
+
+    const handleInsertPrompt = React.useCallback((value) => {
+        const next = String(value || '').trim();
+        if (!next) return;
+        setPrompt(next);
+        window.dispatchEvent(new window.CustomEvent('neuralshell:focus-composer'));
+    }, []);
 
     return (
         <div className="h-screen w-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden font-sans selection:bg-cyan-500/30">
@@ -508,9 +672,17 @@ function App() {
                 workflowId={workflowId}
                 onOpenPalette={openPalette}
                 onOpenSettings={openSettings}
+                onOpenAnalytics={() => setShowAnalytics(true)}
+                onToggleScratchpad={() => setShowScratchpad((prev) => !prev)}
                 runtimeTier={runtimeTier}
                 connectionInfo={connectionInfo}
                 tokensRemaining={tokensRemaining}
+                collabConnected={collab.connected}
+                collabRoomId={collab.roomId}
+                collabPeerCount={Object.keys(collab.remoteCursors || {}).length}
+                accelStatus={accelStatus}
+                feedbackDisabled={!connectionInfo.allowRemoteBridge}
+                feedbackUrl={FEEDBACK_URL}
             />
 
             {showLockBanner && (
@@ -546,6 +718,7 @@ function App() {
                     autoLockOnBlur={Boolean(autoLockOnBlur)}
                     onToggleAutoLock={setAutoLockOnBlur}
                     auditOnly={auditOnly}
+                    onUpgradeToPro={handleUpgradeToPro}
                 />
 
                 <WorkspacePanel
@@ -562,12 +735,20 @@ function App() {
                     connectionInfo={connectionInfo}
                     sessionHydrationStatus={sessionHydrationStatus}
                     onOfflineKill={handleOfflineKillSwitch}
+                    onUpgradeToPro={handleUpgradeToPro}
+                    collab={collab}
                 />
 
                 <WorkbenchRail
                     stats={stats}
                     workflowId={workflowId}
                     onExecute={executeSignal}
+                    onInsertPrompt={handleInsertPrompt}
+                    auditOnly={auditOnly}
+                />
+                <ScratchpadTab
+                    open={showScratchpad}
+                    onClose={() => setShowScratchpad(false)}
                 />
             </div>
 
@@ -575,6 +756,7 @@ function App() {
                 <CommandPalette onClose={closePalette} />
             )}
             {showSettings && <SettingsDrawer />}
+            {showAnalytics && <AnalyticsDrawer onClose={() => setShowAnalytics(false)} />}
 
             {sessionDialog.open && (
                 <div
@@ -663,3 +845,7 @@ function App() {
 }
 
 export default App;
+
+
+
+
