@@ -111,7 +111,8 @@
     "@neural/omega-core": "file:vendor/omega-core",
     "dayjs": "^1.11.9",
     "electron-updater": "^6.8.3",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "@babel/parser": "^7.29.0",
