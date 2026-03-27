@@ -16,6 +16,11 @@ NeuralShell_Distribution_Ready/
 
 # State and Logs
 state/
+!src/renderer/src/state/
+!src/renderer/src/state/*.js
+!src/renderer/src/state/*.jsx
+!src/renderer/src/state/*.ts
+!src/renderer/src/state/*.tsx
 *.log
 .snapshots/
 tmp/userData/
