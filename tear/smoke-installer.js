@@ -71,10 +71,14 @@ function findInstallerPath() {
   return path.join(distDir, installers[installers.length - 1]);
 }
 
-function runWithTimeout(executable, args, timeoutMs, env = process.env) {
+function runWithTimeout(executable, args, timeoutMs, env = process.env, options = {}) {
   return new Promise((resolve, reject) => {
     let done = false;
     const startedAt = Date.now();
+    const reportPath = String(options && options.resolveOnReportPath ? options.resolveOnReportPath : "").trim();
+    const reportPollMs = Number.isFinite(Number(options && options.reportPollMs))
+      ? Math.max(100, Number(options.reportPollMs))
+      : 200;
 
     const child = spawn(executable, args, {
       cwd: path.dirname(executable),
@@ -83,33 +87,58 @@ function runWithTimeout(executable, args, timeoutMs, env = process.env) {
       env
     });
 
-    const timer = setTimeout(() => {
-      if (done) return;
-      done = true;
-      try {
-        child.kill();
-      } catch {
-        // ignore kill errors
-      }
-      reject(new Error(`Process timed out after ${timeoutMs}ms: ${executable}`));
-    }, timeoutMs);
-
-    child.on("exit", (code, signal) => {
+    const finish = (handler) => {
       if (done) return;
       done = true;
       clearTimeout(timer);
-      resolve({
-        code: Number(code),
-        signal: signal || null,
-        durationMs: Date.now() - startedAt
+      clearInterval(reportPollTimer);
+      handler();
+    };
+
+    const timer = setTimeout(() => {
+      finish(() => {
+        try {
+          child.kill();
+        } catch {
+          // ignore kill errors
+        }
+        reject(new Error(`Process timed out after ${timeoutMs}ms: ${executable}`));
+      });
+    }, timeoutMs);
+
+    const reportPollTimer = reportPath
+      ? setInterval(() => {
+          if (done) return;
+          if (!fs.existsSync(reportPath)) return;
+          finish(() => {
+            try {
+              child.kill();
+            } catch {
+              // ignore kill errors
+            }
+            resolve({
+              code: 0,
+              signal: "report",
+              durationMs: Date.now() - startedAt,
+              resolvedByReport: true
+            });
+          });
+        }, reportPollMs)
+      : null;
+
+    child.on("exit", (code, signal) => {
+      finish(() => {
+        resolve({
+          code: Number(code),
+          signal: signal || null,
+          durationMs: Date.now() - startedAt,
+          resolvedByReport: false
+        });
       });
     });
 
     child.on("error", (err) => {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      reject(err);
+      finish(() => reject(err));
     });
   });
 }
@@ -174,6 +203,10 @@ async function runInstallerSmoke() {
         NEURAL_SMOKE_MODE: "1",
         NEURAL_SMOKE_REPORT: smokeReportPath,
         NEURAL_USER_DATA_DIR: userDataDir
+      },
+      {
+        resolveOnReportPath: smokeReportPath,
+        reportPollMs: 200
       }
     );
 
