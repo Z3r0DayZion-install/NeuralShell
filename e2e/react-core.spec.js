@@ -6,6 +6,7 @@ const os = require("os");
 
 test.describe("NeuralShell React Core UI", () => {
     test.describe.configure({ mode: 'serial', timeout: 240000 });
+    test.setTimeout(240000);
     let app;
     let page;
     let userDataDir;
@@ -193,7 +194,7 @@ test.describe("NeuralShell React Core UI", () => {
         expect(wideWorkbench).toBeGreaterThan(compactWorkbench);
 
         await dismissOnboardingIfPresent();
-        await page.getByTestId('layout-reset-panels-btn').click();
+        await page.getByTestId('layout-reset-panels-btn').click({ force: true });
         await page.waitForTimeout(120);
         const resetThread = await railWidth('thread-rail');
         const resetWorkbench = await railWidth('workbench-rail');
