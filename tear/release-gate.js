@@ -5,6 +5,11 @@ const fs = require("fs");
 const root = path.resolve(__dirname, "..");
 const releaseGateReportPath = path.join(root, "release", "release-gate.json");
 const packagedSmokeTimeoutMs = Number(process.env.NEURAL_RELEASE_SMOKE_TIMEOUT_MS || 45000);
+const installerSmokeTimeoutMs = Number(
+  process.env.NEURAL_RELEASE_INSTALLER_SMOKE_TIMEOUT_MS
+    || process.env.NEURAL_RELEASE_SMOKE_TIMEOUT_MS
+    || 30000
+);
 
 function run(cmd) {
   console.log(`\n> ${cmd}`);
@@ -124,7 +129,7 @@ function main() {
       throw err;
     }
     try {
-      run("node tear/smoke-installer.js --strict-install --timeout-ms=45000 --smoke-timeout-ms=30000");
+      run(`node tear/smoke-installer.js --strict-install --timeout-ms=45000 --smoke-timeout-ms=${installerSmokeTimeoutMs}`);
       strictInstallerPass = true;
     } catch (err) {
       strictInstallerPass = false;
