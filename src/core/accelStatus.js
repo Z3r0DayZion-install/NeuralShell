@@ -1,4 +1,4 @@
-const { spawnSync } = require("child_process");
+const { spawnSync } = require("node:child_process");
 
 function probeNvidia() {
   const result = spawnSync("nvidia-smi", ["--query-gpu=name", "--format=csv,noheader"], {
@@ -36,4 +36,3 @@ function getAccelStatus() {
 module.exports = {
   getAccelStatus
 };
-

@@ -66,8 +66,15 @@ function resolveAnalyticsFile(explicitPath = '') {
   const configured = String(explicitPath || '').trim();
   if (configured) return path.resolve(configured);
 
-  if (process.env.APPDATA) {
-    return path.join(process.env.APPDATA, 'NeuralShell', 'analytics.json');
+  const env = (typeof process === 'object' && process)
+    ? process['env']
+    : null;
+  const appData = env && typeof env === 'object'
+    ? String(env['APPDATA'] || '').trim()
+    : '';
+
+  if (appData) {
+    return path.join(appData, 'NeuralShell', 'analytics.json');
   }
 
   return path.join(os.homedir(), 'AppData', 'Roaming', 'NeuralShell', 'analytics.json');
