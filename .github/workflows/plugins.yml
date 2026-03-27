@@ -1,0 +1,117 @@
+name: Plugins Release
+
+on:
+  push:
+    tags:
+      - "expansion-delta6*"
+      - "expansion-delta6-hardening"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build_sign_attach_plugins:
+    runs-on: ubuntu-latest
+    env:
+      VSIX_SIGNING_CERT_CHAIN: ${{ secrets.VSIX_SIGNING_CERT_CHAIN }}
+      VSIX_SIGNING_PRIVATE_KEY: ${{ secrets.VSIX_SIGNING_PRIVATE_KEY }}
+      VSIX_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.VSIX_SIGNING_PRIVATE_KEY_PASSWORD }}
+      JB_CERT_CHAIN: ${{ secrets.JB_CERT_CHAIN }}
+      JB_PRIVATE_KEY: ${{ secrets.JB_PRIVATE_KEY }}
+      JB_PRIVATE_KEY_PASSWORD: ${{ secrets.JB_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Validate plugin signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${VSIX_SIGNING_CERT_CHAIN}" || { echo "VSIX_SIGNING_CERT_CHAIN secret missing"; exit 1; }
+          test -n "${VSIX_SIGNING_PRIVATE_KEY}" || { echo "VSIX_SIGNING_PRIVATE_KEY secret missing"; exit 1; }
+          test -n "${VSIX_SIGNING_PRIVATE_KEY_PASSWORD}" || { echo "VSIX_SIGNING_PRIVATE_KEY_PASSWORD secret missing"; exit 1; }
+          test -n "${JB_CERT_CHAIN}" || { echo "JB_CERT_CHAIN secret missing"; exit 1; }
+          test -n "${JB_PRIVATE_KEY}" || { echo "JB_PRIVATE_KEY secret missing"; exit 1; }
+          test -n "${JB_PRIVATE_KEY_PASSWORD}" || { echo "JB_PRIVATE_KEY_PASSWORD secret missing"; exit 1; }
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Package VSIX
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          npm --prefix plugins/vscode install
+          cd plugins/vscode
+          npx @vscode/vsce package --packagePath ../../release/neuralshell-vscode.vsix
+
+      - name: Sign VSIX artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf "%s" "${VSIX_SIGNING_PRIVATE_KEY}" > release/vsix_private_key.pem
+          printf "%s" "${VSIX_SIGNING_CERT_CHAIN}" > release/vsix_cert_chain.pem
+          openssl dgst -sha256 -sign release/vsix_private_key.pem -passin pass:"${VSIX_SIGNING_PRIVATE_KEY_PASSWORD}" -out release/neuralshell-vscode.vsix.sig release/neuralshell-vscode.vsix
+          openssl dgst -sha256 -verify <(openssl x509 -in release/vsix_cert_chain.pem -pubkey -noout) -signature release/neuralshell-vscode.vsix.sig release/neuralshell-vscode.vsix
+
+      - name: Setup Java for JetBrains plugin
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gradle
+
+      - name: Build JetBrains plugin ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd plugins/jetbrains
+          gradle --no-daemon buildPlugin
+          cd ../..
+          cp plugins/jetbrains/build/distributions/*.zip release/neuralshell-jetbrains.zip
+
+      - name: Sign JetBrains plugin ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf "%s" "${JB_PRIVATE_KEY}" > release/jb_private_key.pem
+          printf "%s" "${JB_CERT_CHAIN}" > release/jb_cert_chain.pem
+          openssl dgst -sha256 -sign release/jb_private_key.pem -passin pass:"${JB_PRIVATE_KEY_PASSWORD}" -out release/neuralshell-jetbrains.zip.sig release/neuralshell-jetbrains.zip
+          openssl dgst -sha256 -verify <(openssl x509 -in release/jb_cert_chain.pem -pubkey -noout) -signature release/neuralshell-jetbrains.zip.sig release/neuralshell-jetbrains.zip
+
+      - name: Upload plugin artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: signed-plugins
+          path: |
+            release/neuralshell-vscode.vsix
+            release/neuralshell-vscode.vsix.sig
+            release/neuralshell-jetbrains.zip
+            release/neuralshell-jetbrains.zip.sig
+          if-no-files-found: error
+
+      - name: Attach plugins to release draft
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          draft: true
+          files: |
+            release/neuralshell-vscode.vsix
+            release/neuralshell-vscode.vsix.sig
+            release/neuralshell-jetbrains.zip
+            release/neuralshell-jetbrains.zip.sig
+          fail_on_unmatched_files: true

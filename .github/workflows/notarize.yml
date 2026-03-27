@@ -1,0 +1,83 @@
+name: Notarize macOS
+
+on:
+  push:
+    tags:
+      - "expansion-delta6*"
+      - "expansion-delta6-hardening"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  notarize_dmg:
+    runs-on: macos-latest
+    env:
+      AC_USERNAME: ${{ secrets.AC_USERNAME }}
+      AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+      AC_TEAM_ID: ${{ secrets.AC_TEAM_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Validate notarization secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${AC_USERNAME}" || { echo "AC_USERNAME secret missing"; exit 1; }
+          test -n "${AC_PASSWORD}" || { echo "AC_PASSWORD secret missing"; exit 1; }
+          test -n "${AC_TEAM_ID}" || { echo "AC_TEAM_ID secret missing"; exit 1; }
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build macOS DMG
+        run: npx electron-builder --mac dmg --publish never
+
+      - name: Submit to Apple Notary and wait
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG_PATH="$(ls dist/*.dmg | head -n 1)"
+          test -n "${DMG_PATH}" || { echo "No DMG generated"; exit 1; }
+          xcrun notarytool submit "${DMG_PATH}" \
+            --apple-id "${AC_USERNAME}" \
+            --password "${AC_PASSWORD}" \
+            --team-id "${AC_TEAM_ID}" \
+            --wait
+
+      - name: Staple notarization ticket
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG_PATH="$(ls dist/*.dmg | head -n 1)"
+          xcrun stapler staple "${DMG_PATH}"
+
+      - name: Verify notarized package
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG_PATH="$(ls dist/*.dmg | head -n 1)"
+          spctl --assess --type exec "${DMG_PATH}"
+
+      - name: Upload notarized DMG artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: notarized-dmg
+          path: dist/*.dmg
+
+      - name: Attach notarized DMG to release draft
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          draft: true
+          files: dist/*.dmg
+          fail_on_unmatched_files: true
+

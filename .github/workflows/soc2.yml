@@ -1,0 +1,61 @@
+name: SOC2 Prep
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - "expansion-delta6*"
+      - "expansion-delta6-hardening"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  soc2_prep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate SOC2 prep report
+        run: node compliance/soc2_collector.cjs
+
+      - name: Verify report exists
+        run: test -f SOC2_PREP_REPORT.md
+
+      - name: Build SOC2 evidence zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -c "import zipfile; z=zipfile.ZipFile('SOC2_PREP_REPORT.zip','w',zipfile.ZIP_DEFLATED); z.write('SOC2_PREP_REPORT.md', arcname='SOC2_PREP_REPORT.md'); z.write('badges/soc2_prep.svg', arcname='soc2_prep.svg'); z.close()"
+
+      - name: Upload SOC2 artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: soc2-prep
+          path: |
+            SOC2_PREP_REPORT.md
+            SOC2_PREP_REPORT.zip
+            badges/soc2_prep.svg
+          if-no-files-found: error
+
+      - name: Attach SOC2 evidence zip to release draft
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          draft: true
+          files: SOC2_PREP_REPORT.zip
+          fail_on_unmatched_files: true

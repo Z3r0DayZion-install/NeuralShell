@@ -1,0 +1,55 @@
+name: PWA Lighthouse
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - "expansion-delta6*"
+      - "expansion-delta6-hardening"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse_mobile_gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Serve static content
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx http-server . -p 4173 &
+          echo $! > /tmp/pwa_http_pid
+          sleep 4
+
+      - name: Lighthouse mobile assertions
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: ./.lighthouserc.mobile.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Stop static server
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/pwa_http_pid ]; then
+            kill "$(cat /tmp/pwa_http_pid)" || true
+          fi
+
