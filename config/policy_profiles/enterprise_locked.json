@@ -1,0 +1,13 @@
+{
+  "id": "enterprise_locked",
+  "label": "Enterprise Locked",
+  "description": "Enforces offline-first + relay disabled + update lane controlled by admins.",
+  "settings": {
+    "allowRemoteBridge": false,
+    "proofRelayEnabled": false,
+    "hostedProxyEnabled": false,
+    "connectOnStartup": false,
+    "otelExportEnabled": false,
+    "updateChannel": "stable"
+  }
+}

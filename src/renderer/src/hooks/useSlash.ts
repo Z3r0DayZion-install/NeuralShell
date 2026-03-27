@@ -9,6 +9,38 @@ type SlashItem = {
     tags?: string[];
 };
 
+const HISTORY_STORAGE_KEY = 'neuralshell_slash_history_v1';
+const MAX_HISTORY_ITEMS = 10;
+
+function readHistory(): string[] {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return [];
+    }
+    try {
+        const raw = window.localStorage.getItem(HISTORY_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+            .map((entry) => String(entry || '').trim())
+            .filter(Boolean)
+            .slice(0, MAX_HISTORY_ITEMS);
+    } catch {
+        return [];
+    }
+}
+
+function writeHistory(values: string[]): void {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+    }
+    try {
+        window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(values.slice(0, MAX_HISTORY_ITEMS)));
+    } catch {
+        // best effort
+    }
+}
+
 function normalize(value: string): string {
     return String(value || '').trim().toLowerCase();
 }
@@ -36,6 +68,9 @@ export function useSlash(items: SlashItem[], onInsert: (item: SlashItem) => void
     const [open, setOpen] = React.useState(false);
     const [query, setQuery] = React.useState('');
     const [selectedIndex, setSelectedIndex] = React.useState(0);
+    const [history, setHistory] = React.useState<string[]>(() => readHistory());
+    const [historyCursor, setHistoryCursor] = React.useState(-1);
+    const historyDraftRef = React.useRef('');
 
     const filtered = React.useMemo(() => {
         const q = normalize(query);
@@ -60,6 +95,10 @@ export function useSlash(items: SlashItem[], onInsert: (item: SlashItem) => void
         setSelectedIndex(0);
     }, [filtered, selectedIndex]);
 
+    React.useEffect(() => {
+        writeHistory(history);
+    }, [history]);
+
     const openPalette = React.useCallback((seed = '') => {
         setOpen(true);
         setQuery(String(seed || '').trim());
@@ -71,6 +110,51 @@ export function useSlash(items: SlashItem[], onInsert: (item: SlashItem) => void
         setQuery('');
         setSelectedIndex(0);
     }, []);
+
+    const resetHistoryCursor = React.useCallback(() => {
+        setHistoryCursor(-1);
+        historyDraftRef.current = '';
+    }, []);
+
+    const rememberCommand = React.useCallback((rawCommand: string) => {
+        const command = String(rawCommand || '').trim();
+        if (!command || !command.startsWith('/')) {
+            return;
+        }
+        setHistory((prev) => {
+            const next = [command, ...prev.filter((entry) => entry !== command)];
+            return next.slice(0, MAX_HISTORY_ITEMS);
+        });
+        resetHistoryCursor();
+    }, [resetHistoryCursor]);
+
+    const recallCommand = React.useCallback((direction: 'up' | 'down', draft: string): string => {
+        const currentDraft = String(draft || '');
+        if (!history.length) return currentDraft;
+
+        if (direction === 'up') {
+            if (historyCursor < 0) {
+                historyDraftRef.current = currentDraft;
+            }
+            const nextCursor = Math.min(historyCursor + 1, history.length - 1);
+            setHistoryCursor(nextCursor);
+            return history[nextCursor] || currentDraft;
+        }
+
+        if (historyCursor < 0) {
+            return currentDraft;
+        }
+
+        const nextCursor = historyCursor - 1;
+        if (nextCursor < 0) {
+            const restore = historyDraftRef.current || '';
+            setHistoryCursor(-1);
+            historyDraftRef.current = '';
+            return restore;
+        }
+        setHistoryCursor(nextCursor);
+        return history[nextCursor] || currentDraft;
+    }, [history, historyCursor]);
 
     const pick = React.useCallback((index?: number) => {
         const targetIndex = Number.isFinite(Number(index)) ? Number(index) : selectedIndex;
@@ -117,11 +201,15 @@ export function useSlash(items: SlashItem[], onInsert: (item: SlashItem) => void
         query,
         setQuery,
         filtered,
+        history,
         selectedIndex,
         setSelectedIndex,
         openPalette,
         closePalette,
         pick,
+        rememberCommand,
+        recallCommand,
+        resetHistoryCursor,
         handleKeyDown,
     };
 }

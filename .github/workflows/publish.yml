@@ -1,0 +1,62 @@
+name: Publish npm Packages
+
+on:
+  push:
+    tags:
+      - "installer/*"
+      - "badge/*"
+      - "neuralshell-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  npmPublish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - package_name: neuralshell-installer
+            package_path: installer
+            tag_prefix: installer/
+          - package_name: neuralshell-badge
+            package_path: packages/neuralshell-badge
+            tag_prefix: badge/
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref_name, matrix.tag_prefix) || startsWith(github.ref_name, 'neuralshell-v')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node and npm auth
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Validate package identity
+        working-directory: ${{ matrix.package_path }}
+        run: |
+          set -euo pipefail
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Package: $NAME@$VERSION"
+          if [ "$NAME" != "${{ matrix.package_name }}" ]; then
+            echo "Package name mismatch for matrix target."
+            exit 1
+          fi
+
+      - name: Publish if version is not already live
+        working-directory: ${{ matrix.package_path }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION already exists on npm. Skipping."
+            exit 0
+          fi
+          npm publish --access public

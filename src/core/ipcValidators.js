@@ -21,7 +21,7 @@ const VALID_PERSONALITY_PROFILES = new Set([
 const VALID_RGB_PROVIDERS = new Set(["openrgb", "none"]);
 const VALID_LOG_LEVELS = new Set(["debug", "info", "warn", "error"]);
 const VALID_TELEMETRY_TYPES = new Set(["ui_action", "bridge_status", "session_event", "performance", "error"]);
-const VALID_TIERS = new Set(["PREVIEW", "OPERATOR"]);
+const VALID_TIERS = new Set(["PREVIEW", "OPERATOR", "AUDITOR"]);
 const DEFAULT_WORKFLOW_ID =
   workflowCatalog && typeof workflowCatalog.DEFAULT_WORKFLOW_ID === "string"
     ? String(workflowCatalog.DEFAULT_WORKFLOW_ID).trim() || "bridge_diagnostics"
@@ -249,7 +249,12 @@ function validateSettings(input) {
       input.autoLoadRecommendedContextProfile == null ? false : Boolean(input.autoLoadRecommendedContextProfile),
     provider: normalizeBridgeProviderId(input.provider),
     apiKey: input.apiKey == null ? "" : String(input.apiKey).trim(),
-    tier: VALID_TIERS.has(String(input.tier).toUpperCase()) ? String(input.tier).toUpperCase() : "PREVIEW"
+    tier: VALID_TIERS.has(String(input.tier).toUpperCase()) ? String(input.tier).toUpperCase() : "PREVIEW",
+    proofRelayEnabled: input.proofRelayEnabled == null ? false : Boolean(input.proofRelayEnabled),
+    hostedProxyEnabled: input.hostedProxyEnabled == null ? false : Boolean(input.hostedProxyEnabled),
+    otelExportEnabled: input.otelExportEnabled == null ? false : Boolean(input.otelExportEnabled),
+    autoUpdateEnabled: input.autoUpdateEnabled == null ? false : Boolean(input.autoUpdateEnabled),
+    analyticsEnabled: input.analyticsEnabled == null ? false : Boolean(input.analyticsEnabled)
   };
 
   assert(
@@ -1026,3 +1031,4 @@ module.exports = {
   validateProfileImport,
   validateProfileExport
 };
+

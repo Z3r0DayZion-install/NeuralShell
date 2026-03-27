@@ -1,47 +1,47 @@
-# NeuralShell Launch Copy
+# NeuralShell Launch Copy (v2.1.29)
 
 ## Single Launch Offer Decision
-**Selected Tier:** Operator Tier (Early Adopter Batch)
-**Price:** $99 (One-time)
-**Benefits:** Full runtime access, persistence profiles, all advanced workflow surfaces, priority bug routing via Discord.
-**Delivery:** Gumroad checkout -> email receipt with License Key and Discord invite.
+**Selected Tier:** Founder's Edition (Founder Beta Batch)
+**Price:** **$149** (One-time)
+**Benefits:** Full runtime access, session hydration, multi-thread workbench, 1 year of core updates, private Founder Discord access.
+**Delivery:** Gumroad checkout -> email receipt with verified installer link and license.
 
 ---
 
 ## Landing Page Copy
 
-**Headline:** The Operator-First Autonomous Shell. 
-**Subheadline:** Stop fighting with black-box chatbots. NeuralShell is a deterministic, offline-capable terminal environment that builds multi-step autonomous chains, with hard-stop operator review boundaries. 
+**Headline:** The Hardened Local-First AI Operator Shell. 
+**Subheadline:** Move beyond the chat window. NeuralShell is a deterministic, offline-capable control surface for technical professionals who need private, persistent autonomous workflows.
 
 **For Operators Who Need:**
-- **Deterministic Trust**: High-risk actions automatically gate for your review. Safe actions autorun.
-- **Offline Sovereignty**: Run local models entirely offline. No forced cloud routing. Keep your data.
-- **Workflow Persistence**: Save complex chains and reload them instantly without losing context.
+- **Persistent Continuity**: Real session hydration means your chat, model, and workspace context survive reloads and switches.
+- **Provable Integrity**: Every action is audited in a tamper-evident ledger. Hard-stop review boundaries for sensitive logic.
+- **Offline Sovereignty**: Absolute privacy by default. Zero telemetry. Zero forced cloud exfiltration.
 
 **Why NeuralShell is Different:**
-General-purpose agents optimize for speed over safety. NeuralShell optimizes for **operator transparency**. You always see the exact terminal pipeline, the rationale for every autonomous decision, and the exact fail-states.
+Generic agents prioritize conversation over execution. NeuralShell prioritizes **system state and data sovereignty**. Built on a capability-based microkernel, it gives you a professional workstation for private local inference.
 
-**The Operator Tier Includes:**
-- Golden Master distribution (Windows desktop app).
-- Full unrestricted runtime access (Stages 1-12 capabilities).
-- Offline profile persistence.
-- Immediate access to the private Operator Discord.
-- Lifetime updates for the V2.x release track.
+**The Founder's Edition Includes:**
+- Sealed v2.1.29 Golden Master (Windows Executable).
+- Multi-thread Workbench for local file extraction.
+- Cryptographically hardened IPC bridge.
+- Immediate entry to the #operator-beta Discord group.
+- Roadmap influence for the v2.2 polish sprint.
 
 **Pricing:**
-- **$99 One-Time.** Limited early-adopter batch slots open now. 
+- **$149 One-Time.** Access limited to 25 technical operators in the Founder Beta batch.
 
 **Call to Action:**
-[ Get Operator Access. Secure Your Node ]
+[ SECURE FOUNDER ACCESS ]
 
 ---
 ### FAQ
 
 **Is this a subscription?**
-No. This is a one-time purchase for lifetime access to the 2.x product lifecycle. Standard local software.
+No. This is a one-time major version license. You own the software. Future years include a $49 maintenance fee for OMEGA-CORE updates.
 
 **Do I need an OpenAI key?**
-No. NeuralShell is built to run entirely on local models (like Ollama) for maximum privacy. You *can* connect hosted APIs if you choose, but the default state is offline.
+No. NeuralShell is optimized for local engines like Ollama and LM Studio. You maintain total control over your model connectivity.
 
-**What operating systems are supported?**
-Currently, NeuralShell V2.0 Alpha is a Windows-first executable. Mac/Linux support is planned for the future.
+**How do I know it's secure?**
+The snapshot includes Phase 20-30 integrity proofs, hardware binding, and a verified source manifest. It is built for air-gapped performance.

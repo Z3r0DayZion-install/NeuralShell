@@ -1,0 +1,25 @@
+{
+  "payload": {
+    "policyId": "enterprise-policy-locked-001",
+    "label": "Enterprise Locked Baseline",
+    "allowedProviders": [
+      "ollama"
+    ],
+    "offlineOnly": true,
+    "allowRemoteBridge": false,
+    "proofRelayEnabled": false,
+    "updateRing": "stable",
+    "certPins": [
+      "sha256:example-cert-pin-1",
+      "sha256:example-cert-pin-2"
+    ],
+    "relayRestriction": "local-only"
+  },
+  "signature": "MEYCIQDunC/sHPcMRGkvhLn/JN3VAfvR3aQMfjkbJrrHFeT70AIhAPPVJTNctHArLj9VUoln/jEfUDwmohdGlgg4vtMEtXCU",
+  "signer": {
+    "algorithm": "ECDSA_P256_SHA256",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEy0V7iuTHVIbal3JO1gVs08sS/04O\ng+26QHaSiOR16iEwH6E+eTwix1nnyw4Q2szcWcxw42JOwInNN+zh4Nz89A==\n-----END PUBLIC KEY-----\n",
+    "fingerprint": "sha256:78b7d2a0650f9b1c022f22319e4ff326dae93e962735936d898675c4e10a21c0"
+  },
+  "signedAt": "2026-03-27T19:32:15.831Z"
+}

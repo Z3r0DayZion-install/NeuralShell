@@ -8,6 +8,10 @@ import CommandPalette from './components/CommandPalette';
 import SettingsDrawer from './components/SettingsDrawer';
 import AnalyticsDrawer from './components/AnalyticsDrawer';
 import ScratchpadTab from './components/ScratchpadTab';
+import OnboardingWizard from './components/OnboardingWizard';
+import IssueAssistModal from './components/IssueAssistModal';
+import SuccessCaptureModal from './components/SuccessCaptureModal';
+import EcosystemLauncher from './components/EcosystemLauncher';
 import { useAccent } from './hooks/useAccent.ts';
 import { useCollabRoom } from './hooks/useCollabRoom.ts';
 
@@ -15,10 +19,127 @@ const QUICKSTART_SESSION = 'NeuralShell_QuickStart';
 const AUDIT_ALLOWED_COMMANDS = new Set(['/help', '/proof', '/roi', '/status', '/workflows', '/guard', '/clear']);
 const PRO_UPGRADE_URL = 'https://gumroad.com/l/neuralshell-operator';
 const FEEDBACK_URL = 'https://github.com/Z3r0DayZion-install/NeuralShell/issues/new?template=bug_report.md&title=Feedback%3A+';
+const ONBOARDING_PROGRESS_KEY = 'neuralshell_onboarding_progress_v1';
+const ONBOARDING_WIZARD_DISMISSED_KEY = 'neuralshell_onboarding_dismissed_v1';
+const DEFAULT_VIEWPORT_WIDTH = 1440;
+const EXPANDED_LAYOUT_MIN = 1280;
+const BALANCED_LAYOUT_MIN = 1080;
+const RAIL_LAYOUT_PREFS_KEY = 'neuralshell_rail_layout_prefs_v1';
+const RAIL_COLLAPSE_PREFS_KEY = 'neuralshell_rail_collapse_prefs_v1';
+const RAIL_RESIZE_HINT_DISMISSED_KEY = 'neuralshell_rail_resize_hint_dismissed_v1';
+const DEFAULT_THREAD_RAIL_WIDTH = 288;
+const DEFAULT_WORKBENCH_RAIL_WIDTH = 288;
+const THREAD_RAIL_MIN_WIDTH = 236;
+const WORKBENCH_RAIL_MIN_WIDTH = 236;
+const THREAD_RAIL_MAX_WIDTH = 480;
+const WORKBENCH_RAIL_MAX_WIDTH = 500;
+const OVERLAY_RAIL_MARGIN = 24;
+const KEYBOARD_RAIL_NUDGE_STEP = 16;
+
+const DEFAULT_RAIL_COLLAPSE_PREFS = Object.freeze({
+    expanded: Object.freeze({ thread: false, workbench: false }),
+    balanced: Object.freeze({ thread: false, workbench: false }),
+    focused: Object.freeze({ thread: false, workbench: false }),
+});
 
 function buildDefaultSessionName() {
     return `Workflow_${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 }
+
+function countOnboardingCompletedSteps() {
+    if (typeof window === 'undefined' || !window.localStorage) return 0;
+    try {
+        const raw = JSON.parse(window.localStorage.getItem(ONBOARDING_PROGRESS_KEY) || '{}');
+        const data = raw && typeof raw === 'object' ? raw : {};
+        return Object.values(data).filter(Boolean).length;
+    } catch {
+        return 0;
+    }
+}
+
+function clampRailWidth(value, min, max) {
+    const safeMax = Number.isFinite(Number(max)) ? Math.max(180, Math.round(Number(max))) : Math.max(180, Math.round(Number(min) || 180));
+    const safeMin = Number.isFinite(Number(min))
+        ? Math.min(Math.max(180, Math.round(Number(min))), safeMax)
+        : Math.min(220, safeMax);
+    const numericValue = Number.isFinite(Number(value)) ? Number(value) : safeMin;
+    return Math.round(Math.min(Math.max(numericValue, safeMin), safeMax));
+}
+
+function readRailLayoutPrefs() {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return {
+            thread: DEFAULT_THREAD_RAIL_WIDTH,
+            workbench: DEFAULT_WORKBENCH_RAIL_WIDTH,
+        };
+    }
+    try {
+        const parsed = JSON.parse(window.localStorage.getItem(RAIL_LAYOUT_PREFS_KEY) || '{}');
+        return {
+            thread: clampRailWidth(
+                parsed && typeof parsed === 'object' ? parsed.thread : DEFAULT_THREAD_RAIL_WIDTH,
+                THREAD_RAIL_MIN_WIDTH,
+                THREAD_RAIL_MAX_WIDTH,
+            ),
+            workbench: clampRailWidth(
+                parsed && typeof parsed === 'object' ? parsed.workbench : DEFAULT_WORKBENCH_RAIL_WIDTH,
+                WORKBENCH_RAIL_MIN_WIDTH,
+                WORKBENCH_RAIL_MAX_WIDTH,
+            ),
+        };
+    } catch {
+        return {
+            thread: DEFAULT_THREAD_RAIL_WIDTH,
+            workbench: DEFAULT_WORKBENCH_RAIL_WIDTH,
+        };
+    }
+}
+
+function readRailCollapsePrefs() {
+    const base = {
+        expanded: { thread: false, workbench: false },
+        balanced: { thread: false, workbench: false },
+        focused: { thread: false, workbench: false },
+    };
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return base;
+    }
+    try {
+        const parsed = JSON.parse(window.localStorage.getItem(RAIL_COLLAPSE_PREFS_KEY) || '{}');
+        const data = parsed && typeof parsed === 'object' ? parsed : {};
+        return {
+            expanded: {
+                thread: Boolean(data.expanded && data.expanded.thread),
+                workbench: Boolean(data.expanded && data.expanded.workbench),
+            },
+            balanced: {
+                thread: Boolean(data.balanced && data.balanced.thread),
+                workbench: Boolean(data.balanced && data.balanced.workbench),
+            },
+            focused: {
+                thread: Boolean(data.focused && data.focused.thread),
+                workbench: Boolean(data.focused && data.focused.workbench),
+            },
+        };
+    } catch {
+        return base;
+    }
+}
+
+const RAIL_SIZE_PRESETS = {
+    compact: {
+        thread: 252,
+        workbench: 252,
+    },
+    balanced: {
+        thread: DEFAULT_THREAD_RAIL_WIDTH,
+        workbench: DEFAULT_WORKBENCH_RAIL_WIDTH,
+    },
+    wide: {
+        thread: 340,
+        workbench: 340,
+    },
+};
 
 function App() {
     useAccent();
@@ -63,6 +184,12 @@ function App() {
         targetSession: '',
     });
     const [runtimeTier, setRuntimeTier] = React.useState('PREVIEW');
+    const [runtimeCapabilityPayload, setRuntimeCapabilityPayload] = React.useState({
+        tierId: 'free',
+        tierLabel: 'Audit-Only',
+        capabilities: [],
+    });
+    const [runtimeContextLoaded, setRuntimeContextLoaded] = React.useState(false);
     const [connectionInfo, setConnectionInfo] = React.useState({
         provider: 'ollama',
         baseUrl: '',
@@ -74,14 +201,39 @@ function App() {
     const [isThinking, setIsThinking] = React.useState(false);
     const [accelStatus, setAccelStatus] = React.useState({ enabled: false, backend: 'cpu', device: '' });
     const [showAnalytics, setShowAnalytics] = React.useState(false);
+    const [showEcosystem, setShowEcosystem] = React.useState(false);
     const [showScratchpad, setShowScratchpad] = React.useState(() => (
         typeof window !== 'undefined'
         && (window.location.pathname === '/scratchpad' || window.location.hash === '#/scratchpad')
     ));
+    const [viewportWidth, setViewportWidth] = React.useState(() => (
+        typeof window !== 'undefined' && Number.isFinite(window.innerWidth)
+            ? window.innerWidth
+            : DEFAULT_VIEWPORT_WIDTH
+    ));
+    const [showLeftRailOverlay, setShowLeftRailOverlay] = React.useState(false);
+    const [showRightRailOverlay, setShowRightRailOverlay] = React.useState(false);
+    const [railWidths, setRailWidths] = React.useState(() => readRailLayoutPrefs());
+    const [railCollapsePrefs, setRailCollapsePrefs] = React.useState(() => readRailCollapsePrefs());
+    const [showRailResizeHint, setShowRailResizeHint] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return false;
+        return window.localStorage.getItem(RAIL_RESIZE_HINT_DISMISSED_KEY) !== '1';
+    });
     const [lastFreeformPrompt, setLastFreeformPrompt] = React.useState('');
     const [sessionNameDraft, setSessionNameDraft] = React.useState(buildDefaultSessionName());
     const [sessionPassphraseDraft, setSessionPassphraseDraft] = React.useState('');
     const [sessionDialogError, setSessionDialogError] = React.useState('');
+    const [showIssueAssist, setShowIssueAssist] = React.useState(false);
+    const [showSuccessCapture, setShowSuccessCapture] = React.useState(false);
+    const [supportBundleMeta, setSupportBundleMeta] = React.useState({
+        outputPath: '',
+        sha256: '',
+    });
+    const [showOnboarding, setShowOnboarding] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return false;
+        const dismissed = window.localStorage.getItem(ONBOARDING_WIZARD_DISMISSED_KEY) === '1';
+        return !dismissed && countOnboardingCompletedSteps() < 4;
+    });
     const sessionNameInputRef = React.useRef(null);
     const sessionPassInputRef = React.useRef(null);
     const sessionCancelButtonRef = React.useRef(null);
@@ -91,7 +243,11 @@ function App() {
     const sessionDialogDescriptionId = React.useId();
     const messageSequenceRef = React.useRef(0);
     const proofSessionToMessageRef = React.useRef(new Map());
+    const railResizeStateRef = React.useRef(null);
     const auditOnly = String(runtimeTier || '').toUpperCase() === 'AUDITOR';
+    const capabilities = Array.isArray(runtimeCapabilityPayload.capabilities) ? runtimeCapabilityPayload.capabilities : [];
+    const canUseOnboardingWizard = capabilities.includes('onboarding_wizard') || String(runtimeCapabilityPayload.tierId || '') === 'enterprise';
+    const canUseIssueAssist = capabilities.includes('issue_assist');
     const tokensRemaining = React.useMemo(() => {
         const budget = 128000;
         const usedTokens = (Array.isArray(chatLog) ? chatLog : []).reduce((sum, entry) => {
@@ -101,6 +257,133 @@ function App() {
         return Math.max(0, budget - usedTokens);
     }, [chatLog]);
     const collab = useCollabRoom(String(workflowId || 'default'));
+    const layoutMode = React.useMemo(() => {
+        if (viewportWidth >= EXPANDED_LAYOUT_MIN) return 'expanded';
+        if (viewportWidth >= BALANCED_LAYOUT_MIN) return 'balanced';
+        return 'focused';
+    }, [viewportWidth]);
+    const showInlineThreadRail = layoutMode !== 'focused';
+    const showInlineWorkbenchRail = layoutMode === 'expanded';
+    const canOpenThreadRailOverlay = layoutMode === 'focused';
+    const canOpenWorkbenchRailOverlay = layoutMode !== 'expanded';
+    const layoutModeLabel = layoutMode === 'focused'
+        ? 'Focused Layout'
+        : layoutMode === 'balanced'
+            ? 'Balanced Layout'
+            : 'Expanded Layout';
+    const railCollapseForMode = railCollapsePrefs[layoutMode] || DEFAULT_RAIL_COLLAPSE_PREFS[layoutMode] || DEFAULT_RAIL_COLLAPSE_PREFS.expanded;
+    const threadRailCollapsed = showInlineThreadRail && Boolean(railCollapseForMode.thread);
+    const workbenchRailCollapsed = showInlineWorkbenchRail && Boolean(railCollapseForMode.workbench);
+    const showInlineThreadRailPanel = showInlineThreadRail && !threadRailCollapsed;
+    const showInlineWorkbenchRailPanel = showInlineWorkbenchRail && !workbenchRailCollapsed;
+    const showThreadRailResizeHint = showRailResizeHint && showInlineThreadRailPanel;
+    const activeRailPresetId = React.useMemo(() => {
+        const matchingPreset = Object.entries(RAIL_SIZE_PRESETS).find(([, preset]) => {
+            const presetThread = clampRailWidth(preset.thread, THREAD_RAIL_MIN_WIDTH, THREAD_RAIL_MAX_WIDTH);
+            const presetWorkbench = clampRailWidth(preset.workbench, WORKBENCH_RAIL_MIN_WIDTH, WORKBENCH_RAIL_MAX_WIDTH);
+            return presetThread === railWidths.thread && presetWorkbench === railWidths.workbench;
+        });
+        return matchingPreset ? matchingPreset[0] : '';
+    }, [railWidths.thread, railWidths.workbench]);
+    const inlineThreadRailMaxWidth = React.useMemo(() => {
+        const viewportCap = Math.floor(viewportWidth * (layoutMode === 'expanded' ? 0.34 : 0.42));
+        return clampRailWidth(viewportCap, THREAD_RAIL_MIN_WIDTH, THREAD_RAIL_MAX_WIDTH);
+    }, [layoutMode, viewportWidth]);
+    const inlineWorkbenchRailMaxWidth = React.useMemo(() => {
+        const viewportCap = Math.floor(viewportWidth * 0.34);
+        return clampRailWidth(viewportCap, WORKBENCH_RAIL_MIN_WIDTH, WORKBENCH_RAIL_MAX_WIDTH);
+    }, [viewportWidth]);
+    const overlayThreadRailWidth = React.useMemo(() => (
+        clampRailWidth(
+            railWidths.thread,
+            THREAD_RAIL_MIN_WIDTH,
+            Math.min(THREAD_RAIL_MAX_WIDTH, viewportWidth - OVERLAY_RAIL_MARGIN),
+        )
+    ), [railWidths.thread, viewportWidth]);
+    const overlayWorkbenchRailWidth = React.useMemo(() => (
+        clampRailWidth(
+            railWidths.workbench,
+            WORKBENCH_RAIL_MIN_WIDTH,
+            Math.min(WORKBENCH_RAIL_MAX_WIDTH, viewportWidth - OVERLAY_RAIL_MARGIN),
+        )
+    ), [railWidths.workbench, viewportWidth]);
+    const inlineThreadRailWidth = React.useMemo(() => (
+        clampRailWidth(
+            railWidths.thread,
+            THREAD_RAIL_MIN_WIDTH,
+            inlineThreadRailMaxWidth,
+        )
+    ), [inlineThreadRailMaxWidth, railWidths.thread]);
+    const inlineWorkbenchRailWidth = React.useMemo(() => (
+        clampRailWidth(
+            railWidths.workbench,
+            WORKBENCH_RAIL_MIN_WIDTH,
+            inlineWorkbenchRailMaxWidth,
+        )
+    ), [inlineWorkbenchRailMaxWidth, railWidths.workbench]);
+
+    React.useEffect(() => {
+        const handleResize = () => {
+            const nextWidth = Number.isFinite(window.innerWidth)
+                ? window.innerWidth
+                : DEFAULT_VIEWPORT_WIDTH;
+            setViewportWidth(nextWidth);
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    React.useEffect(() => {
+        if (layoutMode !== 'focused' && showLeftRailOverlay) {
+            setShowLeftRailOverlay(false);
+        }
+        if (layoutMode === 'expanded' && showRightRailOverlay) {
+            setShowRightRailOverlay(false);
+        }
+    }, [layoutMode, showLeftRailOverlay, showRightRailOverlay]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        try {
+            window.localStorage.setItem(RAIL_LAYOUT_PREFS_KEY, JSON.stringify({
+                thread: clampRailWidth(
+                    railWidths.thread,
+                    THREAD_RAIL_MIN_WIDTH,
+                    THREAD_RAIL_MAX_WIDTH,
+                ),
+                workbench: clampRailWidth(
+                    railWidths.workbench,
+                    WORKBENCH_RAIL_MIN_WIDTH,
+                    WORKBENCH_RAIL_MAX_WIDTH,
+                ),
+            }));
+        } catch {
+            // ignore storage failures for non-critical layout preference writes
+        }
+    }, [railWidths.thread, railWidths.workbench]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        try {
+            window.localStorage.setItem(RAIL_COLLAPSE_PREFS_KEY, JSON.stringify({
+                expanded: {
+                    thread: Boolean(railCollapsePrefs.expanded && railCollapsePrefs.expanded.thread),
+                    workbench: Boolean(railCollapsePrefs.expanded && railCollapsePrefs.expanded.workbench),
+                },
+                balanced: {
+                    thread: Boolean(railCollapsePrefs.balanced && railCollapsePrefs.balanced.thread),
+                    workbench: Boolean(railCollapsePrefs.balanced && railCollapsePrefs.balanced.workbench),
+                },
+                focused: {
+                    thread: Boolean(railCollapsePrefs.focused && railCollapsePrefs.focused.thread),
+                    workbench: Boolean(railCollapsePrefs.focused && railCollapsePrefs.focused.workbench),
+                },
+            }));
+        } catch {
+            // ignore storage failures for non-critical collapse preference writes
+        }
+    }, [railCollapsePrefs]);
 
     const nextMessageId = React.useCallback(() => {
         messageSequenceRef.current += 1;
@@ -155,13 +438,20 @@ function App() {
     }, [updateMessageStdout]);
 
     const refreshRuntimeContext = React.useCallback(async () => {
+        let loaded = false;
         try {
             const [settings, stateSnapshot, health] = await Promise.all([
                 window.api?.settings?.get ? window.api.settings.get() : Promise.resolve({}),
                 window.api?.state?.get ? window.api.state.get() : Promise.resolve({}),
                 window.api?.llm?.health ? window.api.llm.health().catch(() => null) : Promise.resolve(null),
             ]);
+            loaded = true;
             setRuntimeTier(String((settings && settings.tier) || 'PREVIEW').toUpperCase());
+            setRuntimeCapabilityPayload({
+                tierId: String((settings && settings.tierId) || 'free'),
+                tierLabel: String((settings && settings.tierLabel) || 'Audit-Only'),
+                capabilities: Array.isArray(settings && settings.capabilities) ? settings.capabilities : [],
+            });
             setConnectionInfo({
                 provider: String((settings && settings.provider) || (health && health.provider) || 'ollama'),
                 baseUrl: String((settings && settings.ollamaBaseUrl) || (health && health.baseUrl) || ''),
@@ -172,6 +462,10 @@ function App() {
             });
         } catch {
             // keep existing runtime context on transient failures
+        } finally {
+            if (loaded) {
+                setRuntimeContextLoaded(true);
+            }
         }
     }, [model]);
 
@@ -215,6 +509,14 @@ function App() {
     }, [refreshRuntimeContext]);
 
     React.useEffect(() => {
+        if (!runtimeContextLoaded) return;
+        if (canUseOnboardingWizard) return;
+        if (showOnboarding) {
+            setShowOnboarding(false);
+        }
+    }, [canUseOnboardingWizard, runtimeContextLoaded, showOnboarding]);
+
+    React.useEffect(() => {
         if (!(window.api && window.api.proof && typeof window.api.proof.onStdout === 'function')) {
             return undefined;
         }
@@ -233,6 +535,20 @@ function App() {
             }
         });
     }, [updateMessageStdout]);
+
+    React.useEffect(() => {
+        const onSupportBundleExported = (event) => {
+            const detail = event && event.detail && typeof event.detail === 'object' ? event.detail : {};
+            setSupportBundleMeta({
+                outputPath: String(detail.outputPath || ''),
+                sha256: String(detail.sha256 || ''),
+            });
+        };
+        window.addEventListener('neuralshell:support-bundle-exported', onSupportBundleExported);
+        return () => {
+            window.removeEventListener('neuralshell:support-bundle-exported', onSupportBundleExported);
+        };
+    }, []);
 
     const openCreateDialog = React.useCallback(() => {
         if (auditOnly) {
@@ -331,29 +647,84 @@ function App() {
     // Keyboard handler
     React.useEffect(() => {
         const handleKey = (e) => {
+            const active = document.activeElement;
+            const activeTag = active && active.tagName ? String(active.tagName).toLowerCase() : '';
+            const isTypingTarget = Boolean(
+                active
+                && (
+                    activeTag === 'input'
+                    || activeTag === 'textarea'
+                    || active.isContentEditable
+                    || (active.dataset && (active.dataset.testid === 'chat-input' || active.dataset.testid === 'slash-palette-input'))
+                )
+            );
+
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                const active = document.activeElement;
-                if (
-                    active
-                    && active.dataset
-                    && (active.dataset.testid === 'chat-input' || active.dataset.testid === 'slash-palette-input')
-                ) {
+                if (isTypingTarget) {
                     return;
                 }
                 e.preventDefault();
                 togglePalette();
             }
+
+            const isRailResizeHotkey = e.altKey && (e.code === 'BracketLeft' || e.code === 'BracketRight');
+            if (isRailResizeHotkey && !isTypingTarget) {
+                const step = e.code === 'BracketLeft' ? -KEYBOARD_RAIL_NUDGE_STEP : KEYBOARD_RAIL_NUDGE_STEP;
+                const targetRail = e.shiftKey ? 'workbench' : 'thread';
+                const railIsAvailable = targetRail === 'workbench'
+                    ? (showInlineWorkbenchRail || canOpenWorkbenchRailOverlay)
+                    : (showInlineThreadRail || canOpenThreadRailOverlay);
+                if (railIsAvailable) {
+                    e.preventDefault();
+                    setRailWidths((prev) => {
+                        const minWidth = targetRail === 'workbench' ? WORKBENCH_RAIL_MIN_WIDTH : THREAD_RAIL_MIN_WIDTH;
+                        const maxWidth = targetRail === 'workbench' ? WORKBENCH_RAIL_MAX_WIDTH : THREAD_RAIL_MAX_WIDTH;
+                        const currentWidth = Number.isFinite(Number(prev[targetRail]))
+                            ? Number(prev[targetRail])
+                            : (targetRail === 'workbench' ? DEFAULT_WORKBENCH_RAIL_WIDTH : DEFAULT_THREAD_RAIL_WIDTH);
+                        const nextWidth = clampRailWidth(currentWidth + step, minWidth, maxWidth);
+                        if (nextWidth === prev[targetRail]) return prev;
+                        return {
+                            ...prev,
+                            [targetRail]: nextWidth,
+                        };
+                    });
+                }
+            }
+
             if (e.key === 'Escape') {
                 closePalette();
                 closeSettings();
+                if (showEcosystem) {
+                    setShowEcosystem(false);
+                }
                 if (sessionDialog.open) {
                     closeSessionDialog();
+                }
+                if (showLeftRailOverlay) {
+                    setShowLeftRailOverlay(false);
+                }
+                if (showRightRailOverlay) {
+                    setShowRightRailOverlay(false);
                 }
             }
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [togglePalette, closePalette, closeSettings, sessionDialog.open, closeSessionDialog]);
+    }, [
+        togglePalette,
+        closePalette,
+        closeSettings,
+        showEcosystem,
+        sessionDialog.open,
+        closeSessionDialog,
+        showInlineThreadRail,
+        showInlineWorkbenchRail,
+        canOpenThreadRailOverlay,
+        canOpenWorkbenchRailOverlay,
+        showLeftRailOverlay,
+        showRightRailOverlay,
+    ]);
 
     const handleSessionSelect = React.useCallback((sessionName) => {
         const safeName = String(sessionName || '').trim();
@@ -477,7 +848,7 @@ function App() {
                 if (command === '/help') {
                     appendChat({
                         role: 'kernel',
-                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `Ctrl+P` : Open Command Palette',
+                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `Ctrl+P` : Open Command Palette',
                     });
                 } else if (command === '/status') {
                     appendChat({
@@ -498,6 +869,12 @@ function App() {
                     appendChat({
                         role: 'kernel',
                         content: 'Restoring previous session context... Done. All workstation metrics verified.',
+                    });
+                } else if (command === '/ecosystem') {
+                    setShowEcosystem(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Ecosystem Launcher.',
                     });
                 } else if (command === '/proof' || command === '/demo') {
                     const messageId = appendKernelMessage([
@@ -525,6 +902,7 @@ function App() {
                         stdoutDone: false,
                     });
                     launchStdoutStream('proof', messageId);
+                    setShowSuccessCapture(true);
                 } else if (command === '/unit-test') {
                     const messageId = appendKernelMessage([
                         '### Unit Test Probe',
@@ -662,6 +1040,223 @@ function App() {
         window.dispatchEvent(new window.CustomEvent('neuralshell:focus-composer'));
     }, []);
 
+    const handleCloseOnboarding = React.useCallback(() => {
+        setShowOnboarding(false);
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem(ONBOARDING_WIZARD_DISMISSED_KEY, '1');
+        }
+    }, []);
+
+    const dismissRailResizeHint = React.useCallback(() => {
+        setShowRailResizeHint(false);
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        try {
+            window.localStorage.setItem(RAIL_RESIZE_HINT_DISMISSED_KEY, '1');
+        } catch {
+            // ignore storage failures for non-critical hint preference writes
+        }
+    }, []);
+
+    const setRailCollapsedForCurrentMode = React.useCallback((rail, collapsed) => {
+        const railKey = rail === 'workbench' ? 'workbench' : 'thread';
+        const modeKey = layoutMode === 'focused' ? 'focused' : layoutMode === 'balanced' ? 'balanced' : 'expanded';
+        const nextCollapsed = Boolean(collapsed);
+        setRailCollapsePrefs((prev) => {
+            const currentMode = prev[modeKey] || DEFAULT_RAIL_COLLAPSE_PREFS[modeKey];
+            if (Boolean(currentMode && currentMode[railKey]) === nextCollapsed) {
+                return prev;
+            }
+            return {
+                ...prev,
+                [modeKey]: {
+                    thread: railKey === 'thread' ? nextCollapsed : Boolean(currentMode && currentMode.thread),
+                    workbench: railKey === 'workbench' ? nextCollapsed : Boolean(currentMode && currentMode.workbench),
+                },
+            };
+        });
+    }, [layoutMode]);
+
+    const toggleThreadRailCollapse = React.useCallback(() => {
+        setRailCollapsedForCurrentMode('thread', !threadRailCollapsed);
+    }, [setRailCollapsedForCurrentMode, threadRailCollapsed]);
+
+    const toggleWorkbenchRailCollapse = React.useCallback(() => {
+        setRailCollapsedForCurrentMode('workbench', !workbenchRailCollapsed);
+    }, [setRailCollapsedForCurrentMode, workbenchRailCollapsed]);
+
+    const updateRailWidth = React.useCallback((rail, width) => {
+        const key = rail === 'workbench' ? 'workbench' : 'thread';
+        const minWidth = key === 'workbench' ? WORKBENCH_RAIL_MIN_WIDTH : THREAD_RAIL_MIN_WIDTH;
+        const maxWidth = key === 'workbench' ? WORKBENCH_RAIL_MAX_WIDTH : THREAD_RAIL_MAX_WIDTH;
+        const nextWidth = clampRailWidth(width, minWidth, maxWidth);
+        setRailWidths((prev) => {
+            if (prev[key] === nextWidth) return prev;
+            return {
+                ...prev,
+                [key]: nextWidth,
+            };
+        });
+    }, []);
+
+    const applyRailSizePreset = React.useCallback((presetId) => {
+        const safePresetId = String(presetId || '').trim().toLowerCase();
+        const preset = RAIL_SIZE_PRESETS[safePresetId];
+        if (!preset) return;
+        setRailWidths({
+            thread: clampRailWidth(preset.thread, THREAD_RAIL_MIN_WIDTH, THREAD_RAIL_MAX_WIDTH),
+            workbench: clampRailWidth(preset.workbench, WORKBENCH_RAIL_MIN_WIDTH, WORKBENCH_RAIL_MAX_WIDTH),
+        });
+    }, []);
+
+    const resetThreadRailWidth = React.useCallback(() => {
+        updateRailWidth('thread', DEFAULT_THREAD_RAIL_WIDTH);
+    }, [updateRailWidth]);
+
+    const resetWorkbenchRailWidth = React.useCallback(() => {
+        updateRailWidth('workbench', DEFAULT_WORKBENCH_RAIL_WIDTH);
+    }, [updateRailWidth]);
+
+    const beginThreadRailResize = React.useCallback((event) => {
+        if (event.button !== 0 || !showInlineThreadRailPanel) return;
+        event.preventDefault();
+        dismissRailResizeHint();
+        railResizeStateRef.current = {
+            rail: 'thread',
+            startX: Number(event.clientX || 0),
+            startWidth: inlineThreadRailWidth,
+            minWidth: THREAD_RAIL_MIN_WIDTH,
+            maxWidth: inlineThreadRailMaxWidth,
+        };
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+    }, [
+        dismissRailResizeHint,
+        inlineThreadRailMaxWidth,
+        inlineThreadRailWidth,
+        showInlineThreadRailPanel,
+    ]);
+
+    const beginWorkbenchRailResize = React.useCallback((event) => {
+        if (event.button !== 0 || !showInlineWorkbenchRailPanel) return;
+        event.preventDefault();
+        dismissRailResizeHint();
+        railResizeStateRef.current = {
+            rail: 'workbench',
+            startX: Number(event.clientX || 0),
+            startWidth: inlineWorkbenchRailWidth,
+            minWidth: WORKBENCH_RAIL_MIN_WIDTH,
+            maxWidth: inlineWorkbenchRailMaxWidth,
+        };
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+    }, [
+        dismissRailResizeHint,
+        inlineWorkbenchRailMaxWidth,
+        inlineWorkbenchRailWidth,
+        showInlineWorkbenchRailPanel,
+    ]);
+
+    const beginOverlayThreadRailResize = React.useCallback((event) => {
+        if (event.button !== 0 || !showLeftRailOverlay) return;
+        event.preventDefault();
+        railResizeStateRef.current = {
+            rail: 'thread',
+            startX: Number(event.clientX || 0),
+            startWidth: overlayThreadRailWidth,
+            minWidth: THREAD_RAIL_MIN_WIDTH,
+            maxWidth: Math.min(THREAD_RAIL_MAX_WIDTH, Math.max(THREAD_RAIL_MIN_WIDTH, viewportWidth - OVERLAY_RAIL_MARGIN)),
+        };
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+    }, [
+        overlayThreadRailWidth,
+        showLeftRailOverlay,
+        viewportWidth,
+    ]);
+
+    const beginOverlayWorkbenchRailResize = React.useCallback((event) => {
+        if (event.button !== 0 || !showRightRailOverlay) return;
+        event.preventDefault();
+        railResizeStateRef.current = {
+            rail: 'workbench',
+            startX: Number(event.clientX || 0),
+            startWidth: overlayWorkbenchRailWidth,
+            minWidth: WORKBENCH_RAIL_MIN_WIDTH,
+            maxWidth: Math.min(WORKBENCH_RAIL_MAX_WIDTH, Math.max(WORKBENCH_RAIL_MIN_WIDTH, viewportWidth - OVERLAY_RAIL_MARGIN)),
+        };
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+    }, [
+        overlayWorkbenchRailWidth,
+        showRightRailOverlay,
+        viewportWidth,
+    ]);
+
+    React.useEffect(() => {
+        const completeResize = () => {
+            if (!railResizeStateRef.current) return;
+            railResizeStateRef.current = null;
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+        };
+
+        const handlePointerMove = (event) => {
+            const activeResize = railResizeStateRef.current;
+            if (!activeResize) return;
+            const pointerX = Number(event.clientX || 0);
+            if (!Number.isFinite(pointerX)) return;
+            const delta = activeResize.rail === 'thread'
+                ? pointerX - activeResize.startX
+                : activeResize.startX - pointerX;
+            const nextWidth = clampRailWidth(
+                activeResize.startWidth + delta,
+                activeResize.minWidth,
+                activeResize.maxWidth,
+            );
+            updateRailWidth(
+                activeResize.rail,
+                nextWidth,
+            );
+        };
+
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', completeResize);
+        window.addEventListener('pointercancel', completeResize);
+
+        return () => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', completeResize);
+            window.removeEventListener('pointercancel', completeResize);
+            completeResize();
+        };
+    }, [updateRailWidth]);
+
+    React.useEffect(() => {
+        if (!showRailResizeHint) return undefined;
+        if (!showInlineThreadRailPanel && !showInlineWorkbenchRailPanel) return undefined;
+        const timer = window.setTimeout(() => {
+            dismissRailResizeHint();
+        }, 9000);
+        return () => {
+            window.clearTimeout(timer);
+        };
+    }, [
+        dismissRailResizeHint,
+        showInlineThreadRailPanel,
+        showInlineWorkbenchRailPanel,
+        showRailResizeHint,
+    ]);
+
+    const toggleLeftRailOverlay = React.useCallback(() => {
+        setShowRightRailOverlay(false);
+        setShowLeftRailOverlay((prev) => !prev);
+    }, []);
+
+    const toggleRightRailOverlay = React.useCallback(() => {
+        setShowLeftRailOverlay(false);
+        setShowRightRailOverlay((prev) => !prev);
+    }, []);
+
     return (
         <div className="h-screen w-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden font-sans selection:bg-cyan-500/30">
             <TopStatusBar
@@ -673,6 +1268,7 @@ function App() {
                 onOpenPalette={openPalette}
                 onOpenSettings={openSettings}
                 onOpenAnalytics={() => setShowAnalytics(true)}
+                onOpenEcosystem={() => setShowEcosystem(true)}
                 onToggleScratchpad={() => setShowScratchpad((prev) => !prev)}
                 runtimeTier={runtimeTier}
                 connectionInfo={connectionInfo}
@@ -683,6 +1279,9 @@ function App() {
                 accelStatus={accelStatus}
                 feedbackDisabled={!connectionInfo.allowRemoteBridge}
                 feedbackUrl={FEEDBACK_URL}
+                onOpenIssueAssist={canUseIssueAssist ? () => setShowIssueAssist(true) : undefined}
+                tierId={runtimeCapabilityPayload.tierId}
+                tierLabel={runtimeCapabilityPayload.tierLabel}
             />
 
             {showLockBanner && (
@@ -701,25 +1300,184 @@ function App() {
                 </div>
             )}
 
+            <div
+                data-testid="layout-control-bar"
+                className="px-4 py-2 border-b border-white/5 bg-black/20 flex flex-wrap items-center justify-between gap-2"
+            >
+                <div className="flex flex-col">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-slate-500">
+                        {layoutModeLabel} · {Math.round(viewportWidth)}px
+                    </div>
+                    <div className="text-[9px] font-mono text-slate-600">
+                        Alt+[ ] workflow · Alt+Shift+[ ] workbench
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+                        <button
+                            type="button"
+                            data-testid="layout-preset-compact-btn"
+                            onClick={() => applyRailSizePreset('compact')}
+                            className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors ${
+                                activeRailPresetId === 'compact'
+                                    ? 'bg-cyan-500/20 text-cyan-100'
+                                    : 'text-slate-300 hover:bg-white/10'
+                            }`}
+                        >
+                            Compact
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="layout-preset-balanced-btn"
+                            onClick={() => applyRailSizePreset('balanced')}
+                            className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors border-l border-white/10 ${
+                                activeRailPresetId === 'balanced'
+                                    ? 'bg-cyan-500/20 text-cyan-100'
+                                    : 'text-slate-300 hover:bg-white/10'
+                            }`}
+                        >
+                            Balanced
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="layout-preset-wide-btn"
+                            onClick={() => applyRailSizePreset('wide')}
+                            className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors border-l border-white/10 ${
+                                activeRailPresetId === 'wide'
+                                    ? 'bg-cyan-500/20 text-cyan-100'
+                                    : 'text-slate-300 hover:bg-white/10'
+                            }`}
+                        >
+                            Wide
+                        </button>
+                    </div>
+                    <button
+                        type="button"
+                        data-testid="layout-reset-panels-btn"
+                        onClick={() => {
+                            resetThreadRailWidth();
+                            resetWorkbenchRailWidth();
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-mono uppercase tracking-[0.12em] text-slate-300 hover:bg-white/10"
+                    >
+                        Reset Panels
+                    </button>
+                    {showInlineThreadRail && (
+                        <button
+                            type="button"
+                            data-testid="layout-toggle-thread-inline-btn"
+                            onClick={toggleThreadRailCollapse}
+                            className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono uppercase tracking-[0.14em] ${
+                                threadRailCollapsed
+                                    ? 'border-cyan-300/30 bg-cyan-500/10 text-cyan-100'
+                                    : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                            }`}
+                        >
+                            {threadRailCollapsed ? 'Show Workflows' : 'Hide Workflows'}
+                        </button>
+                    )}
+                    {showInlineWorkbenchRail && (
+                        <button
+                            type="button"
+                            data-testid="layout-toggle-workbench-inline-btn"
+                            onClick={toggleWorkbenchRailCollapse}
+                            className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono uppercase tracking-[0.14em] ${
+                                workbenchRailCollapsed
+                                    ? 'border-cyan-300/30 bg-cyan-500/10 text-cyan-100'
+                                    : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                            }`}
+                        >
+                            {workbenchRailCollapsed ? 'Show Workbench' : 'Hide Workbench'}
+                        </button>
+                    )}
+                    {canOpenThreadRailOverlay && (
+                        <button
+                            type="button"
+                            data-testid="layout-toggle-workflows-btn"
+                            onClick={toggleLeftRailOverlay}
+                            className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono uppercase tracking-[0.14em] ${
+                                showLeftRailOverlay
+                                    ? 'border-cyan-300/40 bg-cyan-500/20 text-cyan-100'
+                                    : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                            }`}
+                        >
+                            {showLeftRailOverlay ? 'Close Workflows' : 'Workflows'}
+                        </button>
+                    )}
+                    {canOpenWorkbenchRailOverlay && (
+                        <button
+                            type="button"
+                            data-testid="layout-toggle-workbench-btn"
+                            onClick={toggleRightRailOverlay}
+                            className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono uppercase tracking-[0.14em] ${
+                                showRightRailOverlay
+                                    ? 'border-cyan-300/40 bg-cyan-500/20 text-cyan-100'
+                                    : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                            }`}
+                        >
+                            {showRightRailOverlay ? 'Close Workbench' : 'Workbench'}
+                        </button>
+                    )}
+                </div>
+            </div>
+
             <div className="flex-1 flex min-h-0 overflow-hidden relative">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/[0.03] blur-[120px] pointer-events-none" />
 
-                <ThreadRail
-                    sessions={sessions}
-                    workflowId={workflowId}
-                    onSelectSession={handleSessionSelect}
-                    onCreateSession={openCreateDialog}
-                    onSaveSession={handleSaveActiveSession}
-                    onRetrySave={handleRetrySave}
-                    onLockSession={handleLockActiveSession}
-                    saveStatus={saveStatus}
-                    isSessionUnlocked={isSessionUnlocked}
-                    sessionHydrationStatus={sessionHydrationStatus}
-                    autoLockOnBlur={Boolean(autoLockOnBlur)}
-                    onToggleAutoLock={setAutoLockOnBlur}
-                    auditOnly={auditOnly}
-                    onUpgradeToPro={handleUpgradeToPro}
-                />
+                {showInlineThreadRailPanel && (
+                    <ThreadRail
+                        sessions={sessions}
+                        workflowId={workflowId}
+                        onSelectSession={handleSessionSelect}
+                        onCreateSession={openCreateDialog}
+                        onSaveSession={handleSaveActiveSession}
+                        onRetrySave={handleRetrySave}
+                        onLockSession={handleLockActiveSession}
+                        saveStatus={saveStatus}
+                        isSessionUnlocked={isSessionUnlocked}
+                        sessionHydrationStatus={sessionHydrationStatus}
+                        autoLockOnBlur={Boolean(autoLockOnBlur)}
+                        onToggleAutoLock={setAutoLockOnBlur}
+                        auditOnly={auditOnly}
+                        onUpgradeToPro={handleUpgradeToPro}
+                        widthPx={inlineThreadRailWidth}
+                    />
+                )}
+                {showInlineThreadRailPanel && (
+                    <button
+                        type="button"
+                        role="separator"
+                        aria-label="Resize workflow rail"
+                        aria-orientation="vertical"
+                        data-testid="thread-rail-resize-handle"
+                        onPointerDown={beginThreadRailResize}
+                        onDoubleClick={resetThreadRailWidth}
+                        title="Drag to resize. Double-click to reset."
+                        className="relative group z-20 w-2 -mx-1 cursor-col-resize touch-none select-none flex items-stretch"
+                    >
+                        <span className="mx-auto my-2 w-px bg-white/10 transition-colors group-hover:bg-cyan-400/80" />
+                        {showThreadRailResizeHint && (
+                            <span
+                                role="status"
+                                className="absolute top-3 left-3 whitespace-nowrap px-2 py-1 rounded-lg border border-cyan-300/30 bg-slate-950/95 text-[9px] font-mono uppercase tracking-[0.1em] text-cyan-100 shadow-[0_6px_24px_rgba(0,0,0,0.5)]"
+                            >
+                                Drag to resize · double-click to reset
+                            </span>
+                        )}
+                    </button>
+                )}
+                {showInlineThreadRail && threadRailCollapsed && (
+                    <button
+                        type="button"
+                        data-testid="thread-rail-mini-expand-btn"
+                        onClick={toggleThreadRailCollapse}
+                        className="shrink-0 w-12 border-r border-white/10 bg-slate-950/75 hover:bg-slate-900/90 text-cyan-100 transition-colors flex flex-col items-center justify-center gap-1"
+                        title="Expand workflows rail"
+                    >
+                        <span className="text-[9px] font-mono uppercase tracking-[0.14em]">WF</span>
+                        <span className="text-[8px] text-slate-400 font-mono uppercase tracking-[0.12em]">Open</span>
+                    </button>
+                )}
 
                 <WorkspacePanel
                     chatLog={chatLog}
@@ -739,24 +1497,163 @@ function App() {
                     collab={collab}
                 />
 
-                <WorkbenchRail
-                    stats={stats}
-                    workflowId={workflowId}
-                    onExecute={executeSignal}
-                    onInsertPrompt={handleInsertPrompt}
-                    auditOnly={auditOnly}
-                />
+                {showInlineWorkbenchRailPanel && (
+                    <>
+                        <button
+                            type="button"
+                            role="separator"
+                            aria-label="Resize workbench rail"
+                            aria-orientation="vertical"
+                            data-testid="workbench-rail-resize-handle"
+                            onPointerDown={beginWorkbenchRailResize}
+                            onDoubleClick={resetWorkbenchRailWidth}
+                            title="Drag to resize. Double-click to reset."
+                            className="group z-20 w-2 -mx-1 cursor-col-resize touch-none select-none flex items-stretch"
+                        >
+                            <span className="mx-auto my-2 w-px bg-white/10 transition-colors group-hover:bg-cyan-400/80" />
+                        </button>
+                        <WorkbenchRail
+                            stats={stats}
+                            workflowId={workflowId}
+                            onExecute={executeSignal}
+                            onInsertPrompt={handleInsertPrompt}
+                            auditOnly={auditOnly}
+                            widthPx={inlineWorkbenchRailWidth}
+                        />
+                    </>
+                )}
+                {showInlineWorkbenchRail && workbenchRailCollapsed && (
+                    <button
+                        type="button"
+                        data-testid="workbench-rail-mini-expand-btn"
+                        onClick={toggleWorkbenchRailCollapse}
+                        className="shrink-0 w-12 border-l border-white/10 bg-slate-950/75 hover:bg-slate-900/90 text-cyan-100 transition-colors flex flex-col items-center justify-center gap-1"
+                        title="Expand workbench rail"
+                    >
+                        <span className="text-[9px] font-mono uppercase tracking-[0.14em]">WB</span>
+                        <span className="text-[8px] text-slate-400 font-mono uppercase tracking-[0.12em]">Open</span>
+                    </button>
+                )}
                 <ScratchpadTab
                     open={showScratchpad}
                     onClose={() => setShowScratchpad(false)}
                 />
             </div>
 
+            {canOpenThreadRailOverlay && showLeftRailOverlay && (
+                <>
+                    <div
+                        className="fixed inset-0 z-[72] bg-black/55"
+                        onClick={() => setShowLeftRailOverlay(false)}
+                    />
+                    <div className="fixed left-0 top-14 bottom-0 z-[73] flex items-stretch">
+                        <ThreadRail
+                            sessions={sessions}
+                            workflowId={workflowId}
+                            onSelectSession={handleSessionSelect}
+                            onCreateSession={openCreateDialog}
+                            onSaveSession={handleSaveActiveSession}
+                            onRetrySave={handleRetrySave}
+                            onLockSession={handleLockActiveSession}
+                            saveStatus={saveStatus}
+                            isSessionUnlocked={isSessionUnlocked}
+                            sessionHydrationStatus={sessionHydrationStatus}
+                            autoLockOnBlur={Boolean(autoLockOnBlur)}
+                            onToggleAutoLock={setAutoLockOnBlur}
+                            auditOnly={auditOnly}
+                            onUpgradeToPro={handleUpgradeToPro}
+                            widthPx={overlayThreadRailWidth}
+                        />
+                        <button
+                            type="button"
+                            role="separator"
+                            aria-label="Resize overlay workflow rail"
+                            aria-orientation="vertical"
+                            data-testid="thread-rail-overlay-resize-handle"
+                            onPointerDown={beginOverlayThreadRailResize}
+                            onDoubleClick={resetThreadRailWidth}
+                            title="Drag to resize overlay. Double-click to reset."
+                            className="group z-20 w-2 -mx-1 cursor-col-resize touch-none select-none flex items-stretch"
+                        >
+                            <span className="mx-auto my-2 w-px bg-white/30 transition-colors group-hover:bg-cyan-300/90" />
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {canOpenWorkbenchRailOverlay && showRightRailOverlay && (
+                <>
+                    <div
+                        className="fixed inset-0 z-[72] bg-black/55"
+                        onClick={() => setShowRightRailOverlay(false)}
+                    />
+                    <div className="fixed right-0 top-14 bottom-0 z-[73] flex items-stretch">
+                        <button
+                            type="button"
+                            role="separator"
+                            aria-label="Resize overlay workbench rail"
+                            aria-orientation="vertical"
+                            data-testid="workbench-rail-overlay-resize-handle"
+                            onPointerDown={beginOverlayWorkbenchRailResize}
+                            onDoubleClick={resetWorkbenchRailWidth}
+                            title="Drag to resize overlay. Double-click to reset."
+                            className="group z-20 w-2 -mx-1 cursor-col-resize touch-none select-none flex items-stretch"
+                        >
+                            <span className="mx-auto my-2 w-px bg-white/30 transition-colors group-hover:bg-cyan-300/90" />
+                        </button>
+                        <WorkbenchRail
+                            stats={stats}
+                            workflowId={workflowId}
+                            onExecute={executeSignal}
+                            onInsertPrompt={handleInsertPrompt}
+                            auditOnly={auditOnly}
+                            widthPx={overlayWorkbenchRailWidth}
+                        />
+                    </div>
+                </>
+            )}
+
             {showPalette && (
                 <CommandPalette onClose={closePalette} />
             )}
             {showSettings && <SettingsDrawer />}
-            {showAnalytics && <AnalyticsDrawer onClose={() => setShowAnalytics(false)} />}
+            {showAnalytics && (
+                <AnalyticsDrawer
+                    onClose={() => setShowAnalytics(false)}
+                    capabilities={runtimeCapabilityPayload.capabilities}
+                />
+            )}
+            <EcosystemLauncher
+                open={showEcosystem}
+                onClose={() => setShowEcosystem(false)}
+                capabilities={runtimeCapabilityPayload.capabilities}
+                tierId={runtimeCapabilityPayload.tierId}
+            />
+            {canUseOnboardingWizard && showOnboarding && (
+                <OnboardingWizard
+                    open={showOnboarding}
+                    onClose={handleCloseOnboarding}
+                    onOpenSettings={openSettings}
+                    onRunCommand={executeSignal}
+                />
+            )}
+            <IssueAssistModal
+                open={showIssueAssist}
+                onClose={() => setShowIssueAssist(false)}
+                metadata={{
+                    tier: runtimeCapabilityPayload.tierLabel,
+                    version: 'NeuralShell_V2.2.0',
+                    workflowId: workflowId || '',
+                    supportBundlePath: supportBundleMeta.outputPath || '',
+                    supportBundleHash: supportBundleMeta.sha256 || '',
+                }}
+            />
+            <SuccessCaptureModal
+                open={showSuccessCapture}
+                onClose={() => setShowSuccessCapture(false)}
+                workflowId={workflowId || ''}
+                tierLabel={runtimeCapabilityPayload.tierLabel}
+            />
 
             {sessionDialog.open && (
                 <div

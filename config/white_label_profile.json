@@ -1,0 +1,22 @@
+{
+  "schema": "neuralshell_branding_profile_v1",
+  "profileId": "apex-industries-oem",
+  "displayName": "Apex Industries OEM",
+  "publisherId": "demo-neuralshell-labs",
+  "branding": {
+    "productName": "Apex Neural Ops",
+    "logoText": "Apex Neural Ops",
+    "accentColor": "#22d3ee",
+    "supportUrl": "https://support.neuralshell.app/apex-oem",
+    "docsUrl": "https://github.com/Z3r0DayZion-install/NeuralShell/tree/main/docs",
+    "installerName": "Apex-NeuralShell-Enterprise"
+  },
+  "policyDefaults": {
+    "allowRemoteBridge": false,
+    "offlineOnly": true,
+    "updateRing": "stable",
+    "allowedProviders": [
+      "ollama"
+    ]
+  }
+}

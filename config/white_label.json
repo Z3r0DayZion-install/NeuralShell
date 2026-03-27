@@ -1,0 +1,31 @@
+{
+  "payload": {
+    "schema": "neuralshell_branding_profile_v1",
+    "profileId": "apex-industries-oem",
+    "displayName": "Apex Industries OEM",
+    "publisherId": "demo-neuralshell-labs",
+    "branding": {
+      "productName": "Apex Neural Ops",
+      "logoText": "Apex Neural Ops",
+      "accentColor": "#22d3ee",
+      "supportUrl": "https://support.neuralshell.app/apex-oem",
+      "docsUrl": "https://github.com/Z3r0DayZion-install/NeuralShell/tree/main/docs",
+      "installerName": "Apex-NeuralShell-Enterprise"
+    },
+    "policyDefaults": {
+      "allowRemoteBridge": false,
+      "offlineOnly": true,
+      "updateRing": "stable",
+      "allowedProviders": [
+        "ollama"
+      ]
+    }
+  },
+  "signature": "MEUCIQCm8Zi3h3dbqywQDRATukpXmg32gT73QTdJA4qg3D3zvAIgSvqSyj4rwahnpuVuQqiezgHBijK2dF0hMaGI0M99Kuk=",
+  "signer": {
+    "algorithm": "ECDSA_P256_SHA256",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEy0V7iuTHVIbal3JO1gVs08sS/04O\ng+26QHaSiOR16iEwH6E+eTwix1nnyw4Q2szcWcxw42JOwInNN+zh4Nz89A==\n-----END PUBLIC KEY-----\n",
+    "fingerprint": "sha256:78b7d2a0650f9b1c022f22319e4ff326dae93e962735936d898675c4e10a21c0"
+  },
+  "signedAt": "2026-03-27T20:12:37.512Z"
+}

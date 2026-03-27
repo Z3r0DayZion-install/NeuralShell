@@ -18,6 +18,26 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "state:logProfileEvent",
   "settings:get",
   "settings:update",
+  "license:status",
+  "license:activateBlob",
+  "license:clear",
+  "proofRelay:getConfig",
+  "proofRelay:setConfig",
+  "proofRelay:getRepoMap",
+  "proofRelay:setRepoMap",
+  "autoUpdate:getPolicy",
+  "autoUpdate:setPolicy",
+  "autoUpdate:pending",
+  "autoUpdate:verifyPackage",
+  "autoUpdate:scheduleSwap",
+  "analytics:getDashboard",
+  "analytics:setEnabled",
+  "analytics:clear",
+  "support:exportBundle",
+  "releaseHealth:check",
+  "otel:status",
+  "otel:setEnabled",
+  "otel:verify",
   "session:list",
   "session:save",
   "session:load",
@@ -33,6 +53,7 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "llm:bridge:get",
   "llm:bridge:envStatus",
   "llm:bridge:importEnvProfiles",
+  "llm:bridge:sweep",
   "llm:bridge:test",
   "llm:bridge:save",
   "rgb:status",
@@ -41,6 +62,8 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "audit:tail",
   "audit:verify",
   "system:stats",
+  "accel:status",
+  "system:openExternal",
   "log:log",
   "log:tail",
   "log:clear",
@@ -55,6 +78,7 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "workspace:suggestContextPack",
   "workspace:statFiles",
   "workspace:readFile",
+  "workspace:gitStatus",
   "workspace:clear",
   "workspace:previewAction",
   "workspace:applyAction",
@@ -67,6 +91,9 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "identity:list-peers",
   "identity:rotate",
   "daemon:status",
+  "daemon:wsAuthToken",
+  "collab:getStatus",
+  "modelPool:status",
   "xp:status",
   "xp:add",
   "ritual:list",
@@ -79,6 +106,12 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "vault:lock",
   "vault:unlock",
   "vault:compact",
+  "vault:setSecret",
+  "vault:getSecret",
+  "vault:hasSecret",
+  "vault:deleteSecret",
+  "vault:export",
+  "vault:import",
   "llm:autoDetect",
   "llm:setPersona",
   "kernel:request",
@@ -102,6 +135,12 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "workspace:get-active",
   "workspace:set-active",
   "workspace:register"
+  ,"proof:exec"
+  ,"proof:cancel"
+  ,"agents:list"
+  ,"agents:install"
+  ,"agents:run"
+  ,"agents:receipts"
 ]);
 
 const ALLOWED_SEND_CHANNELS = new Set([]);
@@ -115,7 +154,8 @@ const ALLOWED_ON_CHANNELS = new Set([
   "action:log",
   "workspace:changed",
   "workspace:list-updated",
-  "state-updated"
+  "state-updated",
+  "proof:stdout"
 ]);
 
 function assertAllowed(set, channel, type) {
@@ -223,7 +263,13 @@ contextBridge.exposeInMainWorld("api", {
   vault: {
     lock: () => ipcRenderer.invoke("vault:lock"),
     unlock: (password) => ipcRenderer.invoke("vault:unlock", password),
-    compact: (data, format) => ipcRenderer.invoke("vault:compact", data, format)
+    compact: (data, format) => ipcRenderer.invoke("vault:compact", data, format),
+    setSecret: (profileId, key, value) => ipcRenderer.invoke("vault:setSecret", profileId, key, value),
+    getSecret: (profileId, key) => ipcRenderer.invoke("vault:getSecret", profileId, key),
+    hasSecret: (profileId, key) => ipcRenderer.invoke("vault:hasSecret", profileId, key),
+    deleteSecret: (profileId, key) => ipcRenderer.invoke("vault:deleteSecret", profileId, key),
+    export: (passphrase) => ipcRenderer.invoke("vault:export", passphrase),
+    import: (blob, passphrase, options) => ipcRenderer.invoke("vault:import", blob, passphrase, options)
   },
   kernel: {
     request: (intent, payload) =>
@@ -268,6 +314,40 @@ contextBridge.exposeInMainWorld("api", {
   settings: {
     get: () => ipcRenderer.invoke("settings:get"),
     update: (settings) => ipcRenderer.invoke("settings:update", settings)
+  },
+  license: {
+    status: () => ipcRenderer.invoke("license:status"),
+    activateBlob: (payload) => ipcRenderer.invoke("license:activateBlob", payload),
+    clear: () => ipcRenderer.invoke("license:clear")
+  },
+  proofRelay: {
+    getConfig: () => ipcRenderer.invoke("proofRelay:getConfig"),
+    setConfig: (config) => ipcRenderer.invoke("proofRelay:setConfig", config),
+    getRepoMap: () => ipcRenderer.invoke("proofRelay:getRepoMap"),
+    setRepoMap: (payload) => ipcRenderer.invoke("proofRelay:setRepoMap", payload)
+  },
+  autoUpdate: {
+    getPolicy: () => ipcRenderer.invoke("autoUpdate:getPolicy"),
+    setPolicy: (policy) => ipcRenderer.invoke("autoUpdate:setPolicy", policy),
+    pending: () => ipcRenderer.invoke("autoUpdate:pending"),
+    verifyPackage: (payload) => ipcRenderer.invoke("autoUpdate:verifyPackage", payload),
+    scheduleSwap: (payload) => ipcRenderer.invoke("autoUpdate:scheduleSwap", payload)
+  },
+  analytics: {
+    getDashboard: (days) => ipcRenderer.invoke("analytics:getDashboard", days),
+    setEnabled: (enabled) => ipcRenderer.invoke("analytics:setEnabled", enabled),
+    clear: () => ipcRenderer.invoke("analytics:clear")
+  },
+  support: {
+    exportBundle: (payload) => ipcRenderer.invoke("support:exportBundle", payload)
+  },
+  releaseHealth: {
+    check: () => ipcRenderer.invoke("releaseHealth:check")
+  },
+  otel: {
+    status: () => ipcRenderer.invoke("otel:status"),
+    setEnabled: (enabled) => ipcRenderer.invoke("otel:setEnabled", enabled),
+    verify: () => ipcRenderer.invoke("otel:verify")
   },
   session: {
     /**
@@ -334,6 +414,7 @@ contextBridge.exposeInMainWorld("api", {
     get: () => ipcRenderer.invoke("llm:bridge:get"),
     envStatus: () => ipcRenderer.invoke("llm:bridge:envStatus"),
     importEnvProfiles: () => ipcRenderer.invoke("llm:bridge:importEnvProfiles"),
+    sweep: () => ipcRenderer.invoke("llm:bridge:sweep"),
     test: (profile) => ipcRenderer.invoke("llm:bridge:test", profile),
     save: (payload) => ipcRenderer.invoke("llm:bridge:save", payload)
   },
@@ -351,7 +432,11 @@ contextBridge.exposeInMainWorld("api", {
      * Get a snapshot of system statistics.
      * @returns {Promise<object>}
      */
-    getStats: () => ipcRenderer.invoke("system:stats")
+    getStats: () => ipcRenderer.invoke("system:stats"),
+    openExternal: (url) => ipcRenderer.invoke("system:openExternal", url)
+  },
+  accel: {
+    status: () => ipcRenderer.invoke("accel:status")
   },
   logger: {
     /**
@@ -376,6 +461,7 @@ contextBridge.exposeInMainWorld("api", {
     suggestContextPack: (rootPath, workflowId) => ipcRenderer.invoke("workspace:suggestContextPack", rootPath, workflowId),
     statFiles: (rootPath, relativePaths) => ipcRenderer.invoke("workspace:statFiles", rootPath, relativePaths),
     readFile: (rootPath, relativePath, maxChars) => ipcRenderer.invoke("workspace:readFile", rootPath, relativePath, maxChars),
+    gitStatus: (rootPath) => ipcRenderer.invoke("workspace:gitStatus", rootPath),
     clear: () => ipcRenderer.invoke("workspace:clear"),
     previewAction: (payload) => ipcRenderer.invoke("workspace:previewAction", payload),
     applyAction: (payload) => ipcRenderer.invoke("workspace:applyAction", payload),
@@ -388,6 +474,21 @@ contextBridge.exposeInMainWorld("api", {
     getChainProposals: (workspacePath) => ipcRenderer.invoke("workspace:get-chain-proposals", workspacePath),
     onChanged: (fn) => ipcRenderer.on("workspace:changed", (_e, data) => fn(data)),
     onListUpdated: (fn) => ipcRenderer.on("workspace:list-updated", (_e, data) => fn(data))
+  },
+  proof: {
+    exec: (payload) => ipcRenderer.invoke("proof:exec", payload),
+    cancel: (sessionId) => ipcRenderer.invoke("proof:cancel", sessionId),
+    onStdout: (fn) => {
+      const wrapped = (_event, payload) => fn(payload);
+      ipcRenderer.on("proof:stdout", wrapped);
+      return () => ipcRenderer.removeListener("proof:stdout", wrapped);
+    }
+  },
+  agents: {
+    list: () => ipcRenderer.invoke("agents:list"),
+    install: (agentId, options) => ipcRenderer.invoke("agents:install", agentId, options),
+    run: (agentId, context) => ipcRenderer.invoke("agents:run", agentId, context),
+    receipts: () => ipcRenderer.invoke("agents:receipts")
   },
   identity: {
     /** Returns own public key PEM and display fingerprint. */
@@ -406,11 +507,18 @@ contextBridge.exposeInMainWorld("api", {
   daemon: {
     /** Get current watchdog status snapshot. */
     status: () => ipcRenderer.invoke("daemon:status"),
+    wsAuthToken: () => ipcRenderer.invoke("daemon:wsAuthToken"),
     /** Subscribe to live daemon lifecycle events from the watchdog. */
     onStatus: (fn) => ipcRenderer.on("daemon-status", (_e, data) => fn(data)),
     /** Subscribe to real-time file transfer progress. */
     onTransferProgress: (fn) =>
       ipcRenderer.on("transfer-progress", (_e, data) => fn(data))
+  },
+  collab: {
+    getStatus: () => ipcRenderer.invoke("collab:getStatus")
+  },
+  modelPool: {
+    status: () => ipcRenderer.invoke("modelPool:status")
   },
   project: {
     analyze: (rootPath, workflowId, sessionHistory) =>

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "agents": [
+    {
+      "id": "proof_guard",
+      "pricingType": "free",
+      "priceUsd": 0,
+      "trustBadge": "verified-core",
+      "publisher": "NeuralShell Core",
+      "community": false,
+      "compatibility": {
+        "minVersion": "2.1.0",
+        "maxVersion": ""
+      }
+    },
+    {
+      "id": "refactor_pro",
+      "pricingType": "paid",
+      "priceUsd": 29,
+      "trustBadge": "verified-partner",
+      "publisher": "NeuralShell Labs",
+      "community": false,
+      "compatibility": {
+        "minVersion": "2.1.29",
+        "maxVersion": ""
+      }
+    }
+  ]
+}

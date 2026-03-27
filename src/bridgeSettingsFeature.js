@@ -58,6 +58,17 @@
     const persistOfflineModePreference = typeof deps.persistOfflineModePreference === "function"
       ? deps.persistOfflineModePreference
       : async () => ({ ok: false, reason: "unavailable" });
+    const bridgeProviders = Array.isArray(deps.bridgeProviders) ? deps.bridgeProviders.slice() : [];
+    const getBridgeProvider = typeof deps.getBridgeProvider === "function"
+      ? deps.getBridgeProvider
+      : (providerId) => bridgeProviders.find((provider) => String(provider && provider.id || "") === String(providerId || "")) || {
+        id: String(providerId || "ollama"),
+        label: String(providerId || "ollama"),
+        defaultBaseUrl: "http://127.0.0.1:11434",
+        remote: false,
+        requiresApiKey: false,
+        suggestedModels: []
+      };
 
     function syncSettingsInputsFromState() {
       updateDynamicChrome();
@@ -92,6 +103,7 @@
       renderProviderProfileHelp(activeProfile ? activeProfile.provider : "ollama");
       renderProviderPresetList();
       renderEnvProfileSummary();
+      renderProviderSweepResults();
       refreshBridgeEnvStatus().catch(() => {});
       renderSettingsQuickstartHints();
       updateWorkspaceModeText();
@@ -234,6 +246,254 @@
       };
     }
 
+    function providerProfileForSweep(provider, profiles, timeoutMs, retryCount) {
+      const providerId = String(provider && provider.id || "ollama");
+      const matchingProfiles = (Array.isArray(profiles) ? profiles : [])
+        .filter((profile) => String(profile && profile.provider || "") === providerId);
+      const activeId = resolveActiveProfileId(appState.settings, profiles);
+      const preferred = matchingProfiles.find((profile) => String(profile && profile.id || "") === String(activeId || ""))
+        || matchingProfiles[0];
+      if (preferred) {
+        return {
+          ...preferred,
+          provider: providerId
+        };
+      }
+      const suggestedModel = Array.isArray(provider && provider.suggestedModels) && provider.suggestedModels.length
+        ? String(provider.suggestedModels[0])
+        : String(appState.model || "llama3");
+      const fallbackId = `sweep-${providerId}`;
+      return normalizeProfile({
+        id: fallbackId,
+        name: `${String(provider && provider.label || providerId)} Sweep`,
+        provider: providerId,
+        baseUrl: String(provider && provider.defaultBaseUrl || "http://127.0.0.1:11434"),
+        timeoutMs,
+        retryCount,
+        defaultModel: suggestedModel,
+        apiKey: ""
+      }, suggestedModel, fallbackId);
+    }
+
+    function providerSweepStatusTone(status) {
+      const normalized = String(status || "").trim().toLowerCase();
+      if (normalized === "connected") return "good";
+      if (normalized === "failed") return "bad";
+      if (normalized === "blocked") return "warn";
+      if (normalized === "running") return "ok";
+      return "guard";
+    }
+
+    function renderProviderSweepResults(summary = null) {
+      if (!el.providerSweepSummaryText && !el.providerSweepList) {
+        return;
+      }
+
+      const fallbackProviders = [];
+      for (const profile of getNormalizedProfiles(appState.settings)) {
+        const provider = getBridgeProvider(profile && profile.provider);
+        if (!provider || fallbackProviders.some((entry) => String(entry.id || "") === String(provider.id || ""))) {
+          continue;
+        }
+        fallbackProviders.push(provider);
+      }
+      const providers = bridgeProviders.length ? bridgeProviders : (fallbackProviders.length ? fallbackProviders : [getBridgeProvider("ollama")]);
+      const resultMap = new Map();
+      if (summary && Array.isArray(summary.results)) {
+        for (const item of summary.results) {
+          const providerId = String(item && item.provider || "").trim();
+          if (!providerId) continue;
+          resultMap.set(providerId, item);
+        }
+      }
+
+      if (el.providerSweepSummaryText) {
+        if (!summary) {
+          el.providerSweepSummaryText.textContent = "Run Provider Sweep to validate saved profiles from this UI. Suggested starter models are listed below.";
+        } else if (summary.running) {
+          el.providerSweepSummaryText.textContent = `Running provider sweep across ${summary.total || providers.length} provider ${((summary.total || providers.length) === 1) ? "lane" : "lanes"}...`;
+        } else {
+          el.providerSweepSummaryText.textContent =
+            `Provider sweep: ${summary.connected || 0}/${summary.total || providers.length} connected | ${summary.failed || 0} failed | ${summary.skipped || 0} pending setup.`;
+        }
+      }
+
+      if (!el.providerSweepList || !documentObject) {
+        return;
+      }
+
+      el.providerSweepList.innerHTML = "";
+      for (const provider of providers) {
+        const providerId = String(provider && provider.id || "ollama");
+        const result = resultMap.get(providerId) || null;
+        const status = String(result && result.status || "ready").trim().toLowerCase();
+        const statusLabel = status === "connected"
+          ? "Connected"
+          : status === "failed"
+            ? "Failed"
+            : status === "blocked"
+              ? "Blocked"
+              : status === "running"
+                ? "Running"
+                : status === "skipped"
+                  ? "Setup Needed"
+                  : "Ready";
+
+        const item = documentObject.createElement("div");
+        item.className = "provider-sweep-item";
+
+        const head = documentObject.createElement("div");
+        head.className = "provider-sweep-item-head";
+
+        const title = documentObject.createElement("div");
+        title.className = "provider-sweep-item-title";
+        title.textContent = String(provider && provider.label || providerId);
+
+        const statusNode = documentObject.createElement("span");
+        statusNode.className = "provider-sweep-status";
+        statusNode.dataset.tone = providerSweepStatusTone(status);
+        statusNode.textContent = statusLabel;
+
+        head.appendChild(title);
+        head.appendChild(statusNode);
+
+        const meta = documentObject.createElement("div");
+        meta.className = "provider-sweep-meta";
+        const suggested = Array.isArray(provider && provider.suggestedModels) && provider.suggestedModels.length
+          ? provider.suggestedModels.slice(0, 3).join(", ")
+          : "Bring your own model id";
+        const profileName = String(result && result.profileName || "No saved profile selected");
+        const model = String(result && result.model || (Array.isArray(provider && provider.suggestedModels) && provider.suggestedModels[0]) || appState.model || "llama3");
+        const reason = String(result && result.reason || "").trim();
+        const modelCount = Number(result && result.modelCount || 0);
+        const parts = [
+          `Profile: ${profileName}`,
+          `Model: ${model}`,
+          `Suggested: ${suggested}`
+        ];
+        if (status === "connected" && modelCount > 0) {
+          parts.push(`${modelCount} models listed`);
+        }
+        if (reason) {
+          parts.push(reason);
+        }
+        meta.textContent = parts.join(" | ");
+
+        item.appendChild(head);
+        item.appendChild(meta);
+        el.providerSweepList.appendChild(item);
+      }
+    }
+
+    async function runProviderSweep() {
+      if (!windowObject.api || !windowObject.api.bridge || typeof windowObject.api.bridge.test !== "function") {
+        showBanner("Provider sweep is unavailable.", "bad");
+        return { ok: false, reason: "unavailable" };
+      }
+
+      const settings = appState.settings && typeof appState.settings === "object" ? appState.settings : {};
+      const timeoutMs = clampNumber(settings.timeoutMs || 15000, 1000, 120000, 15000);
+      const retryCount = clampNumber(settings.retryCount || 2, 0, 10, 2);
+      const allowRemoteBridge = Boolean(settings.allowRemoteBridge);
+      const profiles = getNormalizedProfiles(settings);
+
+      const fallbackProviders = [];
+      for (const profile of profiles) {
+        const provider = getBridgeProvider(profile && profile.provider);
+        if (!provider || fallbackProviders.some((entry) => String(entry.id || "") === String(provider.id || ""))) {
+          continue;
+        }
+        fallbackProviders.push(provider);
+      }
+      const providers = bridgeProviders.length ? bridgeProviders : (fallbackProviders.length ? fallbackProviders : [getBridgeProvider("ollama")]);
+      const summarySeed = {
+        running: true,
+        total: providers.length,
+        connected: 0,
+        failed: 0,
+        skipped: providers.length,
+        results: []
+      };
+      renderProviderSweepResults(summarySeed);
+
+      const results = [];
+      for (const provider of providers) {
+        const draft = providerProfileForSweep(provider, profiles, timeoutMs, retryCount);
+        const row = {
+          provider: String(provider && provider.id || "ollama"),
+          label: String(provider && provider.label || provider && provider.id || "Provider"),
+          profileName: String(draft && draft.name || "Draft"),
+          model: String(draft && draft.defaultModel || appState.model || "llama3"),
+          status: "skipped",
+          ok: false,
+          reason: ""
+        };
+
+        if (row.provider === "custom_openai" && /api\.example\.com/i.test(String(draft && draft.baseUrl || ""))) {
+          row.reason = "Set a real custom base URL before running the sweep.";
+          results.push(row);
+          continue;
+        }
+
+        if (provider && provider.remote && !allowRemoteBridge) {
+          row.status = "blocked";
+          row.reason = "Offline Mode is on. Turn it off to test hosted providers.";
+          results.push(row);
+          continue;
+        }
+
+        if (provider && provider.requiresApiKey && !String(draft && draft.apiKey || "").trim()) {
+          row.reason = `${String(provider.label || provider.id || "Provider")} API key is missing in the saved profile.`;
+          results.push(row);
+          continue;
+        }
+
+        try {
+          const result = await windowObject.api.bridge.test(draft);
+          if (result && result.ok) {
+            row.status = "connected";
+            row.ok = true;
+            row.modelCount = Number(result.modelCount || 0);
+            row.sampleModels = Array.isArray(result.models) ? result.models.slice(0, 3) : [];
+            row.reason = "";
+          } else {
+            row.status = "failed";
+            row.reason = String(
+              result && result.health && result.health.reason
+                ? result.health.reason
+                : result && result.reason
+                  ? result.reason
+                  : "Bridge test failed."
+            );
+          }
+        } catch (err) {
+          row.status = "failed";
+          row.reason = String(err && err.message ? err.message : err || "Bridge test failed.");
+        }
+
+        results.push(row);
+      }
+
+      const summary = {
+        running: false,
+        total: providers.length,
+        connected: results.filter((item) => item.status === "connected").length,
+        failed: results.filter((item) => item.status === "failed").length,
+        skipped: results.filter((item) => item.status === "skipped" || item.status === "blocked").length,
+        results
+      };
+      renderProviderSweepResults(summary);
+
+      if (summary.connected === summary.total && summary.total > 0) {
+        showBanner("Provider sweep passed. All provider lanes are connected.", "ok");
+      } else if (summary.failed === 0) {
+        showBanner(`Provider sweep partial: ${summary.connected}/${summary.total} connected.`, "ok");
+      } else {
+        showBanner(`Provider sweep found issues: ${summary.failed} failed, ${summary.skipped} pending setup.`, "bad");
+      }
+      return summary;
+    }
+
     async function saveDraftBridgeProfile() {
       const draft = readProfileDraftFromForm();
       const profiles = getNormalizedProfiles(appState.settings).map((row) => ({ ...row }));
@@ -327,6 +587,11 @@
           importEnvProfiles().catch((err) => showBanner(err.message || String(err), "bad"));
         };
       }
+      if (el.runProviderSweepBtn) {
+        el.runProviderSweepBtn.onclick = () => {
+          runProviderSweep().catch((err) => showBanner(err.message || String(err), "bad"));
+        };
+      }
       if (el.profileTestBtn) {
         el.profileTestBtn.onclick = async () => {
           const result = await testDraftBridgeProfile();
@@ -369,5 +634,4 @@
     createBridgeSettingsFeature
   };
 });
-
 

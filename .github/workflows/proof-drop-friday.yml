@@ -1,0 +1,63 @@
+name: Proof Drop Friday
+
+on:
+  schedule:
+    - cron: "0 16 * * 5"
+  workflow_dispatch:
+
+jobs:
+  weekly_reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build checksum proof bundle
+        run: npm run proof:bundle
+
+      - name: Validate Discord bot token
+        if: ${{ secrets.DISCORD_BOT_TOKEN != '' }}
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: |
+          curl -sS -H "Authorization: Bot $DISCORD_BOT_TOKEN" https://discord.com/api/users/@me >/tmp/discord_me.json
+          if grep -q "\"id\"" /tmp/discord_me.json; then
+            echo "Discord bot token is valid."
+          else
+            echo "Discord bot token validation failed."
+            cat /tmp/discord_me.json
+            exit 1
+          fi
+
+      - name: Parse hash count
+        id: parse
+        run: |
+          COUNT=$(node -e "const fs=require('fs');const t=fs.readFileSync('dist/SHA256SUMS.txt','utf8');const c=t.split(/\r?\n/).filter(l=>/^[A-Fa-f0-9]{64}\s+/.test(l.trim())||/^@\{Hash=[A-Fa-f0-9]{64};/.test(l.trim())).length;process.stdout.write(String(c));")
+          SCORE=$(( COUNT * 5 + 25 ))
+          if [ "$SCORE" -gt 100 ]; then SCORE=100; fi
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+
+      - name: Send Discord reminder
+        if: ${{ secrets.DISCORD_WEBHOOK != '' }}
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          COUNT: ${{ steps.parse.outputs.count }}
+          SCORE: ${{ steps.parse.outputs.score }}
+        run: |
+          curl -sS -X POST "$WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\":\"Proof-Drop Friday: SHA entries=$COUNT | Sovereign Score=$SCORE/100. Run !drop in Discord for manifest upload.\"}"
+
+      - name: No webhook configured
+        if: ${{ secrets.DISCORD_WEBHOOK == '' }}
+        run: echo "DISCORD_WEBHOOK is not set; reminder skipped."

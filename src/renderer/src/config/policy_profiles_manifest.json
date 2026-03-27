@@ -1,0 +1,17 @@
+[
+  {
+    "id": "offline_only",
+    "label": "Offline Only",
+    "description": "Strict local-only lane; remote and relay disabled."
+  },
+  {
+    "id": "balanced_team",
+    "label": "Balanced Team",
+    "description": "Allows approved remote lanes with controlled relay."
+  },
+  {
+    "id": "enterprise_locked",
+    "label": "Enterprise Locked",
+    "description": "Admin-safe defaults for controlled enterprise rollout."
+  }
+]

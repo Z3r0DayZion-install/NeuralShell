@@ -1,0 +1,42 @@
+[
+  {
+    "id": "cust-001",
+    "customerName": "Atlas Rail Group",
+    "onboardingCompletion": 92,
+    "proofRuns30d": 24,
+    "supportBundles30d": 1,
+    "upgraded": true,
+    "renewalDate": "2026-07-31",
+    "timeline": [
+      "Pilot kickoff complete",
+      "Policy suite accepted",
+      "Security review passed"
+    ]
+  },
+  {
+    "id": "cust-002",
+    "customerName": "Blue Harbor Bank",
+    "onboardingCompletion": 61,
+    "proofRuns30d": 8,
+    "supportBundles30d": 4,
+    "upgraded": true,
+    "renewalDate": "2026-06-15",
+    "timeline": [
+      "Deployment in progress",
+      "Support escalations increased"
+    ]
+  },
+  {
+    "id": "cust-003",
+    "customerName": "Metro Utilities",
+    "onboardingCompletion": 44,
+    "proofRuns30d": 3,
+    "supportBundles30d": 6,
+    "upgraded": false,
+    "renewalDate": "2026-05-20",
+    "timeline": [
+      "Procurement delay",
+      "Pilot stalled"
+    ]
+  }
+]

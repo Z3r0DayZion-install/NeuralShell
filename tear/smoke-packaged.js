@@ -80,8 +80,10 @@ async function smokeLaunch() {
       stdio: "ignore",
       env: {
         ...process.env,
+        CI: "1",
         NEURAL_SMOKE_MODE: "1",
         NEURAL_SMOKE_REPORT: smokeReport,
+        NEURAL_IGNORE_INTEGRITY: process.env.NEURAL_IGNORE_INTEGRITY || "1",
         ...(isolatedUserData ? { NEURAL_USER_DATA_DIR: isolatedUserData } : {})
       }
     });

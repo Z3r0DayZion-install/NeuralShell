@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "defaultPlan": "free",
+  "plans": [
+    {
+      "id": "free",
+      "label": "Free",
+      "priceUsd": 0,
+      "billingPeriod": "forever",
+      "seats": 1,
+      "graceDays": 0,
+      "checkout": {
+        "gumroad": "",
+        "stripe": "",
+        "manualInvoice": false
+      },
+      "capabilities": [
+        "proof_view",
+        "roi_view",
+        "status_commands",
+        "session_read",
+        "issue_assist",
+        "support_bundle_export",
+        "onboarding_wizard",
+        "funnel_dashboard"
+      ]
+    },
+    {
+      "id": "pro",
+      "label": "Pro",
+      "priceUsd": 99,
+      "billingPeriod": "one_time",
+      "seats": 1,
+      "graceDays": 7,
+      "checkout": {
+        "gumroad": "https://gumroad.com/l/neuralshell-operator",
+        "stripe": "https://buy.stripe.com/test_neuralshell_pro",
+        "manualInvoice": false
+      },
+      "capabilities": [
+        "proof_view",
+        "roi_view",
+        "status_commands",
+        "session_read",
+        "session_write",
+        "provider_remote_enable",
+        "proof_relay_basic",
+        "issue_assist",
+        "support_bundle_export",
+        "policy_profiles_apply",
+        "onboarding_wizard",
+        "marketplace_paid_install",
+        "funnel_dashboard"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "label": "Enterprise",
+      "priceUsd": 499,
+      "billingPeriod": "annual",
+      "seats": 25,
+      "graceDays": 14,
+      "checkout": {
+        "gumroad": "",
+        "stripe": "",
+        "manualInvoice": true,
+        "invoiceUrl": "mailto:enterprise@neuralshell.app?subject=NeuralShell%20Enterprise%20Invoice%20Request"
+      },
+      "capabilities": [
+        "proof_view",
+        "roi_view",
+        "status_commands",
+        "session_read",
+        "session_write",
+        "provider_remote_enable",
+        "proof_relay_basic",
+        "proof_relay_map",
+        "issue_assist",
+        "support_bundle_export",
+        "policy_profiles_apply",
+        "onboarding_wizard",
+        "marketplace_paid_install",
+        "enterprise_deploy_pack",
+        "release_health_console",
+        "operator_dashboard",
+        "revenue_console",
+        "partner_kit",
+        "funnel_dashboard"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "trust-proof",
+    "title": "Trust Proof",
+    "description": "Generate a concise proof narrative for security and release confidence.",
+    "prompt": "/proof"
+  },
+  {
+    "id": "operator-roi",
+    "title": "Operator ROI",
+    "description": "Produce value framing for leadership in one command.",
+    "prompt": "/roi"
+  },
+  {
+    "id": "guard-check",
+    "title": "Guard Check",
+    "description": "Show runtime policy posture before deep execution.",
+    "prompt": "/guard"
+  }
+]

@@ -1,0 +1,2 @@
+Demo logo placeholder.
+Replace this file path with a PNG/SVG in real pilot pack generation.

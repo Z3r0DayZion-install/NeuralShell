@@ -183,7 +183,12 @@ function defaultSettings() {
     connectionProfiles: [],
     repairTelemetryLog: [],
     profileTrustHistory: [],
-    tier: "PREVIEW"
+    tier: "PREVIEW",
+    proofRelayEnabled: false,
+    hostedProxyEnabled: false,
+    otelExportEnabled: false,
+    autoUpdateEnabled: false,
+    analyticsEnabled: false
   };
 }
 
@@ -535,3 +540,4 @@ module.exports = {
   stateFile,
   TRUST_STATES
 };
+

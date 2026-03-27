@@ -1,0 +1,42 @@
+[
+  {
+    "id": "mobile_companion",
+    "name": "Mobile Companion Upsell",
+    "notes": "Fast status + approvals from phone for field operators.",
+    "effort": 4,
+    "revenuePotential": 7,
+    "salesFriction": 5,
+    "deploymentComplexity": 6,
+    "ecosystemFit": 8
+  },
+  {
+    "id": "team_edition",
+    "name": "Team Edition",
+    "notes": "Role-aware seats, shared workflow visibility, and centralized policy control.",
+    "effort": 7,
+    "revenuePotential": 9,
+    "salesFriction": 4,
+    "deploymentComplexity": 6,
+    "ecosystemFit": 9
+  },
+  {
+    "id": "secure_relay_appliance",
+    "name": "Secure Relay Appliance",
+    "notes": "On-prem hardened relay bridge for regulated enterprise deals.",
+    "effort": 8,
+    "revenuePotential": 8,
+    "salesFriction": 6,
+    "deploymentComplexity": 8,
+    "ecosystemFit": 7
+  },
+  {
+    "id": "enterprise_support_plans",
+    "name": "Enterprise Support Plans",
+    "notes": "SLA-backed premium response and white-glove onboarding services.",
+    "effort": 3,
+    "revenuePotential": 8,
+    "salesFriction": 3,
+    "deploymentComplexity": 2,
+    "ecosystemFit": 8
+  }
+]

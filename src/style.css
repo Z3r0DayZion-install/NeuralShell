@@ -212,7 +212,7 @@ body.settings-menu-open {
 }
 
 .header-details-grid::before {
-  content: "OVERSEER SOURCE DIAGNOSTICS";
+  content: "SYSTEM DIAGNOSTICS";
   position: absolute;
   top: -18px;
   left: 0;
@@ -1027,6 +1027,74 @@ body.pane-resizing * {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.provider-sweep-list {
+  display: grid;
+  gap: 8px;
+}
+
+.provider-sweep-item {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(8, 15, 24, 0.34);
+}
+
+.provider-sweep-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.provider-sweep-item-title {
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.provider-sweep-status {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.provider-sweep-status[data-tone="good"] {
+  border-color: rgba(69, 201, 162, 0.5);
+  color: #8de8c6;
+}
+
+.provider-sweep-status[data-tone="warn"] {
+  border-color: rgba(255, 184, 92, 0.5);
+  color: #ffd3a4;
+}
+
+.provider-sweep-status[data-tone="guard"] {
+  border-color: rgba(124, 156, 194, 0.5);
+  color: #b9d4f4;
+}
+
+.provider-sweep-status[data-tone="bad"] {
+  border-color: rgba(255, 127, 127, 0.52);
+  color: #ffb4b4;
+}
+
+.provider-sweep-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+[data-theme="light"] .provider-sweep-item {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(122, 150, 184, 0.3);
 }
 
 .profile-test-result {

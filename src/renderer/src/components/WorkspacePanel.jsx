@@ -1,12 +1,47 @@
 import React from 'react';
 import slashManifest from '../config/slash_manifest.json';
+import quickStartsManifest from '../config/quickstarts.json';
 import { useSlash } from '../hooks/useSlash.ts';
+import { useThreads } from '../hooks/useThreads.ts';
 import { buildShareUrl, createShareEnvelope } from '../utils/share.ts';
 import AssistantMessage from './AssistantMessage';
+import DiffModal from './DiffModal';
 import ProofChipRow from './ProofChipRow';
+import QuickStarts from './QuickStarts';
 import SlashPalette from './SlashPalette';
+import StreamingBar from './StreamingBar';
+import ThreadDrawer from './ThreadDrawer';
+import ProvGraph from './ProvGraph';
+import VoicePanel from './VoicePanel';
 
 const AUDIT_ALLOWED_COMMANDS = new Set(['/help', '/proof', '/roi', '/status', '/workflows', '/guard', '/clear']);
+const QUICKSTART_DISMISSED_STORAGE_KEY = 'neuralshell_quickstarts_dismissed_v1';
+const QUICKSTART_SEEN_STORAGE_KEY = 'hasSeenQuickStarts';
+
+function readDismissedQuickStarts() {
+    if (typeof window === 'undefined' || !window.localStorage) return [];
+    try {
+        const raw = window.localStorage.getItem(QUICKSTART_DISMISSED_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map((value) => String(value || '').trim()).filter(Boolean);
+    } catch {
+        return [];
+    }
+}
+
+function writeDismissedQuickStarts(ids) {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+        window.localStorage.setItem(
+            QUICKSTART_DISMISSED_STORAGE_KEY,
+            JSON.stringify((Array.isArray(ids) ? ids : []).map((value) => String(value || '').trim()).filter(Boolean)),
+        );
+    } catch {
+        // best effort
+    }
+}
 
 export function WorkspacePanel({
     chatLog,
@@ -22,6 +57,8 @@ export function WorkspacePanel({
     connectionInfo,
     sessionHydrationStatus,
     onOfflineKill,
+    onUpgradeToPro,
+    collab,
 }) {
     const cn = (...parts) => parts.filter(Boolean).join(" ");
     const normalizedPrompt = String(prompt || '').trim().toLowerCase();
@@ -31,8 +68,24 @@ export function WorkspacePanel({
         lockSeen: false,
         unlockedRestored: false,
     });
+    const [diffModalState, setDiffModalState] = React.useState({
+        open: false,
+        beforeText: '',
+        afterText: '',
+    });
+    const [showProvGraph, setShowProvGraph] = React.useState(false);
+    const [streamingBarEnabled, setStreamingBarEnabled] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return true;
+        const value = window.localStorage.getItem('neuralshell_streaming_bar_enabled');
+        if (value == null) return true;
+        return value !== '0';
+    });
+    const [dismissedQuickStartIds, setDismissedQuickStartIds] = React.useState(() => readDismissedQuickStarts());
     const composerRef = React.useRef(null);
     const toastTimerRef = React.useRef(null);
+    const seenRemoteEventsRef = React.useRef(new Set());
+    const cursorTickRef = React.useRef(0);
+    const panelRef = React.useRef(null);
 
     const showToast = React.useCallback((value) => {
         setToast(String(value || '').trim());
@@ -57,6 +110,7 @@ export function WorkspacePanel({
             }
         });
     });
+    const threads = useThreads(String(workflowId || 'default'));
 
     React.useEffect(() => {
         if (toastTimerRef.current) {
@@ -68,6 +122,23 @@ export function WorkspacePanel({
             }
         };
     }, []);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem('neuralshell_streaming_bar_enabled', streamingBarEnabled ? '1' : '0');
+    }, [streamingBarEnabled]);
+
+    React.useEffect(() => {
+        writeDismissedQuickStarts(dismissedQuickStartIds);
+        if (
+            Array.isArray(quickStartsManifest)
+            && dismissedQuickStartIds.length >= quickStartsManifest.length
+            && typeof window !== 'undefined'
+            && window.localStorage
+        ) {
+            window.localStorage.setItem(QUICKSTART_SEEN_STORAGE_KEY, '1');
+        }
+    }, [dismissedQuickStartIds]);
 
     React.useEffect(() => {
         setProofFlowState({
@@ -95,6 +166,51 @@ export function WorkspacePanel({
             composerRef.current.focus();
         }
     }, [workflowId]);
+
+    React.useEffect(() => {
+        const node = panelRef.current;
+        if (!node || !(collab && typeof collab.publish === 'function')) return undefined;
+        const onMouseMove = (event) => {
+            const now = Date.now();
+            if (now - cursorTickRef.current < 80) return;
+            cursorTickRef.current = now;
+            collab.publish('cursor', {
+                x: Number(event.clientX || 0),
+                y: Number(event.clientY || 0),
+            });
+        };
+        node.addEventListener('mousemove', onMouseMove);
+        return () => {
+            node.removeEventListener('mousemove', onMouseMove);
+        };
+    }, [collab]);
+
+    React.useEffect(() => {
+        const eventPayload = collab && collab.lastEvent ? collab.lastEvent : null;
+        if (!eventPayload) return;
+        if (String(eventPayload.eventType || '') !== 'thread-reply') return;
+        const payload = eventPayload.payload && typeof eventPayload.payload === 'object' ? eventPayload.payload : {};
+        const eventId = String(payload.replyId || `${eventPayload.fromPeerId}:${payload.threadId}:${payload.content}`);
+        if (!eventId) return;
+        if (seenRemoteEventsRef.current.has(eventId)) return;
+        seenRemoteEventsRef.current.add(eventId);
+        const threadId = String(payload.threadId || '').trim();
+        const content = String(payload.content || '').trim();
+        if (!threadId || !content) return;
+        threads.addReply(threadId, content);
+    }, [collab && collab.lastEvent, threads]);
+
+    React.useEffect(() => {
+        const focusComposer = () => {
+            if (composerRef.current && typeof composerRef.current.focus === 'function') {
+                composerRef.current.focus();
+            }
+        };
+        window.addEventListener('neuralshell:focus-composer', focusComposer);
+        return () => {
+            window.removeEventListener('neuralshell:focus-composer', focusComposer);
+        };
+    }, []);
 
     React.useEffect(() => {
         const draft = String(prompt || '');
@@ -145,6 +261,92 @@ export function WorkspacePanel({
         }
     }, [showToast, workflowId]);
 
+    const rememberCommand = React.useCallback((value) => {
+        if (slash && typeof slash.rememberCommand === 'function') {
+            slash.rememberCommand(String(value || ''));
+        }
+    }, [slash]);
+
+    const runCommand = React.useCallback((value) => {
+        const command = String(value || '').trim();
+        if (!command) return;
+        rememberCommand(command);
+        if (typeof onExecute === 'function') {
+            onExecute(command);
+        }
+    }, [onExecute, rememberCommand]);
+
+    const runSend = React.useCallback(() => {
+        const current = String(prompt || '').trim();
+        if (!current || !canRunPrompt) return;
+        rememberCommand(current);
+        onSend();
+    }, [canRunPrompt, onSend, prompt, rememberCommand]);
+
+    const openDiffModal = React.useCallback((beforeText, afterText) => {
+        setDiffModalState({
+            open: true,
+            beforeText: String(beforeText || ''),
+            afterText: String(afterText || ''),
+        });
+    }, []);
+
+    const closeDiffModal = React.useCallback(() => {
+        setDiffModalState({
+            open: false,
+            beforeText: '',
+            afterText: '',
+        });
+    }, []);
+
+    const quickStartVisibleIds = React.useMemo(() => {
+        const seenAll = typeof window !== 'undefined'
+            && window.localStorage
+            && window.localStorage.getItem(QUICKSTART_SEEN_STORAGE_KEY) === '1';
+        if (seenAll) return [];
+        return (Array.isArray(quickStartsManifest) ? quickStartsManifest : [])
+            .map((item) => String(item && item.id ? item.id : ''))
+            .filter((id) => id && !dismissedQuickStartIds.includes(id));
+    }, [dismissedQuickStartIds]);
+
+    const onSelectQuickStart = React.useCallback((item) => {
+        const command = String(item && item.prompt ? item.prompt : '').trim();
+        if (!command) return;
+        setPrompt(command);
+        rememberCommand(command);
+        window.requestAnimationFrame(() => {
+            if (composerRef.current && typeof composerRef.current.focus === 'function') {
+                composerRef.current.focus();
+            }
+        });
+    }, [rememberCommand, setPrompt]);
+
+    const onDismissQuickStart = React.useCallback((id) => {
+        const safeId = String(id || '').trim();
+        if (!safeId) return;
+        setDismissedQuickStartIds((prev) => {
+            if (prev.includes(safeId)) return prev;
+            return [...prev, safeId];
+        });
+    }, []);
+
+    const useThreadContext = React.useCallback((threadId) => {
+        const record = threads.threads[String(threadId || '').trim()];
+        if (!record) return;
+        const threadLines = [
+            `[Thread ${record.id}]`,
+            `Root: ${String(record.rootContent || '').trim()}`,
+            ...(Array.isArray(record.replies) ? record.replies.map((reply, index) => `Reply ${index + 1}: ${String(reply.content || '').trim()}`) : []),
+        ];
+        const snippet = threadLines.filter(Boolean).join('\n');
+        setPrompt((current) => `${snippet}\n\n${String(current || '')}`.trim());
+        window.requestAnimationFrame(() => {
+            if (composerRef.current && typeof composerRef.current.focus === 'function') {
+                composerRef.current.focus();
+            }
+        });
+    }, [setPrompt, threads.threads]);
+
     const flowSteps = [
         { id: 'proof', label: 'Proof', done: hasProofOutput },
         { id: 'roi', label: 'ROI', done: hasRoiOutput },
@@ -153,7 +355,7 @@ export function WorkspacePanel({
     ];
 
     return (
-        <main data-testid="workspace-panel" className="flex-1 flex flex-col relative bg-slate-950/40 overflow-hidden">
+        <main ref={panelRef} data-testid="workspace-panel" className="flex-1 flex flex-col relative bg-slate-950/40 overflow-hidden">
             {/* Narrative Discovery Banner (Stabilized) */}
             <div className="px-6 py-2.5 border-b border-white/[0.03] bg-amber-400/[0.02] flex items-center justify-between backdrop-blur-sm z-10 transition-all">
                 <div className="flex items-center gap-3">
@@ -169,23 +371,42 @@ export function WorkspacePanel({
 
             <div className="px-6 py-2 border-b border-white/[0.03] bg-black/20 flex flex-wrap items-center justify-between gap-2">
                 <ProofChipRow steps={flowSteps} />
-                <div className={cn(
-                    'px-2.5 py-1 rounded-md text-[8px] font-mono uppercase tracking-[0.14em] border',
-                    connectionHealth === 'online'
-                        ? 'border-emerald-300/30 bg-emerald-500/10 text-emerald-200'
-                        : connectionHealth === 'offline'
-                            ? 'border-rose-300/30 bg-rose-500/10 text-rose-200'
-                            : 'border-slate-400/20 bg-slate-500/10 text-slate-300',
-                )}
-                >
-                    {providerLabel} · {modelLabel} · {connectionHealth === 'online' ? 'Connected' : connectionHealth === 'offline' ? 'Unavailable' : 'Unknown'}
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        data-testid="open-prov-graph-btn"
+                        onClick={() => setShowProvGraph(true)}
+                        className="px-2 py-1 rounded border border-cyan-300/30 bg-cyan-500/10 text-[9px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                    >
+                        Provenance
+                    </button>
+                    <div className={cn(
+                        'px-2.5 py-1 rounded-md text-[8px] font-mono uppercase tracking-[0.14em] border',
+                        connectionHealth === 'online'
+                            ? 'border-emerald-300/30 bg-emerald-500/10 text-emerald-200'
+                            : connectionHealth === 'offline'
+                                ? 'border-rose-300/30 bg-rose-500/10 text-rose-200'
+                                : 'border-slate-400/20 bg-slate-500/10 text-slate-300',
+                    )}
+                    >
+                        {providerLabel} · {modelLabel} · {connectionHealth === 'online' ? 'Connected' : connectionHealth === 'offline' ? 'Unavailable' : 'Unknown'}
+                    </div>
                 </div>
+            </div>
+            <div className="px-6 py-2 border-b border-white/[0.03] bg-black/20">
+                <VoicePanel collab={collab} />
             </div>
 
             {/* Primary Chat Lane */}
             <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar scroll-smooth">
                 {chatLog.length === 0 ? (
                     <div className="h-full flex flex-col justify-center select-none max-w-2xl mx-auto animate-in fade-in duration-700 pb-10">
+                        <QuickStarts
+                            items={quickStartsManifest}
+                            visibleIds={quickStartVisibleIds}
+                            onSelect={onSelectQuickStart}
+                            onDismiss={onDismissQuickStart}
+                        />
                         {workflowId === 'NeuralShell_QuickStart' ? (
                             <div className="space-y-6">
                                 <div className="flex items-center gap-4 mb-1">
@@ -238,7 +459,7 @@ export function WorkspacePanel({
                                     </div>
                                     <button
                                         data-testid="quickstart-proof-btn"
-                                        onClick={() => onExecute('/proof')}
+                                        onClick={() => runCommand('/proof')}
                                         className="w-full px-4 py-3 rounded-xl border border-cyan-300/40 bg-cyan-400/15 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-400/25 transition-all"
                                     >
                                         Run 90s Proof
@@ -246,14 +467,14 @@ export function WorkspacePanel({
                                     <div className="grid grid-cols-2 gap-3">
                                         <button
                                             data-testid="quickstart-roi-btn"
-                                            onClick={() => onExecute('/roi')}
+                                            onClick={() => runCommand('/roi')}
                                             className="px-4 py-3 rounded-xl border border-emerald-300/30 bg-emerald-400/10 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200 hover:bg-emerald-400/20 transition-all"
                                         >
                                             Show ROI Snapshot
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => setPrompt('/guard')}
+                                            onClick={() => onSelectQuickStart({ prompt: '/guard' })}
                                             className="px-4 py-3 rounded-xl border border-amber-300/30 bg-amber-400/10 text-[10px] font-black uppercase tracking-[0.14em] text-amber-200 hover:bg-amber-400/20 transition-all"
                                         >
                                             Prep Lock Flow
@@ -290,7 +511,7 @@ export function WorkspacePanel({
 
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                                     {/* Card 1: Resume / Artifact */}
-                                    <button data-testid="card-resume" onClick={() => onExecute('/resume')} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
+                                    <button data-testid="card-resume" onClick={() => runCommand('/resume')} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
                                         <div className="text-cyan-400 mb-3 opacity-60 group-hover:opacity-100 transition-opacity">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
                                         </div>
@@ -308,7 +529,7 @@ export function WorkspacePanel({
                                     </button>
 
                                     {/* Card 3: Guard Rail Status */}
-                                    <button data-testid="card-guard" onClick={() => onExecute('/guard')} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
+                                    <button data-testid="card-guard" onClick={() => runCommand('/guard')} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
                                         <div className="text-amber-400 mb-3 opacity-60 group-hover:opacity-100 transition-opacity">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                                         </div>
@@ -317,7 +538,7 @@ export function WorkspacePanel({
                                     </button>
 
                                     {/* Card 4: Routines */}
-                                    <button data-testid="card-help" onClick={() => onExecute('/help')} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
+                                    <button data-testid="card-help" onClick={() => runCommand('/help')} className="group flex flex-col text-left p-5 rounded-2xl bg-white/[0.02] hover:bg-slate-900/80 border border-white/5 hover:border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.05)]">
                                         <div className="text-purple-400 mb-3 opacity-60 group-hover:opacity-100 transition-opacity">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 16 16 12 12 8"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                                         </div>
@@ -325,7 +546,7 @@ export function WorkspacePanel({
                                         <span className="text-[10px] text-slate-500 font-mono leading-relaxed">Display all installed automation protocols and custom aliases.</span>
                                     </button>
 
-                                    <button data-testid="card-proof" onClick={() => onExecute('/proof')} className="group flex flex-col text-left p-5 rounded-2xl bg-cyan-500/[0.05] hover:bg-cyan-500/[0.10] border border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.08)]">
+                                    <button data-testid="card-proof" onClick={() => runCommand('/proof')} className="group flex flex-col text-left p-5 rounded-2xl bg-cyan-500/[0.05] hover:bg-cyan-500/[0.10] border border-cyan-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.08)]">
                                         <div className="text-cyan-300 mb-3 opacity-70 group-hover:opacity-100 transition-opacity">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
                                         </div>
@@ -333,7 +554,7 @@ export function WorkspacePanel({
                                         <span className="text-[10px] text-cyan-100/70 font-mono leading-relaxed">Generate a concise trust + safety + release proof narrative live.</span>
                                     </button>
 
-                                    <button data-testid="card-roi" onClick={() => onExecute('/roi')} className="group flex flex-col text-left p-5 rounded-2xl bg-emerald-500/[0.05] hover:bg-emerald-500/[0.10] border border-emerald-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(16,185,129,0.08)]">
+                                    <button data-testid="card-roi" onClick={() => runCommand('/roi')} className="group flex flex-col text-left p-5 rounded-2xl bg-emerald-500/[0.05] hover:bg-emerald-500/[0.10] border border-emerald-400/30 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(16,185,129,0.08)]">
                                         <div className="text-emerald-300 mb-3 opacity-70 group-hover:opacity-100 transition-opacity">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                                         </div>
@@ -344,33 +565,54 @@ export function WorkspacePanel({
                             </>
                         )}
                     </div>
-                ) : chatLog.map((msg, i) => {
-                    if (msg.role === 'user') {
+                ) : (() => {
+                    let previousAssistantContent = '';
+                    return chatLog.map((msg, i) => {
+                        if (msg.role === 'user') {
+                            return (
+                                <div data-testid="chat-message" key={i} className="max-w-[85%] 2xl:max-w-[75%] ml-auto">
+                                    <div className="flex items-center gap-3 mb-2.5 opacity-30 flex-row-reverse">
+                                        <div className="h-px w-6 bg-cyan-400" />
+                                        <div className="text-[8px] uppercase tracking-[0.3em] font-black">Operator</div>
+                                    </div>
+                                    <div className="p-6 rounded-2xl text-[14px] leading-relaxed shadow-2xl transition-all duration-300 bg-slate-900/80 border border-cyan-400/20 text-cyan-50 shadow-cyan-900/10 whitespace-pre-wrap">
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        const currentContent = String(msg && msg.content ? msg.content : '');
+                        const beforeText = previousAssistantContent;
+                        const diffAvailable = Boolean(beforeText.trim());
+                        previousAssistantContent = currentContent;
+                        const messageId = String(msg && msg.id ? msg.id : `assistant-${i}`);
+
                         return (
-                            <div data-testid="chat-message" key={i} className="max-w-[85%] 2xl:max-w-[75%] ml-auto">
-                                <div className="flex items-center gap-3 mb-2.5 opacity-30 flex-row-reverse">
-                                    <div className="h-px w-6 bg-cyan-400" />
-                                    <div className="text-[8px] uppercase tracking-[0.3em] font-black">Operator</div>
-                                </div>
-                                <div className="p-6 rounded-2xl text-[14px] leading-relaxed shadow-2xl transition-all duration-300 bg-slate-900/80 border border-cyan-400/20 text-cyan-50 shadow-cyan-900/10 whitespace-pre-wrap">
-                                    {msg.content}
-                                </div>
-                            </div>
+                            <AssistantMessage
+                                key={i}
+                                messageId={messageId}
+                                content={currentContent}
+                                onToast={showToast}
+                                onShare={shareAssistantMessage}
+                                onStartThread={(targetMessageId, rootContent) => {
+                                    threads.startThread(targetMessageId || messageId, rootContent || currentContent);
+                                }}
+                                providerId={String((connectionInfo && connectionInfo.provider) || 'ollama')}
+                                modelId={String((connectionInfo && connectionInfo.model) || 'llama3')}
+                                diffAvailable={diffAvailable}
+                                onOpenDiff={() => openDiffModal(beforeText, currentContent)}
+                                stdoutLines={Array.isArray(msg && msg.stdoutLines) ? msg.stdoutLines : []}
+                                stdoutDone={Boolean(msg && msg.stdoutDone)}
+                            />
                         );
-                    }
-                    return (
-                        <AssistantMessage
-                            key={i}
-                            content={msg.content}
-                            onToast={showToast}
-                            onShare={shareAssistantMessage}
-                        />
-                    );
-                })}
+                    });
+                })()}
             </div>
 
             {/* Fixed Composer Bottom */}
             <footer className="p-6 border-t border-white/[0.03] bg-slate-950/80 backdrop-blur-xl">
+                <StreamingBar active={Boolean(isThinking)} enabled={streamingBarEnabled} />
                 <div className="max-w-5xl mx-auto mb-3 flex gap-2.5 overflow-x-auto pb-1 no-scrollbar opacity-30 hover:opacity-100 transition-opacity duration-300">
                     {['/help', '/proof', '/roi', '/clear', '/status', '/workflows', '/guard', '/omega'].map(cmd => (
                         <button
@@ -378,7 +620,7 @@ export function WorkspacePanel({
                             onClick={() => setPrompt(cmd)}
                             disabled={auditOnly && !AUDIT_ALLOWED_COMMANDS.has(cmd)}
                             className={cn(
-                                'text-[8px] font-black px-3 py-1.5 bg-white/5 rounded-md border border-white/5 whitespace-nowrap uppercase tracking-[0.2em]',
+                            'text-[8px] font-black px-3 py-1.5 bg-white/5 rounded-md border border-white/5 whitespace-nowrap uppercase tracking-[0.2em]',
                                 auditOnly && !AUDIT_ALLOWED_COMMANDS.has(cmd)
                                     ? 'text-slate-600 cursor-not-allowed'
                                     : 'text-slate-500 hover:text-cyan-400 hover:border-cyan-400/20 hover:bg-cyan-400/5 transition-all',
@@ -413,10 +655,37 @@ export function WorkspacePanel({
                             Offline Kill
                         </button>
                     )}
+                    <button
+                        type="button"
+                        data-testid="streaming-toggle-btn"
+                        onClick={() => setStreamingBarEnabled((prev) => !prev)}
+                        className={cn(
+                            'px-2 py-1 rounded border text-[9px] font-mono uppercase tracking-[0.14em]',
+                            streamingBarEnabled
+                                ? 'border-cyan-300/30 bg-cyan-500/10 text-cyan-200'
+                                : 'border-slate-400/20 bg-slate-500/10 text-slate-300',
+                        )}
+                    >
+                        Streaming {streamingBarEnabled ? 'On' : 'Off'}
+                    </button>
                 </div>
                 {auditOnly && (
-                    <div className="max-w-5xl mx-auto mb-2 text-[10px] text-amber-300/80 font-mono">
-                        Write actions disabled - upgrade to Pro.
+                    <div className="max-w-5xl mx-auto mb-2 flex flex-wrap items-center gap-2">
+                        <div className="text-[10px] text-amber-300/80 font-mono">
+                            Write actions disabled - upgrade to Pro.
+                        </div>
+                        <button
+                            type="button"
+                            data-testid="workspace-upgrade-pro-btn"
+                            onClick={() => {
+                                if (typeof onUpgradeToPro === 'function') {
+                                    onUpgradeToPro();
+                                }
+                            }}
+                            className="px-2 py-1 rounded border border-cyan-300/30 bg-cyan-500/10 text-[9px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Upgrade to Pro
+                        </button>
                     </div>
                 )}
                 {isThinking && (
@@ -435,6 +704,7 @@ export function WorkspacePanel({
                             setPrompt(value ? `/${value}` : '/');
                         }}
                         items={slash.filtered}
+                        history={slash.history}
                         selectedIndex={slash.selectedIndex}
                         onSelectIndex={slash.setSelectedIndex}
                         onPick={slash.pick}
@@ -445,7 +715,12 @@ export function WorkspacePanel({
                         ref={composerRef}
                         data-testid="chat-input"
                         value={prompt}
-                        onChange={e => setPrompt(e.target.value)}
+                        onChange={(event) => {
+                            if (slash && typeof slash.resetHistoryCursor === 'function') {
+                                slash.resetHistoryCursor();
+                            }
+                            setPrompt(event.target.value);
+                        }}
                         onKeyDown={(event) => {
                             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
                                 event.preventDefault();
@@ -456,12 +731,29 @@ export function WorkspacePanel({
                                 slash.openPalette(current.startsWith('/') ? current.replace(/^\//, '') : '');
                                 return;
                             }
+                            if (
+                                !slash.open
+                                && (event.key === 'ArrowUp' || event.key === 'ArrowDown')
+                                && !event.shiftKey
+                                && !event.altKey
+                                && !event.ctrlKey
+                                && !event.metaKey
+                            ) {
+                                const current = String(prompt || '');
+                                if (current.startsWith('/')) {
+                                    const recalled = slash.recallCommand(event.key === 'ArrowUp' ? 'up' : 'down', current);
+                                    if (recalled !== current) {
+                                        event.preventDefault();
+                                        setPrompt(recalled);
+                                    }
+                                }
+                            }
                             if (slash.open && slash.handleKeyDown(event)) {
                                 return;
                             }
                             if (event.key === 'Enter' && !event.shiftKey) {
                                 event.preventDefault();
-                                if (canRunPrompt) onSend();
+                                runSend();
                             }
                         }}
                         placeholder={auditOnly ? "Audit-only mode: use /proof, /roi, /status, /guard, /help, /workflows." : "Enter command or ask a question into the active thread..."}
@@ -489,7 +781,7 @@ export function WorkspacePanel({
                         )}
                         <button
                             onClick={() => {
-                                if (canRunPrompt) onSend();
+                                runSend();
                             }}
                             disabled={!canRunPrompt || Boolean(isThinking)}
                             className={cn(
@@ -504,6 +796,56 @@ export function WorkspacePanel({
                     </div>
                 </div>
             </footer>
+            <ProvGraph
+                open={showProvGraph}
+                onClose={() => setShowProvGraph(false)}
+                chatLog={chatLog}
+                threads={threads.list}
+            />
+            <DiffModal
+                open={diffModalState.open}
+                beforeText={diffModalState.beforeText}
+                afterText={diffModalState.afterText}
+                onClose={closeDiffModal}
+            />
+            <ThreadDrawer
+                open={Boolean(threads.activeThread)}
+                thread={threads.activeThread}
+                onClose={threads.closeThread}
+                onReply={(threadId, content) => {
+                    const ok = threads.addReply(threadId, content);
+                    if (ok && collab && typeof collab.publish === 'function') {
+                        collab.publish('thread-reply', {
+                            threadId: String(threadId || ''),
+                            content: String(content || ''),
+                            replyId: `reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                        });
+                    }
+                    return ok;
+                }}
+                onUseContext={useThreadContext}
+            />
+            <div className="pointer-events-none fixed inset-0 z-[120]">
+                {Object.entries((collab && collab.remoteCursors) || {}).map(([peerId, cursor]) => {
+                    const x = Number(cursor && cursor.x ? cursor.x : 0);
+                    const y = Number(cursor && cursor.y ? cursor.y : 0);
+                    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+                    return (
+                        <div
+                            key={peerId}
+                            className="absolute"
+                            style={{
+                                transform: `translate(${Math.max(0, x)}px, ${Math.max(0, y)}px)`,
+                            }}
+                        >
+                            <div className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
+                            <div className="mt-1 px-1.5 py-0.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[8px] font-mono uppercase tracking-[0.14em] text-emerald-100">
+                                {String(peerId || 'peer').slice(0, 10)}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
             <div
                 data-testid="copy-toast"
                 className={`fixed bottom-5 right-5 rounded-lg border border-cyan-300/30 bg-cyan-500/15 px-3 py-2 text-[10px] font-mono text-cyan-100 transition-opacity duration-1000 ${toast ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}

@@ -6,6 +6,7 @@ export function SlashPalette({
     query,
     setQuery,
     items,
+    history = [],
     selectedIndex,
     onSelectIndex,
     onPick,
@@ -46,6 +47,31 @@ export function SlashPalette({
                     ESC
                 </button>
             </div>
+            {Array.isArray(history) && history.length > 0 && !String(query || '').trim() && (
+                <div className="px-3 py-2 border-b border-white/5 bg-black/20">
+                    <div className="text-[9px] uppercase tracking-[0.14em] text-slate-500 font-bold mb-1">Recent Commands</div>
+                    <div className="flex flex-wrap gap-1.5">
+                        {history.slice(0, 6).map((entry) => (
+                            <button
+                                key={entry}
+                                type="button"
+                                data-testid={`slash-history-${entry.replace(/[^a-z0-9_-]/gi, '').toLowerCase()}`}
+                                onClick={() => {
+                                    const index = items.findIndex((item) => item.command === entry);
+                                    if (index >= 0) {
+                                        onPick(index);
+                                    } else {
+                                        setQuery(String(entry || '').replace(/^\//, ''));
+                                    }
+                                }}
+                                className="px-2 py-1 rounded border border-white/10 bg-white/5 text-[9px] font-mono text-slate-300 hover:border-cyan-300/30 hover:text-cyan-200"
+                            >
+                                {entry}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
             <div className="max-h-64 overflow-y-auto custom-scrollbar p-2">
                 {items.length === 0 && (
                     <div className="px-3 py-4 text-[11px] text-slate-500 font-mono">

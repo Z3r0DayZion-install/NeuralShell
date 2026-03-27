@@ -1,0 +1,24 @@
+{
+  "snapshots": [
+    {
+      "month": "2026-01",
+      "installs": 1140,
+      "activations": 612,
+      "retained30d": 418,
+      "revenueUsd": 126500,
+      "proofRuns": 840,
+      "partnerGrowth": 4,
+      "compliancePosture": "stable"
+    },
+    {
+      "month": "2026-02",
+      "installs": 1310,
+      "activations": 702,
+      "retained30d": 486,
+      "revenueUsd": 154200,
+      "proofRuns": 1018,
+      "partnerGrowth": 6,
+      "compliancePosture": "stable"
+    }
+  ]
+}

@@ -16,7 +16,7 @@
 
 6. **No duplicated actions** — A new surface must not duplicate an action already available in another zone without justification.
 
-7. **No machine-local paths** — No hardcoded `C:\Users\...` or `/home/...` paths. Use `path.join`, `process.cwd()`, or `app.getPath()`.
+7. **Portability Discipline** — Eradicate machine-local paths (`C:\Users\...` or `/home/...`) in canonical distribution artifacts. Instructional examples and historical notes may retain path strings for context, but active logic must use `path.join`, `process.cwd()`, or `app.getPath()`.
 
 8. **No new IPC channel without schema** — Every new channel must be documented in `IPC_CONTRACT.md` with version, request/response schemas.
 

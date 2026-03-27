@@ -1,28 +1,26 @@
-# NeuralShell Offer Framing
-
-This document defines the framing of the current offer to ensure maximum conversion during the outreach process.
+# NeuralShell Offer Framing: Founder's Edition (v2.1.29)
 
 ## 1. Offer Name & Primary Hook
-- **Offer Name**: "NeuralShell Operator Tier" ($99 One-Time)
-- **Primary Hook**: "A 'local-first' terminal environment for autonomous AI agents that halts at hard-stop review boundaries."
-- **Focus**: Control, Determinism, and Data Sovereignty.
+- **Offer Name**: "NeuralShell Founder's Edition" ($149 One-Time)
+- **Primary Hook**: "A hardened, local-first control surface for autonomous AI operators that prioritizes persistence, privacy, and provable integrity."
+- **Focus**: Professional Workflow, Data Sovereignty, and Continuous State.
 
 ## 2. Lead Price & Integrity
-- **Lead Price**: $99 (One-Time)
-- **Framing**: This is not a subscription. It is a one-time 'Conviction' price for early access to the V2.x track.
-- **Why it matters**: It signals that we are building for serious, professional operators who value privacy and deterministic control over free, cloud-based alternatives.
+- **Lead Price**: **$149** (One-Time)
+- **Framing**: This is a professional investment in a local-first workstation. It is not a recurring subscription. It covers the v2.x major version baseline and includes 1 year of security/core updates.
+- **Why it matters**: It positions NeuralShell as high-trust professional tooling (like a forensic suite or premium IDE) rather than a disposable cloud chat app.
 
-## 3. Pricing Flexibility (The Early-Adopter Clause)
-- **Hold at Full Price**: For the majority of cold/medium outreach, keep the price at $99 to maintain the "Operator" tier's perceived value.
-- **Private Discount flexibility**: For the "Warm 3" (personal network) or high-profile "IFBs" who provide exceptional feedback, a private discount of $20-30 ($69-79) is acceptable to close the deal *now*.
-- **Guidance**: "Because you're in this first cohort and I value your feedback, I can offer you a one-time early-adopter rate of $69."
+## 3. Pricing Flexibility (The Founder Clause)
+- **Hold at Full Price**: For 90% of outreach, maintain the $149 anchor. This establishes the value of the Phase 20-30 hardening proofs.
+- **Private Discount flexibility**: For the first 10 "Founder Beta" users who commit to detailed friction reports, a hard floor of **$99** is acceptable to secure the early conversion.
+- **Guidance**: "Because you're in this first cohort of 25 operators and I value your technical signal, I can offer you a one-time founder rate of $99."
 
 ## 4. What NOT to Promise
-- **Mac/Linux Support (Immediate)**: Be honest that the Alpha is Windows-only for now. Mac/Linux is on the 2026 roadmap.
-- **Perfect Stability**: This is an Alpha. Use the term "Sealed Golden Master" to emphasize that the *core logic* is solid, but UX/UI is still in the "Polish" phase.
-- **Custom Integrations (Now)**: Focus on the existing "local model bridge" (like Ollama). Don't promise to build custom plugins for them immediately.
+- **Cloud Infrastructure**: We are the shell, not the provider. The user must run a local bridge (Ollama/LM Studio).
+- **Infinite Support**: $149 includes 1 year of updates. Future years require a $49 maintenance fee for OMEGA-CORE updates.
+- **Mac/Linux Parity**: Focus on the Windows baseline. Mac/Linux are on the future roadmap but not the current "Sealed" focus.
 
 ---
 
 ## 5. Decision Note: Price vs. Feedback
-During these first 10 conversations, **Feedback is the secondary currency**. If a prospect is highly-qualified but price-sensitive, prioritize the sale (at $69-79) to get them into the Discord. We need their real-world usage to harden the V2.1+ release.
+During this Founder Beta, **Technical Signal is our primary currency**. If a prospect is a high-fit operator (e.g., forensic analyst, security dev) but price-sensitive, use the $99 floor to get them on-link. Their usage of the v2.1.29 baseline is critical for the v2.2 polish.

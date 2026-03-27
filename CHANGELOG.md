@@ -1,5 +1,20 @@
 # NeuralShell v5 Change Log
 
+## 2.2.0 - Growth Wave (Mar 2026)
+
+### Growth boosters shipped
+
+- Added `proof:bundle` and `scripts/genProofBadge.js` to generate a locked proof badge from `dist/SHA256SUMS.txt`.
+- Added `.github/workflows/proof-badge.yml` to run `proof:bundle`, generate `proof_badge.svg`, and publish it to the `badges` branch.
+- Added one-command installer scaffold under `installer/` (`neuralshell-installer`) with OS detection, release download, SHA-256 verification, and install path resolution.
+- Added web sandbox scaffolding under `web-sandbox/` plus `docs/web-sandbox/index.html` and embedded iframe in landing page.
+- Added case-study data source `docs/marketing/case_studies.json` and `app/components/CaseCarousel.jsx`.
+- Added `neuralshell-badge` CLI package scaffold under `packages/neuralshell-badge`.
+- Added Discord Proof-Drop bot scaffold under `discord-bot/` and weekly reminder workflow `.github/workflows/proof-drop-friday.yml`.
+- Added demo recording pipeline `record:demo` via `scripts/record_demo.cjs` and surfaced founder walkthrough playback in README + landing page.
+- Added immutable audit VM assets (`Vagrantfile`, `docs/audit/VAGRANT.md`) and tagged-release Vagrant workflow scaffold (`.github/workflows/vagrant-box.yml`).
+- Added runtime `AUDITOR` tier enforcement path (`LICENSE_MODE=auditor`) and UI gating to disable write actions while preserving proof/status flows.
+
 ## 5.0.0 – Modular Rewrite (Feb 2026)
 
 This release represents a complete architectural refactor of the NeuralShell

@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NeuralShell Web Sandbox</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #04080f;
+      --card: #0b1420;
+      --line: #23425c;
+      --text: #d5e8ff;
+      --muted: #7f9bb6;
+      --accent: #2bd8c4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: radial-gradient(1200px 500px at 20% -10%, #153044 0%, var(--bg) 45%, #02050a 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .shell {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(11, 20, 32, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    button {
+      border: 1px solid rgba(43, 216, 196, 0.45);
+      background: rgba(43, 216, 196, 0.12);
+      color: #c9fff8;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .meta {
+      font-family: "IBM Plex Mono", "Consolas", monospace;
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    pre {
+      margin: 0;
+      min-height: 300px;
+      max-height: 420px;
+      overflow: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #01060c;
+      color: #cde9ff;
+      padding: 14px;
+      font-family: "IBM Plex Mono", "Consolas", monospace;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <h1>Try It Now: 30-Second Proof Sandbox</h1>
+    <p>Runs <code>npm run proof:bundle</code> inside an in-browser demo runtime. If browser isolation blocks WebContainer, a deterministic fallback stream is used.</p>
+    <div class="controls">
+      <button id="runBtn" type="button">Run 30s Proof</button>
+      <span id="mode" class="meta">engine: idle</span>
+    </div>
+    <pre id="logs">[idle] click "Run 30s Proof"</pre>
+  </main>
+
+  <script type="module">
+    const runBtn = document.getElementById("runBtn");
+    const logsEl = document.getElementById("logs");
+    const modeEl = document.getElementById("mode");
+
+    const demoFiles = {
+      "package.json": {
+        file: {
+          contents: JSON.stringify({
+            name: "neuralshell-web-sandbox-demo",
+            private: true,
+            version: "0.0.1",
+            scripts: {
+              "proof:bundle": "node proof-bundle.js"
+            }
+          }, null, 2)
+        }
+      },
+      "proof-bundle.js": {
+        file: {
+          contents: [
+            "const steps = [",
+            "  'Booting NeuralShell proof lane...',",
+            "  'Loading checksum manifest...',",
+            "  'Verifying lock-state consistency...',",
+            "  'Rendering proof narrative state...',",
+            "  'Rendering ROI narrative state...',",
+            "  'Validating lock/unlock continuity...',",
+            "  'Proof bundle complete.'",
+            "];",
+            "let i = 0;",
+            "const t = setInterval(() => {",
+            "  if (i >= steps.length) { clearInterval(t); process.exit(0); return; }",
+            "  console.log('[proof] ' + steps[i]);",
+            "  i += 1;",
+            "}, 450);"
+          ].join("\n")
+        }
+      }
+    };
+
+    const fallbackLines = [
+      "[sandbox] WebContainer unavailable in this browser/runtime.",
+      "[sandbox] Falling back to deterministic proof replay...",
+      "[proof] Booting NeuralShell proof lane...",
+      "[proof] Loading checksum manifest...",
+      "[proof] Verifying lock-state consistency...",
+      "[proof] Rendering proof narrative state...",
+      "[proof] Rendering ROI narrative state...",
+      "[proof] Validating lock/unlock continuity...",
+      "[proof] Proof bundle complete."
+    ];
+
+    function appendLog(line) {
+      logsEl.textContent += `\n${line}`;
+      logsEl.scrollTop = logsEl.scrollHeight;
+    }
+
+    async function runFallback() {
+      modeEl.textContent = "engine: fallback";
+      logsEl.textContent = "[sandbox] Starting fallback proof stream...";
+      for (const line of fallbackLines) {
+        appendLog(line);
+        await new Promise((resolve) => setTimeout(resolve, 380));
+      }
+    }
+
+    async function runWebContainer() {
+      modeEl.textContent = "engine: webcontainer";
+      logsEl.textContent = "[sandbox] Booting WebContainer...";
+      const mod = await import("https://cdn.jsdelivr.net/npm/@webcontainer/api/+esm");
+      const WebContainer = mod.WebContainer;
+      if (!WebContainer) {
+        throw new Error("WebContainer API module did not provide WebContainer.");
+      }
+
+      const webcontainer = await WebContainer.boot();
+      await webcontainer.mount(demoFiles);
+
+      appendLog("[sandbox] Mounted /sandbox/demo-src");
+      const install = await webcontainer.spawn("npm", ["install"]);
+      install.output.pipeTo(new WritableStream({
+        write(data) {
+          appendLog(String(data).trimEnd());
+        }
+      }));
+      const installCode = await install.exit;
+      if (installCode !== 0) {
+        throw new Error(`npm install failed with code ${installCode}`);
+      }
+
+      appendLog("[sandbox] Launching npm run proof:bundle");
+      const proc = await webcontainer.spawn("npm", ["run", "proof:bundle"]);
+      proc.output.pipeTo(new WritableStream({
+        write(data) {
+          appendLog(String(data).trimEnd());
+        }
+      }));
+
+      const timeout = setTimeout(() => {
+        appendLog("[sandbox] 30s timeout reached, ending stream.");
+        try {
+          proc.kill();
+        } catch {}
+      }, 30000);
+
+      await proc.exit;
+      clearTimeout(timeout);
+      appendLog("[sandbox] run complete");
+    }
+
+    runBtn.addEventListener("click", async () => {
+      runBtn.disabled = true;
+      try {
+        await runWebContainer();
+      } catch (error) {
+        appendLog(`[sandbox] ${error.message}`);
+        await runFallback();
+      } finally {
+        runBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

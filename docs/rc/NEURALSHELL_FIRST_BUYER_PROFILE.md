@@ -1,34 +1,33 @@
 # NeuralShell First Buyer Profile
 
-This document defines the "Ideal First Buyer" (IFB) for the NeuralShell V2.0 Alpha Operator Tier ($99). These are the first 10 prospects we will target to secure our initial 1-3 sales.
+This document defines the "Ideal First Buyer" (IFB) for the NeuralShell V2.1.29 Founder Beta ($149). These are the first 10 prospects we will target to secure our initial 1-3 sales.
 
 ## 1. Who They Are
-- **The "Local-First" Practitioner**: Likely a developer, security researcher, or advanced AI enthusiast who is disillusioned with cloud-based, black-box AI tools.
-- **The "Sovereign" Operator**: Someone who already uses tools like Ollama, LM Studio, or LocalGPT and is looking for a more "serious" terminal-based orchestration environment.
-- **The "Privacy-First" Professional**: A user who handles sensitive data and *cannot* risk "phoning home" to OpenAI or Anthropic for their autonomous workflows.
+- **The "Local-First" Practitioner**: Likely a developer, forensic analyst, or advanced AI enthusiast who is disillusioned with cloud-based, black-box AI tools.
+- **The "Sovereign" Operator**: Someone who already uses tools like Ollama, LM Studio, or LocalGPT and is looking for a hardened, persistent desktop orchestrator.
+- **The "Privacy-First" Professional**: A user who handles sensitive data and *cannot* risk sending context to cloud APIs for their autonomous workflows.
 
 ## 2. What They Already Care About
 - **Data Sovereignty**: "My data stays on my machine."
-- **Determinism**: "I want to know exactly what the agent is doing before it does it."
-- **Transparency**: "No hidden system prompts or 'safety' filters I didn't ask for."
-- **Efficiency**: "I need a persistent terminal that remembers my context and workflows."
+- **Determinism**: "I want a control surface, not just a chat box."
+- **Verification**: "I want to see the trust badge and audit logs for every action."
+- **Persistence**: "I need my workflows, context, and chat to survive switches and reloads."
 
 ## 3. The Problem NeuralShell Solves for Them
-- **The "Black-Box" Anxiety**: Standard agents often take "hallucinated" actions without warning. NeuralShell provides **hard-stop review boundaries** for high-risk actions.
-- **The "Scattered Workflow" Friction**: Switching between browser tabs, terminals, and IDEs is slow. NeuralShell provides a **unified, persistent shell** for autonomous chains.
-- **The "Cloud-Dependency" Risk**: If the API goes down or the TOS changes, their workflow breaks. NeuralShell is **offline-capable and self-hosted**.
+- **The "Context Leak" Anxiety**: NeuralShell runs locally with zero telemetry and a policy-gated IPC bridge.
+- **The "Ephemeral Workspace" Friction**: Standard AI UIs lose state. NeuralShell provides real session hydration and workspace persistence.
+- **The "Prestige Over Proof" Gap**: Many tools promise "Agentic AI" but lack auditing. NeuralShell provides Phase 20-30 integrity proofs.
 
 ## 4. Why They Would Buy Early Access Now
-- **To Shape the Roadmap**: They want to influence a tool built for *their* specific workflow (local/offline).
-- **Early-Adopter Status**: Access to the "Operator" tier ($99 one-time) is a high-value entry point before the product hits General Availability (GA) or moves to a subscription model.
-- **Immediate Utility**: Even in Alpha, it solves the "local orchestration" gap they currently feel.
+- **Founder Status**: Immediate access to the hardened v2.1.29 baseline and influence over the v2.2 roadmap.
+- **Lock-in Value**: The $149 one-time price is for the "Founder's Edition," providing a high-trust alternative to recurring SaaS subscriptions.
+- **Immediate Utility**: Solve the "local file analysis" and "private extraction" gaps today.
 
 ## 5. Why They Might Ignore It (The Objections)
-- **"It's too early"**: They might wait for a more stable Beta or Mac/Linux support.
-- **"I can script this myself"**: They believe they can build a similar wrapper using LangChain or AutoGPT (ignoring the overhead of maintaining a secure, persistent UI).
-- **"The price is high for Alpha"**: $99 is a "conviction" price. We must prove the value of the "Sealed Golden Master" and the Discord community.
+- **"It's too early"**: We counter with the "Sealed Golden Master" and "Reproduction Proofs."
+- **"I can script this"**: We counter with the secure IPC bridge and the multi-thread workbench UI that scripting cannot easily replicate.
+- **"The price is high"**: $149 reflects the professional utility and absolute privacy guarantee.
 
-## 6. Target Search Keywords / Locales
-- **Subreddits**: `r/LocalLLaMA`, `r/SelfHosted`, `r/Privacy`.
-- **Twitter/X**: #LocalAI, #Ollama, #PrivacyTech.
-- **GitHub**: Contributors to local-AI projects or frequent commenters on "autonomous agent" issues.
+## 6. Target Keywords / Locales
+- **Subreddits**: `r/LocalLLaMA`, `r/SelfHosted`, `r/osinttools`, `r/Privacy`.
+- **Communities**: Indie Hackers, Hacker News (Show HN), private Discord groups for forensic analysts.

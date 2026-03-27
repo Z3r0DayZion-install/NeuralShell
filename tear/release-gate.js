@@ -4,6 +4,7 @@ const fs = require("fs");
 
 const root = path.resolve(__dirname, "..");
 const releaseGateReportPath = path.join(root, "release", "release-gate.json");
+const packagedSmokeTimeoutMs = Number(process.env.NEURAL_RELEASE_SMOKE_TIMEOUT_MS || 45000);
 
 function run(cmd) {
   console.log(`\n> ${cmd}`);
@@ -54,12 +55,36 @@ function verifyArtifacts() {
 
 function verifyOfflineFirstGuardrails() {
   const mainJs = fs.readFileSync(path.join(root, "src", "main.js"), "utf8");
-  const rendererJs = fs.readFileSync(path.join(root, "src", "renderer.js"), "utf8");
   const validatorJs = fs.readFileSync(path.join(root, "src", "core", "ipcValidators.js"), "utf8");
+  const rendererMain = fs.readFileSync(path.join(root, "src", "renderer", "src", "main.jsx"), "utf8");
+  const appJsx = fs.readFileSync(path.join(root, "src", "renderer", "src", "App.jsx"), "utf8");
+  const shellContext = fs.readFileSync(path.join(root, "src", "renderer", "src", "state", "ShellContext.jsx"), "utf8");
 
   assert(mainJs.includes("allowRemoteBridge"), "Missing allowRemoteBridge handling in main process.");
-  assert(rendererJs.includes("autonomous"), "Missing autonomous mode wiring in renderer.");
+  assert(mainJs.includes("dist-renderer") && mainJs.includes("index.html"), "Main process is not loading the React renderer bundle.");
+  assert(!mainJs.includes("renderer.html"), "Main process still references legacy renderer.html loading.");
   assert(validatorJs.includes("allowRemoteBridge"), "Missing allowRemoteBridge validator enforcement.");
+  assert(
+    rendererMain.includes("createRoot(document.getElementById('root'))")
+      || rendererMain.includes('createRoot(document.getElementById("root"))'),
+    "React renderer entrypoint is not mounting on #root."
+  );
+  assert(
+    rendererMain.includes("<ShellProvider>") && rendererMain.includes("<App />"),
+    "React renderer entrypoint must compose ShellProvider and App."
+  );
+  assert(
+    appJsx.includes('data-testid="session-modal"')
+      && appJsx.includes('data-testid="session-lock-banner"'),
+    "React session interaction surfaces are missing modal/lock UI contracts."
+  );
+  assert(
+    shellContext.includes("AUTOSAVE_DEBOUNCE_MS")
+      && shellContext.includes("saveActiveSession")
+      && shellContext.includes("beforeunload")
+      && shellContext.includes("visibilitychange"),
+    "Session autosave guardrails are missing debounce/flush coverage."
+  );
 }
 
 function writeGateReport(report) {
@@ -79,7 +104,7 @@ function main() {
   verifyBenchmarkReport();
   if (strictPackaged) {
     try {
-      run("node tear/smoke-packaged.js --strict-launch --isolated-user-data --timeout-ms=25000");
+      run(`node tear/smoke-packaged.js --strict-launch --isolated-user-data --timeout-ms=${packagedSmokeTimeoutMs}`);
       strictPackagedPass = true;
     } catch (err) {
       strictPackagedPass = false;
@@ -114,8 +139,9 @@ function main() {
       throw err;
     }
   } else {
-    run("node tear/smoke-packaged.js");
+    run(`node tear/smoke-packaged.js --timeout-ms=${packagedSmokeTimeoutMs}`);
   }
+  run("node tear/smoke-native-trust.js");
   verifyArtifacts();
   verifyOfflineFirstGuardrails();
   writeGateReport({

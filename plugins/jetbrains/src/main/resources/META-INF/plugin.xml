@@ -1,0 +1,22 @@
+<idea-plugin>
+  <id>app.neuralshell.jetbrains</id>
+  <name>NeuralShell</name>
+  <vendor email="founder@neuralshell.app">NeuralShell</vendor>
+  <description><![CDATA[
+  NeuralShell proof runner and diff panel integration for IntelliJ-based IDEs.
+  ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <toolWindow id="NeuralShell Proof" factoryClass="app.neuralshell.plugins.ProofToolWindowFactory" anchor="right" />
+    <notificationGroup id="NeuralShell" displayType="BALLOON" isLogByDefault="true"/>
+  </extensions>
+
+  <actions>
+    <action id="NeuralShell.RunProof"
+            class="app.neuralshell.plugins.RunProofAction"
+            text="NeuralShell: Run Proof"
+            description="Run NeuralShell proof flow for current project"/>
+  </actions>
+</idea-plugin>

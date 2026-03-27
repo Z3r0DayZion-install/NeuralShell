@@ -1,5 +1,6 @@
 export type RouteMatch =
     | { name: 'app' }
+    | { name: 'scratchpad' }
     | { name: 'share'; hash: string };
 
 function sanitizeHash(value: string): string {
@@ -18,6 +19,12 @@ function parseShareFromHash(rawHash: string): string {
     return sanitizeHash(match[1]);
 }
 
+function isScratchpadRoute(pathname: string, rawHash: string): boolean {
+    const safePath = String(pathname || '').trim();
+    const safeHash = String(rawHash || '').trim();
+    return safePath === '/scratchpad' || safeHash === '#/scratchpad';
+}
+
 export function resolveRoute(pathname: string, rawHash = ''): RouteMatch {
     const pathHash = parseShareFromPath(pathname);
     if (pathHash) {
@@ -26,6 +33,9 @@ export function resolveRoute(pathname: string, rawHash = ''): RouteMatch {
     const hashRoute = parseShareFromHash(rawHash);
     if (hashRoute) {
         return { name: 'share', hash: hashRoute };
+    }
+    if (isScratchpadRoute(pathname, rawHash)) {
+        return { name: 'scratchpad' };
     }
     return { name: 'app' };
 }

@@ -1,0 +1,16 @@
+{
+  "policyId": "enterprise-policy-locked-001",
+  "label": "Enterprise Locked Baseline",
+  "allowedProviders": [
+    "ollama"
+  ],
+  "offlineOnly": true,
+  "allowRemoteBridge": false,
+  "proofRelayEnabled": false,
+  "updateRing": "stable",
+  "certPins": [
+    "sha256:example-cert-pin-1",
+    "sha256:example-cert-pin-2"
+  ],
+  "relayRestriction": "local-only"
+}

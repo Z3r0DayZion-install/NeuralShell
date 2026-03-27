@@ -59,18 +59,21 @@ const WORKFLOW_SUGGESTION_BONUSES = {
     [/^package\.json$/i, 26],
     [/^src\/main\.js$/i, 34],
     [/^src\/preload\.js$/i, 32],
-    [/^src\/renderer\.js$/i, 30],
-    [/^src\/renderer\.html$/i, 26],
-    [/^src\/style\.css$/i, 24],
+    [/^src\/renderer\/src\/state\/ShellContext\.jsx$/i, 34],
+    [/^src\/renderer\/src\/App\.jsx$/i, 32],
+    [/^src\/renderer\/src\/components\/WorkspacePanel\.jsx$/i, 30],
+    [/^src\/renderer\/src\/components\/ThreadRail\.jsx$/i, 28],
+    [/^src\/renderer\/src\/hooks\/useNeuralState\.js$/i, 26],
+    [/^src\/renderer\/src\/main\.jsx$/i, 24],
     [/^README(\.[^.]+)?$/i, 12],
     [/^docs\//i, 10]
   ],
   spec_writer: [
     [/^README(\.[^.]+)?$/i, 28],
     [/^docs\//i, 34],
-    [/^src\/renderer\.html$/i, 20],
-    [/^src\/style\.css$/i, 18],
-    [/^src\/renderer\.js$/i, 16],
+    [/^src\/renderer\/src\/App\.jsx$/i, 20],
+    [/^src\/renderer\/src\/components\/WorkspacePanel\.jsx$/i, 18],
+    [/^src\/renderer\/src\/components\/ThreadRail\.jsx$/i, 16],
     [/^package\.json$/i, 10]
   ],
   session_handoff: [
@@ -157,9 +160,12 @@ function suggestContextPackPaths(rootPath, workflowId = "") {
   const srcFiles = [
     ["src/main.js", "Main process and performance bridge", 18],
     ["src/preload.js", "Guarded preload and IPC bridge", 18],
-    ["src/renderer.js", "Renderer workflow and operator state", 16],
-    ["src/renderer.html", "Primary UI layout surface", 16],
-    ["src/style.css", "Primary UI styling surface", 15]
+    ["src/renderer/src/main.jsx", "React renderer mount entry", 18],
+    ["src/renderer/src/App.jsx", "React shell composition and modal/session flow", 18],
+    ["src/renderer/src/state/ShellContext.jsx", "Session persistence and autosave lifecycle", 20],
+    ["src/renderer/src/components/WorkspacePanel.jsx", "Primary operator workspace surface", 16],
+    ["src/renderer/src/components/ThreadRail.jsx", "Session rail and lock/save controls", 16],
+    ["src/renderer/src/hooks/useNeuralState.js", "Renderer-state IPC sync hook", 16]
   ];
   for (const [relativePath, reason, baseScore] of srcFiles) {
     pushSuggestion(relativePath, reason, baseScore);

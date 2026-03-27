@@ -1,0 +1,17 @@
+{
+  "schema": "neuralshell_branding_profile_v1",
+  "profileId": "neuralshell-default",
+  "displayName": "NeuralShell Default Branding",
+  "branding": {
+    "productName": "NeuralShell",
+    "logoText": "NeuralShell",
+    "accentColor": "#22d3ee",
+    "supportUrl": "https://github.com/Z3r0DayZion-install/NeuralShell/issues",
+    "docsUrl": "https://github.com/Z3r0DayZion-install/NeuralShell/tree/main/docs"
+  },
+  "policyDefaults": {
+    "allowRemoteBridge": false,
+    "offlineOnly": false,
+    "updateRing": "stable"
+  }
+}

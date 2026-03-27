@@ -10,11 +10,7 @@ const { execSync } = require("child_process");
 
 const DEFAULT_GOLD_MASTER_PATH = path.resolve(__dirname, "..", "NeuralShell_Distribution_Ready", "NeuralShell_Evidence_v1.0.zip");
 const DESKTOP_GOLD_MASTER_PATH = path.join(process.env.USERPROFILE, "Desktop", "NeuralShell_Evidence_v1.0.zip");
-const _GOLD_MASTER_PATH = "scripts/release-verify.js";
-const _EXPECTED_HASH = "d41d8cd98f00b204e9800998ecf8427e";
-// The original hash was "de9fd93e42b88814465401c8116d324880defc4d55254c66391e015616a8e015";
-// The instruction provided a partial hash and a syntax error.
-// Assuming the intent was to mark the original EXPECTED_HASH as unused and replace it with the new value.
+const SOURCE_AUDIT_SNAPSHOT_PATH = path.resolve(__dirname, "..", "NEURALSHELL_V2_SOURCE_AUDIT_SNAPSHOT.zip");
 
 const PROFILES = {
     "v1-gold-master": {
@@ -65,6 +61,20 @@ const PROFILES = {
             "scripts/omega_verify.js",
             "production-server.js"
         ]
+    },
+    "v2.1.29-source-audit": {
+        label: "NeuralShell V2.1.29 Source Audit Snapshot",
+        path: SOURCE_AUDIT_SNAPSHOT_PATH,
+        hash: "750683363ce1147cb9cd1e61d19f1b7c9eda4c1754f8a5268724c6a03612dc38",
+        requiredFiles: [
+            "package.json",
+            "src/main.js",
+            "src/preload.js",
+            "src/renderer/src/App.jsx",
+            "src/renderer/src/state/ShellContext.jsx",
+            "scripts/capture_store_screenshots.js",
+            "tear/release-gate.js"
+        ]
     }
 };
 
@@ -110,7 +120,8 @@ function verifyZipContents(zipPath, requiredFiles) {
 
 async function run() {
     log("Starting Release Verification (Detached Proof Model)...");
-    const profileKey = process.argv[2] || "v2-kickoff";
+    const profileKey = process.argv[2]
+        || (fs.existsSync(SOURCE_AUDIT_SNAPSHOT_PATH) ? "v2.1.29-source-audit" : "v2.1-gold-master");
     const profile = PROFILES[profileKey];
 
     if (!profile) {

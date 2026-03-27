@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Security Triage Team",
+    "metric": "41% faster incident handoff",
+    "img": "site-assets/screenshots/runtime-and-integrity.png",
+    "summary": "Operators used the proof + guard flow to standardize incident context in one pass."
+  },
+  {
+    "title": "Release Ops Cell",
+    "metric": "62% fewer release rollback drills",
+    "img": "site-assets/screenshots/settings-and-profiles.png",
+    "summary": "Strict lock/unlock continuity checks reduced confidence gaps between staging and packaged runs."
+  },
+  {
+    "title": "AI Automation Pod",
+    "metric": "11.8 hours reclaimed/operator/month",
+    "img": "site-assets/screenshots/main-workspace.png",
+    "summary": "Persistent sessions and proof-mode onboarding cut repeated setup and context rebuild time."
+  }
+]

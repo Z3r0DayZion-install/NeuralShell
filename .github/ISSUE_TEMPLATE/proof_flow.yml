@@ -1,0 +1,29 @@
+name: Proof flow regression
+description: Report a problem with /proof, /roi, lock/unlock, or packaged parity
+title: "proof-flow: "
+labels:
+  - proof
+  - regression
+body:
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Where did this fail?
+      options:
+        - Runtime/dev lane
+        - Packaged app lane
+        - Both lanes
+    validations:
+      required: true
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Failure symptom
+      placeholder: Explain what failed...
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Artifact references
+      description: Include report/screenshot paths or support bundle hash

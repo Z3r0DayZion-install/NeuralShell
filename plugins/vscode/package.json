@@ -1,0 +1,43 @@
+{
+  "name": "neuralshell-vscode-adapter",
+  "displayName": "NeuralShell Adapter",
+  "description": "Thin VSCode adapter for Run in NeuralShell workflow.",
+  "version": "0.1.0",
+  "publisher": "neuralshell",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "activationEvents": [
+    "onCommand:neuralshell.runProof",
+    "onView:neuralshell.proofView"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "neuralshell",
+          "title": "NeuralShell",
+          "icon": "media/neuralshell.svg"
+        }
+      ]
+    },
+    "views": {
+      "neuralshell": [
+        {
+          "id": "neuralshell.proofView",
+          "name": "Proof Status"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "neuralshell.runProof",
+        "title": "NeuralShell: Run Proof"
+      }
+    ]
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

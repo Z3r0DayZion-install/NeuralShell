@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, screen, session } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, screen, session, shell } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -28,10 +28,39 @@ const executionEngine = require("./core/executionEngine");
 const chainPlanner = require("./core/chainPlanner");
 const diagnosticsLedger = require("./core/diagnosticsLedger");
 const actionOutcomeStore = require("./core/actionOutcomeStore");
+const agentMarketplace = require("./core/agentMarketplace");
+const { getAccelStatus } = require("./core/accelStatus");
 const verificationCatalog = require("./verificationCatalog");
 const bridgeProviderCatalog = require("./bridgeProviderCatalog");
 const airgapPolicy = require("./airgapPolicy");
 const bridgeSettingsModel = require("./bridgeSettingsModel");
+const { runLlmSweep } = require("./core/llmSweep");
+const { getGitStatusSummary } = require("./ipc/gitStatus.cjs");
+const { streamProofCommand } = require("./ipc/execProof.cjs");
+const { DaemonWsBridge } = require("./daemon/ws_bridge");
+const { ModelPool } = require("./daemon/modelPool");
+const { LocalCollabSignalServer } = require("../collab/signalServer.cjs");
+const { HostedModelProxy } = require("../gateway/hostedModelProxy.js");
+const { OTelBridge } = require("../telemetry/otelBridge.js");
+const { resolveCapabilities, hasCapability } = require("./core/capabilities");
+const {
+  verifyLicenseBlob,
+  planIdToLicenseMode,
+  listPlans
+} = require("../billing/licenseEngine");
+
+let exportSupportBundle = null;
+let evaluateReleaseHealth = null;
+try {
+  ({ exportSupportBundle } = require("../scripts/export_support_bundle.cjs"));
+} catch {
+  exportSupportBundle = null;
+}
+try {
+  ({ evaluateReleaseHealth } = require("../scripts/release_health_check.cjs"));
+} catch {
+  evaluateReleaseHealth = null;
+}
 
 const llmService = require("./core/llmService");
 const { LLM_STATUS, CONNECTION_DEFAULTS } = require("./core/config");
@@ -68,16 +97,23 @@ let analyticsStore;
 let rgbController;
 let auditChain;
 let daemonWatchdog;
+let daemonWsBridge;
+let collabSignalServer;
+let hostedModelProxy;
+let otelBridge;
+let modelPool;
 let xpManager;
 let ritualManager;
 let historyLoader;
 let secretVault;
 let autoUpdateLane;
 let _agentController;
+let activeLicenseStatus = null;
 
 let mainWindow = null;
 let bridgeHealthTimer = null;
 let smokeFinalized = false;
+const proofExecSessions = new Map();
 
 function parseRuntimeEnvFile(filePath) {
   if (!filePath || !fs.existsSync(filePath)) return {};
@@ -118,18 +154,140 @@ function normalizeLicenseMode(value) {
   const raw = String(value || "").trim().toLowerCase();
   if (raw === "auditor" || raw === "audit") return "auditor";
   if (raw === "operator" || raw === "pro") return "operator";
+  if (raw === "enterprise" || raw === "ent") return "enterprise";
   return "preview";
 }
 
 function forcedTierFromLicenseMode(mode) {
   if (mode === "auditor") return "AUDITOR";
   if (mode === "operator") return "OPERATOR";
+  if (mode === "enterprise") return "OPERATOR";
   return null;
 }
 
 loadRuntimeEnvOverrides();
 const RUNTIME_LICENSE_MODE = normalizeLicenseMode(process.env.LICENSE_MODE);
 const FORCED_RUNTIME_TIER = forcedTierFromLicenseMode(RUNTIME_LICENSE_MODE);
+
+function resolveLicenseStorePath() {
+  try {
+    return path.join(app.getPath("userData"), "billing", "active_license.json");
+  } catch {
+    return path.join(process.cwd(), "state", "billing", "active_license.json");
+  }
+}
+
+function persistActiveLicenseBlob(blob) {
+  const targetPath = resolveLicenseStorePath();
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.writeFileSync(targetPath, `${JSON.stringify(blob, null, 2)}\n`, "utf8");
+  return targetPath;
+}
+
+function clearPersistedLicenseBlob() {
+  const targetPath = resolveLicenseStorePath();
+  if (fs.existsSync(targetPath)) {
+    fs.rmSync(targetPath, { force: true });
+  }
+}
+
+function loadPersistedLicenseStatus() {
+  const targetPath = resolveLicenseStorePath();
+  if (!fs.existsSync(targetPath)) return null;
+  const parsed = JSON.parse(fs.readFileSync(targetPath, "utf8"));
+  const verified = verifyLicenseBlob(parsed, { now: new Date() });
+  if (!verified || !verified.ok) return null;
+  return verified;
+}
+
+function refreshActiveLicenseStatus() {
+  try {
+    activeLicenseStatus = loadPersistedLicenseStatus();
+  } catch {
+    activeLicenseStatus = null;
+  }
+  return activeLicenseStatus;
+}
+
+function resolveLicenseCapabilities() {
+  if (!activeLicenseStatus) return null;
+  if (activeLicenseStatus.status !== "active" && activeLicenseStatus.status !== "grace") return null;
+  return {
+    tierId: String(activeLicenseStatus.planId || "free"),
+    tierLabel: String(activeLicenseStatus.planLabel || "Free"),
+    capabilities: Array.isArray(activeLicenseStatus.capabilities)
+      ? activeLicenseStatus.capabilities
+      : [],
+    source: "license"
+  };
+}
+
+function licenseStatusForRenderer() {
+  const status = activeLicenseStatus;
+  if (!status) {
+    return {
+      present: false,
+      status: "none",
+      planId: "free",
+      planLabel: "Free",
+      seats: 1,
+      expiresAt: "",
+      graceEndsAt: "",
+      graceRemainingDays: 0
+    };
+  }
+  return {
+    present: true,
+    status: status.status,
+    licenseId: status.licenseId,
+    customer: status.customer,
+    planId: status.planId,
+    planLabel: status.planLabel,
+    seats: status.seats,
+    issuedAt: status.issuedAt,
+    expiresAt: status.expiresAt,
+    graceEndsAt: status.graceEndsAt,
+    graceRemainingDays: status.graceRemainingDays
+  };
+}
+
+function resolveEffectiveLicenseMode() {
+  const forcedRuntimeMode = String(RUNTIME_LICENSE_MODE || "preview").trim().toLowerCase();
+  if (forcedRuntimeMode && forcedRuntimeMode !== "preview") {
+    return forcedRuntimeMode;
+  }
+  if (activeLicenseStatus && (activeLicenseStatus.status === "active" || activeLicenseStatus.status === "grace")) {
+    return planIdToLicenseMode(activeLicenseStatus.planId);
+  }
+  return "preview";
+}
+
+function resolveRuntimeCapabilities(settings = {}) {
+  const forcedRuntimeMode = String(RUNTIME_LICENSE_MODE || "preview").trim().toLowerCase();
+  if (forcedRuntimeMode && forcedRuntimeMode !== "preview") {
+    return resolveCapabilities(forcedRuntimeMode);
+  }
+
+  const fromLicense = resolveLicenseCapabilities();
+  if (fromLicense) {
+    return fromLicense;
+  }
+
+  const modeFromSettings = String(settings && settings.licenseMode ? settings.licenseMode : "").trim().toLowerCase();
+  const licenseMode = modeFromSettings || "preview";
+  return resolveCapabilities(licenseMode);
+}
+
+function enforceTierCapabilities(settings = {}) {
+  const next = settings && typeof settings === "object" ? { ...settings } : {};
+  const caps = resolveRuntimeCapabilities(next);
+
+  if (!hasCapability(caps, "proof_relay_basic")) {
+    next.proofRelayEnabled = false;
+  }
+
+  return next;
+}
 
 function withRuntimeTier(settings = {}) {
   const next = settings && typeof settings === "object" ? { ...settings } : {};
@@ -258,6 +416,89 @@ function writeProofRelayConfig(config = {}) {
   fs.mkdirSync(path.dirname(PROOF_RELAY_CONFIG_PATH), { recursive: true });
   fs.writeFileSync(PROOF_RELAY_CONFIG_PATH, `${JSON.stringify(next, null, 2)}\n`, "utf8");
   return next;
+}
+
+const PROOF_RELAY_MAP_VAULT_PROFILE = "proof-relay-map";
+const PROOF_RELAY_MAP_VAULT_KEY = "relay_map_json";
+
+async function readProofRelayMapFromVault() {
+  if (!secretVault || typeof secretVault.getSecret !== "function") {
+    return {};
+  }
+  try {
+    const raw = await secretVault.getSecret(PROOF_RELAY_MAP_VAULT_PROFILE, PROOF_RELAY_MAP_VAULT_KEY);
+    const parsed = raw ? JSON.parse(String(raw)) : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    const out = {};
+    for (const [repo, mapping] of Object.entries(parsed)) {
+      const safeRepo = String(repo || "").trim();
+      if (!safeRepo) continue;
+      const row = mapping && typeof mapping === "object" ? mapping : {};
+      out[safeRepo] = {
+        slackWebhook: String(row.slackWebhook || "").trim(),
+        discordWebhook: String(row.discordWebhook || "").trim()
+      };
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+async function writeProofRelayMapToVault(mapPayload = {}) {
+  if (!secretVault || typeof secretVault.setSecret !== "function") {
+    throw new Error("Vault is unavailable for relay map storage.");
+  }
+  const source = mapPayload && typeof mapPayload === "object" ? mapPayload : {};
+  const normalized = {};
+  for (const [repo, mapping] of Object.entries(source)) {
+    const safeRepo = String(repo || "").trim();
+    if (!safeRepo) continue;
+    const row = mapping && typeof mapping === "object" ? mapping : {};
+    normalized[safeRepo] = {
+      slackWebhook: String(row.slackWebhook || "").trim(),
+      discordWebhook: String(row.discordWebhook || "").trim()
+    };
+  }
+  await secretVault.setSecret(
+    PROOF_RELAY_MAP_VAULT_PROFILE,
+    PROOF_RELAY_MAP_VAULT_KEY,
+    JSON.stringify(normalized)
+  );
+  return normalized;
+}
+
+function ensureHostedModelProxy() {
+  if (!hostedModelProxy) {
+    hostedModelProxy = new HostedModelProxy({
+      host: "127.0.0.1",
+      port: Number(process.env.NS_HOSTED_PROXY_PORT || 55117),
+      providerApiKey: String(process.env.TOGETHER_API_KEY || ""),
+      logger: (event, payload) => {
+        if (logger && typeof logger.log === "function") {
+          logger.log("info", `hosted_proxy:${event}`, payload || {});
+        }
+      }
+    });
+  }
+  return hostedModelProxy;
+}
+
+function ensureCollabSignalServer() {
+  if (!collabSignalServer) {
+    collabSignalServer = new LocalCollabSignalServer({
+      host: "127.0.0.1",
+      port: Number(process.env.NS_COLLAB_SIGNAL_PORT || 55116),
+      logger: (event, payload) => {
+        if (logger && typeof logger.log === "function") {
+          logger.log("info", `collab_signal:${event}`, payload || {});
+        }
+      }
+    });
+  }
+  return collabSignalServer;
 }
 
 const BUILT_IN_COMMANDS = [
@@ -552,6 +793,25 @@ async function resolveProfileApiKey(profile = {}, settings = {}) {
   return "";
 }
 
+async function buildProviderOverridesFromSettings(settings = {}) {
+  const overrides = {};
+  const profiles = normalizeBridgeProfiles(settings);
+
+  for (const profile of profiles) {
+    if (!profile || typeof profile !== "object") continue;
+    const providerId = normalizeBridgeProviderId(profile.provider);
+    if (!providerId || overrides[providerId]) continue;
+    const apiKey = await resolveProfileApiKey(profile, settings);
+    overrides[providerId] = {
+      apiKey: String(apiKey || "").trim(),
+      baseUrl: String(profile.baseUrl || "").trim(),
+      model: String(profile.defaultModel || stateManager.get("model") || "llama3").trim() || "llama3"
+    };
+  }
+
+  return overrides;
+}
+
 async function sanitizeBridgeSettingsSecrets(settings = {}) {
   const normalized = normalizeBridgeSettings(settings);
   const profiles = Array.isArray(normalized.connectionProfiles)
@@ -766,7 +1026,7 @@ async function applyBridgeSettings(settings = {}) {
 }
 
 async function persistBridgeSettings(nextSettings = {}) {
-  const guarded = validateSettings(withRuntimeTier(nextSettings));
+  const guarded = validateSettings(enforceTierCapabilities(withRuntimeTier(nextSettings)));
   const vaulted = await sanitizeBridgeSettingsSecrets(guarded);
   stateManager.set("settings", vaulted);
   const saved = stateManager.get("settings") || vaulted;
@@ -788,6 +1048,19 @@ async function persistBridgeSettings(nextSettings = {}) {
     });
   }
 
+  if (saved.hostedProxyEnabled) {
+    const proxy = ensureHostedModelProxy();
+    if (!proxy.status().running) {
+      await proxy.start();
+    }
+  } else if (hostedModelProxy && hostedModelProxy.status().running) {
+    hostedModelProxy.stop();
+  }
+
+  if (otelBridge) {
+    otelBridge.setEnabled(Boolean(saved.otelExportEnabled));
+  }
+
   await applyBridgeSettings(saved);
   return saved;
 }
@@ -796,11 +1069,23 @@ async function settingsForRenderer(settings = {}) {
   const profiles = await decorateBridgeProfiles(settings);
   const activeProfileId = String(settings.activeProfileId || "").trim();
   const active = profiles.find((profile) => profile.id === activeProfileId) || null;
+  const proxyStatus = hostedModelProxy && typeof hostedModelProxy.status === "function"
+    ? hostedModelProxy.status()
+    : { running: false, enabled: false };
+  const capabilities = resolveRuntimeCapabilities(settings);
+  const licenseStatus = licenseStatusForRenderer();
   return {
     ...settings,
+    tierId: capabilities.tierId,
+    tierLabel: capabilities.tierLabel,
+    capabilities: capabilities.capabilities,
+    capabilitySource: String(capabilities.source || "runtime"),
+    licenseStatus,
     connectionProfiles: profiles,
     apiKey: "",
-    apiKeyPresent: Boolean(active && active.apiKeyPresent)
+    apiKeyPresent: Boolean(active && active.apiKeyPresent),
+    hostedProxyStatus: proxyStatus,
+    otelStatus: otelBridge ? otelBridge.status() : { enabled: false, host: "127.0.0.1", port: 4317 }
   };
 }
 
@@ -826,6 +1111,9 @@ async function _runBridgeHealthCheck() {
   try {
     const settings = stateManager.get("settings") || {};
     const health = await llmService.getHealth();
+    if (modelPool && typeof modelPool.tickUnload === "function") {
+      modelPool.tickUnload();
+    }
 
     let nextStatus = LLM_STATUS.OFFLINE;
     if (health && health.ok) {
@@ -1470,6 +1758,25 @@ app.whenReady().then(async () => {
     userDataPath: app.getPath("userData"),
     logger
   });
+  otelBridge = new OTelBridge({
+    host: "127.0.0.1",
+    port: 4317,
+    enabled: false,
+    logger: (event, payload) => {
+      if (logger && typeof logger.log === "function") {
+        logger.log("info", `otel:${event}`, payload || {});
+      }
+    }
+  });
+  modelPool = new ModelPool({
+    idleMs: 60 * 60 * 1000,
+    coldStartTargetMs: 4000,
+    logger: (event, payload) => {
+      if (logger && typeof logger.log === "function") {
+        logger.log("info", `model_pool:${event}`, payload || {});
+      }
+    }
+  });
   const AgentController = require("./core/agentController");
   _agentController = new AgentController({ llmService, sessionManager });
   auditChain = new AuditChain(
@@ -1517,6 +1824,7 @@ app.whenReady().then(async () => {
 
   await identityKernel.init();
   stateManager.load();
+  refreshActiveLicenseStatus();
   auditChain.init();
   const settings = await persistBridgeSettings(
     validateSettings(withRuntimeTier(stateManager.get("settings") || {}))
@@ -1589,6 +1897,21 @@ app.whenReady().then(async () => {
   });
 
   daemonWatchdog.start();
+
+  daemonWsBridge = new DaemonWsBridge({
+    host: "127.0.0.1",
+    port: Number(process.env.NS_DAEMON_WS_PORT || 55015),
+    secret: process.env.NS_DAEMON_JWT_SECRET || "",
+    logger: (event, payload) => {
+      if (logger && typeof logger.log === "function") {
+        logger.log("info", `daemon_ws:${event}`, payload || {});
+      }
+    }
+  });
+  daemonWsBridge.start();
+
+  const collabServer = ensureCollabSignalServer();
+  collabServer.start();
 });
 
 app.on("window-all-closed", () => {
@@ -1609,6 +1932,15 @@ app.on("before-quit", async () => {
   if (bridgeHealthTimer) {
     clearInterval(bridgeHealthTimer);
     bridgeHealthTimer = null;
+  }
+  if (daemonWsBridge && typeof daemonWsBridge.stop === "function") {
+    daemonWsBridge.stop();
+  }
+  if (collabSignalServer && typeof collabSignalServer.stop === "function") {
+    collabSignalServer.stop();
+  }
+  if (hostedModelProxy && typeof hostedModelProxy.stop === "function") {
+    hostedModelProxy.stop();
   }
   await pluginLoader.onShutdown();
 });
@@ -1648,6 +1980,9 @@ ipcMain.handle("llm:chat", async (_event, messages) => {
   }
 
   const chatStartedAt = Date.now();
+  if (modelPool && typeof modelPool.markUsage === "function") {
+    modelPool.markUsage(stateManager.get("model") || "unknown");
+  }
   const response = await llmService.chat(payload, false);
   const assistantContent = response && response.message ? response.message.content || "" : "";
   const assistantMessage = {
@@ -1662,21 +1997,30 @@ ipcMain.handle("llm:chat", async (_event, messages) => {
     content: assistantContent
   });
 
-  if (analyticsStore) {
-    const settings = stateManager.get("settings") || {};
-    const activeProfile = pickActiveBridgeProfile(settings);
-    const latestPromptTokens = latestMessage ? countWords(latestMessage.content) : 0;
-    const completionTokens = countWords(assistantContent);
-    analyticsStore.recordEvent({
-      ts: new Date().toISOString(),
-      provider: activeProfile ? activeProfile.provider : "ollama",
-      model: stateManager.get("model") || "unknown",
-      latencyMs: Date.now() - chatStartedAt,
-      promptTokens: latestPromptTokens,
-      completionTokens,
-      totalTokens: latestPromptTokens + completionTokens
-    });
-  }
+    if (analyticsStore) {
+      const settings = stateManager.get("settings") || {};
+      const activeProfile = pickActiveBridgeProfile(settings);
+      const latestPromptTokens = latestMessage ? countWords(latestMessage.content) : 0;
+      const completionTokens = countWords(assistantContent);
+      const latencyMs = Date.now() - chatStartedAt;
+      analyticsStore.recordEvent({
+        ts: new Date().toISOString(),
+        provider: activeProfile ? activeProfile.provider : "ollama",
+        model: stateManager.get("model") || "unknown",
+        latencyMs,
+        promptTokens: latestPromptTokens,
+        completionTokens,
+        totalTokens: latestPromptTokens + completionTokens
+      });
+      if (otelBridge && typeof otelBridge.exportMetric === "function") {
+        otelBridge.exportMetric({
+          metric: "llm_latency_ms",
+          value: latencyMs,
+          provider: activeProfile ? activeProfile.provider : "ollama",
+          model: stateManager.get("model") || "unknown"
+        }).catch(() => {});
+      }
+    }
 
   return response;
 });
@@ -1701,6 +2045,9 @@ ipcMain.handle("llm:stream", async (_event, messages) => {
 
   try {
     const streamStartedAt = Date.now();
+    if (modelPool && typeof modelPool.markUsage === "function") {
+      modelPool.markUsage(stateManager.get("model") || "unknown");
+    }
     let assistantBuffer = "";
     const iterator = await llmService.chat(payload, true);
     for await (const chunk of iterator) {
@@ -1724,15 +2071,24 @@ ipcMain.handle("llm:stream", async (_event, messages) => {
       const activeProfile = pickActiveBridgeProfile(settings);
       const latestPromptTokens = latestMessage ? countWords(latestMessage.content) : 0;
       const completionTokens = countWords(assistantBuffer);
+      const latencyMs = Date.now() - streamStartedAt;
       analyticsStore.recordEvent({
         ts: new Date().toISOString(),
         provider: activeProfile ? activeProfile.provider : "ollama",
         model: stateManager.get("model") || "unknown",
-        latencyMs: Date.now() - streamStartedAt,
+        latencyMs,
         promptTokens: latestPromptTokens,
         completionTokens,
         totalTokens: latestPromptTokens + completionTokens
       });
+      if (otelBridge && typeof otelBridge.exportMetric === "function") {
+        otelBridge.exportMetric({
+          metric: "llm_stream_latency_ms",
+          value: latencyMs,
+          provider: activeProfile ? activeProfile.provider : "ollama",
+          model: stateManager.get("model") || "unknown"
+        }).catch(() => {});
+      }
     }
 
     sendToRenderer("llm-stream-complete");
@@ -1863,7 +2219,7 @@ ipcMain.handle("settings:get", async () => {
   const rendererSettings = await settingsForRenderer(stateManager.get("settings") || vaulted);
   return {
     ...rendererSettings,
-    licenseMode: RUNTIME_LICENSE_MODE
+    licenseMode: resolveEffectiveLicenseMode()
   };
 });
 
@@ -1879,7 +2235,69 @@ ipcMain.handle("settings:update", async (_event, settings) => {
   const rendererSettings = await settingsForRenderer(savedSettings);
   return {
     ...rendererSettings,
-    licenseMode: RUNTIME_LICENSE_MODE
+    licenseMode: resolveEffectiveLicenseMode()
+  };
+});
+
+ipcMain.handle("license:status", async () => {
+  refreshActiveLicenseStatus();
+  const status = licenseStatusForRenderer();
+  return {
+    ...status,
+    plans: listPlans()
+  };
+});
+
+ipcMain.handle("license:activateBlob", async (_event, rawBlob) => {
+  const blob = typeof rawBlob === "string" ? JSON.parse(rawBlob) : rawBlob;
+  const verification = verifyLicenseBlob(blob, { now: new Date() });
+  if (!verification || !verification.ok) {
+    return {
+      ok: false,
+      status: verification && verification.status ? verification.status : "invalid",
+      reason: verification && verification.reason ? verification.reason : "license_verification_failed"
+    };
+  }
+  const storagePath = persistActiveLicenseBlob(blob);
+  activeLicenseStatus = verification;
+  if (logger && typeof logger.log === "function") {
+    logger.log("info", "license_activated", {
+      planId: verification.planId,
+      seats: verification.seats,
+      storagePath
+    });
+  }
+  if (auditChain && typeof auditChain.append === "function") {
+    auditChain.append({
+      event: "license_activated",
+      planId: verification.planId,
+      seats: verification.seats,
+      at: new Date().toISOString()
+    });
+  }
+  return {
+    ok: true,
+    status: verification.status,
+    planId: verification.planId,
+    planLabel: verification.planLabel,
+    seats: verification.seats,
+    expiresAt: verification.expiresAt,
+    graceEndsAt: verification.graceEndsAt,
+    graceRemainingDays: verification.graceRemainingDays
+  };
+});
+
+ipcMain.handle("license:clear", async () => {
+  clearPersistedLicenseBlob();
+  activeLicenseStatus = null;
+  if (auditChain && typeof auditChain.append === "function") {
+    auditChain.append({
+      event: "license_cleared",
+      at: new Date().toISOString()
+    });
+  }
+  return {
+    ok: true
   };
 });
 
@@ -1888,6 +2306,14 @@ ipcMain.handle("proofRelay:getConfig", async () => {
 });
 
 ipcMain.handle("proofRelay:setConfig", async (_event, payload) => {
+  const caps = resolveRuntimeCapabilities(stateManager.get("settings") || {});
+  if (!hasCapability(caps, "proof_relay_basic")) {
+    return {
+      ok: false,
+      reason: "tier_capability_required",
+      required: "proof_relay_basic"
+    };
+  }
   const input = payload && typeof payload === "object" ? payload : {};
   const next = writeProofRelayConfig({
     enabled: Boolean(input.enabled),
@@ -1901,6 +2327,31 @@ ipcMain.handle("proofRelay:setConfig", async (_event, payload) => {
   return {
     ok: true,
     ...next
+  };
+});
+
+ipcMain.handle("proofRelay:getRepoMap", async () => {
+  const map = await readProofRelayMapFromVault();
+  return {
+    ok: true,
+    map
+  };
+});
+
+ipcMain.handle("proofRelay:setRepoMap", async (_event, payload) => {
+  const caps = resolveRuntimeCapabilities(stateManager.get("settings") || {});
+  if (!hasCapability(caps, "proof_relay_map")) {
+    return {
+      ok: false,
+      reason: "tier_capability_required",
+      required: "proof_relay_map"
+    };
+  }
+  const input = payload && typeof payload === "object" ? payload : {};
+  const nextMap = await writeProofRelayMapToVault(input.map || {});
+  return {
+    ok: true,
+    map: nextMap
   };
 });
 
@@ -2042,14 +2493,74 @@ ipcMain.handle("analytics:clear", async () => {
   return analyticsStore.clear();
 });
 
+ipcMain.handle("support:exportBundle", async (_event, payload) => {
+  if (typeof exportSupportBundle !== "function") {
+    return {
+      ok: false,
+      reason: "support_bundle_exporter_unavailable"
+    };
+  }
+  const input = payload && typeof payload === "object" ? payload : {};
+  return exportSupportBundle({
+    output: input.outputPath || "",
+    includeUserText: Boolean(input.includeUserText)
+  });
+});
+
+ipcMain.handle("releaseHealth:check", async () => {
+  if (typeof evaluateReleaseHealth !== "function") {
+    return {
+      generatedAt: new Date().toISOString(),
+      status: "red",
+      summary: {
+        total: 0,
+        passing: 0,
+        criticalMissing: 1,
+        optionalMissing: 0
+      },
+      rows: [],
+      reason: "release_health_checker_unavailable"
+    };
+  }
+  return evaluateReleaseHealth();
+});
+
+ipcMain.handle("otel:status", async () => {
+  return otelBridge ? otelBridge.status() : { enabled: false, host: "127.0.0.1", port: 4317 };
+});
+
+ipcMain.handle("otel:setEnabled", async (_event, enabled) => {
+  const currentSettings = stateManager.get("settings") || {};
+  await persistBridgeSettings({
+    ...currentSettings,
+    otelExportEnabled: Boolean(enabled)
+  });
+  return otelBridge ? otelBridge.status() : { enabled: false, host: "127.0.0.1", port: 4317 };
+});
+
+ipcMain.handle("otel:verify", async () => {
+  if (!otelBridge) {
+    return {
+      ok: false,
+      reason: "otel_bridge_unavailable"
+    };
+  }
+  return otelBridge.verifyConnection();
+});
+
 ipcMain.handle("llm:bridge:get", async () => {
   const normalizedSettings = normalizeBridgeSettings(stateManager.get("settings") || {});
   const profiles = await decorateBridgeProfiles(normalizedSettings);
+  const proxyStatus = hostedModelProxy && typeof hostedModelProxy.status === "function"
+    ? hostedModelProxy.status()
+    : { running: false, enabled: false };
   return {
     profiles,
     activeProfileId: normalizedSettings.activeProfileId,
     connectOnStartup: normalizedSettings.connectOnStartup !== false,
-    allowRemoteBridge: Boolean(normalizedSettings.allowRemoteBridge)
+    allowRemoteBridge: Boolean(normalizedSettings.allowRemoteBridge),
+    hostedProxyEnabled: Boolean(normalizedSettings.hostedProxyEnabled),
+    hostedProxyStatus: proxyStatus
   };
 });
 
@@ -2057,6 +2568,39 @@ ipcMain.handle("llm:bridge:envStatus", async () => {
   const settings = stateManager.get("settings") || {};
   return {
     providers: providerEnvStatusEntries(settings)
+  };
+});
+
+ipcMain.handle("llm:bridge:sweep", async () => {
+  const settings = stateManager.get("settings") || {};
+  const providerOverrides = await buildProviderOverridesFromSettings(settings);
+  const hostedProxyEnabled = Boolean(settings.hostedProxyEnabled);
+  if (hostedProxyEnabled) {
+    const proxy = ensureHostedModelProxy();
+    if (!proxy.status().running) {
+      await proxy.start();
+    }
+    providerOverrides.together = {
+      ...(providerOverrides.together || {}),
+      baseUrl: proxy.baseUrl(),
+      apiKey: String(process.env.TOGETHER_API_KEY || "")
+    };
+  }
+  const sweep = await runLlmSweep({
+    strict: false,
+    allowRemote: Boolean(settings.allowRemoteBridge),
+    providerOverrides,
+    requestTimeoutMs: 12000,
+    maxRetries: 0
+  });
+  return {
+    ...sweep,
+    hostedProxy: hostedProxyEnabled
+      ? ensureHostedModelProxy().status()
+      : {
+        running: false,
+        enabled: false
+      }
   };
 });
 
@@ -2268,8 +2812,59 @@ ipcMain.handle("daemon:status", async () => {
   if (!daemonWatchdog) return { status: "not-started" };
   return {
     status: daemonWatchdog.isAlive() ? "running" : "stopped",
-    pid: daemonWatchdog._proc?.pid ?? null
+    pid: daemonWatchdog._proc?.pid ?? null,
+    wsBridge: daemonWsBridge ? daemonWsBridge.status() : { running: false },
+    collabSignal: collabSignalServer ? collabSignalServer.status() : { running: false }
   };
+});
+
+ipcMain.handle("daemon:wsAuthToken", async () => {
+  if (!daemonWsBridge) {
+    throw new Error("Daemon WS bridge is unavailable.");
+  }
+  return {
+    ok: true,
+    host: "127.0.0.1",
+    port: Number(process.env.NS_DAEMON_WS_PORT || 55015),
+    token: daemonWsBridge.issueToken({
+      sub: "renderer",
+      scope: "proof:run"
+    })
+  };
+});
+
+ipcMain.handle("collab:getStatus", async () => {
+  const server = ensureCollabSignalServer();
+  if (!server.status().running) {
+    server.start();
+  }
+  return {
+    ok: true,
+    ...server.status()
+  };
+});
+
+ipcMain.handle("modelPool:status", async () => {
+  return modelPool ? modelPool.snapshot() : { models: [], idleMs: 0, coldStartTargetMs: 4000 };
+});
+
+// ---------------- AGENT MARKETPLACE IPC ----------------
+
+ipcMain.handle("agents:list", async () => {
+  return agentMarketplace.listCoreAgents();
+});
+
+ipcMain.handle("agents:install", async (_event, agentId, options) => {
+  return agentMarketplace.installAgent(agentId, options || {});
+});
+
+ipcMain.handle("agents:run", async (_event, agentId, context) => {
+  const payload = context && typeof context === "object" ? context : {};
+  return agentMarketplace.runAgentInSandbox(agentId, payload);
+});
+
+ipcMain.handle("agents:receipts", async () => {
+  return agentMarketplace.listInstallReceipts();
 });
 
 // ---------------- COMMAND IPC ----------------
@@ -2356,9 +2951,93 @@ ipcMain.handle("verification:run", async (_event, payload) => {
   };
 });
 
+ipcMain.handle("proof:exec", async (_event, payload) => {
+  const input = payload && typeof payload === "object" ? payload : {};
+  const command = String(input.command || "").trim().toLowerCase();
+  if (command !== "proof" && command !== "unit-test") {
+    throw new Error("Unsupported proof command. Allowed: proof, unit-test.");
+  }
+
+  const sessionId = `proof-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const cancel = streamProofCommand(command, {
+    onChunk: (line) => {
+      sendToRenderer("proof:stdout", {
+        sessionId,
+        command,
+        line: String(line || ""),
+        done: false,
+        at: new Date().toISOString()
+      });
+    },
+    onDone: (meta = {}) => {
+      sendToRenderer("proof:stdout", {
+        sessionId,
+        command,
+        line: "",
+        done: true,
+        cancelled: Boolean(meta.cancelled),
+        at: new Date().toISOString()
+      });
+      proofExecSessions.delete(sessionId);
+    }
+  });
+
+  proofExecSessions.set(sessionId, cancel);
+  return { ok: true, sessionId, command };
+});
+
+ipcMain.handle("proof:cancel", async (_event, sessionId) => {
+  const safeId = String(sessionId || "").trim();
+  if (!safeId) return false;
+  const cancel = proofExecSessions.get(safeId);
+  if (!cancel) return false;
+  try {
+    cancel();
+  } catch {
+    // ignore cancellation errors
+  }
+  proofExecSessions.delete(safeId);
+  return true;
+});
+
 // ---------------- SYSTEM & LOGGING IPC ----------------
 
 ipcMain.handle("system:stats", async () => systemMonitor.getStats());
+ipcMain.handle("accel:status", async () => getAccelStatus());
+
+const ALLOWED_EXTERNAL_HOSTS = new Set([
+  "gumroad.com",
+  "www.gumroad.com",
+  "discord.gg",
+  "discord.com",
+  "github.com",
+  "www.github.com"
+]);
+
+ipcMain.handle("system:openExternal", async (_event, rawUrl) => {
+  const value = String(rawUrl || "").trim();
+  if (!value) {
+    throw new Error("A URL is required.");
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error("Invalid URL.");
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new Error("Only https:// links are allowed.");
+  }
+
+  if (!ALLOWED_EXTERNAL_HOSTS.has(String(parsed.hostname || "").toLowerCase())) {
+    throw new Error("Blocked external destination.");
+  }
+
+  await shell.openExternal(parsed.toString());
+  return { ok: true, url: parsed.toString() };
+});
 
 ipcMain.handle("log:log", async (_event, level, message, meta) => {
   const payload = validateLog(level, message);
@@ -2439,6 +3118,10 @@ ipcMain.handle("workspace:readFile", async (_event, rootPath, relativePath, maxC
 
 ipcMain.handle("workspace:clear", async () => {
   return { cleared: true };
+});
+
+ipcMain.handle("workspace:gitStatus", async (_event, rootPath) => {
+  return getGitStatusSummary(rootPath || "");
 });
 
 ipcMain.handle("workspace:previewAction", async (_event, payload) => {

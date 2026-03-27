@@ -1,0 +1,26 @@
+[
+  {
+    "id": "provider_sweep",
+    "title": "Provider Sweep",
+    "description": "Validate your local/hosted provider lanes and establish an initial connection baseline.",
+    "action": "open_settings_and_sweep"
+  },
+  {
+    "id": "vault_save",
+    "title": "Save Vault Secret",
+    "description": "Store one secret in Vault+ to validate encrypted local credential handling.",
+    "action": "set_vault_secret"
+  },
+  {
+    "id": "run_proof",
+    "title": "Run 90s Proof",
+    "description": "Execute /proof to demonstrate trust posture and value flow in the current runtime.",
+    "action": "run_proof_command"
+  },
+  {
+    "id": "share_badge",
+    "title": "Share Proof Badge",
+    "description": "Copy the proof badge/summary link to verify outbound sharing UX.",
+    "action": "open_badge_link"
+  }
+]

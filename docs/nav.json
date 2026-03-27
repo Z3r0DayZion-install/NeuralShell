@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "sections": [
+    {
+      "id": "install",
+      "title": "Install",
+      "links": [
+        { "label": "Quick Start", "path": "docs/SETUP.md" },
+        { "label": "Usage", "path": "docs/USAGE.md" },
+        { "label": "Founder Beta Guide", "path": "docs/beta/FOUNDER_BETA_GUIDE.md" }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security",
+      "links": [
+        { "label": "Privacy Policy", "path": "docs/PRIVACY_POLICY.md" },
+        { "label": "Policy Matrix", "path": "docs/OMEGA_POLICY_MATRIX.md" },
+        { "label": "Threat Model", "path": "docs/audit/THREAT_MODEL.md" }
+      ]
+    },
+    {
+      "id": "proofing",
+      "title": "Proofing",
+      "links": [
+        { "label": "Audit Summary", "path": "docs/audit/AUDIT_SUMMARY.md" },
+        { "label": "Proof Bundle Summary", "path": "release/proof-bundle-summary.json" },
+        { "label": "Packaged Proof Report", "path": "release/ui-self-sell-proof-report-packaged.json" }
+      ]
+    },
+    {
+      "id": "deployment",
+      "title": "Deployment",
+      "links": [
+        { "label": "Enterprise Deployment", "path": "docs/deployment/enterprise.md" },
+        { "label": "Vagrant Audit Guide", "path": "docs/audit/VAGRANT.md" },
+        { "label": "Portable Mode", "path": "docs/PORTABLE_MODE.md" }
+      ]
+    },
+    {
+      "id": "billing",
+      "title": "Billing",
+      "links": [
+        { "label": "Billing & Licensing", "path": "docs/billing/README.md" },
+        { "label": "Checkout Links", "path": "docs/billing/CHECKOUT_LINKS.md" },
+        { "label": "Pricing Page", "path": "landing/pricing.html" }
+      ]
+    },
+    {
+      "id": "support",
+      "title": "Support",
+      "links": [
+        { "label": "CI Secrets", "path": "docs/ci_secrets.md" },
+        { "label": "Beta Feedback", "path": "docs/beta/BETA_FEEDBACK.md" },
+        { "label": "Bug Report Template", "path": "docs/pilots/BETA_BUG_REPORT_TEMPLATE.md" }
+      ]
+    },
+    {
+      "id": "release",
+      "title": "Release",
+      "links": [
+        { "label": "Runbook: Tag Release", "path": "docs/RUNBOOK_TAG_RELEASE.md" },
+        { "label": "Runbook: Hotfix", "path": "docs/RUNBOOK_HOTFIX.md" },
+        { "label": "Release Health Script", "path": "scripts/release_health_check.cjs" }
+      ]
+    },
+    {
+      "id": "policies",
+      "title": "Policies",
+      "links": [
+        { "label": "Offline Only Profile", "path": "config/policy_profiles/offline_only.json" },
+        { "label": "Balanced Team Profile", "path": "config/policy_profiles/balanced_team.json" },
+        { "label": "Enterprise Locked Profile", "path": "config/policy_profiles/enterprise_locked.json" }
+      ]
+    },
+    {
+      "id": "growth",
+      "title": "Growth",
+      "links": [
+        { "label": "Referrals", "path": "docs/growth/referrals.md" },
+        { "label": "Partner Kit", "path": "docs/partners/README.md" },
+        { "label": "Reseller Ops", "path": "docs/partners/reseller.md" },
+        { "label": "Partner Landing", "path": "landing/partners.html" },
+        { "label": "Launch Pack Generator", "path": "docs/marketing/LAUNCH_PACK_GENERATOR.md" }
+      ]
+    },
+    {
+      "id": "enterprise_ecosystem",
+      "title": "Enterprise Ecosystem",
+      "links": [
+        { "label": "Sales Console", "path": "docs/sales/README.md" },
+        { "label": "Pilot Program Kit", "path": "docs/pilot/README.md" },
+        { "label": "White-Label OEM Guide", "path": "docs/deployment/white_label.md" },
+        { "label": "Training & Certification", "path": "docs/training/README.md" },
+        { "label": "Board Pack Guide", "path": "docs/analytics/board_pack.md" },
+        { "label": "Expansion Roadmap", "path": "docs/strategy/roadmap.md" },
+        { "label": "Board Pack Generator", "path": "scripts/gen_board_pack.cjs" },
+        { "label": "White-Label Build Generator", "path": "scripts/gen_white_label_build.cjs" }
+      ]
+    }
+  ]
+}

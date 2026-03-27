@@ -1,561 +1,236 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NeuralShell | Run AI Locally With Full Control</title>
-  <meta name="description"
-    content="NeuralShell is an offline-first AI workstation for operators who want persistent workflows, model control, and zero black-box behavior. Not a chatbox, a real operator shell." />
-  <meta property="og:title" content="NeuralShell | Operator Tier" />
-  <meta property="og:description"
-    content="Stop fighting with black-box chatbots. Secure your local AI workstation with NeuralShell." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="site-assets/og-card.png" />
-  <meta name="theme-color" content="#081723" />
-  <link rel="icon" href="site-assets/icon-512.png" />
-  <link rel="stylesheet" href="site.css" />
+  <title>NeuralShell Docs Portal</title>
   <style>
-    /* Storefront specific overrides */
-    .integrity-terminal {
-      background: #02080e;
-      border: 1px solid var(--line-strong);
-      border-radius: var(--radius-sm);
-      padding: 16px;
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      line-height: 1.4;
-      color: var(--muted);
-      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+    :root {
+      --bg: #071019;
+      --panel: #0d1824;
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #d6e2f0;
+      --muted: #8ea1b7;
+      --accent: #2cd4d4;
+      --ok: #22c55e;
     }
-
-    .terminal-line {
-      margin-bottom: 4px;
-      border-left: 2px solid transparent;
-      padding-left: 8px;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 20% 20%, #112538 0%, var(--bg) 45%, #04070b 100%);
+      min-height: 100vh;
     }
-
-    .t-label {
-      color: var(--brand);
-      font-weight: bold;
-      margin-right: 6px;
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 18px 44px;
     }
-
-    .status-pill.pulse {
-      background: var(--brand);
-      color: var(--ink-0);
-      animation: pulse-glow 2s infinite ease-in-out;
-    }
-
-    @keyframes pulse-glow {
-
-      0%,
-      100% {
-        opacity: 1;
-        box-shadow: 0 0 5px var(--brand);
-      }
-
-      50% {
-        opacity: 0.7;
-        box-shadow: 0 0 15px var(--brand);
-      }
-    }
-
-    .pricing-card {
-      background: linear-gradient(145deg, rgba(20, 37, 54, 0.9) 0%, rgba(12, 24, 37, 0.95) 100%);
-      border: 2px solid var(--brand);
-      padding: 40px;
-      border-radius: var(--radius-lg);
-      text-align: center;
-      max-width: 500px;
-      margin: 40px auto;
-      box-shadow: 0 0 50px rgba(75, 215, 195, 0.15);
-    }
-
-    .preview-container {
-      max-width: 1000px;
-      margin: 40px auto;
-      background: var(--ink-2);
-      padding: 24px;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--line-strong);
-      position: relative;
-    }
-
-    .ui-callout {
-      position: absolute;
-      background: rgba(75, 215, 195, 0.1);
-      border: 1px solid var(--brand);
-      color: var(--brand);
-      padding: 6px 12px;
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      border-radius: var(--radius-sm);
-      pointer-events: none;
-      backdrop-filter: blur(4px);
-      z-index: 20;
-    }
-
-    .ui-callout::before {
-      content: "";
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: var(--brand);
-      border-radius: 50%;
-    }
-
-    /* Example callout positions */
-    #callout-cmd {
-      top: 20%;
-      left: 10%;
-    }
-
-    #callout-out {
-      top: 40%;
-      left: 30%;
-    }
-
-    #callout-sys {
-      top: 15%;
-      right: 10%;
-    }
-
-    #callout-wf {
-      bottom: 20%;
-      right: 15%;
-    }
-
-    .trust-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 40px;
-      margin: 60px 0;
-    }
-
-    .trust-box {
-      padding: 30px;
-      border-radius: var(--radius-md);
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .trust-box.for {
-      border-left: 4px solid var(--brand);
-    }
-
-    .trust-box.not-for {
-      border-left: 4px solid #ff4d4d;
-      opacity: 0.8;
-    }
-
-    .trust-box h3 {
+    .header {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 16px;
-      font-size: 1.4rem;
     }
-
-    .trust-box ul {
-      list-style: none;
-      padding: 0;
+    .title {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: 0.01em;
     }
-
-    .trust-box li {
-      margin-bottom: 10px;
-      padding-left: 20px;
-      position: relative;
-    }
-
-    .trust-box.for li::before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: var(--brand);
-    }
-
-    .trust-box.not-for li::before {
-      content: "✕";
-      position: absolute;
-      left: 0;
-      color: #ff4d4d;
-    }
-
-    .video-hero {
-      max-width: 900px;
-      margin: 0 auto 60px;
-      text-align: center;
-    }
-
-    .video-wrapper {
-      position: relative;
-      aspect-ratio: 16/9;
-      background: #000;
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      border: 2px solid var(--line-strong);
-      box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
-    }
-
-    .video-caption {
-      margin-top: 12px;
-      font-family: var(--font-mono);
-      color: var(--brand);
+    .sub {
+      margin: 4px 0 0;
+      color: var(--muted);
       font-size: 0.9rem;
     }
-
-    .p-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--line-strong);
-      border: none;
-      cursor: pointer;
-      transition: all 200ms;
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
-
-    .p-dot.active {
-      background: var(--brand);
-      transform: scale(1.4);
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.02);
     }
-
-    .pricing-price {
-      font-size: 4rem;
-      font-family: var(--font-display);
+    .badge.ok {
+      color: #d8ffe4;
+      border-color: rgba(34, 197, 94, 0.4);
+      background: rgba(34, 197, 94, 0.12);
+    }
+    .search {
+      margin: 14px 0 18px;
+    }
+    .search input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.32);
       color: var(--text);
-      margin: 20px 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      outline: none;
     }
-
-    .pricing-price span {
-      font-size: 1.2rem;
-      color: var(--muted);
+    .search input:focus {
+      border-color: rgba(44, 212, 212, 0.65);
+      box-shadow: 0 0 0 3px rgba(44, 212, 212, 0.12);
     }
-
-    .faq-grid {
+    .grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 30px;
-      margin-top: 40px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
     }
-
-    .faq-item h3 {
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 12px;
+    }
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 12px;
-      font-size: 1.2rem;
     }
-
-    .faq-item p {
+    .list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .list a {
+      display: block;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 9px 10px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .list a:hover {
+      border-color: rgba(44, 212, 212, 0.45);
+      background: rgba(44, 212, 212, 0.08);
+    }
+    .path {
+      display: block;
+      margin-top: 4px;
       color: var(--muted);
-      line-height: 1.6;
+      font-size: 0.72rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      word-break: break-all;
     }
-
-    @media (max-width: 800px) {
-      .faq-grid {
-        grid-template-columns: 1fr;
-      }
+    .empty {
+      padding: 16px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.01);
     }
   </style>
 </head>
-
 <body>
-  <div class="site-shell">
-    <header class="hero">
-      <nav class="topbar">
-        <div class="brand">
-          <span class="brand-mark"></span>
-          <span class="brand-copy">NeuralShell</span>
-        </div>
-        <div class="topbar-links">
-          <a href="#pricing">Buy Operator Tier</a>
-          <a href="https://discord.gg/neuralshell">Join Discord</a>
-          <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
-        </div>
-      </nav>
-
-      <div class="video-hero">
-        <div class="video-wrapper">
-          <video width="100%" height="auto" autoplay muted loop playsinline>
-            <source src="release/proof-video-walkthrough.webm" type="video/webm">
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        <p class="video-caption">60-second real NeuralShell walkthrough — no slides, no mockups, just the interface.</p>
-      </div>
-
-      <section class="hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">Now in Alpha // Operator Tier Open</p>
-          <h1>Run AI Locally With Full Control — Not a Chatbox, a Real Operator Shell</h1>
-          <p class="lede">
-            NeuralShell is an offline-first AI workstation designed for operators who want persistent workflows, model
-            control, and zero black-box behavior.
-          </p>
-          <div class="cta-row">
-            <a class="cta primary" href="#pricing">
-              Get Operator Tier Access
-            </a>
-            <a class="cta secondary" href="https://discord.gg/neuralshell">
-              Join the Community
-            </a>
-          </div>
-          <ul class="hero-points">
-            <li><strong>What it actually does:</strong> Run local AI workflows with full visibility and structured
-              control.</li>
-            <li><strong>Persistent Workspace:</strong> Maintain session state across tasks in a real workstation
-              environment.</li>
-            <li><strong>Local Sovereignty:</strong> No hidden calls, no cloud dependency. Your data stays on your
-              machine.</li>
-          </ul>
-        </div>
-
-        <aside class="hero-panel">
-          <div class="panel-header">
-            <span>System Integrity Monitor</span>
-            <span class="status-pill pulse">Live</span>
-          </div>
-          <div id="integrity-terminal" class="integrity-terminal">
-            <div class="terminal-line"><span class="t-label">[BOOT]</span> Initializing OMEGA-Kernel...</div>
-            <div class="terminal-line"><span class="t-label">[AUTH]</span> Verifying Trust Anchor...</div>
-            <div class="terminal-line"><span class="t-label">[PASS]</span>
-              75cb2558e5aca6e8e763f4af871d88fb5fc2b5f87f6f612353f0d520b37f7cd9</div>
-            <div class="terminal-line"><span class="t-label">[SYS]</span> State: SEALED (v2.1.29)</div>
-          </div>
-          <div class="stack" style="margin-top: 20px;">
-            <div class="stat-row">
-              <span>Tier</span>
-              <strong style="color: var(--brand);">Operator</strong>
-            </div>
-            <div class="stat-row">
-              <span>Network</span>
-              <strong>Airgapped / Local</strong>
-            </div>
-          </div>
-        </aside>
-      </section>
-    </header>
-
-    <main>
-      <section class="signal-bar" aria-label="Highlights">
-        <div>
-          <span class="signal-label">Privacy</span>
-          <strong>Zero Cloud Phoning</strong>
-        </div>
-        <div>
-          <span class="signal-label">Control</span>
-          <strong>Manual Gatekeeping</strong>
-        </div>
-        <div>
-          <span class="signal-label">Architecture</span>
-          <strong>Sealed Golden Master</strong>
-        </div>
-        <div>
-          <span class="signal-label">Ownership</span>
-          <strong>One-time Payment</strong>
-        </div>
-      </section>
-
-      <section class="section" id="why">
-        <div class="section-head">
-          <p class="eyebrow">The Difference</p>
-          <h2>What makes this different</h2>
-        </div>
-        <div class="card-grid">
-          <article class="feature-card">
-            <h3>No black-box execution</h3>
-            <p>
-              You always see the exact terminal pipeline and the rationale for every decision. No magic prompts, just
-              structured logs.
-            </p>
-          </article>
-          <article class="feature-card">
-            <h3>No forced cloud dependency</h3>
-            <p>
-              Built to run entirely on local infrastructure. Your internal workflows and data stay on your machine, not
-              on a third-party server.
-            </p>
-          </article>
-          <article class="feature-card">
-            <h3>Command surface, not chat UI</h3>
-            <p>
-              Designed as a serious operator environment. Manage multi-hour workflows without losing context or security
-              states.
-            </p>
-          </article>
-        </div>
-
-        <div class="trust-grid">
-          <div class="trust-box for">
-            <h3>This is for:</h3>
-            <ul>
-              <li>Local AI users (Ollama, LM Studio, etc.)</li>
-              <li>Developers and builders</li>
-              <li>Privacy-focused operators</li>
-              <li>People tired of shallow chatbot UX</li>
-            </ul>
-          </div>
-          <div class="trust-box not-for">
-            <h3>This is NOT for:</h3>
-            <ul>
-              <li>People looking for a polished plug-and-play SaaS</li>
-              <li>Users who want everything handled in the cloud</li>
-              <li>Beginners who don't care about control or system behavior</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-head">
-          <p class="eyebrow">The Interface</p>
-          <h2>Built for serious work.</h2>
-        </div>
-        <div class="preview-container">
-          <div id="dynamic-preview" class="dynamic-preview">
-            <img id="preview-img" src="site-assets/screenshots/main-workspace.png" alt="NeuralShell Interface" />
-
-            <!-- UI Callouts for Main Workspace -->
-            <div class="ui-callout" id="callout-cmd">Command Input</div>
-            <div class="ui-callout" id="callout-out">Live Terminal Output</div>
-            <div class="ui-callout" id="callout-sys">System State Monitor</div>
-            <div class="ui-callout" id="callout-wf">Structured Workflow Panel</div>
-
-            <div id="preview-label" class="preview-label">The Operator Terminal: Encrypted thread work & system
-              diagnostics.</div>
-          </div>
-          <div class="preview-controls">
-            <button onclick="updatePreview(0)" class="p-dot active"></button>
-            <button onclick="updatePreview(1)" class="p-dot"></button>
-            <button onclick="updatePreview(2)" class="p-dot"></button>
-            <button onclick="updatePreview(3)" class="p-dot"></button>
-          </div>
-        </div>
-        <script>
-          function preventDoubleClick(el) {
-            if (el.classList.contains('disabled')) {
-              event.preventDefault();
-              return false;
-            }
-            el.classList.add('disabled');
-            el.style.opacity = '0.5';
-            el.style.pointerEvents = 'none';
-            el.innerText = 'Redirecting...';
-            setTimeout(() => {
-              el.classList.remove('disabled');
-              el.style.opacity = '1';
-              el.style.pointerEvents = 'auto';
-              el.innerText = 'Secure Operator Access';
-            }, 5000);
-          }
-
-          const previewData = [
-            { src: "site-assets/screenshots/main-workspace.png", label: "The Operator Terminal: Encrypted thread work & system diagnostics." },
-            { src: "site-assets/screenshots/session-management.png", label: "Persistent Agency: Encrypted, multi-hour workflow storage." },
-            { src: "site-assets/screenshots/settings-and-profiles.png", label: "Sovereign Intelligence: Local bridge & model configuration." },
-            { src: "site-assets/screenshots/runtime-and-integrity.png", label: "Deterministic Trust: Real-time integrity auditing & boundary logs." }
-          ];
-          let currentIdx = 0;
-          function updatePreview(idx) {
-            currentIdx = idx;
-            const img = document.getElementById('preview-img');
-            const label = document.getElementById('preview-label');
-            const dots = document.querySelectorAll('.p-dot');
-
-            img.style.opacity = 0;
-            const callouts = document.querySelectorAll('.ui-callout');
-            callouts.forEach(c => c.style.display = 'none');
-
-            setTimeout(() => {
-              img.src = previewData[idx].src;
-              label.textContent = previewData[idx].label;
-              img.style.opacity = 1;
-              dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-              if (idx === 0) callouts.forEach(c => c.style.display = 'block');
-            }, 200);
-          }
-          setInterval(() => updatePreview((currentIdx + 1) % 4), 6000);
-        </script>
-      </section>
-
-      <section class="section" id="pricing">
-        <div class="section-head" style="text-align: center;">
-          <p class="eyebrow">The Offer</p>
-          <h2>Secure Your Node</h2>
-        </div>
-        <div class="pricing-card">
-          <p class="eyebrow">Operator Tier</p>
-          <div class="pricing-price">$99<span>/one-time</span></div>
-          <ul class="hero-points" style="text-align: left; margin: 30px 0; display: block;">
-            <li style="margin-bottom: 12px;">Immediate Download (Windows v2.0 Alpha)</li>
-            <li style="margin-bottom: 12px;">Full Unrestricted Runtime Access (Stages 1-12)</li>
-            <li style="margin-bottom: 12px;">Unique ECDSA License Key</li>
-            <li style="margin-bottom: 12px;">Private "Sovereign Beta" Discord Access</li>
-            <li style="margin-bottom: 12px;">Lifetime Updates for V2.x Track</li>
-          </ul>
-          <a class="cta primary" href="https://gumroad.com/l/neuralshell-operator" onclick="preventDoubleClick(this)"
-            style="width: 100%; font-size: 1.2rem; height: 60px;">
-            Get Operator Tier Access
-          </a>
-          <p style="margin-top: 20px; color: var(--muted); font-size: 0.9rem;">
-            Secure checkout via Gumroad.
-          </p>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-head">
-          <p class="eyebrow">Common Questions</p>
-          <h2>FAQ</h2>
-        </div>
-        <div class="faq-grid">
-          <div class="faq-item">
-            <h3>Is this a subscription?</h3>
-            <p>No. This is a one-time purchase for lifetime access to the 2.x product lifecycle. It is standard local
-              software, not a SaaS service.</p>
-          </div>
-          <div class="faq-item">
-            <h3>Do I need an OpenAI key?</h3>
-            <p>No. NeuralShell is built for local-first privacy. It defaults to local model bridges (like Ollama). You
-              can connect hosted APIs if you wish, but it is not required.</p>
-          </div>
-          <div class="faq-item">
-            <h3>What OS is supported?</h3>
-            <p>Currently, the V2.0 Alpha is a Windows-native executable. Mac and Linux support are on the roadmap for
-              the Beta phase.</p>
-          </div>
-          <div class="faq-item">
-            <h3>Who is this for?</h3>
-            <p>Local-first AI users, privacy-minded operators, and advanced users who want a more serious, deterministic
-              AI workflow shell than a browser-based chatbot.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="section proof-section" style="text-align: center; padding-bottom: 100px;">
-        <div class="section-head">
-          <h2>Ready to take control?</h2>
-          <p class="lede" style="margin: 0 auto 30px;">Join the first batch of Operators shaping the future of
-            autonomous local agency.</p>
-        </div>
-        <div class="cta-row" style="justify-content: center;">
-          <a class="cta primary" href="https://gumroad.com/l/neuralshell-operator" onclick="preventDoubleClick(this)">
-            Secure Operator Access
-          </a>
-          <a class="cta secondary" href="https://discord.gg/neuralshell">
-            Join the Discord
-          </a>
-        </div>
-      </section>
-    </main>
-
-    <footer class="footer">
+  <div class="wrap">
+    <div class="header">
       <div>
-        <span class="footer-mark">NeuralShell</span>
-        <p>The Operator-First Autonomous Shell.</p>
+        <h1 class="title">NeuralShell Docs Portal</h1>
+        <p class="sub">Install, security, proofing, deployment, billing, support, release, growth, and policy docs in one searchable page.</p>
       </div>
-      <div class="footer-links">
-        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
-        <a href="docs/PRIVACY_POLICY.md">Privacy Policy</a>
-        <a href="mailto:founder@neuralshell.app">Contact</a>
+      <div class="badge-row">
+        <span class="badge ok">Proof-First</span>
+        <span class="badge">Offline-First</span>
+        <span class="badge">Founder Beta</span>
       </div>
-    </footer>
-  </div>
-</body>
+    </div>
 
+    <div class="search">
+      <input id="search" type="search" placeholder="Search docs by section, title, or path..." aria-label="Search docs" />
+    </div>
+
+    <div id="grid" class="grid" aria-live="polite"></div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const search = document.getElementById('search');
+
+    function safeArray(value) {
+      return Array.isArray(value) ? value : [];
+    }
+
+    function normalizeText(value) {
+      return String(value || '').toLowerCase();
+    }
+
+    function renderSections(sections, query) {
+      const q = normalizeText(query).trim();
+      const safeSections = safeArray(sections);
+      const blocks = [];
+
+      for (const section of safeSections) {
+        const links = safeArray(section && section.links);
+        const filteredLinks = links.filter((link) => {
+          if (!q) return true;
+          const haystack = [
+            section && section.title,
+            section && section.id,
+            link && link.label,
+            link && link.path,
+          ].map(normalizeText).join(' ');
+          return haystack.includes(q);
+        });
+
+        if (!filteredLinks.length) continue;
+
+        const items = filteredLinks.map((link) => {
+          const label = String(link && link.label ? link.label : 'Untitled');
+          const rawPath = String(link && link.path ? link.path : '#');
+          const href = rawPath.startsWith('docs/') ? rawPath.slice(5) : rawPath;
+          const pathText = String(link && link.path ? link.path : '');
+          return `<li><a href="../${href}" target="_blank" rel="noreferrer">${label}<span class="path">${pathText}</span></a></li>`;
+        }).join('');
+
+        blocks.push(`
+          <section class="card">
+            <h2>${String(section && section.title ? section.title : 'Section')}</h2>
+            <ul class="list">${items}</ul>
+          </section>
+        `);
+      }
+
+      if (!blocks.length) {
+        grid.innerHTML = '<div class="empty">No documents match this search.</div>';
+        return;
+      }
+
+      grid.innerHTML = blocks.join('');
+    }
+
+    async function boot() {
+      try {
+        const response = await fetch('./nav.json', { cache: 'no-store' });
+        const payload = await response.json();
+        const sections = safeArray(payload && payload.sections);
+        renderSections(sections, '');
+        search.addEventListener('input', () => {
+          renderSections(sections, search.value);
+        });
+      } catch (err) {
+        grid.innerHTML = `<div class="empty">Failed to load docs nav: ${String(err && err.message ? err.message : err)}</div>`;
+      }
+    }
+
+    boot();
+  </script>
+</body>
 </html>

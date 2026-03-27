@@ -90,7 +90,8 @@ The repository scan revealed high-value architectural assets recovered from the 
 As part of the final push for V2.1.29 GA, a rigorous 4-phase Prelaunch Checklist was executed to ensure absolute honesty and system hardening before public launch:
 
 ### Phase 1: Honesty Cleanup
-- Eradicated all machine-local paths (`C:\Users\...`, `file:///...`) from distribution artifacts like `MASTER_PROOF.md` and `RC_HANDOFF.md`.
+- The **canonical active link layer is portability-clean**. Absolute machine-local path strings (`C:\Users\...`) have been removed from active system logic and distribution artifacts (e.g., `MASTER_PROOF.md`, `RC_HANDOFF.md`).
+- Remaining machine-local strings in non-canonical docs are descriptive examples, policy text, or installation guidance only.
 - Consolidated `walkthrough.md` as the definitive, canonical proof-of-work artifact alongside `docs/CANON.md`.
 
 ### Phase 2: Registry Scaffolding Solidified

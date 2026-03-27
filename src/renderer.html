@@ -16,7 +16,7 @@
           <img src="../assets/logo-primary.svg" class="brand-logo" alt="NeuralShell" />
           <div class="brand-copy">
             <h1 class="visually-hidden">NeuralShell</h1>
-            <span id="heroWorkflowBadge" class="header-badge">OMEGA CORE ACCESS</span>
+            <span id="heroWorkflowBadge" class="header-badge">SYSTEM VERIFIED</span>
             <span id="tierBadge" class="header-badge"
               style="cursor: pointer; background: var(--ns-panel-1); color: var(--muted); border-color: var(--ns-panel-1);"
               title="Click to enter Operator License">PREVIEW NODE</span>
@@ -55,7 +55,7 @@
                 <span class="mode-switch-label">Offline</span>
               </label>
             </div>
-            <div id="offlineModeSummaryText" class="header-status-value">Sovereign Airgap Policy Active</div>
+            <div id="offlineModeSummaryText" class="header-status-value">Offline Security Active</div>
           </div>
         </div>
 
@@ -68,7 +68,7 @@
           <button id="discordSupportBtn" class="btn-header" title="Get Discord Support">Support</button>
           <button id="settingsMenuOpenBtn" class="btn-header" aria-controls="settingsMenuPanel"
             aria-expanded="false">Settings</button>
-          <button id="headerDetailsToggle" class="btn-header" title="Toggle Overseer Diagnostics">Diagnostics</button>
+          <button id="headerDetailsToggle" class="btn-header" title="Toggle System Health">Health</button>
         </div>
       </div>
 
@@ -145,19 +145,18 @@
                 <div class="visual-pulse"></div>
               </div>
               <div class="starter-action-info">
-                <span class="starter-action-label">CONNECT LOCAL LOGIC</span>
+                <span class="starter-action-label">CONNECT AI ENGINE</span>
                 <span class="starter-action-note">Select an offline provider to begin local intelligence routing.</span>
               </div>
             </div>
             <div class="starter-action-card" data-action="scan">
               <div class="starter-action-visual">
-                <span class="starter-action-icon">LOAD</span>
+                <span class="starter-action-icon">WORKBENCH</span>
                 <div class="visual-pulse"></div>
               </div>
               <div class="starter-action-info">
-                <span class="starter-action-label">RESTORE WORKSPACE</span>
-                <span class="starter-action-note">Resume a multi-step execution from an encrypted session
-                  profile.</span>
+                <span class="starter-action-label">ANALYZE LOCAL FILES</span>
+                <span class="starter-action-note">Drop sensitive context into the workbench for private extraction.</span>
               </div>
             </div>
             <div class="starter-action-card" data-action="tunnel">
@@ -577,8 +576,11 @@
               <div id="providerPresetList" class="provider-preset-list"></div>
               <div class="row row-wrap action-grid settings-inline-actions">
                 <button id="importEnvProfilesBtn" class="btn-secondary">Import Env Profiles</button>
+                <button id="runProviderSweepBtn" class="btn-secondary">Run Provider Sweep</button>
               </div>
               <div id="envProfileSummaryText" class="panel-note">No env-backed hosted providers detected yet.</div>
+              <div id="providerSweepSummaryText" class="panel-note">Run Provider Sweep to verify each provider profile from inside NeuralShell.</div>
+              <div id="providerSweepList" class="provider-sweep-list"></div>
             </div>
 
             <div class="settings-quickstart-shell">
@@ -1294,28 +1296,25 @@
       <div class="overlay-card">
         <div class="onboarding-layout">
           <section class="onboarding-copy">
-            <p class="kicker">v1.2.0 Foundation</p>
-            <h2>Welcome to NeuralShell</h2>
-            <p class="subtitle">Quick setup to get your first reliable session running.</p>
+            <p class="kicker">v2.1.29 Founder Beta</p>
+            <h2>Welcome, Operator</h2>
+            <p class="subtitle">Secure, local-first AI control surface for technical professionals.</p>
             <div class="hero-tags">
-              <span class="hero-tag">Local-first</span>
-              <span class="hero-tag">Guarded IPC</span>
-              <span class="hero-tag">Session recovery</span>
-            </div>
-            <div class="onboarding-points">
+              <span class="hero-tag">Local-First</span>
+              <span class="hero-tag">Hardened Security</span>
+              <span class="hero-tag">Deterministic Workflows</span>
+            </div>            <div class="onboarding-points">
               <div class="onboarding-point">
-                <span class="cluster-title">1. Choose the active model</span>
-                <span class="cluster-note">NeuralShell will default to the selected bridge model for first-run
-                  prompts.</span>
+                <span class="cluster-title">1. Connect Your AI Engine</span>
+                <span class="cluster-note">Choose a local provider (Ollama, LM Studio) to begin private inference.</span>
               </div>
               <div class="onboarding-point">
-                <span class="cluster-title">2. Set operator comfort defaults</span>
-                <span class="cluster-note">Auto-scroll and remember-completion determine day-one console
-                  behavior.</span>
+                <span class="cluster-title">2. Attach a Workspace</span>
+                <span class="cluster-note">Select a local directory to provide context for your private workflows.</span>
               </div>
               <div class="onboarding-point">
-                <span class="cluster-title">3. Enter the console</span>
-                <span class="cluster-note">You can reopen onboarding later from the settings drawer.</span>
+                <span class="cluster-title">3. Start Operating</span>
+                <span class="cluster-note">Use the Command Palette (Ctrl+K) to route actions and run local rituals.</span>
               </div>
             </div>
           </section>

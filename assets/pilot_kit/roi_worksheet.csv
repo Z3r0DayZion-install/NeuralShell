@@ -1,0 +1,2 @@
+customer,industry,use_case,team_size,baseline_hours_per_week,target_hours_saved_per_week,hourly_cost_usd,current_audit_cycle_days,target_audit_cycle_days,monthly_value_usd,annual_value_usd
+{{customerName}},{{industry}},{{useCase}},12,96,28,145,10,6,16240,194880

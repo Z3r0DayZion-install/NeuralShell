@@ -36,20 +36,63 @@ function testMainBuiltInCommandWiring() {
   );
 }
 
-function testRendererStateAndModelLinkage() {
-  const rendererJs = read("src/renderer.js");
-  assert(rendererJs.includes("async function persistChatState()"), "renderer.js missing persistChatState helper.");
+function testReactRendererSessionModelLinkage() {
+  const appJsx = read("src/renderer/src/App.jsx");
+  const shellContextJsx = read("src/renderer/src/state/ShellContext.jsx");
+  const threadRailJsx = read("src/renderer/src/components/ThreadRail.jsx");
+  const workspacePanelJsx = read("src/renderer/src/components/WorkspacePanel.jsx");
+
   assert(
-    rendererJs.includes("await api.llm.setModel(state.selectedModel);"),
-    "renderer.js session load does not apply model to backend."
+    appJsx.includes("const handleSessionSelect") &&
+      appJsx.includes("isSessionUnlocked") &&
+      appJsx.includes("openUnlockDialog"),
+    "App session selection flow must route locked sessions through unlock dialog."
   );
   assert(
-    rendererJs.includes("await api.state.set(\"model\", state.selectedModel);"),
-    "renderer.js session load does not persist model state."
+    appJsx.includes("const handleSaveActiveSession") &&
+      appJsx.includes("saveActiveSession('manual')"),
+    "App must wire manual save action to ShellContext saveActiveSession."
   );
   assert(
-    rendererJs.includes("showBanner(`State import failed: ${err.message}`, \"bad\");"),
-    "renderer.js missing state import failure banner."
+    appJsx.includes("const handleLockActiveSession") &&
+      appJsx.includes("lockSession(workflowId)"),
+    "App must wire explicit lock action for active session."
+  );
+  assert(
+    appJsx.includes('role="dialog"') &&
+      appJsx.includes("aria-modal=\"true\"") &&
+      appJsx.includes("sessionDialogTitleId"),
+    "Session modal must keep dialog accessibility semantics wired."
+  );
+
+  assert(
+    shellContextJsx.includes("const createSession = useCallback") &&
+      shellContextJsx.includes("await refreshSessions();") &&
+      shellContextJsx.includes("await setWorkflowId(safeName);") &&
+      shellContextJsx.includes("await hydrateSession(safeName, safePassphrase);"),
+    "ShellContext createSession flow must refresh index then select and hydrate new session."
+  );
+  assert(
+    shellContextJsx.includes("const lockSession = useCallback") &&
+      shellContextJsx.includes("setSessionHydrationStatus('locked')"),
+    "ShellContext must expose explicit session locking behavior."
+  );
+  assert(
+    shellContextJsx.includes("window.addEventListener('beforeunload', flushOnPageHide);") &&
+      shellContextJsx.includes("window.addEventListener('blur', lockOnBlur);"),
+    "ShellContext must flush autosave on unload and support optional blur auto-lock."
+  );
+
+  assert(
+    threadRailJsx.includes("save-active-session-btn") &&
+      threadRailJsx.includes("retry-save-session-btn") &&
+      threadRailJsx.includes("lock-active-session-btn"),
+    "Thread rail must expose save/retry/lock controls."
+  );
+  assert(
+    workspacePanelJsx.includes('data-testid="chat-message"') &&
+      workspacePanelJsx.includes('data-testid="chat-input"'),
+    "Workspace panel must keep message/input testing surface."
   );
 }
 
@@ -62,9 +105,10 @@ function testSystemStatsContract() {
 
 function run() {
   testMainBuiltInCommandWiring();
-  testRendererStateAndModelLinkage();
+  testReactRendererSessionModelLinkage();
   testSystemStatsContract();
   console.log("Linkage regression test passed.");
 }
 
 run();
+

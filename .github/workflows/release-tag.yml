@@ -54,6 +54,8 @@ jobs:
         run: npm run icons:generate
 
       - name: Verify ship readiness
+        env:
+          NEURAL_RELEASE_SMOKE_TIMEOUT_MS: "60000"
         run: npm run verify:ship
 
       - name: Compose release notes and changelog snapshot

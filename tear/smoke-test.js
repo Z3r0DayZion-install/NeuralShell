@@ -37,92 +37,26 @@ function validateMainWindowTarget() {
   );
 }
 
-function validateRendererTargets() {
-  const html = read("src/renderer.html");
-  const rendererJs = read("src/renderer.js");
-  const requiredIds = [
-    "modelSelect",
-    "refreshModelsBtn",
-    "statusLabel",
-    "sessionList",
-    "runSelfTestBtn",
-    "runButtonAuditBtn",
-    "sessionSearchInput",
-    "sessionSortSelect",
-    "sessionName",
-    "sessionPass",
-    "sessionMetadataOutput",
-    "saveSessionBtn",
-    "loadSessionBtn",
-    "renameSessionBtn",
-    "deleteSessionBtn",
-    "duplicateSessionBtn",
-    "chatHistory",
-    "typingIndicator",
-    "chatSearchInput",
-    "chatSearchBtn",
-    "chatSearchClearBtn",
-    "newChatBtn",
-    "deleteLastExchangeBtn",
-    "promptInput",
-    "promptMetrics",
-    "autoScrollInput",
-    "sendBtn",
-    "stopBtn",
-    "retryBtn",
-    "editLastBtn",
-    "snippetSelect",
-    "insertSnippetBtn",
-    "regenerateBtn",
-    "exportChatBtn",
-    "exportMarkdownBtn",
-    "copyMarkdownBtn",
-    "copyLastAssistantBtn",
-    "shortcutHelpBtn",
-    "importChatBtn",
-    "importChatFile",
-    "refreshCommandsBtn",
-    "commandList",
-    "baseUrlInput",
-    "timeoutInput",
-    "retryInput",
-    "themeSelect",
-    "tokenBudgetInput",
-    "autosaveNameInput",
-    "autosaveIntervalInput",
-    "autosaveEnabledInput",
-    "applySettingsBtn",
-    "repairIndexBtn",
-    "exportStateBtn",
-    "importStateBtn",
-    "importStateFile",
-    "cpuUsage",
-    "memoryUsage",
-    "tokensUsed",
-    "platformInfo",
-    "clockTime",
-    "statusMeta"
-    ,
-    "loadLogsBtn",
-    "clearLogsBtn",
-    "exportLogsBtn",
-    "logsOutput",
-    "loadChatLogsBtn",
-    "clearChatLogsBtn",
-    "exportChatLogsBtn",
-    "chatLogsOutput"
-    ,
-    "buttonAuditOutput",
-    "shortcutOverlay",
-    "shortcutCloseBtn",
-    "undoBtn",
-    "commandHelpBtn"
-  ];
-
-  requiredIds.forEach((id) => {
-    assert(html.includes(`id="${id}"`), `renderer.html missing id="${id}"`);
-    assert(rendererJs.includes(`"${id}"`) || rendererJs.includes(`'${id}'`), `renderer.js does not reference "${id}"`);
-  });
+function validateReactEntryTargets() {
+  const distHtml = read("dist-renderer/index.html");
+  const rendererMain = read("src/renderer/src/main.jsx");
+  assert(
+    distHtml.includes('id="root"'),
+    "dist-renderer/index.html missing React root node."
+  );
+  assert(
+    distHtml.includes('<script type="module"'),
+    "dist-renderer/index.html missing module script entry."
+  );
+  assert(
+    rendererMain.includes("createRoot(document.getElementById('root'))") ||
+      rendererMain.includes('createRoot(document.getElementById("root"))'),
+    "src/renderer/src/main.jsx does not mount React at #root."
+  );
+  assert(
+    rendererMain.includes("<ShellProvider>") && rendererMain.includes("<App />"),
+    "src/renderer/src/main.jsx must compose ShellProvider + App."
+  );
 }
 
 function validateScripts() {
@@ -134,7 +68,7 @@ function validateScripts() {
 function run() {
   validateRequiredFiles();
   validateMainWindowTarget();
-  // Legacy DOM ID checks are skipped for the componentized React renderer
+  validateReactEntryTargets();
   validateScripts();
   console.log("Smoke test passed (React Architecture).");
 }

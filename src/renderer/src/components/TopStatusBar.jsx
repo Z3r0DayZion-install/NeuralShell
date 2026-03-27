@@ -3,6 +3,7 @@ import { Moon, Sun, SunMoon } from 'lucide-react';
 import { useLatencyHistory } from '../hooks/useLatencyHistory.ts';
 import { useUIPreferences } from '../state/useUIPreferences';
 import CollabBadge from './CollabBadge';
+import TierBadge from './TierBadge';
 
 function estimateCostPer1k(providerId) {
     const provider = String(providerId || '').trim().toLowerCase();
@@ -38,6 +39,7 @@ export function TopStatusBar({
     onOpenPalette,
     onOpenSettings,
     onOpenAnalytics,
+    onOpenEcosystem,
     onToggleScratchpad,
     runtimeTier,
     connectionInfo,
@@ -48,6 +50,9 @@ export function TopStatusBar({
     accelStatus,
     feedbackDisabled,
     feedbackUrl,
+    onOpenIssueAssist,
+    tierId,
+    tierLabel,
 }) {
     const tierName = ['INITIATE', 'OPERATOR', 'ANALYST', 'EXECUTOR', 'WARLORD', 'EXECUTIONER', 'APEX', 'GOD_MODE', 'PHASE_24_MUTANT'][Math.min((xpState?.tier || 1) - 1, 8)];
     const safeRuntimeTier = String(runtimeTier || 'PREVIEW').toUpperCase();
@@ -83,8 +88,12 @@ export function TopStatusBar({
         && Boolean(window.api && window.api.system && typeof window.api.system.openExternal === 'function');
     const handleOpenFeedback = React.useCallback(() => {
         if (!canOpenFeedback) return;
+        if (typeof onOpenIssueAssist === 'function') {
+            onOpenIssueAssist();
+            return;
+        }
         window.api.system.openExternal(resolvedFeedbackUrl).catch(() => undefined);
-    }, [canOpenFeedback, resolvedFeedbackUrl]);
+    }, [canOpenFeedback, onOpenIssueAssist, resolvedFeedbackUrl]);
 
     return (
         <header data-testid="top-status-bar" className="h-14 border-b border-white/5 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-6 z-30 shrink-0">
@@ -106,6 +115,7 @@ export function TopStatusBar({
                                 {safeRuntimeTier}
                             </span>
                         )}
+                        <TierBadge tierId={tierId} tierLabel={tierLabel} />
                     </div>
                 </div>
 
@@ -245,6 +255,14 @@ export function TopStatusBar({
                     title="Analytics"
                 >
                     <span className="inline-block text-[11px] font-mono tracking-wide">Δ</span>
+                </button>
+                <button
+                    data-testid="ecosystem-open-btn"
+                    onClick={onOpenEcosystem}
+                    className="px-2.5 py-1.5 rounded-lg border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono text-cyan-100 hover:bg-cyan-500/20"
+                    title="Ecosystem Launcher"
+                >
+                    Ecosystem
                 </button>
                 <button
                     type="button"

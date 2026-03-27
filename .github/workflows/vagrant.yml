@@ -1,0 +1,62 @@
+name: Vagrant Audit Box
+
+on:
+  push:
+    tags:
+      - "neuralshell-v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to upload assets to"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  package_and_upload_box:
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Validate toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v vagrant >/dev/null 2>&1 || { echo "vagrant is required on self-hosted runner"; exit 1; }
+          command -v VBoxManage >/dev/null 2>&1 || { echo "VirtualBox is required on self-hosted runner"; exit 1; }
+          command -v gh >/dev/null 2>&1 || { echo "gh CLI is required on self-hosted runner"; exit 1; }
+
+      - name: Build Vagrant box
+        shell: bash
+        run: |
+          set -euo pipefail
+          vagrant validate
+          vagrant up --provider=virtualbox
+          vagrant package --output NeuralShell_audit.box
+          sha256sum NeuralShell_audit.box > SHA256SUMS.txt
+
+      - name: Resolve release tag
+        id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${{ github.event.inputs.release_tag }}" ]; then
+            echo "value=${{ github.event.inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload box + checksum to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.value }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --draft --title "$TAG" --notes "Automated Vagrant audit box upload."
+          fi
+          gh release upload "$TAG" NeuralShell_audit.box SHA256SUMS.txt --clobber

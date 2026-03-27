@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-03-27T08:37:39.481Z",
+  "plans": [
+    {
+      "id": "free",
+      "label": "Free",
+      "priceUsd": 0,
+      "billingPeriod": "forever",
+      "gumroad": "",
+      "stripe": "",
+      "manualInvoice": false,
+      "invoiceUrl": ""
+    },
+    {
+      "id": "pro",
+      "label": "Pro",
+      "priceUsd": 99,
+      "billingPeriod": "one_time",
+      "gumroad": "https://gumroad.com/l/neuralshell-operator",
+      "stripe": "https://buy.stripe.com/test_neuralshell_pro",
+      "manualInvoice": false,
+      "invoiceUrl": ""
+    },
+    {
+      "id": "enterprise",
+      "label": "Enterprise",
+      "priceUsd": 499,
+      "billingPeriod": "annual",
+      "gumroad": "",
+      "stripe": "",
+      "manualInvoice": true,
+      "invoiceUrl": "mailto:enterprise@neuralshell.app?subject=NeuralShell%20Enterprise%20Invoice%20Request"
+    }
+  ]
+}
