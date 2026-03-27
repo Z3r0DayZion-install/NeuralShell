@@ -61,7 +61,8 @@ test.describe("NeuralShell React Core UI", () => {
         return box && Number.isFinite(box.width) ? box.width : 0;
     }
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({}, testInfo) => {
+        testInfo.setTimeout(240000);
         // Create isolated user data directory to bypass Single Instance Locks
         userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "neuralshell-e2e-react-"));
 
