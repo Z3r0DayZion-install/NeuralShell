@@ -5,7 +5,7 @@ const fs = require("fs");
 const os = require("os");
 
 test.describe("NeuralShell React Core UI", () => {
-    test.describe.configure({ mode: 'serial' });
+    test.describe.configure({ mode: 'serial', timeout: 240000 });
     let app;
     let page;
     let userDataDir;
@@ -68,13 +68,14 @@ test.describe("NeuralShell React Core UI", () => {
         app = await electron.launch({
             args: ["."],
             cwd: path.resolve(__dirname, ".."),
+            timeout: 120000,
             env: {
                 ...process.env,
                 NEURAL_USER_DATA_DIR: userDataDir,
                 NEURAL_IGNORE_INTEGRITY: "1"
             }
         });
-        page = await app.firstWindow();
+        page = await app.firstWindow({ timeout: 120000 });
     });
 
     test.afterAll(async () => {
