@@ -62,6 +62,7 @@ export default function EcosystemLauncher({
     onClose,
     capabilities = [],
     tierId = 'free',
+    onOpenMissionControl,
 }) {
     const [role, setRole] = React.useState(() => loadRole());
     const [activeModuleId, setActiveModuleId] = React.useState('ecosystem_launcher');
@@ -162,6 +163,24 @@ export default function EcosystemLauncher({
                     {activeModule && activeModule.id === 'ecosystem_launcher' && (
                         <EcosystemHome role={role} tierId={String(tierId || 'free')} moduleCount={accessibleModules.length} />
                     )}
+                    {activeModule && activeModule.id === 'mission_control' && (
+                        <section data-testid="ecosystem-mission-control-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-blue-200 font-bold">Mission Control Runtime Cockpit</div>
+                            <div className="text-[11px] text-slate-200">
+                                Launch the live runtime command center with provider, vault, proof, policy, update, and watchdog state in one view.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-mission-control-btn"
+                                onClick={() => {
+                                    if (typeof onOpenMissionControl === 'function') onOpenMissionControl();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
+                            >
+                                Open Mission Control
+                            </button>
+                        </section>
+                    )}
                     {activeModule && activeModule.id === 'sales_console' && <SalesConsole />}
                     {activeModule && activeModule.id === 'pilot_kit' && <PilotKitConsole />}
                     {activeModule && activeModule.id === 'white_label' && <BrandingOverrides />}
@@ -176,4 +195,3 @@ export default function EcosystemLauncher({
         </>
     );
 }
-

@@ -8,6 +8,9 @@ on:
 jobs:
   weekly_reminder:
     runs-on: ubuntu-latest
+    env:
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -25,9 +28,7 @@ jobs:
         run: npm run proof:bundle
 
       - name: Validate Discord bot token
-        if: ${{ secrets.DISCORD_BOT_TOKEN != '' }}
-        env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        if: ${{ env.DISCORD_BOT_TOKEN != '' }}
         run: |
           curl -sS -H "Authorization: Bot $DISCORD_BOT_TOKEN" https://discord.com/api/users/@me >/tmp/discord_me.json
           if grep -q "\"id\"" /tmp/discord_me.json; then
@@ -48,9 +49,9 @@ jobs:
           echo "score=$SCORE" >> $GITHUB_OUTPUT
 
       - name: Send Discord reminder
-        if: ${{ secrets.DISCORD_WEBHOOK != '' }}
+        if: ${{ env.DISCORD_WEBHOOK != '' }}
         env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
           COUNT: ${{ steps.parse.outputs.count }}
           SCORE: ${{ steps.parse.outputs.score }}
         run: |
@@ -59,5 +60,5 @@ jobs:
             -d "{\"content\":\"Proof-Drop Friday: SHA entries=$COUNT | Sovereign Score=$SCORE/100. Run !drop in Discord for manifest upload.\"}"
 
       - name: No webhook configured
-        if: ${{ secrets.DISCORD_WEBHOOK == '' }}
+        if: ${{ env.DISCORD_WEBHOOK == '' }}
         run: echo "DISCORD_WEBHOOK is not set; reminder skipped."

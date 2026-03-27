@@ -1,6 +1,7 @@
 export type EcosystemRole = 'founder' | 'sales' | 'support' | 'operator';
 
 export type EcosystemModuleId =
+    | 'mission_control'
     | 'sales_console'
     | 'pilot_kit'
     | 'white_label'
@@ -28,6 +29,13 @@ const TIER_RANK: Record<'free' | 'pro' | 'enterprise', number> = {
 };
 
 export const ECOSYSTEM_MODULES: EcosystemModule[] = [
+    {
+        id: 'mission_control',
+        title: 'Mission Control',
+        description: 'Runtime authority cockpit with live health cards, event feed, and watchdog visibility.',
+        minTier: 'free',
+        roles: ['founder', 'sales', 'support', 'operator'],
+    },
     {
         id: 'sales_console',
         title: 'Enterprise Sales Console',
@@ -140,4 +148,3 @@ export function getAccessibleEcosystemModules(
         canAccessEcosystemModule(moduleDef, role, tierId, capabilities)
     ));
 }
-

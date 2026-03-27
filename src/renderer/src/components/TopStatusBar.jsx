@@ -4,6 +4,7 @@ import { useLatencyHistory } from '../hooks/useLatencyHistory.ts';
 import { useUIPreferences } from '../state/useUIPreferences';
 import CollabBadge from './CollabBadge';
 import TierBadge from './TierBadge';
+import WatchdogStatusBadge from './WatchdogStatusBadge.jsx';
 
 function estimateCostPer1k(providerId) {
     const provider = String(providerId || '').trim().toLowerCase();
@@ -40,7 +41,11 @@ export function TopStatusBar({
     onOpenSettings,
     onOpenAnalytics,
     onOpenEcosystem,
+    onOpenMissionControl,
     onToggleScratchpad,
+    watchdogStatus,
+    watchdogAlertCount,
+    onOpenRuntimeAlerts,
     runtimeTier,
     connectionInfo,
     tokensRemaining,
@@ -264,6 +269,19 @@ export function TopStatusBar({
                 >
                     Ecosystem
                 </button>
+                <button
+                    data-testid="mission-control-open-btn"
+                    onClick={onOpenMissionControl}
+                    className="px-2.5 py-1.5 rounded-lg border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono text-blue-100 hover:bg-blue-500/20"
+                    title="Mission Control"
+                >
+                    Mission
+                </button>
+                <WatchdogStatusBadge
+                    status={watchdogStatus}
+                    alertCount={watchdogAlertCount}
+                    onClick={onOpenRuntimeAlerts}
+                />
                 <button
                     type="button"
                     data-testid="scratchpad-open-btn"

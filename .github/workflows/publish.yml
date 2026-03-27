@@ -24,18 +24,41 @@ jobs:
           - package_name: neuralshell-badge
             package_path: packages/neuralshell-badge
             tag_prefix: badge/
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref_name, matrix.tag_prefix) || startsWith(github.ref_name, 'neuralshell-v')
     steps:
+      - name: Evaluate publish target
+        id: gate
+        run: |
+          set -euo pipefail
+          REF_NAME="${{ github.ref_name }}"
+          SHOULD_PUBLISH="false"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SHOULD_PUBLISH="true"
+          elif [[ "$REF_NAME" == neuralshell-v* ]]; then
+            SHOULD_PUBLISH="true"
+          elif [[ "$REF_NAME" == "${{ matrix.tag_prefix }}"* ]]; then
+            SHOULD_PUBLISH="true"
+          fi
+          echo "should_publish=$SHOULD_PUBLISH" >> "$GITHUB_OUTPUT"
+          echo "ref_name=$REF_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Skip non-target package in matrix
+        if: ${{ steps.gate.outputs.should_publish != 'true' }}
+        run: |
+          echo "Skipping matrix target '${{ matrix.package_name }}' for ref '${{ steps.gate.outputs.ref_name }}'."
+
       - name: Checkout
+        if: ${{ steps.gate.outputs.should_publish == 'true' }}
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup Node and npm auth
+        if: ${{ steps.gate.outputs.should_publish == 'true' }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22.12.0"
           registry-url: "https://registry.npmjs.org"
 
       - name: Validate package identity
+        if: ${{ steps.gate.outputs.should_publish == 'true' }}
         working-directory: ${{ matrix.package_path }}
         run: |
           set -euo pipefail
@@ -47,7 +70,19 @@ jobs:
             exit 1
           fi
 
+      - name: Validate npm publish token
+        if: ${{ steps.gate.outputs.should_publish == 'true' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "NPM_TOKEN is not configured; cannot publish."
+            exit 1
+          fi
+
       - name: Publish if version is not already live
+        if: ${{ steps.gate.outputs.should_publish == 'true' }}
         working-directory: ${{ matrix.package_path }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

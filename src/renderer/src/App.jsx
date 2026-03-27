@@ -12,8 +12,21 @@ import OnboardingWizard from './components/OnboardingWizard';
 import IssueAssistModal from './components/IssueAssistModal';
 import SuccessCaptureModal from './components/SuccessCaptureModal';
 import EcosystemLauncher from './components/EcosystemLauncher';
+import MissionControl from './components/MissionControl.jsx';
+import NodeChainPanel from './components/NodeChainPanel.jsx';
+import RuntimeAlertsDrawer from './components/RuntimeAlertsDrawer.jsx';
+import FirstBootWizard from './components/FirstBootWizard.jsx';
+import OnboardingProgressRail from './components/OnboardingProgressRail.jsx';
+import SplitWorkspace from './components/SplitWorkspace.jsx';
 import { useAccent } from './hooks/useAccent.ts';
 import { useCollabRoom } from './hooks/useCollabRoom.ts';
+import { useRuntimeState } from './hooks/useRuntimeState.ts';
+import { useEventFeed } from './hooks/useEventFeed.ts';
+import { useFirstBoot } from './hooks/useFirstBoot.ts';
+import { NodeChainEngine } from './runtime/nodechain/engine.ts';
+import starterNodeChainRules from './config/nodechain_starter_rules.json';
+import { appendRuntimeEvent, onRuntimeEvent } from './runtime/runtimeEventBus.ts';
+import { RuntimeWatchdogSupervisor } from './runtime/watchdog/supervisor.ts';
 
 const QUICKSTART_SESSION = 'NeuralShell_QuickStart';
 const AUDIT_ALLOWED_COMMANDS = new Set(['/help', '/proof', '/roi', '/status', '/workflows', '/guard', '/clear']);
@@ -35,6 +48,8 @@ const THREAD_RAIL_MAX_WIDTH = 480;
 const WORKBENCH_RAIL_MAX_WIDTH = 500;
 const OVERLAY_RAIL_MARGIN = 24;
 const KEYBOARD_RAIL_NUDGE_STEP = 16;
+const NODECHAIN_RULES_STORAGE_KEY = 'neuralshell_nodechain_rules_v1';
+const NODECHAIN_ALLOWLIST = ['releaseHealth:check', 'audit:verify', 'verification:run'];
 
 const DEFAULT_RAIL_COLLAPSE_PREFS = Object.freeze({
     expanded: Object.freeze({ thread: false, workbench: false }),
@@ -126,6 +141,17 @@ function readRailCollapsePrefs() {
     }
 }
 
+function loadNodeChainRules() {
+    if (typeof window === 'undefined' || !window.localStorage) return starterNodeChainRules;
+    try {
+        const parsed = JSON.parse(window.localStorage.getItem(NODECHAIN_RULES_STORAGE_KEY) || '[]');
+        if (!Array.isArray(parsed) || !parsed.length) return starterNodeChainRules;
+        return parsed;
+    } catch {
+        return starterNodeChainRules;
+    }
+}
+
 const RAIL_SIZE_PRESETS = {
     compact: {
         thread: 252,
@@ -202,6 +228,12 @@ function App() {
     const [accelStatus, setAccelStatus] = React.useState({ enabled: false, backend: 'cpu', device: '' });
     const [showAnalytics, setShowAnalytics] = React.useState(false);
     const [showEcosystem, setShowEcosystem] = React.useState(false);
+    const [showMissionControl, setShowMissionControl] = React.useState(false);
+    const [showNodeChainPanel, setShowNodeChainPanel] = React.useState(false);
+    const [showRuntimeAlerts, setShowRuntimeAlerts] = React.useState(false);
+    const [showFirstBootWizard, setShowFirstBootWizard] = React.useState(false);
+    const [showSplitWorkspace, setShowSplitWorkspace] = React.useState(false);
+    const [watchdogAlerts, setWatchdogAlerts] = React.useState([]);
     const [showScratchpad, setShowScratchpad] = React.useState(() => (
         typeof window !== 'undefined'
         && (window.location.pathname === '/scratchpad' || window.location.hash === '#/scratchpad')
@@ -243,7 +275,12 @@ function App() {
     const sessionDialogDescriptionId = React.useId();
     const messageSequenceRef = React.useRef(0);
     const proofSessionToMessageRef = React.useRef(new Map());
+    const proofSessionMetaRef = React.useRef(new Map());
     const railResizeStateRef = React.useRef(null);
+    const nodeChainEngineRef = React.useRef(null);
+    const nodeChainRulesHashRef = React.useRef('');
+    const watchdogSupervisorRef = React.useRef(null);
+    const lastUpdateSignatureRef = React.useRef('');
     const auditOnly = String(runtimeTier || '').toUpperCase() === 'AUDITOR';
     const capabilities = Array.isArray(runtimeCapabilityPayload.capabilities) ? runtimeCapabilityPayload.capabilities : [];
     const canUseOnboardingWizard = capabilities.includes('onboarding_wizard') || String(runtimeCapabilityPayload.tierId || '') === 'enterprise';
@@ -257,6 +294,56 @@ function App() {
         return Math.max(0, budget - usedTokens);
     }, [chatLog]);
     const collab = useCollabRoom(String(workflowId || 'default'));
+    const collabPeerCount = React.useMemo(() => Object.keys(collab.remoteCursors || {}).length, [collab.remoteCursors]);
+    const { runtimeState, refreshRuntimeState } = useRuntimeState({
+        connectionInfo,
+        workflowId: String(workflowId || ''),
+        runtimeTier: String(runtimeTier || ''),
+        sessionHydrationStatus: String(sessionHydrationStatus || ''),
+        collabConnected: Boolean(collab.connected),
+        collabRoomId: String(collab.roomId || 'default'),
+        collabPeerCount,
+    });
+    const { events: runtimeEvents } = useEventFeed();
+    const firstBoot = useFirstBoot();
+    const {
+        steps: firstBootSteps,
+        progress: firstBootProgress,
+        open: firstBootOpen,
+        busyStepId: firstBootBusyStepId,
+        allDone: firstBootAllDone,
+        completeStep: completeFirstBootStep,
+        markSkipped: markFirstBootSkipped,
+        runStep: runFirstBootCoreStep,
+        dismiss: dismissFirstBoot,
+        reopen: reopenFirstBoot,
+        reset: resetFirstBoot,
+    } = firstBoot;
+    const unacknowledgedWatchdogAlerts = React.useMemo(() => (
+        (Array.isArray(watchdogAlerts) ? watchdogAlerts : []).filter((entry) => !entry.acknowledged)
+    ), [watchdogAlerts]);
+    const watchdogStatus = React.useMemo(() => {
+        if (!unacknowledgedWatchdogAlerts.length) {
+            return String((runtimeState && runtimeState.watchdog && runtimeState.watchdog.status) || 'running');
+        }
+        if (unacknowledgedWatchdogAlerts.some((alert) => String(alert.severity || '') === 'critical')) {
+            return 'fatal';
+        }
+        if (unacknowledgedWatchdogAlerts.some((alert) => (
+            String(alert.severity || '') === 'degraded' || String(alert.severity || '') === 'warning'
+        ))) {
+            return 'degraded';
+        }
+        return 'running';
+    }, [runtimeState, unacknowledgedWatchdogAlerts]);
+    const latestProofStdout = React.useMemo(() => {
+        const proofMessage = [...(Array.isArray(chatLog) ? chatLog : [])]
+            .reverse()
+            .find((entry) => Array.isArray(entry && entry.stdoutLines) && entry.stdoutLines.length);
+        if (!proofMessage) return '';
+        return proofMessage.stdoutLines.slice(-120).join('\n');
+    }, [chatLog]);
+    const previousCollabPeerCountRef = React.useRef(collabPeerCount);
     const layoutMode = React.useMemo(() => {
         if (viewportWidth >= EXPANDED_LAYOUT_MIN) return 'expanded';
         if (viewportWidth >= BALANCED_LAYOUT_MIN) return 'balanced';
@@ -429,6 +516,10 @@ function App() {
             const sessionId = String(response && response.sessionId ? response.sessionId : '').trim();
             if (!sessionId) return;
             proofSessionToMessageRef.current.set(sessionId, String(messageId || '').trim());
+            proofSessionMetaRef.current.set(sessionId, {
+                command: String(command || '').trim().toLowerCase(),
+                messageId: String(messageId || '').trim(),
+            });
         } catch (err) {
             updateMessageStdout(messageId, {
                 line: `[${command}] stream failed: ${err && err.message ? err.message : String(err)}`,
@@ -525,6 +616,7 @@ function App() {
             const sessionId = String(data.sessionId || '').trim();
             if (!sessionId) return;
             const messageId = proofSessionToMessageRef.current.get(sessionId);
+            const meta = proofSessionMetaRef.current.get(sessionId);
             if (!messageId) return;
             updateMessageStdout(messageId, {
                 line: String(data.line || ''),
@@ -532,6 +624,17 @@ function App() {
             });
             if (data.done) {
                 proofSessionToMessageRef.current.delete(sessionId);
+                proofSessionMetaRef.current.delete(sessionId);
+                if (meta && String(meta.command || '') === 'proof') {
+                    appendRuntimeEvent('proof.passed', {
+                        messageId: String(meta.messageId || ''),
+                        sessionId,
+                    }, { source: 'proof', severity: 'info' });
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                        window.localStorage.setItem('neuralshell_proof_last_status_v1', 'passed');
+                        window.localStorage.setItem('neuralshell_proof_stage_v1', 'complete');
+                    }
+                }
             }
         });
     }, [updateMessageStdout]);
@@ -549,6 +652,258 @@ function App() {
             window.removeEventListener('neuralshell:support-bundle-exported', onSupportBundleExported);
         };
     }, []);
+
+    React.useEffect(() => {
+        if (!runtimeContextLoaded || !firstBootOpen) return;
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        if (window.localStorage.getItem(ONBOARDING_WIZARD_DISMISSED_KEY) === '1') {
+            dismissFirstBoot();
+        }
+    }, [dismissFirstBoot, firstBootOpen, runtimeContextLoaded]);
+
+    React.useEffect(() => {
+        const previous = Number(previousCollabPeerCountRef.current || 0);
+        const next = Number(collabPeerCount || 0);
+        if (next > previous) {
+            appendRuntimeEvent('collab.peer.joined', {
+                roomId: String(collab.roomId || 'default'),
+                peerCount: next,
+            }, { source: 'collab', severity: 'info' });
+        } else if (next < previous) {
+            appendRuntimeEvent('collab.peer.left', {
+                roomId: String(collab.roomId || 'default'),
+                peerCount: next,
+            }, { source: 'collab', severity: 'warning' });
+        }
+        previousCollabPeerCountRef.current = next;
+    }, [collab.roomId, collabPeerCount]);
+
+    React.useEffect(() => {
+        if (!(runtimeState && runtimeState.updateLane)) return;
+        const signatureState = String(runtimeState.updateLane.signatureState || '').toLowerCase();
+        if (signatureState === lastUpdateSignatureRef.current) return;
+        lastUpdateSignatureRef.current = signatureState;
+        if (signatureState === 'verified' || signatureState === 'unknown') return;
+        appendRuntimeEvent('update.verification.failed', {
+            signatureState,
+            stagedUpdateAvailable: Boolean(runtimeState.updateLane.stagedUpdateAvailable),
+        }, { source: 'update-lane', severity: 'critical' });
+    }, [runtimeState]);
+
+    const openRuntimePanelById = React.useCallback((panelId) => {
+        const safePanel = String(panelId || '').trim().toLowerCase();
+        if (safePanel === 'mission' || safePanel === 'mission-control') {
+            setShowMissionControl(true);
+            return;
+        }
+        if (safePanel === 'watchdog') {
+            setShowRuntimeAlerts(true);
+            return;
+        }
+        if (safePanel === 'nodechain') {
+            setShowNodeChainPanel(true);
+            return;
+        }
+        if (safePanel === 'firstboot' || safePanel === 'first-boot') {
+            reopenFirstBoot();
+            setShowFirstBootWizard(true);
+            return;
+        }
+        if (safePanel === 'split' || safePanel === 'split-workspace') {
+            setShowSplitWorkspace(true);
+            return;
+        }
+        if (safePanel === 'settings') {
+            openSettings();
+        }
+    }, [openSettings, reopenFirstBoot]);
+
+    const triggerNodeChainSnapshot = React.useCallback(async () => {
+        appendRuntimeEvent('runtime.snapshot.requested', {
+            source: 'nodechain',
+        }, { source: 'snapshots', severity: 'info' });
+    }, []);
+
+    const nodeChainHandlers = React.useMemo(() => ({
+        showAlert: async (payload) => {
+            const safePayload = payload && typeof payload === 'object' ? payload : {};
+            appendRuntimeEvent('runtime.watchdog.alert', safePayload, {
+                source: 'nodechain',
+                severity: String(safePayload.severity || 'warning').toLowerCase(),
+            });
+        },
+        openPanel: async (payload) => {
+            const panel = String(payload && payload.panel ? payload.panel : '');
+            openRuntimePanelById(panel);
+        },
+        shareProofBadge: async () => {
+            if (!(window.api && window.api.system && typeof window.api.system.openExternal === 'function')) return;
+            await window.api.system.openExternal('https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/main/assets/proof_badge.svg');
+        },
+        snapshotState: async () => {
+            await triggerNodeChainSnapshot();
+        },
+        disableRelay: async () => {
+            if (!(window.api && window.api.settings && typeof window.api.settings.get === 'function')) return;
+            const current = await window.api.settings.get();
+            await window.api.settings.update({
+                ...(current || {}),
+                proofRelayEnabled: false,
+            });
+            appendRuntimeEvent('relay.failed', { reason: 'NodeChain disabled relay path after failures.' }, { source: 'relay', severity: 'degraded' });
+            await refreshRuntimeContext();
+            await refreshRuntimeState();
+        },
+        blockUpdateApply: async () => {
+            if (window.api && window.api.autoUpdate && typeof window.api.autoUpdate.setPolicy === 'function') {
+                await window.api.autoUpdate.setPolicy({ autoApply: false, blockedBy: 'nodechain' });
+            }
+        },
+        promptVaultSave: async () => {
+            window.dispatchEvent(new window.CustomEvent('neuralshell:prompt-vault-save'));
+        },
+        writeAuditLog: async (payload) => {
+            if (window.api && window.api.logger && typeof window.api.logger.log === 'function') {
+                await window.api.logger.log('info', 'nodechain-action', payload || {});
+            }
+        },
+        switchSafePolicy: async () => {
+            if (!(window.api && window.api.settings && typeof window.api.settings.get === 'function')) return;
+            const current = await window.api.settings.get();
+            await window.api.settings.update({
+                ...(current || {}),
+                offlineOnlyEnforced: true,
+                allowRemoteBridge: false,
+                autoUpdateChannel: 'frozen',
+            });
+            await refreshRuntimeContext();
+            await refreshRuntimeState();
+        },
+        runLocalScript: async (payload) => {
+            if (!(window.api && window.api.command && typeof window.api.command.run === 'function')) return;
+            const commandId = String(payload && payload.commandId ? payload.commandId : '').trim();
+            const args = Array.isArray(payload && payload.args) ? payload.args : [];
+            await window.api.command.run(commandId, args);
+        },
+    }), [openRuntimePanelById, refreshRuntimeContext, refreshRuntimeState, triggerNodeChainSnapshot]);
+
+    React.useEffect(() => {
+        const rules = loadNodeChainRules();
+        const rulesHash = JSON.stringify(rules || []);
+        const engine = new NodeChainEngine(rules, nodeChainHandlers, NODECHAIN_ALLOWLIST);
+        nodeChainEngineRef.current = engine;
+        nodeChainRulesHashRef.current = rulesHash;
+        engine.start();
+        const unsubscribe = onRuntimeEvent((event) => {
+            const latestRules = loadNodeChainRules();
+            const latestHash = JSON.stringify(latestRules || []);
+            if (latestHash !== nodeChainRulesHashRef.current) {
+                nodeChainRulesHashRef.current = latestHash;
+                engine.setRules(latestRules);
+            }
+            engine.dispatch({
+                type: String(event && event.type ? event.type : ''),
+                at: String(event && event.at ? event.at : new Date().toISOString()),
+                payload: event && event.payload && typeof event.payload === 'object' ? event.payload : {},
+            }, false).then((logs) => {
+                if (!Array.isArray(logs) || !logs.length) return;
+                const failed = logs.some((entry) => String(entry.status || '') === 'failed');
+                appendRuntimeEvent('nodechain.rule.executed', {
+                    eventType: String(event && event.type ? event.type : ''),
+                    runs: logs.length,
+                    failed,
+                }, { source: 'nodechain', severity: failed ? 'warning' : 'info' });
+            }).catch(() => undefined);
+        });
+        return () => {
+            unsubscribe();
+            engine.stop();
+            nodeChainEngineRef.current = null;
+            nodeChainRulesHashRef.current = '';
+        };
+    }, [nodeChainHandlers]);
+
+    React.useEffect(() => {
+        if (!watchdogSupervisorRef.current) {
+            watchdogSupervisorRef.current = new RuntimeWatchdogSupervisor({
+                retryProviderProbe: async () => {
+                    await refreshRuntimeContext();
+                    await refreshRuntimeState();
+                },
+                disableRelayPath: async () => {
+                    if (!(window.api && window.api.settings && typeof window.api.settings.get === 'function')) return;
+                    const current = await window.api.settings.get();
+                    await window.api.settings.update({
+                        ...(current || {}),
+                        proofRelayEnabled: false,
+                    });
+                    await refreshRuntimeContext();
+                    await refreshRuntimeState();
+                },
+                freezeUpdateLane: async () => {
+                    if (window.api && window.api.autoUpdate && typeof window.api.autoUpdate.setPolicy === 'function') {
+                        await window.api.autoUpdate.setPolicy({ autoApply: false, frozenBy: 'watchdog' });
+                    }
+                },
+                switchSafePolicy: async () => {
+                    if (!(window.api && window.api.settings && typeof window.api.settings.get === 'function')) return;
+                    const current = await window.api.settings.get();
+                    await window.api.settings.update({
+                        ...(current || {}),
+                        allowRemoteBridge: false,
+                        offlineOnlyEnforced: true,
+                        autoUpdateChannel: 'frozen',
+                    });
+                    await refreshRuntimeContext();
+                    await refreshRuntimeState();
+                },
+                onAlert: (alert) => {
+                    appendRuntimeEvent('runtime.watchdog.alert', {
+                        source: alert.source,
+                        message: alert.message,
+                        suggestedAction: alert.suggestedAction,
+                    }, { source: 'watchdog', severity: alert.severity });
+                },
+            });
+        }
+        const supervisor = watchdogSupervisorRef.current;
+        if (!supervisor || !(runtimeState && runtimeState.providerHealth)) return;
+        supervisor.evaluate({
+            providerHealth: {
+                online: Boolean(runtimeState.providerHealth.online),
+                activeProvider: String(runtimeState.providerHealth.activeProvider || 'ollama'),
+                model: String(runtimeState.providerHealth.model || 'llama3'),
+            },
+            relayState: {
+                enabled: Boolean(runtimeState.relayState && runtimeState.relayState.enabled),
+                relayError: String(runtimeState.relayState && runtimeState.relayState.relayError ? runtimeState.relayState.relayError : ''),
+            },
+            updateLane: {
+                signatureState: String(runtimeState.updateLane && runtimeState.updateLane.signatureState ? runtimeState.updateLane.signatureState : 'unknown'),
+                stagedUpdateAvailable: Boolean(runtimeState.updateLane && runtimeState.updateLane.stagedUpdateAvailable),
+            },
+            vaultState: {
+                locked: Boolean(runtimeState.vaultState && runtimeState.vaultState.locked),
+                exportImportStatus: String(runtimeState.vaultState && runtimeState.vaultState.exportImportStatus ? runtimeState.vaultState.exportImportStatus : 'idle'),
+            },
+        }).then((alerts) => {
+            setWatchdogAlerts(Array.isArray(alerts) ? alerts : []);
+        }).catch(() => undefined);
+    }, [refreshRuntimeContext, refreshRuntimeState, runtimeState]);
+
+    React.useEffect(() => {
+        const onPromptVaultSave = () => {
+            appendChat({
+                id: nextMessageId(),
+                role: 'kernel',
+                content: 'NodeChain prompted a vault save. Open Settings > Vault to seal the current runtime state.',
+            });
+        };
+        window.addEventListener('neuralshell:prompt-vault-save', onPromptVaultSave);
+        return () => {
+            window.removeEventListener('neuralshell:prompt-vault-save', onPromptVaultSave);
+        };
+    }, [appendChat, nextMessageId]);
 
     const openCreateDialog = React.useCallback(() => {
         if (auditOnly) {
@@ -698,6 +1053,21 @@ function App() {
                 if (showEcosystem) {
                     setShowEcosystem(false);
                 }
+                if (showMissionControl) {
+                    setShowMissionControl(false);
+                }
+                if (showNodeChainPanel) {
+                    setShowNodeChainPanel(false);
+                }
+                if (showRuntimeAlerts) {
+                    setShowRuntimeAlerts(false);
+                }
+                if (showFirstBootWizard) {
+                    setShowFirstBootWizard(false);
+                }
+                if (showSplitWorkspace) {
+                    setShowSplitWorkspace(false);
+                }
                 if (sessionDialog.open) {
                     closeSessionDialog();
                 }
@@ -716,6 +1086,11 @@ function App() {
         closePalette,
         closeSettings,
         showEcosystem,
+        showMissionControl,
+        showNodeChainPanel,
+        showRuntimeAlerts,
+        showFirstBootWizard,
+        showSplitWorkspace,
         sessionDialog.open,
         closeSessionDialog,
         showInlineThreadRail,
@@ -848,7 +1223,7 @@ function App() {
                 if (command === '/help') {
                     appendChat({
                         role: 'kernel',
-                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `Ctrl+P` : Open Command Palette',
+                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
                     });
                 } else if (command === '/status') {
                     appendChat({
@@ -876,7 +1251,51 @@ function App() {
                         role: 'kernel',
                         content: 'Opening Ecosystem Launcher.',
                     });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'ecosystem' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/mission') {
+                    setShowMissionControl(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Mission Control cockpit.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'mission-control' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/nodechain') {
+                    setShowNodeChainPanel(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening NodeChain runtime engine panel.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'nodechain' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/watchdog') {
+                    setShowRuntimeAlerts(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening runtime watchdog alerts drawer.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'watchdog' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/firstboot') {
+                    reopenFirstBoot();
+                    setShowFirstBootWizard(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening first-boot authority funnel.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'first-boot' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/split') {
+                    setShowSplitWorkspace(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening live split workspace.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'split-workspace' }, { source: 'runtime', severity: 'info' });
                 } else if (command === '/proof' || command === '/demo') {
+                    appendRuntimeEvent('proof.started', {
+                        workflowId: String(workflowId || 'default'),
+                    }, { source: 'proof', severity: 'info' });
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                        window.localStorage.setItem('neuralshell_proof_last_status_v1', 'running');
+                        window.localStorage.setItem('neuralshell_proof_stage_v1', 'executing');
+                    }
                     const messageId = appendKernelMessage([
                             '### 90-Second Value Proof',
                             '',
@@ -1046,6 +1465,109 @@ function App() {
             window.localStorage.setItem(ONBOARDING_WIZARD_DISMISSED_KEY, '1');
         }
     }, []);
+
+    const runFirstBootStep = React.useCallback(async (stepId) => {
+        await runFirstBootCoreStep(stepId, async () => {
+            const safeStepId = String(stepId || '');
+            if (safeStepId === 'welcome_intro') {
+                appendChat({
+                    id: nextMessageId(),
+                    role: 'kernel',
+                    content: 'Welcome to NeuralShell runtime authority mode. You are configuring a local-first, proof-aware workstation.',
+                });
+                return;
+            }
+            if (safeStepId === 'provider_sweep') {
+                await refreshRuntimeContext();
+                await refreshRuntimeState();
+                appendChat({
+                    id: nextMessageId(),
+                    role: 'kernel',
+                    content: 'Provider sweep completed. Runtime connectivity baseline refreshed.',
+                });
+                return;
+            }
+            if (safeStepId === 'vault_setup') {
+                openSettings();
+                window.dispatchEvent(new window.CustomEvent('neuralshell:prompt-vault-save'));
+                return;
+            }
+            if (safeStepId === 'policy_profile_selection') {
+                if (window.api && window.api.settings && typeof window.api.settings.get === 'function') {
+                    const current = await window.api.settings.get();
+                    await window.api.settings.update({
+                        ...(current || {}),
+                        offlineOnlyEnforced: Boolean(current && current.offlineOnlyEnforced),
+                    });
+                }
+                await refreshRuntimeContext();
+                await refreshRuntimeState();
+                return;
+            }
+            if (safeStepId === 'update_ring_selection') {
+                if (window.api && window.api.settings && typeof window.api.settings.get === 'function') {
+                    const current = await window.api.settings.get();
+                    await window.api.settings.update({
+                        ...(current || {}),
+                        autoUpdateChannel: String((current && current.autoUpdateChannel) || 'stable'),
+                    });
+                }
+                await refreshRuntimeContext();
+                await refreshRuntimeState();
+                return;
+            }
+            if (safeStepId === 'run_proof') {
+                await executeSignal('/proof');
+                return;
+            }
+            if (safeStepId === 'license_import') {
+                openSettings();
+                return;
+            }
+            if (safeStepId === 'share_badge') {
+                if (window.api && window.api.system && typeof window.api.system.openExternal === 'function') {
+                    await window.api.system.openExternal('https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/main/assets/proof_badge.svg');
+                }
+                return;
+            }
+            if (safeStepId === 'open_mission_control') {
+                setShowMissionControl(true);
+            }
+        });
+    }, [appendChat, nextMessageId, openSettings, refreshRuntimeContext, refreshRuntimeState, runFirstBootCoreStep]);
+
+    const skipFirstBootStep = React.useCallback((stepId) => {
+        markFirstBootSkipped(stepId);
+        completeFirstBootStep(stepId);
+    }, [completeFirstBootStep, markFirstBootSkipped]);
+
+    const handleFinishFirstBoot = React.useCallback(() => {
+        if (firstBootAllDone) {
+            setShowMissionControl(true);
+        }
+        dismissFirstBoot();
+        setShowFirstBootWizard(false);
+    }, [dismissFirstBoot, firstBootAllDone]);
+
+    const acknowledgeWatchdogAlert = React.useCallback((alertId) => {
+        const supervisor = watchdogSupervisorRef.current;
+        if (supervisor && typeof supervisor.acknowledgeAlert === 'function') {
+            supervisor.acknowledgeAlert(alertId);
+            setWatchdogAlerts(supervisor.getAlerts());
+        }
+    }, []);
+
+    const restoreSnapshotPayload = React.useCallback((payload) => {
+        const state = payload && typeof payload === 'object' ? payload : {};
+        appendChat({
+            id: nextMessageId(),
+            role: 'kernel',
+            content: `Snapshot restore applied: provider=${String(state.provider || 'n/a')}, model=${String(state.model || 'n/a')}, policy=${String(state.policyProfile || 'n/a')}.`,
+        });
+        if (state.activePanels && Array.isArray(state.activePanels) && state.activePanels.includes('mission-control')) {
+            setShowMissionControl(true);
+        }
+    }, [appendChat, nextMessageId]);
 
     const dismissRailResizeHint = React.useCallback(() => {
         setShowRailResizeHint(false);
@@ -1269,13 +1791,17 @@ function App() {
                 onOpenSettings={openSettings}
                 onOpenAnalytics={() => setShowAnalytics(true)}
                 onOpenEcosystem={() => setShowEcosystem(true)}
+                onOpenMissionControl={() => setShowMissionControl(true)}
                 onToggleScratchpad={() => setShowScratchpad((prev) => !prev)}
+                watchdogStatus={watchdogStatus}
+                watchdogAlertCount={unacknowledgedWatchdogAlerts.length}
+                onOpenRuntimeAlerts={() => setShowRuntimeAlerts(true)}
                 runtimeTier={runtimeTier}
                 connectionInfo={connectionInfo}
                 tokensRemaining={tokensRemaining}
                 collabConnected={collab.connected}
                 collabRoomId={collab.roomId}
-                collabPeerCount={Object.keys(collab.remoteCursors || {}).length}
+                collabPeerCount={collabPeerCount}
                 accelStatus={accelStatus}
                 feedbackDisabled={!connectionInfo.allowRemoteBridge}
                 feedbackUrl={FEEDBACK_URL}
@@ -1419,6 +1945,20 @@ function App() {
                         </button>
                     )}
                 </div>
+            </div>
+            <div className="px-4 py-2 border-b border-white/5 bg-black/15">
+                <OnboardingProgressRail
+                    steps={firstBootSteps}
+                    progress={firstBootProgress}
+                    onReopen={() => {
+                        reopenFirstBoot();
+                        setShowFirstBootWizard(true);
+                    }}
+                    onReset={() => {
+                        resetFirstBoot();
+                        setShowFirstBootWizard(true);
+                    }}
+                />
             </div>
 
             <div className="flex-1 flex min-h-0 overflow-hidden relative">
@@ -1628,8 +2168,62 @@ function App() {
                 onClose={() => setShowEcosystem(false)}
                 capabilities={runtimeCapabilityPayload.capabilities}
                 tierId={runtimeCapabilityPayload.tierId}
+                onOpenMissionControl={() => {
+                    setShowEcosystem(false);
+                    setShowMissionControl(true);
+                }}
             />
-            {canUseOnboardingWizard && showOnboarding && (
+            <MissionControl
+                open={showMissionControl}
+                onClose={() => setShowMissionControl(false)}
+                runtimeState={runtimeState}
+                events={runtimeEvents}
+                onOpenSettings={openSettings}
+                onOpenNodeChain={() => setShowNodeChainPanel(true)}
+                onOpenWatchdog={() => setShowRuntimeAlerts(true)}
+                onOpenFirstBoot={() => {
+                    reopenFirstBoot();
+                    setShowFirstBootWizard(true);
+                }}
+                onOpenSplitWorkspace={() => setShowSplitWorkspace(true)}
+            />
+            <NodeChainPanel
+                open={showNodeChainPanel}
+                onClose={() => setShowNodeChainPanel(false)}
+                onSnapshotRequest={triggerNodeChainSnapshot}
+                onOpenPanel={openRuntimePanelById}
+            />
+            <RuntimeAlertsDrawer
+                open={showRuntimeAlerts}
+                alerts={watchdogAlerts}
+                onClose={() => setShowRuntimeAlerts(false)}
+                onAcknowledge={acknowledgeWatchdogAlert}
+            />
+            <SplitWorkspace
+                open={showSplitWorkspace}
+                onClose={() => setShowSplitWorkspace(false)}
+                runtimeState={runtimeState}
+                onRestoreSnapshotPayload={restoreSnapshotPayload}
+                alerts={watchdogAlerts}
+                proofStdout={latestProofStdout}
+                releaseHealth={runtimeState && runtimeState.releaseHealth ? runtimeState.releaseHealth : {}}
+            />
+            {showFirstBootWizard && (
+                <FirstBootWizard
+                    open={showFirstBootWizard}
+                    steps={firstBootSteps}
+                    progress={firstBootProgress}
+                    busyStepId={firstBootBusyStepId}
+                    onRunStep={runFirstBootStep}
+                    onSkipStep={skipFirstBootStep}
+                    onClose={() => {
+                        setShowFirstBootWizard(false);
+                        dismissFirstBoot();
+                    }}
+                    onFinish={handleFinishFirstBoot}
+                />
+            )}
+            {canUseOnboardingWizard && showOnboarding && !showFirstBootWizard && (
                 <OnboardingWizard
                     open={showOnboarding}
                     onClose={handleCloseOnboarding}

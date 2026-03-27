@@ -64,7 +64,8 @@
     "dist": "electron-builder --publish never",
     "test:flaky": "node scripts/flaky-test-gate.js npm test",
     "test:e2e": "playwright test e2e/react-core.spec.js -c playwright.e2e.config.js",
-    "verify:ui": "playwright test e2e/react-core.spec.js e2e/agentInstall.spec.js e2e/provGraph.spec.js e2e/voiceRoom.spec.js e2e/billingActivation.spec.js e2e/upgradePrompt.spec.js e2e/marketplacePaidInstall.spec.js e2e/referralFlow.spec.js e2e/whiteLabelBuild.spec.js e2e/partnerConsole.spec.js e2e/certificationFlow.spec.js e2e/ecosystemLauncher.spec.js -c playwright.e2e.config.js --workers=1",
+    "verify:ui": "playwright test e2e/react-core.spec.js e2e/agentInstall.spec.js e2e/provGraph.spec.js e2e/voiceRoom.spec.js e2e/billingActivation.spec.js e2e/upgradePrompt.spec.js e2e/marketplacePaidInstall.spec.js e2e/referralFlow.spec.js e2e/whiteLabelBuild.spec.js e2e/partnerConsole.spec.js e2e/certificationFlow.spec.js e2e/ecosystemLauncher.spec.js e2e/missionControl.spec.js e2e/nodeChainRules.spec.js e2e/watchdogAlerts.spec.js e2e/firstBootAuthority.spec.js e2e/splitWorkspace.spec.js e2e/stateSnapshots.spec.js -c playwright.e2e.config.js --workers=1",
+    "screenshots:delta11": "node scripts/capture_delta11_screenshots.cjs",
     "test:e2e:parallel": "playwright test e2e/react-core.spec.js -c playwright.e2e.config.js --workers=2",
     "test:visual": "playwright test e2e/ui-visual-regression.spec.js -c playwright.vreg.config.js",
     "test:visual:parallel": "playwright test e2e/ui-visual-regression.spec.js -c playwright.vreg.config.js --workers=2",
@@ -105,7 +106,8 @@
     "board:pack": "node scripts/gen_board_pack.cjs",
     "white-label:sign": "node scripts/sign_white_label_config.cjs",
     "white-label:verify": "node scripts/verify_white_label_config.cjs",
-    "white-label:build": "node scripts/gen_white_label_build.cjs"
+    "white-label:build": "node scripts/gen_white_label_build.cjs",
+    "release:truth:verify": "node scripts/release_truth_verify.cjs"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",
