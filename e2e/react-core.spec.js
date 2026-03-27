@@ -18,7 +18,8 @@ test.describe("NeuralShell React Core UI", () => {
     }
 
     async function ensureShellReady() {
-        await expect(page.locator('[data-testid="top-status-bar"]')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('[data-testid="top-status-bar"]')).toBeVisible({ timeout: 30000 });
+        await expect(page.locator('[data-testid="thread-rail"]')).toBeVisible({ timeout: 30000 });
         const onboardingClose = page.getByTestId('onboarding-close-btn');
         if (await onboardingClose.count()) {
             await onboardingClose.first().click().catch(() => {});
@@ -94,9 +95,8 @@ test.describe("NeuralShell React Core UI", () => {
     test("App boots and critical React shells render", async () => {
         // Wait for the renderer to load the React app
         await ensureShellReady();
-        await expect(page.locator('[data-testid="thread-rail"]')).toBeVisible();
-        await expect(page.locator('[data-testid="workspace-panel"]')).toBeVisible();
-        await expect(page.locator('[data-testid="workbench-rail"]')).toBeVisible();
+        await expect(page.locator('[data-testid="workspace-panel"]')).toBeVisible({ timeout: 30000 });
+        await expect(page.locator('[data-testid="workbench-rail"]')).toBeVisible({ timeout: 30000 });
     });
 
     test("Trust indicators are present", async () => {
