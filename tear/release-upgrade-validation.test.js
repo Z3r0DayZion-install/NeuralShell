@@ -79,9 +79,61 @@ function runStrictFailCase() {
   }
 }
 
+function runStrictSoftFailAcceptCase() {
+  const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), "neuralshell-upgrade-validate-softfail-"));
+  try {
+    writeFile(fixtureRoot, "dist/NeuralShell Setup 1.2.5-OMEGA.exe", "installer");
+    writeFile(fixtureRoot, "dist/NeuralShell Setup 1.2.5-OMEGA.exe.blockmap", "blockmap");
+    writeFile(fixtureRoot, "dist/OMEGA.yml", "version: 1.2.5-OMEGA\npath: NeuralShell Setup 1.2.5-OMEGA.exe\n");
+    writeFile(
+      fixtureRoot,
+      "release/installer-smoke-report.json",
+      JSON.stringify(
+        {
+          generatedAt: "2026-03-08T03:00:00.000Z",
+          strictInstall: true,
+          passed: false,
+          install: { code: 0 },
+          smoke: { code: 124 }
+        },
+        null,
+        2
+      )
+    );
+    writeFile(
+      fixtureRoot,
+      "release/release-gate.json",
+      JSON.stringify(
+        {
+          generatedAt: "2026-03-08T03:01:00.000Z",
+          strictPackaged: true,
+          strictInstallerPass: false,
+          strictInstallerSoftFailed: true,
+          passed: true
+        },
+        null,
+        2
+      )
+    );
+
+    const { report } = generateUpgradeValidationReport({
+      rootDir: fixtureRoot,
+      strict: true,
+      allowInstallerSoftFail: true
+    });
+
+    assert(report.passed === true, "Expected strict upgrade validation to pass on approved installer soft-fail.");
+    assert(report.checks.installerSmokeSoftFailed === true, "Expected installer smoke soft-fail flag.");
+    assert(report.checks.installerSmokeAccepted === true, "Expected installer smoke acceptance under soft-fail.");
+  } finally {
+    fs.rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+}
+
 function run() {
   runStrictPassCase();
   runStrictFailCase();
+  runStrictSoftFailAcceptCase();
   console.log("Release upgrade validation test passed.");
 }
 

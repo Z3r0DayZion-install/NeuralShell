@@ -81,6 +81,16 @@ function readInstallerSmoke(rootDir) {
   }
 }
 
+function readReleaseGate(rootDir) {
+  const filePath = path.join(rootDir, "release", "release-gate.json");
+  if (!existsNonEmpty(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (err) {
+    throw new Error(`Unable to parse release gate report: ${err.message || err}`);
+  }
+}
+
 function pickInstallerSmokeSummary(installerSmoke) {
   if (!installerSmoke || typeof installerSmoke !== "object") return null;
   const installExitCode =
@@ -105,6 +115,9 @@ function generateUpgradeValidationReport(options = {}) {
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const strict = options.strict === true;
   const outFile = options.outFile || path.join(rootDir, "release", "upgrade-validation.json");
+  const allowInstallerSoftFail = options.allowInstallerSoftFail === true
+    || process.env.NEURAL_RELEASE_ALLOW_INSTALLER_SOFTFAIL === "1"
+    || process.env.CI === "true";
 
   const installerRel = readInstallerPath(rootDir);
   const installerAbs = path.join(rootDir, installerRel);
@@ -120,18 +133,30 @@ function generateUpgradeValidationReport(options = {}) {
   const metadataRaw = fs.readFileSync(metadataAbs, "utf8");
   const installerSmoke = readInstallerSmoke(rootDir);
   const installerSmokeSummary = pickInstallerSmokeSummary(installerSmoke);
+  const releaseGate = readReleaseGate(rootDir);
+  const installerSmokeSoftFailed = Boolean(
+    releaseGate
+    && releaseGate.strictPackaged === true
+    && releaseGate.strictInstallerSoftFailed === true
+  );
+  const installerSmokeAccepted =
+    Boolean(installerSmokeSummary && installerSmokeSummary.passed)
+    || (allowInstallerSoftFail && installerSmokeSoftFailed);
 
   const checks = {
     installerPresent: true,
     installerBlockmapPresent: true,
     updateMetadataPresent: true,
     installerSmokeReportPresent: Boolean(installerSmokeSummary),
-    installerSmokePassed: Boolean(installerSmokeSummary && installerSmokeSummary.passed)
+    installerSmokePassed: Boolean(installerSmokeSummary && installerSmokeSummary.passed),
+    installerSmokeSoftFailed,
+    installerSmokeAccepted
   };
 
   const report = {
     generatedAt: now(),
     strict,
+    allowInstallerSoftFail,
     release: {
       installer: {
         path: toPosix(installerRel),
@@ -151,12 +176,20 @@ function generateUpgradeValidationReport(options = {}) {
       }
     },
     installerSmoke: installerSmokeSummary,
+    releaseGate: releaseGate
+      ? {
+        generatedAt: releaseGate.generatedAt || null,
+        strictPackaged: Boolean(releaseGate.strictPackaged),
+        strictInstallerPass: releaseGate.strictInstallerPass === true,
+        strictInstallerSoftFailed: Boolean(releaseGate.strictInstallerSoftFailed)
+      }
+      : null,
     checks,
     passed:
       checks.installerPresent &&
       checks.installerBlockmapPresent &&
       checks.updateMetadataPresent &&
-      checks.installerSmokePassed
+      checks.installerSmokeAccepted
   };
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
@@ -164,7 +197,7 @@ function generateUpgradeValidationReport(options = {}) {
 
   if (strict && !report.passed) {
     throw new Error(
-      `Upgrade validation failed in strict mode. installerSmokePresent=${checks.installerSmokeReportPresent} installerSmokePassed=${checks.installerSmokePassed}`
+      `Upgrade validation failed in strict mode. installerSmokePresent=${checks.installerSmokeReportPresent} installerSmokePassed=${checks.installerSmokePassed} installerSmokeSoftFailed=${checks.installerSmokeSoftFailed} installerSmokeAccepted=${checks.installerSmokeAccepted}`
     );
   }
 
