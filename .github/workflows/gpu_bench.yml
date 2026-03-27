@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          npm run bench:gpu | tee "release/gpu-bench-${{ matrix.os }}.log"
+          node scripts/bench_gpu.cjs | tee "release/gpu-bench-${{ matrix.os }}.log"
 
       - name: Upload GPU benchmark log
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

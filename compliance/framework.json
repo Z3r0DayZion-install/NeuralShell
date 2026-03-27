@@ -1,0 +1,33 @@
+{
+  "framework": "SOC2-Prep-v1",
+  "controls": [
+    {
+      "id": "CC6.1",
+      "title": "Logical access and identity controls",
+      "requiredFiles": [
+        "src/core/identityKernel.js",
+        "src/core/secretVault.js",
+        "src/main.js"
+      ]
+    },
+    {
+      "id": "CC7.2",
+      "title": "Monitoring and anomaly evidence",
+      "requiredFiles": [
+        "release/proof-bundle-summary.json",
+        "artifacts/sbom/latest.json",
+        "release/llm-sweep-report.json"
+      ]
+    },
+    {
+      "id": "CC8.1",
+      "title": "Change management and integrity",
+      "requiredFiles": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/security-gate.yml",
+        "scripts/release-verify.js"
+      ]
+    }
+  ]
+}
+

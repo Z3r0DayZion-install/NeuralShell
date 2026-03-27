@@ -6,7 +6,7 @@
       ],
       "numberOfRuns": 1,
       "settings": {
-        "preset": "mobile",
+        "emulatedFormFactor": "mobile",
         "onlyCategories": [
           "performance",
           "best-practices",
@@ -38,4 +38,3 @@
     }
   }
 }
-
