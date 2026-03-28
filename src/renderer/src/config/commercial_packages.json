@@ -1,0 +1,11 @@
+{
+  "packages": [
+    { "skuId": "core_desktop", "title": "Core Desktop", "tier": "free", "deployment": ["desktop"], "supportPlan": "community" },
+    { "skuId": "pro_operator", "title": "Pro Operator", "tier": "pro", "deployment": ["desktop", "sealed_network"], "supportPlan": "business" },
+    { "skuId": "enterprise", "title": "Enterprise", "tier": "enterprise", "deployment": ["desktop", "airgapped", "sealed_network"], "supportPlan": "enterprise" },
+    { "skuId": "appliance", "title": "Hardware Appliance", "tier": "enterprise", "deployment": ["appliance"], "supportPlan": "enterprise_appliance" },
+    { "skuId": "oversight_federation", "title": "Oversight/Federation", "tier": "enterprise", "deployment": ["oversight_node", "federation"], "supportPlan": "enterprise_plus" },
+    { "skuId": "training_bundle", "title": "Training Bundle", "tier": "add_on", "deployment": ["offline_courseware"], "supportPlan": "training_success" },
+    { "skuId": "white_label_oem", "title": "White-label/OEM", "tier": "enterprise", "deployment": ["desktop", "appliance"], "supportPlan": "partner_success" }
+  ]
+}

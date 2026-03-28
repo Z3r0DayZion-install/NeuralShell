@@ -7,6 +7,7 @@ import TierBadge from './TierBadge';
 import WatchdogStatusBadge from './WatchdogStatusBadge.jsx';
 import ApplianceModeBadge from './ApplianceModeBadge.jsx';
 import AirGapModeBadge from './AirGapModeBadge.jsx';
+import DemoModeBadge from './DemoModeBadge.jsx';
 
 function estimateCostPer1k(providerId) {
     const provider = String(providerId || '').trim().toLowerCase();
@@ -48,6 +49,8 @@ export function TopStatusBar({
     onOpenApplianceConsole,
     onOpenAirGapOperations,
     onOpenInstitutionalCommand,
+    onOpenDemoFlow,
+    onOpenFieldLaunch,
     onToggleScratchpad,
     watchdogStatus,
     watchdogAlertCount,
@@ -61,6 +64,7 @@ export function TopStatusBar({
     accelStatus,
     applianceModeEnabled,
     airGapLocked,
+    demoModeEnabled,
     feedbackDisabled,
     feedbackUrl,
     onOpenIssueAssist,
@@ -301,6 +305,22 @@ export function TopStatusBar({
                 >
                     Institutional
                 </button>
+                <button
+                    data-testid="demo-flow-open-btn"
+                    onClick={onOpenDemoFlow}
+                    className="px-2.5 py-1.5 rounded-lg border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono text-emerald-100 hover:bg-emerald-500/20"
+                    title="Demo Flow Console"
+                >
+                    Demo
+                </button>
+                <button
+                    data-testid="field-launch-open-btn"
+                    onClick={onOpenFieldLaunch}
+                    className="px-2.5 py-1.5 rounded-lg border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono text-blue-100 hover:bg-blue-500/20"
+                    title="Field Launch Command Center"
+                >
+                    Launch
+                </button>
                 <WatchdogStatusBadge
                     status={watchdogStatus}
                     alertCount={watchdogAlertCount}
@@ -313,6 +333,10 @@ export function TopStatusBar({
                 <AirGapModeBadge
                     locked={airGapLocked}
                     onOpen={onOpenAirGapOperations}
+                />
+                <DemoModeBadge
+                    enabled={demoModeEnabled}
+                    onOpen={onOpenDemoFlow}
                 />
                 <button
                     type="button"

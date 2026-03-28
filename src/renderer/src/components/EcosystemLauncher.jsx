@@ -35,6 +35,14 @@ const APPLIANCE_ALLOWED_MODULES = new Set([
     'procurement_command',
     'tamper_simulation',
     'institutional_command',
+    'demo_flow',
+    'deployment_program',
+    'training_delivery',
+    'support_ops',
+    'buyer_journey',
+    'pilot_conversion',
+    'commercial_packages',
+    'field_launch',
     'shift_console',
     'incident_mode',
     'policy_rollout',
@@ -94,6 +102,14 @@ export default function EcosystemLauncher({
     onOpenProcurementCommand,
     onOpenTamperSimulation,
     onOpenInstitutionalCommand,
+    onOpenDemoFlow,
+    onOpenDeploymentProgram,
+    onOpenTrainingDelivery,
+    onOpenSupportOps,
+    onOpenBuyerJourney,
+    onOpenPilotConversion,
+    onOpenCommercialPackages,
+    onOpenFieldLaunch,
     onOpenShiftConsole,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -417,6 +433,150 @@ export default function EcosystemLauncher({
                                 className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
                             >
                                 Open Institutional Command
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'demo_flow' && (
+                        <section data-testid="ecosystem-demo-flow-entry" className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-100 font-bold">Institutional Demo Flow</div>
+                            <div className="text-[11px] text-slate-200">
+                                Launch deterministic demo mode with seeded state and guided presenter flow.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-demo-flow-btn"
+                                onClick={() => {
+                                    if (typeof onOpenDemoFlow === 'function') onOpenDemoFlow();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-emerald-200/35 bg-emerald-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/30"
+                            >
+                                Open Demo Flow
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'deployment_program' && (
+                        <section data-testid="ecosystem-deployment-program-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Deployment Program Pack</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open deployment runbooks and preflight/post-install validation controls.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-deployment-program-btn"
+                                onClick={() => {
+                                    if (typeof onOpenDeploymentProgram === 'function') onOpenDeploymentProgram();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
+                            >
+                                Open Deployment Program
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'training_delivery' && (
+                        <section data-testid="ecosystem-training-delivery-entry" className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-100 font-bold">Training Delivery Pack</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open role-based offline training bundle generation and lab history.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-training-delivery-btn"
+                                onClick={() => {
+                                    if (typeof onOpenTrainingDelivery === 'function') onOpenTrainingDelivery();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-emerald-200/35 bg-emerald-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/30"
+                            >
+                                Open Training Delivery
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'support_ops' && (
+                        <section data-testid="ecosystem-support-ops-entry" className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-amber-100 font-bold">Support Operations Pack</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open support intake, severity matrix, and triage queue controls.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-support-ops-btn"
+                                onClick={() => {
+                                    if (typeof onOpenSupportOps === 'function') onOpenSupportOps();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-amber-200/35 bg-amber-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-amber-100 hover:bg-amber-500/30"
+                            >
+                                Open Support Ops
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'buyer_journey' && (
+                        <section data-testid="ecosystem-buyer-journey-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Buyer Evaluation Journey</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open evaluator quickstart and defensible buyer path summary.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-buyer-journey-btn"
+                                onClick={() => {
+                                    if (typeof onOpenBuyerJourney === 'function') onOpenBuyerJourney();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Buyer Journey
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'pilot_conversion' && (
+                        <section data-testid="ecosystem-pilot-conversion-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Pilot Conversion Kit</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open proof-of-value and expansion planning workflows for pilot conversion.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-pilot-conversion-btn"
+                                onClick={() => {
+                                    if (typeof onOpenPilotConversion === 'function') onOpenPilotConversion();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Pilot Conversion
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'commercial_packages' && (
+                        <section data-testid="ecosystem-commercial-packages-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Commercial Package Matrix</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open SKU, deployment, and support entitlement alignment surface.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-commercial-packages-btn"
+                                onClick={() => {
+                                    if (typeof onOpenCommercialPackages === 'function') onOpenCommercialPackages();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Commercial Packages
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'field_launch' && (
+                        <section data-testid="ecosystem-field-launch-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Field Launch Command Center</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open launch-day commercialization and deployment readiness dashboard.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-field-launch-btn"
+                                onClick={() => {
+                                    if (typeof onOpenFieldLaunch === 'function') onOpenFieldLaunch();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
+                            >
+                                Open Field Launch
                             </button>
                         </section>
                     )}

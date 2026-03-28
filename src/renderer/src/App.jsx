@@ -34,6 +34,14 @@ import ContinuityDrillCenter from './components/ContinuityDrillCenter.jsx';
 import ProcurementCommandCenter from './components/ProcurementCommandCenter.jsx';
 import TamperSimulationCenter from './components/TamperSimulationCenter.jsx';
 import InstitutionalCommandConsole from './components/InstitutionalCommandConsole.jsx';
+import DemoFlowConsole from './components/DemoFlowConsole.jsx';
+import DeploymentProgramCenter from './components/DeploymentProgramCenter.jsx';
+import TrainingDeliveryCenter from './components/TrainingDeliveryCenter.jsx';
+import SupportOpsConsole from './components/SupportOpsConsole.jsx';
+import BuyerEvaluationCenter from './components/BuyerEvaluationCenter.jsx';
+import PilotConversionConsole from './components/PilotConversionConsole.jsx';
+import CommercialPackageConsole from './components/CommercialPackageConsole.jsx';
+import FieldLaunchCommandCenter from './components/FieldLaunchCommandCenter.jsx';
 import { useAccent } from './hooks/useAccent.ts';
 import { useCollabRoom } from './hooks/useCollabRoom.ts';
 import { useRuntimeState } from './hooks/useRuntimeState.ts';
@@ -60,6 +68,7 @@ const RAIL_COLLAPSE_PREFS_KEY = 'neuralshell_rail_collapse_prefs_v1';
 const RAIL_RESIZE_HINT_DISMISSED_KEY = 'neuralshell_rail_resize_hint_dismissed_v1';
 const APPLIANCE_MODE_KEY = 'neuralshell_appliance_mode_v1';
 const AIRGAP_MODE_KEY = 'neuralshell_airgap_mode_v1';
+const DEMO_MODE_KEY = 'neuralshell_demo_mode_v1';
 const RUNTIME_ROLE_KEY = 'neuralshell_runtime_role_v1';
 const INCIDENTS_STORAGE_KEY = 'neuralshell_incidents_v1';
 const POLICY_ROLLOUT_HISTORY_KEY = 'neuralshell_policy_rollout_history_v1';
@@ -268,6 +277,14 @@ function App() {
     const [showPolicyRollout, setShowPolicyRollout] = React.useState(false);
     const [showOfflineUpdateConsole, setShowOfflineUpdateConsole] = React.useState(false);
     const [showMissionScheduler, setShowMissionScheduler] = React.useState(false);
+    const [showDemoFlow, setShowDemoFlow] = React.useState(false);
+    const [showDeploymentProgram, setShowDeploymentProgram] = React.useState(false);
+    const [showTrainingDelivery, setShowTrainingDelivery] = React.useState(false);
+    const [showSupportOps, setShowSupportOps] = React.useState(false);
+    const [showBuyerJourney, setShowBuyerJourney] = React.useState(false);
+    const [showPilotConversion, setShowPilotConversion] = React.useState(false);
+    const [showCommercialPackages, setShowCommercialPackages] = React.useState(false);
+    const [showFieldLaunch, setShowFieldLaunch] = React.useState(false);
     const [applianceModeEnabled, setApplianceModeEnabled] = React.useState(() => {
         if (typeof window === 'undefined' || !window.localStorage) return false;
         return window.localStorage.getItem(APPLIANCE_MODE_KEY) === '1';
@@ -275,6 +292,10 @@ function App() {
     const [airGapLocked, setAirGapLocked] = React.useState(() => {
         if (typeof window === 'undefined' || !window.localStorage) return false;
         return window.localStorage.getItem(AIRGAP_MODE_KEY) === '1';
+    });
+    const [demoModeEnabled, setDemoModeEnabled] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return false;
+        return window.localStorage.getItem(DEMO_MODE_KEY) === '1';
     });
     const [activeRuntimeRole, setActiveRuntimeRole] = React.useState(() => {
         if (typeof window === 'undefined' || !window.localStorage) return 'operator';
@@ -506,6 +527,11 @@ function App() {
         if (typeof window === 'undefined' || !window.localStorage) return;
         window.localStorage.setItem(AIRGAP_MODE_KEY, airGapLocked ? '1' : '0');
     }, [airGapLocked]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(DEMO_MODE_KEY, demoModeEnabled ? '1' : '0');
+    }, [demoModeEnabled]);
 
     React.useEffect(() => {
         if (typeof window === 'undefined' || !window.localStorage) return;
@@ -820,6 +846,10 @@ function App() {
             setShowMissionControl(true);
             return;
         }
+        if (safePanel === 'demo' || safePanel === 'demo-flow' || safePanel === 'demo_flow') {
+            setShowDemoFlow(true);
+            return;
+        }
         if (safePanel === 'fleet' || safePanel === 'fleet-control') {
             if (!roleCapabilities.canManageFleet) {
                 appendRuntimeEvent('role.access.denied', { panel: safePanel, role: activeRuntimeRole }, { source: 'roles', severity: 'warning' });
@@ -874,6 +904,34 @@ function App() {
         }
         if (safePanel === 'institutional' || safePanel === 'institutional-command') {
             setShowInstitutionalCommand(true);
+            return;
+        }
+        if (safePanel === 'deployment' || safePanel === 'deployment-program' || safePanel === 'deployment_program') {
+            setShowDeploymentProgram(true);
+            return;
+        }
+        if (safePanel === 'training' || safePanel === 'training-delivery' || safePanel === 'training_delivery') {
+            setShowTrainingDelivery(true);
+            return;
+        }
+        if (safePanel === 'support' || safePanel === 'support-ops' || safePanel === 'support_ops') {
+            setShowSupportOps(true);
+            return;
+        }
+        if (safePanel === 'buyer' || safePanel === 'buyer-journey' || safePanel === 'buyer_journey') {
+            setShowBuyerJourney(true);
+            return;
+        }
+        if (safePanel === 'pilot' || safePanel === 'pilot-conversion' || safePanel === 'pilot_conversion') {
+            setShowPilotConversion(true);
+            return;
+        }
+        if (safePanel === 'commercial' || safePanel === 'commercial-packages' || safePanel === 'commercial_packages') {
+            setShowCommercialPackages(true);
+            return;
+        }
+        if (safePanel === 'launch' || safePanel === 'field-launch' || safePanel === 'field_launch') {
+            setShowFieldLaunch(true);
             return;
         }
         if (safePanel === 'shift' || safePanel === 'shift-console') {
@@ -1297,6 +1355,30 @@ function App() {
                 if (showInstitutionalCommand) {
                     setShowInstitutionalCommand(false);
                 }
+                if (showDemoFlow) {
+                    setShowDemoFlow(false);
+                }
+                if (showDeploymentProgram) {
+                    setShowDeploymentProgram(false);
+                }
+                if (showTrainingDelivery) {
+                    setShowTrainingDelivery(false);
+                }
+                if (showSupportOps) {
+                    setShowSupportOps(false);
+                }
+                if (showBuyerJourney) {
+                    setShowBuyerJourney(false);
+                }
+                if (showPilotConversion) {
+                    setShowPilotConversion(false);
+                }
+                if (showCommercialPackages) {
+                    setShowCommercialPackages(false);
+                }
+                if (showFieldLaunch) {
+                    setShowFieldLaunch(false);
+                }
                 if (showShiftConsole) {
                     setShowShiftConsole(false);
                 }
@@ -1354,6 +1436,14 @@ function App() {
         showProcurementCommand,
         showTamperSimulation,
         showInstitutionalCommand,
+        showDemoFlow,
+        showDeploymentProgram,
+        showTrainingDelivery,
+        showSupportOps,
+        showBuyerJourney,
+        showPilotConversion,
+        showCommercialPackages,
+        showFieldLaunch,
         showShiftConsole,
         showIncidentMode,
         showPolicyRollout,
@@ -1495,7 +1585,7 @@ function App() {
                 if (command === '/help') {
                     appendChat({
                         role: 'kernel',
-                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/fleet` : Open Fleet Control panel\n- `/recovery` : Open Recovery Center\n- `/appliance` : Open Appliance Console\n- `/airgap` : Open Air-Gapped Operations Center\n- `/trustfabric` : Open PKI Trust Fabric\n- `/hardware` : Open Hardware Appliance Program\n- `/courier` : Open Offline Evidence Courier\n- `/drills` : Open Continuity Drill Center\n- `/procurement` : Open Procurement Command Center\n- `/simulate` : Open Tamper Simulation Center\n- `/institutional` : Open Institutional Command Console\n- `/shift` : Open Shift Console\n- `/incident` : Open Incident Mode\n- `/rollout` : Open Policy Rollout Console\n- `/updates` : Open Offline Update Console\n- `/missions` : Open Mission Scheduler\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
+                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/fleet` : Open Fleet Control panel\n- `/recovery` : Open Recovery Center\n- `/appliance` : Open Appliance Console\n- `/airgap` : Open Air-Gapped Operations Center\n- `/trustfabric` : Open PKI Trust Fabric\n- `/hardware` : Open Hardware Appliance Program\n- `/courier` : Open Offline Evidence Courier\n- `/drills` : Open Continuity Drill Center\n- `/procurement` : Open Procurement Command Center\n- `/simulate` : Open Tamper Simulation Center\n- `/institutional` : Open Institutional Command Console\n- `/demoflow` : Open Demo Flow Console\n- `/deployment` : Open Deployment Program Pack\n- `/training` : Open Training Delivery Center\n- `/support` : Open Support Ops Console\n- `/buyer` : Open Buyer Evaluation Journey\n- `/pilot` : Open Pilot Conversion Console\n- `/commercial` : Open Commercial Package Console\n- `/launch` : Open Field Launch Command Center\n- `/shift` : Open Shift Console\n- `/incident` : Open Incident Mode\n- `/rollout` : Open Policy Rollout Console\n- `/updates` : Open Offline Update Console\n- `/missions` : Open Mission Scheduler\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
                     });
                 } else if (command === '/status') {
                     appendChat({
@@ -1608,6 +1698,62 @@ function App() {
                         content: 'Opening Institutional Command Console.',
                     });
                     appendRuntimeEvent('runtime.panel.opened', { panel: 'institutional-command' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/demoflow') {
+                    setShowDemoFlow(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Demo Flow Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'demo-flow' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/deployment') {
+                    setShowDeploymentProgram(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Deployment Program Pack.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'deployment-program' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/training') {
+                    setShowTrainingDelivery(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Training Delivery Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'training-delivery' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/support') {
+                    setShowSupportOps(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Support Ops Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'support-ops' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/buyer') {
+                    setShowBuyerJourney(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Buyer Evaluation Journey.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'buyer-journey' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/pilot') {
+                    setShowPilotConversion(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Pilot Conversion Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'pilot-conversion' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/commercial') {
+                    setShowCommercialPackages(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Commercial Package Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'commercial-packages' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/launch' || command === '/fieldlaunch') {
+                    setShowFieldLaunch(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Field Launch Command Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'field-launch' }, { source: 'runtime', severity: 'info' });
                 } else if (command === '/shift') {
                     setShowShiftConsole(true);
                     appendChat({
@@ -2187,6 +2333,8 @@ function App() {
                 onOpenApplianceConsole={() => setShowApplianceConsole(true)}
                 onOpenAirGapOperations={() => setShowAirGapOperations(true)}
                 onOpenInstitutionalCommand={() => setShowInstitutionalCommand(true)}
+                onOpenDemoFlow={() => setShowDemoFlow(true)}
+                onOpenFieldLaunch={() => setShowFieldLaunch(true)}
                 onToggleScratchpad={() => setShowScratchpad((prev) => !prev)}
                 watchdogStatus={watchdogStatus}
                 watchdogAlertCount={unacknowledgedWatchdogAlerts.length}
@@ -2200,6 +2348,7 @@ function App() {
                 accelStatus={accelStatus}
                 applianceModeEnabled={applianceModeEnabled}
                 airGapLocked={airGapLocked}
+                demoModeEnabled={demoModeEnabled}
                 feedbackDisabled={!connectionInfo.allowRemoteBridge}
                 feedbackUrl={FEEDBACK_URL}
                 onOpenIssueAssist={canUseIssueAssist ? () => setShowIssueAssist(true) : undefined}
@@ -2613,6 +2762,38 @@ function App() {
                     setShowEcosystem(false);
                     setShowInstitutionalCommand(true);
                 }}
+                onOpenDemoFlow={() => {
+                    setShowEcosystem(false);
+                    setShowDemoFlow(true);
+                }}
+                onOpenDeploymentProgram={() => {
+                    setShowEcosystem(false);
+                    setShowDeploymentProgram(true);
+                }}
+                onOpenTrainingDelivery={() => {
+                    setShowEcosystem(false);
+                    setShowTrainingDelivery(true);
+                }}
+                onOpenSupportOps={() => {
+                    setShowEcosystem(false);
+                    setShowSupportOps(true);
+                }}
+                onOpenBuyerJourney={() => {
+                    setShowEcosystem(false);
+                    setShowBuyerJourney(true);
+                }}
+                onOpenPilotConversion={() => {
+                    setShowEcosystem(false);
+                    setShowPilotConversion(true);
+                }}
+                onOpenCommercialPackages={() => {
+                    setShowEcosystem(false);
+                    setShowCommercialPackages(true);
+                }}
+                onOpenFieldLaunch={() => {
+                    setShowEcosystem(false);
+                    setShowFieldLaunch(true);
+                }}
                 onOpenShiftConsole={() => {
                     setShowEcosystem(false);
                     setShowShiftConsole(true);
@@ -2652,6 +2833,14 @@ function App() {
                 onOpenProcurementCommand={() => setShowProcurementCommand(true)}
                 onOpenTamperSimulation={() => setShowTamperSimulation(true)}
                 onOpenInstitutionalCommand={() => setShowInstitutionalCommand(true)}
+                onOpenDemoFlow={() => setShowDemoFlow(true)}
+                onOpenDeploymentProgram={() => setShowDeploymentProgram(true)}
+                onOpenTrainingDelivery={() => setShowTrainingDelivery(true)}
+                onOpenSupportOps={() => setShowSupportOps(true)}
+                onOpenBuyerJourney={() => setShowBuyerJourney(true)}
+                onOpenPilotConversion={() => setShowPilotConversion(true)}
+                onOpenCommercialPackages={() => setShowCommercialPackages(true)}
+                onOpenFieldLaunch={() => setShowFieldLaunch(true)}
                 onOpenShift={() => setShowShiftConsole(true)}
                 onOpenIncidentMode={() => setShowIncidentMode(true)}
                 onOpenPolicyRollout={() => setShowPolicyRollout(true)}
@@ -2754,6 +2943,42 @@ function App() {
             <InstitutionalCommandConsole
                 open={showInstitutionalCommand}
                 onClose={() => setShowInstitutionalCommand(false)}
+                onOpenPanel={openRuntimePanelById}
+            />
+            <DemoFlowConsole
+                open={showDemoFlow}
+                onClose={() => setShowDemoFlow(false)}
+                enabled={demoModeEnabled}
+                onToggleEnabled={setDemoModeEnabled}
+                onOpenPanel={openRuntimePanelById}
+            />
+            <DeploymentProgramCenter
+                open={showDeploymentProgram}
+                onClose={() => setShowDeploymentProgram(false)}
+            />
+            <TrainingDeliveryCenter
+                open={showTrainingDelivery}
+                onClose={() => setShowTrainingDelivery(false)}
+            />
+            <SupportOpsConsole
+                open={showSupportOps}
+                onClose={() => setShowSupportOps(false)}
+            />
+            <BuyerEvaluationCenter
+                open={showBuyerJourney}
+                onClose={() => setShowBuyerJourney(false)}
+            />
+            <PilotConversionConsole
+                open={showPilotConversion}
+                onClose={() => setShowPilotConversion(false)}
+            />
+            <CommercialPackageConsole
+                open={showCommercialPackages}
+                onClose={() => setShowCommercialPackages(false)}
+            />
+            <FieldLaunchCommandCenter
+                open={showFieldLaunch}
+                onClose={() => setShowFieldLaunch(false)}
                 onOpenPanel={openRuntimePanelById}
             />
             <ShiftConsole

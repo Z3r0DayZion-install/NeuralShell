@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NeuralShell Evaluator Journey</title>
+  <style>
+    :root {
+      --bg: #f3f5f7;
+      --panel: #ffffff;
+      --ink: #0e2230;
+      --muted: #4b6272;
+      --accent: #127f8a;
+      --accent-2: #1d5f9a;
+      --warn: #8e6a00;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Trebuchet MS", "Franklin Gothic Medium", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 0%, #dff1f4, var(--bg) 45%), linear-gradient(160deg, #f9fcfd 0%, #eaf0f3 100%);
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1rem 2rem;
+    }
+    .hero, .card {
+      background: var(--panel);
+      border: 1px solid #d6e1e8;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(5, 25, 38, 0.08);
+    }
+    .hero {
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      margin: 0 0 0.4rem;
+      font-size: 1.6rem;
+    }
+    p {
+      margin: 0.25rem 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.8rem;
+    }
+    .card {
+      padding: 0.9rem;
+    }
+    .badge {
+      display: inline-block;
+      border: 1px solid #b7d5db;
+      background: #e8f6f8;
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.1rem;
+      color: var(--ink);
+    }
+    li { margin: 0.2rem 0; }
+    .cta {
+      margin-top: 0.9rem;
+      display: inline-block;
+      text-decoration: none;
+      border: 1px solid var(--accent-2);
+      color: var(--accent-2);
+      padding: 0.45rem 0.8rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .warn {
+      color: var(--warn);
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <span class="badge">Evaluator Quickstart</span>
+      <h1>NeuralShell Institutional Evaluation Journey</h1>
+      <p>Use this page to run a clear 30-minute institutional walkthrough from verified product capabilities.</p>
+      <p class="warn">No certification or compliance claim should be made unless independently earned and documented.</p>
+      <a class="cta" href="../docs/buyer/30_MIN_WALKTHROUGH.md">Open 30-Min Walkthrough</a>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>What This Is</h2>
+        <ul>
+          <li>Local-first institutional operations platform</li>
+          <li>Air-gapped and PKI-governed control workflows</li>
+          <li>Evidence-first continuity and procurement support</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>What This Is Not</h2>
+        <ul>
+          <li>Cloud-only monitoring product</li>
+          <li>Offensive security tooling</li>
+          <li>Auto-generated compliance guarantee system</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>Evaluation Success Criteria</h2>
+        <ul>
+          <li>Demo path executes without manual repair</li>
+          <li>Security/procurement pack generated from runtime truth</li>
+          <li>Pilot scope and evidence criteria agreed in writing</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

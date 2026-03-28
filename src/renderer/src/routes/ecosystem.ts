@@ -1,4 +1,4 @@
-export type EcosystemRole = 'founder' | 'sales' | 'support' | 'operator';
+export type EcosystemRole = 'founder' | 'sales' | 'support' | 'operator' | 'security';
 
 export type EcosystemModuleId =
     | 'mission_control'
@@ -13,6 +13,14 @@ export type EcosystemModuleId =
     | 'procurement_command'
     | 'tamper_simulation'
     | 'institutional_command'
+    | 'demo_flow'
+    | 'deployment_program'
+    | 'training_delivery'
+    | 'support_ops'
+    | 'buyer_journey'
+    | 'pilot_conversion'
+    | 'commercial_packages'
+    | 'field_launch'
     | 'shift_console'
     | 'incident_mode'
     | 'policy_rollout'
@@ -128,6 +136,62 @@ export const ECOSYSTEM_MODULES: EcosystemModule[] = [
         description: 'Unified executive/operator command surface across all institutional tracks.',
         minTier: 'enterprise',
         roles: ['founder', 'operator', 'support', 'sales'],
+    },
+    {
+        id: 'demo_flow',
+        title: 'Institutional Demo System',
+        description: 'Seeded deterministic demo route with presenter guidance and baseline reset controls.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support', 'operator'],
+    },
+    {
+        id: 'deployment_program',
+        title: 'Deployment Program Pack',
+        description: 'Role-based deployment runbooks plus preflight and post-install validation flows.',
+        minTier: 'pro',
+        roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'training_delivery',
+        title: 'Training Delivery Pack',
+        description: 'Offline role training tracks, labs, instructor guidance, and exam export controls.',
+        minTier: 'pro',
+        roles: ['founder', 'operator', 'support', 'sales'],
+    },
+    {
+        id: 'support_ops',
+        title: 'Support Operations Pack',
+        description: 'Support intake, severity matrix, escalation ladder, and triage workflow controls.',
+        minTier: 'pro',
+        roles: ['founder', 'support', 'operator'],
+    },
+    {
+        id: 'buyer_journey',
+        title: 'Buyer Evaluation Journey',
+        description: 'Evaluator quickstart and defensible buyer path from first look to approval.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'pilot_conversion',
+        title: 'Pilot Conversion Kit',
+        description: 'Evidence-first pilot review templates and expansion planning artifacts.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'commercial_packages',
+        title: 'Commercial Package Matrix',
+        description: 'SKU, deployment, support entitlement, and add-on mapping across offerings.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'field_launch',
+        title: 'Field Launch Command Center',
+        description: 'One-screen commercialization and deployment readiness tracker with blockers.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support', 'operator'],
     },
     {
         id: 'shift_console',

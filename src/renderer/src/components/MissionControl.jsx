@@ -39,6 +39,14 @@ export default function MissionControl({
     onOpenProcurementCommand,
     onOpenTamperSimulation,
     onOpenInstitutionalCommand,
+    onOpenDemoFlow,
+    onOpenDeploymentProgram,
+    onOpenTrainingDelivery,
+    onOpenSupportOps,
+    onOpenBuyerJourney,
+    onOpenPilotConversion,
+    onOpenCommercialPackages,
+    onOpenFieldLaunch,
     onOpenShift,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -76,7 +84,7 @@ export default function MissionControl({
                         <div className="text-[10px] uppercase tracking-[0.18em] text-cyan-300 font-bold">Mission Control</div>
                         <div className="text-[10px] text-slate-500 font-mono">Runtime cockpit, authority feed, and control rails.</div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                         <button
                             type="button"
                             data-testid="mission-control-open-fleet-btn"
@@ -164,6 +172,70 @@ export default function MissionControl({
                             className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
                         >
                             Institutional
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-demo-flow-btn"
+                            onClick={onOpenDemoFlow}
+                            className="px-2.5 py-1.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/20"
+                        >
+                            Demo
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-deployment-program-btn"
+                            onClick={onOpenDeploymentProgram}
+                            className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
+                        >
+                            Deploy
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-training-delivery-btn"
+                            onClick={onOpenTrainingDelivery}
+                            className="px-2.5 py-1.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/20"
+                        >
+                            Training
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-support-ops-btn"
+                            onClick={onOpenSupportOps}
+                            className="px-2.5 py-1.5 rounded border border-amber-300/30 bg-amber-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-amber-100 hover:bg-amber-500/20"
+                        >
+                            Support
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-buyer-journey-btn"
+                            onClick={onOpenBuyerJourney}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Buyer
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-pilot-conversion-btn"
+                            onClick={onOpenPilotConversion}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Pilot
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-commercial-packages-btn"
+                            onClick={onOpenCommercialPackages}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Commercial
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-field-launch-btn"
+                            onClick={onOpenFieldLaunch}
+                            className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
+                        >
+                            Launch
                         </button>
                         <button
                             type="button"

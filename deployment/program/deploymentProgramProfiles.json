@@ -1,0 +1,29 @@
+{
+  "deploymentRoles": [
+    "it_admin",
+    "security_admin",
+    "platform_operator",
+    "support_engineer"
+  ],
+  "runbookScopes": [
+    "standard_desktop",
+    "appliance",
+    "oversight_node",
+    "airgapped_install",
+    "pki_enabled_install"
+  ],
+  "checklists": {
+    "preflight": [
+      "Validate host OS baseline and patch posture.",
+      "Confirm storage, memory, and CPU minima for selected profile.",
+      "Confirm signing roots and trust registry availability.",
+      "Confirm import station controls for offline deployments."
+    ],
+    "postinstall": [
+      "Launch runtime and verify smoke readiness signal.",
+      "Validate trust chain status and certificate expiry posture.",
+      "Run policy baseline check and record evidence bundle.",
+      "Record deployment attestation and operator sign-off."
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "profileId": "institutional_exec_brief",
+    "title": "Institutional Executive Brief",
+    "description": "30-minute guided walkthrough for executive and procurement stakeholders.",
+    "presenterFlow": [
+      { "panelId": "mission-control", "title": "Mission Control", "talkTrack": "Establish real-time operational posture and authority controls." },
+      { "panelId": "fleet-control", "title": "Fleet Control", "talkTrack": "Show multi-node visibility and deterministic control coverage." },
+      { "panelId": "recovery-center", "title": "Recovery Center", "talkTrack": "Demonstrate incident recovery and safe restore pathways." },
+      { "panelId": "airgap-operations", "title": "Air-Gapped Operations", "talkTrack": "Validate controlled transfer and no-cloud runtime operation." },
+      { "panelId": "trust-fabric", "title": "PKI Trust Fabric", "talkTrack": "Prove certificate lifecycle, revocation, and trust traceability." },
+      { "panelId": "procurement-command", "title": "Procurement Command", "talkTrack": "Generate buyer-ready review assets from runtime truth." },
+      { "panelId": "institutional-command", "title": "Institutional Command", "talkTrack": "Close with one-screen readiness posture and executive summary." }
+    ]
+  },
+  {
+    "profileId": "operator_training_lab",
+    "title": "Operator Training Lab",
+    "description": "Hands-on training profile with continuity and support drill emphasis.",
+    "presenterFlow": [
+      { "panelId": "training-delivery", "title": "Training Delivery", "talkTrack": "Introduce role-based curriculum and lab tracks." },
+      { "panelId": "support-ops", "title": "Support Ops", "talkTrack": "Run severity triage and escalation simulation." },
+      { "panelId": "continuity-drills", "title": "Continuity Drills", "talkTrack": "Validate remediation tracking from failed drills." },
+      { "panelId": "field-launch", "title": "Field Launch", "talkTrack": "Confirm pack freshness and launch blockers visibility." }
+    ]
+  }
+]

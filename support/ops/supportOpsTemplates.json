@@ -1,0 +1,35 @@
+{
+  "severityMatrix": [
+    {
+      "severity": "sev1",
+      "label": "Critical",
+      "responseTarget": "15 minutes",
+      "resolutionTarget": "4 hours"
+    },
+    {
+      "severity": "sev2",
+      "label": "High",
+      "responseTarget": "30 minutes",
+      "resolutionTarget": "1 business day"
+    },
+    {
+      "severity": "sev3",
+      "label": "Medium",
+      "responseTarget": "4 hours",
+      "resolutionTarget": "3 business days"
+    },
+    {
+      "severity": "sev4",
+      "label": "Low",
+      "responseTarget": "1 business day",
+      "resolutionTarget": "7 business days"
+    }
+  ],
+  "escalationLadder": [
+    "L1 Support",
+    "L2 Support",
+    "Incident Commander",
+    "Security Engineering",
+    "Executive Duty Owner"
+  ]
+}
