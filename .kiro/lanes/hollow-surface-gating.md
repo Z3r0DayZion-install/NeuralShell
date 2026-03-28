@@ -35,6 +35,8 @@ The Hollow Surface Gating pattern solves this without requiring immediate implem
 
 ## 3. Doctrine Note
 
+HSG is not a cleanup tool; it is a trust-preservation doctrine for evidence-based product visibility.
+
 Hollow surfaces destroy trust because they signal either incompleteness or deception. A user who clicks a button expecting functionality and finds a dead control or fake data learns that the product is not what it claims to be. This is worse than a missing feature—it's a broken promise. The correct treatment is internal-only gating: keep the surface accessible to teams who understand its status (sales, ops, demo), but remove it from the user-facing product until it is genuinely implemented. This preserves the ability to iterate internally while maintaining the integrity of the user-facing product. Gating is not hiding; it is honest staging.
 
 ---

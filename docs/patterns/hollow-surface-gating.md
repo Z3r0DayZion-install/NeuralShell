@@ -157,6 +157,21 @@ After implementation, verify:
 
 ## Reuse Guidance for Future Lanes
 
+### Batch 4 Selection Criteria
+
+Only pick surfaces that meet at least two of these:
+- They look operational enough to mislead users
+- They overlap with real product claims
+- They are ambiguous enough that the audit could go either way
+- They are reachable from a high-visibility surface
+
+### Batch 4 Stop Rule
+
+- Audit 3 to 5 surfaces
+- Gate only confirmed hollow
+- Preserve confirmed real
+- Defer anything mixed
+
 ### Batch Size
 Gate 3–10 surfaces per lane. Smaller batches reduce risk and enable faster review.
 
@@ -229,5 +244,7 @@ This PR applies the Hollow Surface Gating (HSG) pattern documented in docs/patte
 - Product steering: `.kiro/steering/product.md`
 
 ## Doctrine
+
+HSG is not a cleanup tool; it is a trust-preservation doctrine for evidence-based product visibility.
 
 Hollow surfaces destroy trust because they signal either incompleteness or deception. A user who clicks a button expecting functionality and finds a dead control or fake data learns that the product is not what it claims to be. This is worse than a missing feature—it's a broken promise. The correct treatment is internal-only gating: keep the surface accessible to teams who understand its status (sales, ops, demo), but remove it from the user-facing product until it is genuinely implemented. This preserves the ability to iterate internally while maintaining the integrity of the user-facing product. Gating is not hiding; it is honest staging.
