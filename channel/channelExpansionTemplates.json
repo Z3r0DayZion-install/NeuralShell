@@ -1,0 +1,23 @@
+{
+  "channelTypes": [
+    "consultants",
+    "managed_service_providers",
+    "integrators",
+    "oem",
+    "compliance_partners"
+  ],
+  "scoreDimensions": [
+    { "id": "market_fit", "label": "Market Fit", "weight": 25 },
+    { "id": "delivery_readiness", "label": "Delivery Readiness", "weight": 25 },
+    { "id": "enablement_gap", "label": "Enablement Gap", "weight": 20 },
+    { "id": "sales_motion_fit", "label": "Sales Motion Fit", "weight": 15 },
+    { "id": "support_coverage", "label": "Support Coverage", "weight": 15 }
+  ],
+  "launchReadinessItems": [
+    "demo_pack",
+    "deployment_runbook",
+    "security_review_packet",
+    "training_track",
+    "support_escalation_path"
+  ]
+}

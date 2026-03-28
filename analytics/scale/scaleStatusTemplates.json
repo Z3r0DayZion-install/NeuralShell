@@ -1,0 +1,21 @@
+{
+  "summaryCards": [
+    "certified_partners",
+    "managed_accounts",
+    "strategic_risk_accounts",
+    "rollout_portfolio",
+    "revenue_ops",
+    "renewal_pressure",
+    "channel_expansion",
+    "field_execution_health"
+  ],
+  "drilldowns": [
+    "partner_certification",
+    "managed_services",
+    "strategic_account",
+    "portfolio_rollout",
+    "revenue_ops",
+    "channel_expansion",
+    "cross_account_renewal"
+  ]
+}

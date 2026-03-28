@@ -1,0 +1,24 @@
+{
+  "deploymentStages": [
+    "planning",
+    "security_review",
+    "pilot",
+    "rollout",
+    "stabilization",
+    "expansion"
+  ],
+  "dependencyTypes": [
+    "trust_chain",
+    "appliance_supply",
+    "operator_training",
+    "policy_rollout",
+    "support_coverage"
+  ],
+  "resourceDimensions": [
+    "operator_capacity",
+    "support_capacity",
+    "security_review_bandwidth",
+    "partner_enablement",
+    "training_delivery"
+  ]
+}

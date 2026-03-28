@@ -1,0 +1,11 @@
+{
+  "tiers": ["registered", "certified", "strategic", "suspended"],
+  "governanceSignals": [
+    "certification_compliance",
+    "policy_adherence",
+    "delivery_performance",
+    "support_escalation_behavior",
+    "commercial_integrity"
+  ],
+  "statusFlows": ["escalate", "suspend", "reactivate"]
+}

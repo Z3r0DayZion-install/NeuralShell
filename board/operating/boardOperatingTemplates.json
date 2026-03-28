@@ -1,0 +1,13 @@
+{
+  "packSections": [
+    "growth_summary",
+    "renewal_summary",
+    "partner_summary",
+    "rollout_summary",
+    "support_summary",
+    "service_line_summary",
+    "risk_register",
+    "evidence_appendix"
+  ],
+  "deltaDimensions": ["month_over_month", "quarter_over_quarter"]
+}

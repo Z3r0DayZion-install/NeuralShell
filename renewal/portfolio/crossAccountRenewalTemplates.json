@@ -1,0 +1,16 @@
+{
+  "riskSignals": [
+    { "id": "support_load", "label": "Support Load", "weight": 25, "higherIsRiskier": true },
+    { "id": "incident_backlog", "label": "Incident Backlog", "weight": 20, "higherIsRiskier": true },
+    { "id": "deployment_health", "label": "Deployment Health", "weight": 20, "higherIsRiskier": false },
+    { "id": "adoption_health", "label": "Adoption Health", "weight": 20, "higherIsRiskier": false },
+    { "id": "executive_sponsor", "label": "Executive Sponsor Confidence", "weight": 15, "higherIsRiskier": false }
+  ],
+  "interventionTemplates": [
+    "Executive renewal review",
+    "Support surge plan",
+    "Deployment stabilization sprint",
+    "Adoption enablement sprint",
+    "Commercial scope alignment review"
+  ]
+}

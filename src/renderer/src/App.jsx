@@ -50,6 +50,22 @@ import RenewalRiskConsole from './components/RenewalRiskConsole.jsx';
 import LaunchWeekCommandCenter from './components/LaunchWeekCommandCenter.jsx';
 import FollowupGenerator from './components/FollowupGenerator.jsx';
 import FieldFeedbackConsole from './components/FieldFeedbackConsole.jsx';
+import PartnerCertificationHub from './components/PartnerCertificationHub.jsx';
+import ManagedServicesConsole from './components/ManagedServicesConsole.jsx';
+import StrategicAccountConsole from './components/StrategicAccountConsole.jsx';
+import PortfolioRolloutPlanner from './components/PortfolioRolloutPlanner.jsx';
+import RevenueOpsConsole from './components/RevenueOpsConsole.jsx';
+import ChannelExpansionPlanner from './components/ChannelExpansionPlanner.jsx';
+import CrossAccountRenewalMatrix from './components/CrossAccountRenewalMatrix.jsx';
+import ExecutiveScaleDashboard from './components/ExecutiveScaleDashboard.jsx';
+import EcosystemPortfolioConsole from './components/EcosystemPortfolioConsole.jsx';
+import ServiceLineConsole from './components/ServiceLineConsole.jsx';
+import PartnerNetworkGovernance from './components/PartnerNetworkGovernance.jsx';
+import GlobalPlanningConsole from './components/GlobalPlanningConsole.jsx';
+import EcosystemRevenuePlanner from './components/EcosystemRevenuePlanner.jsx';
+import BoardOperatingPackConsole from './components/BoardOperatingPackConsole.jsx';
+import LicensedOperatorFramework from './components/LicensedOperatorFramework.jsx';
+import EcosystemCommandCenter from './components/EcosystemCommandCenter.jsx';
 import { useAccent } from './hooks/useAccent.ts';
 import { useCollabRoom } from './hooks/useCollabRoom.ts';
 import { useRuntimeState } from './hooks/useRuntimeState.ts';
@@ -301,6 +317,22 @@ function App() {
     const [showLaunchWeek, setShowLaunchWeek] = React.useState(false);
     const [showFollowupGenerator, setShowFollowupGenerator] = React.useState(false);
     const [showFieldFeedback, setShowFieldFeedback] = React.useState(false);
+    const [showPartnerCertification, setShowPartnerCertification] = React.useState(false);
+    const [showManagedServices, setShowManagedServices] = React.useState(false);
+    const [showStrategicAccount, setShowStrategicAccount] = React.useState(false);
+    const [showPortfolioRollout, setShowPortfolioRollout] = React.useState(false);
+    const [showRevenueOps, setShowRevenueOps] = React.useState(false);
+    const [showChannelExpansion, setShowChannelExpansion] = React.useState(false);
+    const [showCrossAccountRenewal, setShowCrossAccountRenewal] = React.useState(false);
+    const [showExecutiveScale, setShowExecutiveScale] = React.useState(false);
+    const [showEcosystemPortfolio, setShowEcosystemPortfolio] = React.useState(false);
+    const [showServiceLine, setShowServiceLine] = React.useState(false);
+    const [showPartnerNetworkGovernance, setShowPartnerNetworkGovernance] = React.useState(false);
+    const [showGlobalPlanning, setShowGlobalPlanning] = React.useState(false);
+    const [showEcosystemRevenue, setShowEcosystemRevenue] = React.useState(false);
+    const [showBoardOperatingPack, setShowBoardOperatingPack] = React.useState(false);
+    const [showLicensedOperator, setShowLicensedOperator] = React.useState(false);
+    const [showEcosystemCommand, setShowEcosystemCommand] = React.useState(false);
     const [applianceModeEnabled, setApplianceModeEnabled] = React.useState(() => {
         if (typeof window === 'undefined' || !window.localStorage) return false;
         return window.localStorage.getItem(APPLIANCE_MODE_KEY) === '1';
@@ -982,6 +1014,70 @@ function App() {
             setShowFieldFeedback(true);
             return;
         }
+        if (safePanel === 'partner-certification' || safePanel === 'partner_certification') {
+            setShowPartnerCertification(true);
+            return;
+        }
+        if (safePanel === 'managed-services' || safePanel === 'managed_services') {
+            setShowManagedServices(true);
+            return;
+        }
+        if (safePanel === 'strategic-account' || safePanel === 'strategic_account') {
+            setShowStrategicAccount(true);
+            return;
+        }
+        if (safePanel === 'portfolio-rollout' || safePanel === 'portfolio_rollout') {
+            setShowPortfolioRollout(true);
+            return;
+        }
+        if (safePanel === 'revenue-ops' || safePanel === 'revenue_ops') {
+            setShowRevenueOps(true);
+            return;
+        }
+        if (safePanel === 'channel-expansion' || safePanel === 'channel_expansion') {
+            setShowChannelExpansion(true);
+            return;
+        }
+        if (safePanel === 'cross-account-renewal' || safePanel === 'cross_account_renewal') {
+            setShowCrossAccountRenewal(true);
+            return;
+        }
+        if (safePanel === 'executive-scale' || safePanel === 'executive_scale') {
+            setShowExecutiveScale(true);
+            return;
+        }
+        if (safePanel === 'ecosystem-portfolio' || safePanel === 'ecosystem_portfolio') {
+            setShowEcosystemPortfolio(true);
+            return;
+        }
+        if (safePanel === 'service-line' || safePanel === 'service_line') {
+            setShowServiceLine(true);
+            return;
+        }
+        if (safePanel === 'partner-network-governance' || safePanel === 'partner_network_governance') {
+            setShowPartnerNetworkGovernance(true);
+            return;
+        }
+        if (safePanel === 'global-planning' || safePanel === 'global_planning') {
+            setShowGlobalPlanning(true);
+            return;
+        }
+        if (safePanel === 'ecosystem-revenue' || safePanel === 'ecosystem_revenue') {
+            setShowEcosystemRevenue(true);
+            return;
+        }
+        if (safePanel === 'board-operating-pack' || safePanel === 'board_operating_pack') {
+            setShowBoardOperatingPack(true);
+            return;
+        }
+        if (safePanel === 'licensed-operator' || safePanel === 'licensed_operator') {
+            setShowLicensedOperator(true);
+            return;
+        }
+        if (safePanel === 'ecosystem-command' || safePanel === 'ecosystem_command') {
+            setShowEcosystemCommand(true);
+            return;
+        }
         if (safePanel === 'shift' || safePanel === 'shift-console') {
             setShowShiftConsole(true);
             return;
@@ -1451,6 +1547,54 @@ function App() {
                 if (showFieldFeedback) {
                     setShowFieldFeedback(false);
                 }
+                if (showPartnerCertification) {
+                    setShowPartnerCertification(false);
+                }
+                if (showManagedServices) {
+                    setShowManagedServices(false);
+                }
+                if (showStrategicAccount) {
+                    setShowStrategicAccount(false);
+                }
+                if (showPortfolioRollout) {
+                    setShowPortfolioRollout(false);
+                }
+                if (showRevenueOps) {
+                    setShowRevenueOps(false);
+                }
+                if (showChannelExpansion) {
+                    setShowChannelExpansion(false);
+                }
+                if (showCrossAccountRenewal) {
+                    setShowCrossAccountRenewal(false);
+                }
+                if (showExecutiveScale) {
+                    setShowExecutiveScale(false);
+                }
+                if (showEcosystemPortfolio) {
+                    setShowEcosystemPortfolio(false);
+                }
+                if (showServiceLine) {
+                    setShowServiceLine(false);
+                }
+                if (showPartnerNetworkGovernance) {
+                    setShowPartnerNetworkGovernance(false);
+                }
+                if (showGlobalPlanning) {
+                    setShowGlobalPlanning(false);
+                }
+                if (showEcosystemRevenue) {
+                    setShowEcosystemRevenue(false);
+                }
+                if (showBoardOperatingPack) {
+                    setShowBoardOperatingPack(false);
+                }
+                if (showLicensedOperator) {
+                    setShowLicensedOperator(false);
+                }
+                if (showEcosystemCommand) {
+                    setShowEcosystemCommand(false);
+                }
                 if (showShiftConsole) {
                     setShowShiftConsole(false);
                 }
@@ -1524,6 +1668,22 @@ function App() {
         showLaunchWeek,
         showFollowupGenerator,
         showFieldFeedback,
+        showPartnerCertification,
+        showManagedServices,
+        showStrategicAccount,
+        showPortfolioRollout,
+        showRevenueOps,
+        showChannelExpansion,
+        showCrossAccountRenewal,
+        showExecutiveScale,
+        showEcosystemPortfolio,
+        showServiceLine,
+        showPartnerNetworkGovernance,
+        showGlobalPlanning,
+        showEcosystemRevenue,
+        showBoardOperatingPack,
+        showLicensedOperator,
+        showEcosystemCommand,
         showShiftConsole,
         showIncidentMode,
         showPolicyRollout,
@@ -2962,6 +3122,70 @@ function App() {
                     setShowEcosystem(false);
                     setShowFieldFeedback(true);
                 }}
+                onOpenPartnerCertification={() => {
+                    setShowEcosystem(false);
+                    setShowPartnerCertification(true);
+                }}
+                onOpenManagedServices={() => {
+                    setShowEcosystem(false);
+                    setShowManagedServices(true);
+                }}
+                onOpenStrategicAccount={() => {
+                    setShowEcosystem(false);
+                    setShowStrategicAccount(true);
+                }}
+                onOpenPortfolioRollout={() => {
+                    setShowEcosystem(false);
+                    setShowPortfolioRollout(true);
+                }}
+                onOpenRevenueOps={() => {
+                    setShowEcosystem(false);
+                    setShowRevenueOps(true);
+                }}
+                onOpenChannelExpansion={() => {
+                    setShowEcosystem(false);
+                    setShowChannelExpansion(true);
+                }}
+                onOpenCrossAccountRenewal={() => {
+                    setShowEcosystem(false);
+                    setShowCrossAccountRenewal(true);
+                }}
+                onOpenExecutiveScale={() => {
+                    setShowEcosystem(false);
+                    setShowExecutiveScale(true);
+                }}
+                onOpenEcosystemPortfolio={() => {
+                    setShowEcosystem(false);
+                    setShowEcosystemPortfolio(true);
+                }}
+                onOpenServiceLine={() => {
+                    setShowEcosystem(false);
+                    setShowServiceLine(true);
+                }}
+                onOpenPartnerNetworkGovernance={() => {
+                    setShowEcosystem(false);
+                    setShowPartnerNetworkGovernance(true);
+                }}
+                onOpenGlobalPlanning={() => {
+                    setShowEcosystem(false);
+                    setShowGlobalPlanning(true);
+                }}
+                onOpenEcosystemRevenue={() => {
+                    setShowEcosystem(false);
+                    setShowEcosystemRevenue(true);
+                }}
+                onOpenBoardOperatingPack={() => {
+                    setShowEcosystem(false);
+                    setShowBoardOperatingPack(true);
+                }}
+                onOpenLicensedOperator={() => {
+                    setShowEcosystem(false);
+                    setShowLicensedOperator(true);
+                }}
+                onOpenEcosystemCommand={() => {
+                    setShowEcosystem(false);
+                    setShowEcosystemCommand(true);
+                }}
                 onOpenShiftConsole={() => {
                     setShowEcosystem(false);
                     setShowShiftConsole(true);
@@ -3017,6 +3241,22 @@ function App() {
                 onOpenLaunchWeek={() => setShowLaunchWeek(true)}
                 onOpenFollowupGenerator={() => setShowFollowupGenerator(true)}
                 onOpenFieldFeedback={() => setShowFieldFeedback(true)}
+                onOpenPartnerCertification={() => setShowPartnerCertification(true)}
+                onOpenManagedServices={() => setShowManagedServices(true)}
+                onOpenStrategicAccount={() => setShowStrategicAccount(true)}
+                onOpenPortfolioRollout={() => setShowPortfolioRollout(true)}
+                onOpenRevenueOps={() => setShowRevenueOps(true)}
+                onOpenChannelExpansion={() => setShowChannelExpansion(true)}
+                onOpenCrossAccountRenewal={() => setShowCrossAccountRenewal(true)}
+                onOpenExecutiveScale={() => setShowExecutiveScale(true)}
+                onOpenEcosystemPortfolio={() => setShowEcosystemPortfolio(true)}
+                onOpenServiceLine={() => setShowServiceLine(true)}
+                onOpenPartnerNetworkGovernance={() => setShowPartnerNetworkGovernance(true)}
+                onOpenGlobalPlanning={() => setShowGlobalPlanning(true)}
+                onOpenEcosystemRevenue={() => setShowEcosystemRevenue(true)}
+                onOpenBoardOperatingPack={() => setShowBoardOperatingPack(true)}
+                onOpenLicensedOperator={() => setShowLicensedOperator(true)}
+                onOpenEcosystemCommand={() => setShowEcosystemCommand(true)}
                 onOpenShift={() => setShowShiftConsole(true)}
                 onOpenIncidentMode={() => setShowIncidentMode(true)}
                 onOpenPolicyRollout={() => setShowPolicyRollout(true)}
@@ -3189,6 +3429,72 @@ function App() {
             <FieldFeedbackConsole
                 open={showFieldFeedback}
                 onClose={() => setShowFieldFeedback(false)}
+            />
+            <PartnerCertificationHub
+                open={showPartnerCertification}
+                onClose={() => setShowPartnerCertification(false)}
+            />
+            <ManagedServicesConsole
+                open={showManagedServices}
+                onClose={() => setShowManagedServices(false)}
+            />
+            <StrategicAccountConsole
+                open={showStrategicAccount}
+                onClose={() => setShowStrategicAccount(false)}
+            />
+            <PortfolioRolloutPlanner
+                open={showPortfolioRollout}
+                onClose={() => setShowPortfolioRollout(false)}
+            />
+            <RevenueOpsConsole
+                open={showRevenueOps}
+                onClose={() => setShowRevenueOps(false)}
+            />
+            <ChannelExpansionPlanner
+                open={showChannelExpansion}
+                onClose={() => setShowChannelExpansion(false)}
+            />
+            <CrossAccountRenewalMatrix
+                open={showCrossAccountRenewal}
+                onClose={() => setShowCrossAccountRenewal(false)}
+            />
+            <ExecutiveScaleDashboard
+                open={showExecutiveScale}
+                onClose={() => setShowExecutiveScale(false)}
+                onOpenPanel={openRuntimePanelById}
+            />
+            <EcosystemPortfolioConsole
+                open={showEcosystemPortfolio}
+                onClose={() => setShowEcosystemPortfolio(false)}
+            />
+            <ServiceLineConsole
+                open={showServiceLine}
+                onClose={() => setShowServiceLine(false)}
+            />
+            <PartnerNetworkGovernance
+                open={showPartnerNetworkGovernance}
+                onClose={() => setShowPartnerNetworkGovernance(false)}
+            />
+            <GlobalPlanningConsole
+                open={showGlobalPlanning}
+                onClose={() => setShowGlobalPlanning(false)}
+            />
+            <EcosystemRevenuePlanner
+                open={showEcosystemRevenue}
+                onClose={() => setShowEcosystemRevenue(false)}
+            />
+            <BoardOperatingPackConsole
+                open={showBoardOperatingPack}
+                onClose={() => setShowBoardOperatingPack(false)}
+            />
+            <LicensedOperatorFramework
+                open={showLicensedOperator}
+                onClose={() => setShowLicensedOperator(false)}
+            />
+            <EcosystemCommandCenter
+                open={showEcosystemCommand}
+                onClose={() => setShowEcosystemCommand(false)}
+                onOpenPanel={openRuntimePanelById}
             />
             <ShiftConsole
                 open={showShiftConsole}

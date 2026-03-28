@@ -29,6 +29,22 @@ export type EcosystemModuleId =
     | 'launch_week'
     | 'followup_generator'
     | 'field_feedback'
+    | 'partner_certification'
+    | 'managed_services'
+    | 'strategic_account'
+    | 'portfolio_rollout'
+    | 'revenue_ops'
+    | 'channel_expansion'
+    | 'cross_account_renewal'
+    | 'executive_scale'
+    | 'ecosystem_portfolio'
+    | 'service_line'
+    | 'partner_network_governance'
+    | 'global_planning'
+    | 'ecosystem_revenue'
+    | 'board_operating_pack'
+    | 'licensed_operator'
+    | 'ecosystem_command'
     | 'shift_console'
     | 'incident_mode'
     | 'policy_rollout'
@@ -254,6 +270,118 @@ export const ECOSYSTEM_MODULES: EcosystemModule[] = [
         id: 'field_feedback',
         title: 'Field Feedback Routing',
         description: 'Capture and classify field feedback for routing to product/support/docs/training queues.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support', 'operator'],
+    },
+    {
+        id: 'partner_certification',
+        title: 'Partner Certification Hub',
+        description: 'Formal partner certification, enablement assignment, recertification warnings, and registry export.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'managed_services',
+        title: 'Managed Services Console',
+        description: 'Multi-account managed operations with health, drift, and escalation visibility.',
+        minTier: 'pro',
+        roles: ['founder', 'support', 'operator'],
+    },
+    {
+        id: 'strategic_account',
+        title: 'Strategic Account Orchestration',
+        description: 'Stakeholder maps, blockers, and evidence-linked expansion hypotheses for key accounts.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'portfolio_rollout',
+        title: 'Portfolio Rollout Planner',
+        description: 'Cross-site/account rollout stage matrix with dependency and strain visibility.',
+        minTier: 'pro',
+        roles: ['founder', 'support', 'operator'],
+    },
+    {
+        id: 'revenue_ops',
+        title: 'Revenue Operations Console',
+        description: 'Pipeline-to-revenue, SKU mix, and expansion/renewal signal views.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'channel_expansion',
+        title: 'Channel Expansion Planner',
+        description: 'Channel model scorecards, enablement gaps, and launch package readiness planning.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'cross_account_renewal',
+        title: 'Cross-Account Renewal Matrix',
+        description: 'Renewal timing, risk overlays, and intervention planning across accounts.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'executive_scale',
+        title: 'Executive Scale Dashboard',
+        description: 'Founder/exec one-screen summary for partner, account, rollout, revenue, and renewal scale posture.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support', 'operator'],
+    },
+    {
+        id: 'ecosystem_portfolio',
+        title: 'Ecosystem Portfolio Console',
+        description: 'Operate product/service/channel portfolio lines with attachment path and health visibility.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'service_line',
+        title: 'Service Line Operating Layer',
+        description: 'Service line catalog, capacity, utilization, and health operations view.',
+        minTier: 'pro',
+        roles: ['founder', 'support', 'operator'],
+    },
+    {
+        id: 'partner_network_governance',
+        title: 'Partner Network Governance',
+        description: 'Network-wide tier, compliance, and governance-state command view.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'global_planning',
+        title: 'Global Account & Region Planning',
+        description: 'Region-fit overlays and phased global planning across account/deployment realities.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'ecosystem_revenue',
+        title: 'Ecosystem Revenue Mix Planner',
+        description: 'Revenue mix, margin proxy, and partner/support overlays across ecosystem lines.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'board_operating_pack',
+        title: 'Board / Investor Operating Pack',
+        description: 'Generate sober board/investor operating packs with evidence-linked appendix context.',
+        minTier: 'pro',
+        roles: ['founder'],
+    },
+    {
+        id: 'licensed_operator',
+        title: 'Licensed Operator Framework',
+        description: 'Controlled licensed-operator launch framework tied to training/certification/governance requirements.',
+        minTier: 'pro',
+        roles: ['founder', 'support'],
+    },
+    {
+        id: 'ecosystem_command',
+        title: 'Ecosystem Command Center',
+        description: 'Top-level ecosystem command summary with drill-down into all Δ18 systems.',
         minTier: 'pro',
         roles: ['founder', 'sales', 'support', 'operator'],
     },

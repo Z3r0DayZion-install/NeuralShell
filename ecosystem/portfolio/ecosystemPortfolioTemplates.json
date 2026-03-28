@@ -1,0 +1,25 @@
+{
+  "portfolioLines": [
+    "core_product",
+    "appliance_program",
+    "oversight_federation",
+    "training_delivery",
+    "support_operations",
+    "managed_services",
+    "partner_enablement"
+  ],
+  "attachmentPaths": [
+    "core_to_training",
+    "core_to_support",
+    "enterprise_to_appliance",
+    "pilot_to_managed_services",
+    "partner_enablement_to_channel_expansion"
+  ],
+  "healthDimensions": [
+    "adoption",
+    "delivery_capacity",
+    "support_load",
+    "renewal_momentum",
+    "partner_alignment"
+  ]
+}

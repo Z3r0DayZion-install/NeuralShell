@@ -55,6 +55,22 @@ export default function MissionControl({
     onOpenLaunchWeek,
     onOpenFollowupGenerator,
     onOpenFieldFeedback,
+    onOpenPartnerCertification,
+    onOpenManagedServices,
+    onOpenStrategicAccount,
+    onOpenPortfolioRollout,
+    onOpenRevenueOps,
+    onOpenChannelExpansion,
+    onOpenCrossAccountRenewal,
+    onOpenExecutiveScale,
+    onOpenEcosystemPortfolio,
+    onOpenServiceLine,
+    onOpenPartnerNetworkGovernance,
+    onOpenGlobalPlanning,
+    onOpenEcosystemRevenue,
+    onOpenBoardOperatingPack,
+    onOpenLicensedOperator,
+    onOpenEcosystemCommand,
     onOpenShift,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -308,6 +324,134 @@ export default function MissionControl({
                             className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
                         >
                             Feedback
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-partner-certification-btn"
+                            onClick={onOpenPartnerCertification}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Certify
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-managed-services-btn"
+                            onClick={onOpenManagedServices}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Managed
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-strategic-account-btn"
+                            onClick={onOpenStrategicAccount}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Strategic
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-portfolio-rollout-btn"
+                            onClick={onOpenPortfolioRollout}
+                            className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
+                        >
+                            Portfolio
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-revenue-ops-btn"
+                            onClick={onOpenRevenueOps}
+                            className="px-2.5 py-1.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/20"
+                        >
+                            Revenue
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-channel-expansion-btn"
+                            onClick={onOpenChannelExpansion}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Channel
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-cross-account-renewal-btn"
+                            onClick={onOpenCrossAccountRenewal}
+                            className="px-2.5 py-1.5 rounded border border-amber-300/30 bg-amber-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-amber-100 hover:bg-amber-500/20"
+                        >
+                            Renewal+
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-executive-scale-btn"
+                            onClick={onOpenExecutiveScale}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            ExecScale
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-ecosystem-portfolio-btn"
+                            onClick={onOpenEcosystemPortfolio}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Portfolio+
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-service-line-btn"
+                            onClick={onOpenServiceLine}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Services
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-partner-network-governance-btn"
+                            onClick={onOpenPartnerNetworkGovernance}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            PartnerNet
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-global-planning-btn"
+                            onClick={onOpenGlobalPlanning}
+                            className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
+                        >
+                            Global
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-ecosystem-revenue-btn"
+                            onClick={onOpenEcosystemRevenue}
+                            className="px-2.5 py-1.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/20"
+                        >
+                            RevMix
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-board-operating-pack-btn"
+                            onClick={onOpenBoardOperatingPack}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            BoardOps
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-licensed-operator-btn"
+                            onClick={onOpenLicensedOperator}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Operator
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-ecosystem-command-btn"
+                            onClick={onOpenEcosystemCommand}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            EcoCmd
                         </button>
                         <button
                             type="button"

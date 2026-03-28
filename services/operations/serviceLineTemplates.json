@@ -1,0 +1,12 @@
+{
+  "serviceLines": [
+    "deployment_services",
+    "training_delivery",
+    "support_operations",
+    "advisory_services",
+    "managed_operations",
+    "certification_delivery"
+  ],
+  "capacityDimensions": ["staffed_capacity", "active_load", "utilization_percent"],
+  "healthIndicators": ["delivery_sla", "escalation_backlog", "coverage_risk"]
+}

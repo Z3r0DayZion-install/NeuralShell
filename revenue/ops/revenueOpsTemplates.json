@@ -1,0 +1,17 @@
+{
+  "pipelineStages": ["lead", "evaluation", "security_review", "pilot", "procurement", "closed_won", "closed_lost"],
+  "skuFamilies": ["core_desktop", "pro_operator", "enterprise", "appliance", "oversight_federation", "training_bundle", "support_plan"],
+  "revenueDimensions": [
+    { "id": "new_revenue", "label": "New Revenue" },
+    { "id": "renewal_revenue", "label": "Renewal Revenue" },
+    { "id": "expansion_revenue", "label": "Expansion Revenue" },
+    { "id": "partner_sourced", "label": "Partner Sourced" }
+  ],
+  "monthlyPackSections": [
+    "pipeline_to_revenue",
+    "won_lost_stalled",
+    "sku_mix",
+    "renewal_expansion_split",
+    "partner_sourced_performance"
+  ]
+}

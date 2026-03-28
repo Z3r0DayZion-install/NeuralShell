@@ -1,0 +1,11 @@
+{
+  "operatorPackSections": [
+    "territory_scope",
+    "training_prerequisites",
+    "certification_prerequisites",
+    "governance_requirements",
+    "policy_controls",
+    "launch_readiness"
+  ],
+  "operatorTypes": ["licensed_operator", "regional_operator", "controlled_franchise"]
+}

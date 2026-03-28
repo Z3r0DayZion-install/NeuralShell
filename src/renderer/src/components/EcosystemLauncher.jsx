@@ -51,6 +51,22 @@ const APPLIANCE_ALLOWED_MODULES = new Set([
     'launch_week',
     'followup_generator',
     'field_feedback',
+    'partner_certification',
+    'managed_services',
+    'strategic_account',
+    'portfolio_rollout',
+    'revenue_ops',
+    'channel_expansion',
+    'cross_account_renewal',
+    'executive_scale',
+    'ecosystem_portfolio',
+    'service_line',
+    'partner_network_governance',
+    'global_planning',
+    'ecosystem_revenue',
+    'board_operating_pack',
+    'licensed_operator',
+    'ecosystem_command',
     'shift_console',
     'incident_mode',
     'policy_rollout',
@@ -126,6 +142,22 @@ export default function EcosystemLauncher({
     onOpenLaunchWeek,
     onOpenFollowupGenerator,
     onOpenFieldFeedback,
+    onOpenPartnerCertification,
+    onOpenManagedServices,
+    onOpenStrategicAccount,
+    onOpenPortfolioRollout,
+    onOpenRevenueOps,
+    onOpenChannelExpansion,
+    onOpenCrossAccountRenewal,
+    onOpenExecutiveScale,
+    onOpenEcosystemPortfolio,
+    onOpenServiceLine,
+    onOpenPartnerNetworkGovernance,
+    onOpenGlobalPlanning,
+    onOpenEcosystemRevenue,
+    onOpenBoardOperatingPack,
+    onOpenLicensedOperator,
+    onOpenEcosystemCommand,
     onOpenShiftConsole,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -737,6 +769,294 @@ export default function EcosystemLauncher({
                                 className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
                             >
                                 Open Field Feedback
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'partner_certification' && (
+                        <section data-testid="ecosystem-partner-certification-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Partner Certification Hub</div>
+                            <div className="text-[11px] text-slate-200">
+                                Manage partner certification tracks, recertification warnings, and co-sell readiness exports.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-partner-certification-btn"
+                                onClick={() => {
+                                    if (typeof onOpenPartnerCertification === 'function') onOpenPartnerCertification();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Partner Certification
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'managed_services' && (
+                        <section data-testid="ecosystem-managed-services-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Managed Services Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Run operator-network account health, escalation, and drift management across managed accounts.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-managed-services-btn"
+                                onClick={() => {
+                                    if (typeof onOpenManagedServices === 'function') onOpenManagedServices();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Managed Services
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'strategic_account' && (
+                        <section data-testid="ecosystem-strategic-account-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Strategic Account Orchestration</div>
+                            <div className="text-[11px] text-slate-200">
+                                Orchestrate stakeholder maps, blockers, and evidence-linked expansion hypotheses for key accounts.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-strategic-account-btn"
+                                onClick={() => {
+                                    if (typeof onOpenStrategicAccount === 'function') onOpenStrategicAccount();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Strategic Account
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'portfolio_rollout' && (
+                        <section data-testid="ecosystem-portfolio-rollout-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Portfolio Rollout Planner</div>
+                            <div className="text-[11px] text-slate-200">
+                                Coordinate rollout stages, dependency hotspots, and resource strain across accounts and sites.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-portfolio-rollout-btn"
+                                onClick={() => {
+                                    if (typeof onOpenPortfolioRollout === 'function') onOpenPortfolioRollout();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
+                            >
+                                Open Portfolio Rollout
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'revenue_ops' && (
+                        <section data-testid="ecosystem-revenue-ops-entry" className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-100 font-bold">Revenue Operations Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Review pipeline-to-revenue conversion, SKU mix, and expansion-vs-renewal posture from local data.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-revenue-ops-btn"
+                                onClick={() => {
+                                    if (typeof onOpenRevenueOps === 'function') onOpenRevenueOps();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-emerald-200/35 bg-emerald-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/30"
+                            >
+                                Open Revenue Ops
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'channel_expansion' && (
+                        <section data-testid="ecosystem-channel-expansion-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Channel Expansion Planner</div>
+                            <div className="text-[11px] text-slate-200">
+                                Plan channel models, readiness gaps, and enablement priorities for controlled growth.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-channel-expansion-btn"
+                                onClick={() => {
+                                    if (typeof onOpenChannelExpansion === 'function') onOpenChannelExpansion();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Channel Expansion
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'cross_account_renewal' && (
+                        <section data-testid="ecosystem-cross-account-renewal-entry" className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-amber-100 font-bold">Cross-Account Renewal Matrix</div>
+                            <div className="text-[11px] text-slate-200">
+                                Visualize renewal urgency and intervention planning across multiple accounts in one matrix.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-cross-account-renewal-btn"
+                                onClick={() => {
+                                    if (typeof onOpenCrossAccountRenewal === 'function') onOpenCrossAccountRenewal();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-amber-200/35 bg-amber-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-amber-100 hover:bg-amber-500/30"
+                            >
+                                Open Cross-Account Renewal
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'executive_scale' && (
+                        <section data-testid="ecosystem-executive-scale-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Executive Scale Dashboard</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open one-screen executive scale operations view with partner, account, rollout, and revenue signals.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-executive-scale-btn"
+                                onClick={() => {
+                                    if (typeof onOpenExecutiveScale === 'function') onOpenExecutiveScale();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Executive Scale
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'ecosystem_portfolio' && (
+                        <section data-testid="ecosystem-portfolio-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Ecosystem Portfolio Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Operate portfolio lines and attachment paths across product, services, support, and channels.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-ecosystem-portfolio-btn"
+                                onClick={() => {
+                                    if (typeof onOpenEcosystemPortfolio === 'function') onOpenEcosystemPortfolio();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Ecosystem Portfolio
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'service_line' && (
+                        <section data-testid="ecosystem-service-line-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Service Line Operating Layer</div>
+                            <div className="text-[11px] text-slate-200">
+                                Manage service-line capacity, utilization, and operating health for delivery discipline.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-service-line-btn"
+                                onClick={() => {
+                                    if (typeof onOpenServiceLine === 'function') onOpenServiceLine();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Service Line Console
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'partner_network_governance' && (
+                        <section data-testid="ecosystem-partner-network-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Partner Network Governance</div>
+                            <div className="text-[11px] text-slate-200">
+                                Track tier governance, compliance posture, and escalation/reactivation flows across the partner network.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-partner-network-governance-btn"
+                                onClick={() => {
+                                    if (typeof onOpenPartnerNetworkGovernance === 'function') onOpenPartnerNetworkGovernance();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Partner Network Governance
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'global_planning' && (
+                        <section data-testid="ecosystem-global-planning-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Global Account & Region Planning</div>
+                            <div className="text-[11px] text-slate-200">
+                                Plan global account and region expansion using deployment, compliance, and channel-fit overlays.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-global-planning-btn"
+                                onClick={() => {
+                                    if (typeof onOpenGlobalPlanning === 'function') onOpenGlobalPlanning();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
+                            >
+                                Open Global Planning
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'ecosystem_revenue' && (
+                        <section data-testid="ecosystem-ecosystem-revenue-entry" className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-100 font-bold">Ecosystem Revenue Mix Planner</div>
+                            <div className="text-[11px] text-slate-200">
+                                Optimize ecosystem revenue mix across product, services, support, and partner-sourced streams.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-ecosystem-revenue-btn"
+                                onClick={() => {
+                                    if (typeof onOpenEcosystemRevenue === 'function') onOpenEcosystemRevenue();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-emerald-200/35 bg-emerald-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/30"
+                            >
+                                Open Ecosystem Revenue
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'board_operating_pack' && (
+                        <section data-testid="ecosystem-board-operating-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Board / Investor Operating Pack</div>
+                            <div className="text-[11px] text-slate-200">
+                                Generate board operating packs with risk framing and evidence-linked appendix references.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-board-operating-pack-btn"
+                                onClick={() => {
+                                    if (typeof onOpenBoardOperatingPack === 'function') onOpenBoardOperatingPack();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Board Operating Pack
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'licensed_operator' && (
+                        <section data-testid="ecosystem-licensed-operator-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Licensed Operator Framework</div>
+                            <div className="text-[11px] text-slate-200">
+                                Prepare controlled licensed/regional operator launch packs with governance prerequisites.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-licensed-operator-btn"
+                                onClick={() => {
+                                    if (typeof onOpenLicensedOperator === 'function') onOpenLicensedOperator();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Licensed Operator Framework
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'ecosystem_command' && (
+                        <section data-testid="ecosystem-ecosystem-command-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Ecosystem Command Center</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open top-level ecosystem command surface with portfolio, network, service, planning, and revenue posture.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-ecosystem-command-btn"
+                                onClick={() => {
+                                    if (typeof onOpenEcosystemCommand === 'function') onOpenEcosystemCommand();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Ecosystem Command
                             </button>
                         </section>
                     )}
