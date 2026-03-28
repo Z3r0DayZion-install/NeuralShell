@@ -95,6 +95,50 @@ function verifyOfflineFirstGuardrails() {
   );
 }
 
+function readInstallerSmokeReport() {
+  const filePath = path.join(root, "release", "installer-smoke-report.json");
+  if (!existsNonEmpty(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch (err) {
+    return {
+      parseError: err && err.message ? err.message : String(err)
+    };
+  }
+}
+
+function summarizeInstallerSmoke(installerSmoke) {
+  if (!installerSmoke || typeof installerSmoke !== "object") return null;
+  const smokeChecks = installerSmoke.smoke && installerSmoke.smoke.report && installerSmoke.smoke.report.checks
+    ? installerSmoke.smoke.report.checks
+    : {};
+  return {
+    generatedAt: installerSmoke.generatedAt || null,
+    passed: Boolean(installerSmoke.passed),
+    strictInstall: Boolean(installerSmoke.strictInstall),
+    installerPath: installerSmoke.installerPath || null,
+    installDir: installerSmoke.installDir || null,
+    userDataDir: installerSmoke.userDataDir || null,
+    smokeReportPath: installerSmoke.smokeReportPath || null,
+    error: installerSmoke.error || null,
+    install: installerSmoke.install || null,
+    smoke: installerSmoke.smoke
+      ? {
+        code: installerSmoke.smoke.code,
+        signal: installerSmoke.smoke.signal,
+        durationMs: installerSmoke.smoke.durationMs,
+        resolvedByReport: Boolean(installerSmoke.smoke.resolvedByReport),
+        reportPath: installerSmoke.smoke.reportPath || null,
+        checks: {
+          rendererLoad: Boolean(smokeChecks.rendererLoad),
+          rendererDom: Boolean(smokeChecks.rendererDom),
+          ipcHandshake: Boolean(smokeChecks.ipcHandshake)
+        }
+      }
+      : null
+  };
+}
+
 function writeGateReport(report) {
   fs.mkdirSync(path.dirname(releaseGateReportPath), { recursive: true });
   fs.writeFileSync(releaseGateReportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
@@ -108,6 +152,7 @@ function main() {
   let strictInstallerPass = null;
   let strictInstallerSoftFailed = false;
   let strictInstallerSoftFailReason = "";
+  let installerSmokeSummary = null;
 
   run("npm test");
   run("npm run benchmark:autonomy");
@@ -135,12 +180,20 @@ function main() {
     }
     try {
       run(`node tear/smoke-installer.js --strict-install --timeout-ms=45000 --smoke-timeout-ms=${installerSmokeTimeoutMs}`);
+      installerSmokeSummary = summarizeInstallerSmoke(readInstallerSmokeReport());
       strictInstallerPass = true;
     } catch (err) {
       strictInstallerPass = false;
+      installerSmokeSummary = summarizeInstallerSmoke(readInstallerSmokeReport());
+      const smokeError = installerSmokeSummary && installerSmokeSummary.error
+        ? JSON.stringify(installerSmokeSummary.error)
+        : "";
+      strictInstallerSoftFailReason = [
+        err && err.message ? err.message : String(err),
+        smokeError ? `installerSmoke=${smokeError}` : ""
+      ].filter(Boolean).join(" | ");
       if (allowInstallerSoftFail) {
         strictInstallerSoftFailed = true;
-        strictInstallerSoftFailReason = err && err.message ? err.message : String(err);
         console.warn(
           `\n[release-gate] Installer smoke soft-failed (${strictInstallerSoftFailReason}). Continuing due NEURAL_RELEASE_ALLOW_INSTALLER_SOFTFAIL/CI.`
         );
@@ -151,6 +204,8 @@ function main() {
           strictPackagedPass,
           strictInstallerPass,
           strictInstallerSoftFailed: false,
+          strictInstallerSoftFailReason,
+          installerSmoke: installerSmokeSummary,
           passed: false,
           failureStage: "smoke-installer:strict"
         });
@@ -170,6 +225,7 @@ function main() {
     strictInstallerPass,
     strictInstallerSoftFailed,
     strictInstallerSoftFailReason,
+    installerSmoke: installerSmokeSummary,
     passed: true
   });
   console.log("\nRelease gate passed.");
