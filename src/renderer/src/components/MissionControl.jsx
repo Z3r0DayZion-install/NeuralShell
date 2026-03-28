@@ -28,6 +28,14 @@ export default function MissionControl({
     runtimeState,
     events,
     onOpenSettings,
+    onOpenFleet,
+    onOpenRecovery,
+    onOpenAppliance,
+    onOpenShift,
+    onOpenIncidentMode,
+    onOpenPolicyRollout,
+    onOpenOfflineUpdates,
+    onOpenMissionScheduler,
     onOpenNodeChain,
     onOpenWatchdog,
     onOpenFirstBoot,
@@ -61,6 +69,70 @@ export default function MissionControl({
                         <div className="text-[10px] text-slate-500 font-mono">Runtime cockpit, authority feed, and control rails.</div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-fleet-btn"
+                            onClick={onOpenFleet}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Fleet
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-recovery-btn"
+                            onClick={onOpenRecovery}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Recovery
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-appliance-btn"
+                            onClick={onOpenAppliance}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Appliance
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-shift-btn"
+                            onClick={onOpenShift}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Shift
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-incident-btn"
+                            onClick={onOpenIncidentMode}
+                            className="px-2.5 py-1.5 rounded border border-rose-300/30 bg-rose-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-rose-100 hover:bg-rose-500/20"
+                        >
+                            Incident
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-policy-rollout-btn"
+                            onClick={onOpenPolicyRollout}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Rollout
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-offline-updates-btn"
+                            onClick={onOpenOfflineUpdates}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Updates
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-mission-scheduler-btn"
+                            onClick={onOpenMissionScheduler}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Missions
+                        </button>
                         <button
                             type="button"
                             data-testid="mission-control-open-nodechain-btn"

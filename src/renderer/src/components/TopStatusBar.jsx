@@ -5,6 +5,7 @@ import { useUIPreferences } from '../state/useUIPreferences';
 import CollabBadge from './CollabBadge';
 import TierBadge from './TierBadge';
 import WatchdogStatusBadge from './WatchdogStatusBadge.jsx';
+import ApplianceModeBadge from './ApplianceModeBadge.jsx';
 
 function estimateCostPer1k(providerId) {
     const provider = String(providerId || '').trim().toLowerCase();
@@ -42,6 +43,8 @@ export function TopStatusBar({
     onOpenAnalytics,
     onOpenEcosystem,
     onOpenMissionControl,
+    onOpenFleetControl,
+    onOpenApplianceConsole,
     onToggleScratchpad,
     watchdogStatus,
     watchdogAlertCount,
@@ -53,6 +56,7 @@ export function TopStatusBar({
     collabRoomId,
     collabPeerCount,
     accelStatus,
+    applianceModeEnabled,
     feedbackDisabled,
     feedbackUrl,
     onOpenIssueAssist,
@@ -277,10 +281,22 @@ export function TopStatusBar({
                 >
                     Mission
                 </button>
+                <button
+                    data-testid="fleet-control-open-btn"
+                    onClick={onOpenFleetControl}
+                    className="px-2.5 py-1.5 rounded-lg border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono text-cyan-100 hover:bg-cyan-500/20"
+                    title="Fleet Control"
+                >
+                    Fleet
+                </button>
                 <WatchdogStatusBadge
                     status={watchdogStatus}
                     alertCount={watchdogAlertCount}
                     onClick={onOpenRuntimeAlerts}
+                />
+                <ApplianceModeBadge
+                    enabled={applianceModeEnabled}
+                    onOpen={onOpenApplianceConsole}
                 />
                 <button
                     type="button"

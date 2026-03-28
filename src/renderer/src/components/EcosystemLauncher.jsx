@@ -22,6 +22,18 @@ const ROLE_OPTIONS = [
     { id: 'support', label: 'Support' },
     { id: 'operator', label: 'Operator' },
 ];
+const APPLIANCE_ALLOWED_MODULES = new Set([
+    'mission_control',
+    'fleet_control',
+    'recovery_center',
+    'appliance_console',
+    'shift_console',
+    'incident_mode',
+    'policy_rollout',
+    'offline_update_packs',
+    'mission_scheduler',
+    'enterprise_policy',
+]);
 
 function loadRole() {
     if (typeof window === 'undefined' || !window.localStorage) return 'founder';
@@ -63,6 +75,15 @@ export default function EcosystemLauncher({
     capabilities = [],
     tierId = 'free',
     onOpenMissionControl,
+    onOpenFleetControl,
+    onOpenRecoveryCenter,
+    onOpenApplianceConsole,
+    onOpenShiftConsole,
+    onOpenIncidentMode,
+    onOpenPolicyRollout,
+    onOpenOfflineUpdates,
+    onOpenMissionScheduler,
+    applianceModeEnabled = false,
 }) {
     const [role, setRole] = React.useState(() => loadRole());
     const [activeModuleId, setActiveModuleId] = React.useState('ecosystem_launcher');
@@ -73,8 +94,12 @@ export default function EcosystemLauncher({
     }, [role]);
 
     const accessibleModules = React.useMemo(
-        () => getAccessibleEcosystemModules(role, tierId, capabilities),
-        [capabilities, role, tierId],
+        () => {
+            const base = getAccessibleEcosystemModules(role, tierId, capabilities);
+            if (!applianceModeEnabled) return base;
+            return base.filter((item) => APPLIANCE_ALLOWED_MODULES.has(item.id));
+        },
+        [applianceModeEnabled, capabilities, role, tierId],
     );
 
     React.useEffect(() => {
@@ -178,6 +203,150 @@ export default function EcosystemLauncher({
                                 className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
                             >
                                 Open Mission Control
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'fleet_control' && (
+                        <section data-testid="ecosystem-fleet-control-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Fleet Control</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open the multi-node fleet panel to import offline bundles, compare node posture, and drill into node-level event feeds.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-fleet-control-btn"
+                                onClick={() => {
+                                    if (typeof onOpenFleetControl === 'function') onOpenFleetControl();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Fleet Control
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'recovery_center' && (
+                        <section data-testid="ecosystem-recovery-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Recovery Center</div>
+                            <div className="text-[11px] text-slate-200">
+                                Generate signed backup bundles, verify restore artifacts, and apply staged or safe-mode recovery.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-recovery-btn"
+                                onClick={() => {
+                                    if (typeof onOpenRecoveryCenter === 'function') onOpenRecoveryCenter();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Recovery Center
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'appliance_console' && (
+                        <section data-testid="ecosystem-appliance-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Appliance Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open hardened appliance controls for relay, policy distribution, update gating, and support ingest posture.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-appliance-btn"
+                                onClick={() => {
+                                    if (typeof onOpenApplianceConsole === 'function') onOpenApplianceConsole();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Appliance Console
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'shift_console' && (
+                        <section data-testid="ecosystem-shift-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Shift Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open role-based shift operations, handoff notes, and signed summary exports.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-shift-btn"
+                                onClick={() => {
+                                    if (typeof onOpenShiftConsole === 'function') onOpenShiftConsole();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Shift Console
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'incident_mode' && (
+                        <section data-testid="ecosystem-incident-entry" className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-rose-100 font-bold">Incident Mode</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open incident workflow to capture timeline, attach nodes, apply playbooks, and export incident bundles.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-incident-btn"
+                                onClick={() => {
+                                    if (typeof onOpenIncidentMode === 'function') onOpenIncidentMode();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-rose-200/35 bg-rose-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-rose-100 hover:bg-rose-500/30"
+                            >
+                                Open Incident Mode
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'policy_rollout' && (
+                        <section data-testid="ecosystem-policy-rollout-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Policy Rollout</div>
+                            <div className="text-[11px] text-slate-200">
+                                Launch signed policy rollout controls with diff preview and rollback history.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-policy-rollout-btn"
+                                onClick={() => {
+                                    if (typeof onOpenPolicyRollout === 'function') onOpenPolicyRollout();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Policy Rollout
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'offline_update_packs' && (
+                        <section data-testid="ecosystem-offline-updates-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Offline Update Packs</div>
+                            <div className="text-[11px] text-slate-200">
+                                Verify signed update packs, assign node rings, and promote update lanes with explicit control.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-offline-updates-btn"
+                                onClick={() => {
+                                    if (typeof onOpenOfflineUpdates === 'function') onOpenOfflineUpdates();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Offline Updates
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'mission_scheduler' && (
+                        <section data-testid="ecosystem-mission-scheduler-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Mission Scheduler</div>
+                            <div className="text-[11px] text-slate-200">
+                                Run NodeChain mission templates with schedules, dry-run controls, and mission history visibility.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-mission-scheduler-btn"
+                                onClick={() => {
+                                    if (typeof onOpenMissionScheduler === 'function') onOpenMissionScheduler();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Mission Scheduler
                             </button>
                         </section>
                     )}

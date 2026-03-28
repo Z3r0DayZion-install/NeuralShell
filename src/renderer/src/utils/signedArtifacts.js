@@ -183,31 +183,36 @@ export async function verifyArtifactSignature(payload, signatureBase64, publicKe
     if (!window.crypto || !window.crypto.subtle) {
         throw new Error('WebCrypto is unavailable.');
     }
-    const publicKey = await importPublicKeyPem(publicKeyPem);
-    const encoder = new window.TextEncoder();
-    const normalized = stableStringify(payload);
-    const signatureBuffer = base64Decode(signatureBase64);
-    const verified = await window.crypto.subtle.verify(
-        {
-            name: 'ECDSA',
-            hash: { name: 'SHA-256' },
-        },
-        publicKey,
-        signatureBuffer,
-        encoder.encode(normalized),
-    );
-    if (verified) return true;
     try {
-        const rawSignature = derToRawEcdsaSignature(signatureBuffer, 32);
-        return window.crypto.subtle.verify(
+        const publicKey = await importPublicKeyPem(publicKeyPem);
+        const encoder = new window.TextEncoder();
+        const normalized = stableStringify(payload);
+        const signatureBuffer = base64Decode(signatureBase64);
+        const verified = await window.crypto.subtle.verify(
             {
                 name: 'ECDSA',
                 hash: { name: 'SHA-256' },
             },
             publicKey,
-            rawSignature,
+            signatureBuffer,
             encoder.encode(normalized),
         );
+        if (verified) return true;
+        try {
+            const rawSignature = derToRawEcdsaSignature(signatureBuffer, 32);
+            const rawVerified = await window.crypto.subtle.verify(
+                {
+                    name: 'ECDSA',
+                    hash: { name: 'SHA-256' },
+                },
+                publicKey,
+                rawSignature,
+                encoder.encode(normalized),
+            );
+            return Boolean(rawVerified);
+        } catch {
+            return false;
+        }
     } catch {
         return false;
     }

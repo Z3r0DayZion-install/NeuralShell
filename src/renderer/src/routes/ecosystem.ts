@@ -2,6 +2,14 @@ export type EcosystemRole = 'founder' | 'sales' | 'support' | 'operator';
 
 export type EcosystemModuleId =
     | 'mission_control'
+    | 'fleet_control'
+    | 'recovery_center'
+    | 'appliance_console'
+    | 'shift_console'
+    | 'incident_mode'
+    | 'policy_rollout'
+    | 'offline_update_packs'
+    | 'mission_scheduler'
     | 'sales_console'
     | 'pilot_kit'
     | 'white_label'
@@ -35,6 +43,62 @@ export const ECOSYSTEM_MODULES: EcosystemModule[] = [
         description: 'Runtime authority cockpit with live health cards, event feed, and watchdog visibility.',
         minTier: 'free',
         roles: ['founder', 'sales', 'support', 'operator'],
+    },
+    {
+        id: 'fleet_control',
+        title: 'Fleet Control',
+        description: 'Import and compare multi-node runtime bundles with health and event drill-ins.',
+        minTier: 'pro',
+        roles: ['founder', 'support', 'operator'],
+    },
+    {
+        id: 'recovery_center',
+        title: 'Recovery Center',
+        description: 'Signed recovery bundles, restore preview, and safe-mode restoration flow.',
+        minTier: 'pro',
+        roles: ['founder', 'support', 'operator'],
+    },
+    {
+        id: 'appliance_console',
+        title: 'Appliance Console',
+        description: 'Operator-only hardened appliance mode for relay/control deployments.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'shift_console',
+        title: 'Shift Console',
+        description: 'Role-aware handoff console with signed shift summaries.',
+        minTier: 'pro',
+        roles: ['founder', 'operator', 'support', 'sales'],
+    },
+    {
+        id: 'incident_mode',
+        title: 'Incident Mode',
+        description: 'Declare and manage degraded/critical incidents with playbook execution.',
+        minTier: 'pro',
+        roles: ['founder', 'operator', 'support', 'security'],
+    },
+    {
+        id: 'policy_rollout',
+        title: 'Policy Rollout',
+        description: 'Signed fleet policy rollout preview, apply, and rollback history.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support', 'security'],
+    },
+    {
+        id: 'offline_update_packs',
+        title: 'Offline Update Packs',
+        description: 'Verify offline update packs and assign/promote update rings per node.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support', 'security'],
+    },
+    {
+        id: 'mission_scheduler',
+        title: 'Mission Scheduler',
+        description: 'NodeChain mission templates, schedules, dry-run controls, and run history.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support'],
     },
     {
         id: 'sales_console',

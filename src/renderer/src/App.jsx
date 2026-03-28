@@ -18,11 +18,21 @@ import RuntimeAlertsDrawer from './components/RuntimeAlertsDrawer.jsx';
 import FirstBootWizard from './components/FirstBootWizard.jsx';
 import OnboardingProgressRail from './components/OnboardingProgressRail.jsx';
 import SplitWorkspace from './components/SplitWorkspace.jsx';
+import FleetControlPanel from './components/FleetControlPanel.jsx';
+import RecoveryCenter from './components/RecoveryCenter.jsx';
+import ApplianceConsole from './components/ApplianceConsole.jsx';
+import ShiftConsole from './components/ShiftConsole.jsx';
+import IncidentModePanel from './components/IncidentModePanel.jsx';
+import PolicyRolloutConsole from './components/PolicyRolloutConsole.jsx';
+import OfflineUpdateConsole from './components/OfflineUpdateConsole.jsx';
+import MissionScheduler from './components/MissionScheduler.jsx';
 import { useAccent } from './hooks/useAccent.ts';
 import { useCollabRoom } from './hooks/useCollabRoom.ts';
 import { useRuntimeState } from './hooks/useRuntimeState.ts';
 import { useEventFeed } from './hooks/useEventFeed.ts';
 import { useFirstBoot } from './hooks/useFirstBoot.ts';
+import { useFleetState } from './hooks/useFleetState.ts';
+import { getRoleCapabilities } from './runtime/roles/roleCapabilities.ts';
 import { NodeChainEngine } from './runtime/nodechain/engine.ts';
 import starterNodeChainRules from './config/nodechain_starter_rules.json';
 import { appendRuntimeEvent, onRuntimeEvent } from './runtime/runtimeEventBus.ts';
@@ -40,6 +50,10 @@ const BALANCED_LAYOUT_MIN = 1080;
 const RAIL_LAYOUT_PREFS_KEY = 'neuralshell_rail_layout_prefs_v1';
 const RAIL_COLLAPSE_PREFS_KEY = 'neuralshell_rail_collapse_prefs_v1';
 const RAIL_RESIZE_HINT_DISMISSED_KEY = 'neuralshell_rail_resize_hint_dismissed_v1';
+const APPLIANCE_MODE_KEY = 'neuralshell_appliance_mode_v1';
+const RUNTIME_ROLE_KEY = 'neuralshell_runtime_role_v1';
+const INCIDENTS_STORAGE_KEY = 'neuralshell_incidents_v1';
+const POLICY_ROLLOUT_HISTORY_KEY = 'neuralshell_policy_rollout_history_v1';
 const DEFAULT_THREAD_RAIL_WIDTH = 288;
 const DEFAULT_WORKBENCH_RAIL_WIDTH = 288;
 const THREAD_RAIL_MIN_WIDTH = 236;
@@ -229,6 +243,45 @@ function App() {
     const [showAnalytics, setShowAnalytics] = React.useState(false);
     const [showEcosystem, setShowEcosystem] = React.useState(false);
     const [showMissionControl, setShowMissionControl] = React.useState(false);
+    const [showFleetControl, setShowFleetControl] = React.useState(false);
+    const [showRecoveryCenter, setShowRecoveryCenter] = React.useState(false);
+    const [showApplianceConsole, setShowApplianceConsole] = React.useState(false);
+    const [showShiftConsole, setShowShiftConsole] = React.useState(false);
+    const [showIncidentMode, setShowIncidentMode] = React.useState(false);
+    const [showPolicyRollout, setShowPolicyRollout] = React.useState(false);
+    const [showOfflineUpdateConsole, setShowOfflineUpdateConsole] = React.useState(false);
+    const [showMissionScheduler, setShowMissionScheduler] = React.useState(false);
+    const [applianceModeEnabled, setApplianceModeEnabled] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return false;
+        return window.localStorage.getItem(APPLIANCE_MODE_KEY) === '1';
+    });
+    const [activeRuntimeRole, setActiveRuntimeRole] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return 'operator';
+        const stored = String(window.localStorage.getItem(RUNTIME_ROLE_KEY) || 'operator').trim().toLowerCase();
+        if (stored === 'founder' || stored === 'operator' || stored === 'support' || stored === 'security' || stored === 'sales') {
+            return stored;
+        }
+        return 'operator';
+    });
+    const [incidents, setIncidents] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return [];
+        try {
+            const parsed = JSON.parse(window.localStorage.getItem(INCIDENTS_STORAGE_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    });
+    const [policyRolloutHistory, setPolicyRolloutHistory] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return [];
+        try {
+            const parsed = JSON.parse(window.localStorage.getItem(POLICY_ROLLOUT_HISTORY_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    });
+    const roleCapabilities = React.useMemo(() => getRoleCapabilities(activeRuntimeRole), [activeRuntimeRole]);
     const [showNodeChainPanel, setShowNodeChainPanel] = React.useState(false);
     const [showRuntimeAlerts, setShowRuntimeAlerts] = React.useState(false);
     const [showFirstBootWizard, setShowFirstBootWizard] = React.useState(false);
@@ -281,6 +334,7 @@ function App() {
     const nodeChainRulesHashRef = React.useRef('');
     const watchdogSupervisorRef = React.useRef(null);
     const lastUpdateSignatureRef = React.useRef('');
+    const lastIncidentEventIdRef = React.useRef('');
     const auditOnly = String(runtimeTier || '').toUpperCase() === 'AUDITOR';
     const capabilities = Array.isArray(runtimeCapabilityPayload.capabilities) ? runtimeCapabilityPayload.capabilities : [];
     const canUseOnboardingWizard = capabilities.includes('onboarding_wizard') || String(runtimeCapabilityPayload.tierId || '') === 'enterprise';
@@ -306,6 +360,7 @@ function App() {
     });
     const { events: runtimeEvents } = useEventFeed();
     const firstBoot = useFirstBoot();
+    const fleet = useFleetState();
     const {
         steps: firstBootSteps,
         progress: firstBootProgress,
@@ -420,6 +475,26 @@ function App() {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(APPLIANCE_MODE_KEY, applianceModeEnabled ? '1' : '0');
+    }, [applianceModeEnabled]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(RUNTIME_ROLE_KEY, String(activeRuntimeRole || 'operator'));
+    }, [activeRuntimeRole]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(INCIDENTS_STORAGE_KEY, JSON.stringify(Array.isArray(incidents) ? incidents : []));
+    }, [incidents]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(POLICY_ROLLOUT_HISTORY_KEY, JSON.stringify(Array.isArray(policyRolloutHistory) ? policyRolloutHistory : []));
+    }, [policyRolloutHistory]);
 
     React.useEffect(() => {
         if (layoutMode !== 'focused' && showLeftRailOverlay) {
@@ -690,10 +765,85 @@ function App() {
         }, { source: 'update-lane', severity: 'critical' });
     }, [runtimeState]);
 
+    React.useEffect(() => {
+        const latest = Array.isArray(runtimeEvents) && runtimeEvents.length ? runtimeEvents[runtimeEvents.length - 1] : null;
+        if (!latest || !latest.id) return;
+        if (String(lastIncidentEventIdRef.current || '') === String(latest.id)) return;
+        lastIncidentEventIdRef.current = String(latest.id);
+        setIncidents((prev) => {
+            const safe = Array.isArray(prev) ? prev : [];
+            return safe.map((incident) => {
+                if (String(incident && incident.status ? incident.status : '') !== 'open') return incident;
+                const timeline = Array.isArray(incident.timeline) ? incident.timeline : [];
+                return {
+                    ...incident,
+                    timeline: [...timeline, {
+                        at: String(latest.at || new Date().toISOString()),
+                        type: String(latest.type || 'runtime.event'),
+                        source: String(latest.source || 'runtime'),
+                        detail: latest.payload && typeof latest.payload === 'object' ? latest.payload : {},
+                    }].slice(-400),
+                };
+            });
+        });
+    }, [runtimeEvents]);
+
     const openRuntimePanelById = React.useCallback((panelId) => {
         const safePanel = String(panelId || '').trim().toLowerCase();
         if (safePanel === 'mission' || safePanel === 'mission-control') {
             setShowMissionControl(true);
+            return;
+        }
+        if (safePanel === 'fleet' || safePanel === 'fleet-control') {
+            if (!roleCapabilities.canManageFleet) {
+                appendRuntimeEvent('role.access.denied', { panel: safePanel, role: activeRuntimeRole }, { source: 'roles', severity: 'warning' });
+                return;
+            }
+            setShowFleetControl(true);
+            return;
+        }
+        if (safePanel === 'recovery' || safePanel === 'recovery-center') {
+            if (!roleCapabilities.canRunRecovery) {
+                appendRuntimeEvent('role.access.denied', { panel: safePanel, role: activeRuntimeRole }, { source: 'roles', severity: 'warning' });
+                return;
+            }
+            setShowRecoveryCenter(true);
+            return;
+        }
+        if (safePanel === 'appliance' || safePanel === 'appliance-console') {
+            if (!roleCapabilities.canManageAppliance) {
+                appendRuntimeEvent('role.access.denied', { panel: safePanel, role: activeRuntimeRole }, { source: 'roles', severity: 'warning' });
+                return;
+            }
+            setShowApplianceConsole(true);
+            return;
+        }
+        if (safePanel === 'shift' || safePanel === 'shift-console') {
+            setShowShiftConsole(true);
+            return;
+        }
+        if (safePanel === 'incident' || safePanel === 'incident-mode') {
+            if (!roleCapabilities.canDeclareIncidents) {
+                appendRuntimeEvent('role.access.denied', { panel: safePanel, role: activeRuntimeRole }, { source: 'roles', severity: 'warning' });
+                return;
+            }
+            setShowIncidentMode(true);
+            return;
+        }
+        if (safePanel === 'policy-rollout' || safePanel === 'rollout') {
+            if (!roleCapabilities.canRunPolicyRollouts) {
+                appendRuntimeEvent('role.access.denied', { panel: safePanel, role: activeRuntimeRole }, { source: 'roles', severity: 'warning' });
+                return;
+            }
+            setShowPolicyRollout(true);
+            return;
+        }
+        if (safePanel === 'update-packs' || safePanel === 'offline-updates') {
+            setShowOfflineUpdateConsole(true);
+            return;
+        }
+        if (safePanel === 'missions' || safePanel === 'mission-scheduler') {
+            setShowMissionScheduler(true);
             return;
         }
         if (safePanel === 'watchdog') {
@@ -716,7 +866,7 @@ function App() {
         if (safePanel === 'settings') {
             openSettings();
         }
-    }, [openSettings, reopenFirstBoot]);
+    }, [activeRuntimeRole, openSettings, reopenFirstBoot, roleCapabilities]);
 
     const triggerNodeChainSnapshot = React.useCallback(async () => {
         appendRuntimeEvent('runtime.snapshot.requested', {
@@ -1056,6 +1206,30 @@ function App() {
                 if (showMissionControl) {
                     setShowMissionControl(false);
                 }
+                if (showFleetControl) {
+                    setShowFleetControl(false);
+                }
+                if (showRecoveryCenter) {
+                    setShowRecoveryCenter(false);
+                }
+                if (showApplianceConsole) {
+                    setShowApplianceConsole(false);
+                }
+                if (showShiftConsole) {
+                    setShowShiftConsole(false);
+                }
+                if (showIncidentMode) {
+                    setShowIncidentMode(false);
+                }
+                if (showPolicyRollout) {
+                    setShowPolicyRollout(false);
+                }
+                if (showOfflineUpdateConsole) {
+                    setShowOfflineUpdateConsole(false);
+                }
+                if (showMissionScheduler) {
+                    setShowMissionScheduler(false);
+                }
                 if (showNodeChainPanel) {
                     setShowNodeChainPanel(false);
                 }
@@ -1087,6 +1261,14 @@ function App() {
         closeSettings,
         showEcosystem,
         showMissionControl,
+        showFleetControl,
+        showRecoveryCenter,
+        showApplianceConsole,
+        showShiftConsole,
+        showIncidentMode,
+        showPolicyRollout,
+        showOfflineUpdateConsole,
+        showMissionScheduler,
         showNodeChainPanel,
         showRuntimeAlerts,
         showFirstBootWizard,
@@ -1223,7 +1405,7 @@ function App() {
                 if (command === '/help') {
                     appendChat({
                         role: 'kernel',
-                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
+                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/fleet` : Open Fleet Control panel\n- `/recovery` : Open Recovery Center\n- `/appliance` : Open Appliance Console\n- `/shift` : Open Shift Console\n- `/incident` : Open Incident Mode\n- `/rollout` : Open Policy Rollout Console\n- `/updates` : Open Offline Update Console\n- `/missions` : Open Mission Scheduler\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
                     });
                 } else if (command === '/status') {
                     appendChat({
@@ -1259,6 +1441,62 @@ function App() {
                         content: 'Opening Mission Control cockpit.',
                     });
                     appendRuntimeEvent('runtime.panel.opened', { panel: 'mission-control' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/fleet') {
+                    setShowFleetControl(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Fleet Control panel.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'fleet-control' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/recovery') {
+                    setShowRecoveryCenter(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Recovery Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'recovery-center' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/appliance') {
+                    setShowApplianceConsole(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Appliance Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'appliance-console' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/shift') {
+                    setShowShiftConsole(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Shift Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'shift-console' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/incident') {
+                    setShowIncidentMode(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Incident Mode.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'incident-mode' }, { source: 'runtime', severity: 'warning' });
+                } else if (command === '/rollout') {
+                    setShowPolicyRollout(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Policy Rollout Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'policy-rollout' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/updates') {
+                    setShowOfflineUpdateConsole(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Offline Update Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'offline-update-console' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/missions') {
+                    setShowMissionScheduler(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Mission Scheduler.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'mission-scheduler' }, { source: 'runtime', severity: 'info' });
                 } else if (command === '/nodechain') {
                     setShowNodeChainPanel(true);
                     appendChat({
@@ -1557,6 +1795,13 @@ function App() {
         }
     }, []);
 
+    const importLocalRuntimeNode = React.useCallback(() => {
+        return fleet.importRuntimeNode(runtimeState, {
+            nodeId: 'local-runtime',
+            displayName: 'Local Runtime',
+        });
+    }, [fleet, runtimeState]);
+
     const restoreSnapshotPayload = React.useCallback((payload) => {
         const state = payload && typeof payload === 'object' ? payload : {};
         appendChat({
@@ -1792,6 +2037,8 @@ function App() {
                 onOpenAnalytics={() => setShowAnalytics(true)}
                 onOpenEcosystem={() => setShowEcosystem(true)}
                 onOpenMissionControl={() => setShowMissionControl(true)}
+                onOpenFleetControl={() => setShowFleetControl(true)}
+                onOpenApplianceConsole={() => setShowApplianceConsole(true)}
                 onToggleScratchpad={() => setShowScratchpad((prev) => !prev)}
                 watchdogStatus={watchdogStatus}
                 watchdogAlertCount={unacknowledgedWatchdogAlerts.length}
@@ -1803,6 +2050,7 @@ function App() {
                 collabRoomId={collab.roomId}
                 collabPeerCount={collabPeerCount}
                 accelStatus={accelStatus}
+                applianceModeEnabled={applianceModeEnabled}
                 feedbackDisabled={!connectionInfo.allowRemoteBridge}
                 feedbackUrl={FEEDBACK_URL}
                 onOpenIssueAssist={canUseIssueAssist ? () => setShowIssueAssist(true) : undefined}
@@ -2172,6 +2420,39 @@ function App() {
                     setShowEcosystem(false);
                     setShowMissionControl(true);
                 }}
+                onOpenFleetControl={() => {
+                    setShowEcosystem(false);
+                    setShowFleetControl(true);
+                }}
+                onOpenRecoveryCenter={() => {
+                    setShowEcosystem(false);
+                    setShowRecoveryCenter(true);
+                }}
+                onOpenApplianceConsole={() => {
+                    setShowEcosystem(false);
+                    setShowApplianceConsole(true);
+                }}
+                onOpenShiftConsole={() => {
+                    setShowEcosystem(false);
+                    setShowShiftConsole(true);
+                }}
+                onOpenIncidentMode={() => {
+                    setShowEcosystem(false);
+                    setShowIncidentMode(true);
+                }}
+                onOpenPolicyRollout={() => {
+                    setShowEcosystem(false);
+                    setShowPolicyRollout(true);
+                }}
+                onOpenOfflineUpdates={() => {
+                    setShowEcosystem(false);
+                    setShowOfflineUpdateConsole(true);
+                }}
+                onOpenMissionScheduler={() => {
+                    setShowEcosystem(false);
+                    setShowMissionScheduler(true);
+                }}
+                applianceModeEnabled={applianceModeEnabled}
             />
             <MissionControl
                 open={showMissionControl}
@@ -2179,6 +2460,14 @@ function App() {
                 runtimeState={runtimeState}
                 events={runtimeEvents}
                 onOpenSettings={openSettings}
+                onOpenFleet={() => setShowFleetControl(true)}
+                onOpenRecovery={() => setShowRecoveryCenter(true)}
+                onOpenAppliance={() => setShowApplianceConsole(true)}
+                onOpenShift={() => setShowShiftConsole(true)}
+                onOpenIncidentMode={() => setShowIncidentMode(true)}
+                onOpenPolicyRollout={() => setShowPolicyRollout(true)}
+                onOpenOfflineUpdates={() => setShowOfflineUpdateConsole(true)}
+                onOpenMissionScheduler={() => setShowMissionScheduler(true)}
                 onOpenNodeChain={() => setShowNodeChainPanel(true)}
                 onOpenWatchdog={() => setShowRuntimeAlerts(true)}
                 onOpenFirstBoot={() => {
@@ -2186,6 +2475,184 @@ function App() {
                     setShowFirstBootWizard(true);
                 }}
                 onOpenSplitWorkspace={() => setShowSplitWorkspace(true)}
+            />
+            <FleetControlPanel
+                open={showFleetControl}
+                onClose={() => setShowFleetControl(false)}
+                fleet={fleet}
+                onImportLocalRuntime={importLocalRuntimeNode}
+            />
+            <RecoveryCenter
+                open={showRecoveryCenter}
+                onClose={() => setShowRecoveryCenter(false)}
+            />
+            <ApplianceConsole
+                open={showApplianceConsole}
+                onClose={() => setShowApplianceConsole(false)}
+                enabled={applianceModeEnabled}
+                onToggleEnabled={async (nextEnabled) => {
+                    setApplianceModeEnabled(Boolean(nextEnabled));
+                    if (!(window.api && window.api.settings && typeof window.api.settings.get === 'function')) return;
+                    try {
+                        const current = await window.api.settings.get();
+                        const base = current && typeof current === 'object' ? current : {};
+                        if (nextEnabled) {
+                            await window.api.settings.update({
+                                ...base,
+                                offlineOnlyEnforced: true,
+                                allowRemoteBridge: false,
+                                autoUpdateChannel: 'locked',
+                            });
+                        }
+                    } catch {
+                        // best effort update only
+                    }
+                }}
+                runtimeState={runtimeState}
+                fleetSummary={fleet.healthSummary}
+            />
+            <ShiftConsole
+                open={showShiftConsole}
+                onClose={() => setShowShiftConsole(false)}
+                role={activeRuntimeRole}
+                onChangeRole={(nextRole) => setActiveRuntimeRole(nextRole)}
+                fleetNodes={fleet.nodes}
+                incidents={incidents.filter((entry) => String(entry && entry.status ? entry.status : '') === 'open')}
+            />
+            <IncidentModePanel
+                open={showIncidentMode}
+                onClose={() => setShowIncidentMode(false)}
+                incidents={incidents}
+                fleetNodes={fleet.nodes}
+                onDeclare={(input) => {
+                    const nextIncident = {
+                        incidentId: `inc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        title: String(input && input.title ? input.title : 'Runtime Incident'),
+                        severity: String(input && input.severity ? input.severity : 'degraded'),
+                        status: 'open',
+                        declaredAt: new Date().toISOString(),
+                        affectedNodes: Array.isArray(input && input.affectedNodes) ? input.affectedNodes : [],
+                        timeline: [],
+                    };
+                    setIncidents((prev) => [nextIncident, ...(Array.isArray(prev) ? prev : [])].slice(0, 250));
+                    appendRuntimeEvent('incident.declared', {
+                        incidentId: nextIncident.incidentId,
+                        severity: nextIncident.severity,
+                        affectedNodes: nextIncident.affectedNodes.length,
+                    }, { source: 'incident', severity: nextIncident.severity === 'critical' ? 'critical' : 'degraded' });
+                    return nextIncident;
+                }}
+                onResolve={(incidentId) => {
+                    setIncidents((prev) => (Array.isArray(prev) ? prev.map((entry) => (
+                        String(entry.incidentId || '') === String(incidentId || '')
+                            ? {
+                                ...entry,
+                                status: 'resolved',
+                                resolvedAt: new Date().toISOString(),
+                            }
+                            : entry
+                    )) : prev));
+                    appendRuntimeEvent('incident.resolved', { incidentId: String(incidentId || '') }, { source: 'incident', severity: 'info' });
+                }}
+                onApplyPlaybook={(playbook, activeIncident) => {
+                    const incidentId = String(activeIncident && activeIncident.incidentId ? activeIncident.incidentId : '');
+                    if (!incidentId) return;
+                    setIncidents((prev) => (Array.isArray(prev) ? prev.map((entry) => {
+                        if (String(entry.incidentId || '') !== incidentId) return entry;
+                        return {
+                            ...entry,
+                            timeline: [...(Array.isArray(entry.timeline) ? entry.timeline : []), {
+                                at: new Date().toISOString(),
+                                type: 'incident.playbook.applied',
+                                source: 'incident',
+                                detail: {
+                                    playbookId: String(playbook && playbook.id ? playbook.id : ''),
+                                    playbookTitle: String(playbook && playbook.title ? playbook.title : ''),
+                                },
+                            }].slice(-400),
+                        };
+                    }) : prev));
+                    appendRuntimeEvent('incident.playbook.applied', {
+                        incidentId,
+                        playbookId: String(playbook && playbook.id ? playbook.id : ''),
+                    }, { source: 'incident', severity: 'warning' });
+                }}
+                onTriggerSafeMode={async () => {
+                    if (!(window.api && window.api.settings && typeof window.api.settings.get === 'function')) return;
+                    try {
+                        const current = await window.api.settings.get();
+                        await window.api.settings.update({
+                            ...(current || {}),
+                            offlineOnlyEnforced: true,
+                            allowRemoteBridge: false,
+                            autoUpdateChannel: 'frozen',
+                        });
+                    } catch {
+                        // best effort
+                    }
+                    appendRuntimeEvent('incident.safe_mode.enabled', {}, { source: 'incident', severity: 'critical' });
+                }}
+            />
+            <PolicyRolloutConsole
+                open={showPolicyRollout}
+                onClose={() => setShowPolicyRollout(false)}
+                fleet={fleet}
+                history={policyRolloutHistory}
+                onApplyRollout={({ bundle, nodeIds, mode, scheduledFor }) => {
+                    const payload = bundle && bundle.payload && typeof bundle.payload === 'object' ? bundle.payload : {};
+                    const policyProfile = String(payload.policyProfile || payload.label || payload.policyId || 'fleet-policy');
+                    const policyId = String(payload.policyId || policyProfile || 'policy');
+                    const rolloutRecord = {
+                        rolloutId: `rollout-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        policyId,
+                        policyProfile,
+                        nodeIds: Array.isArray(nodeIds) ? nodeIds : [],
+                        mode: String(mode || 'immediate'),
+                        scheduledFor: scheduledFor || '',
+                        status: 'applied',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    };
+                    fleet.applyPolicyBundle({ policyProfile, policyId }, rolloutRecord.nodeIds, { mode: rolloutRecord.mode });
+                    setPolicyRolloutHistory((prev) => [rolloutRecord, ...(Array.isArray(prev) ? prev : [])].slice(0, 250));
+                    appendRuntimeEvent('fleet.policy.rollout.applied', {
+                        rolloutId: rolloutRecord.rolloutId,
+                        policyProfile,
+                        targets: rolloutRecord.nodeIds.length,
+                        mode: rolloutRecord.mode,
+                    }, { source: 'fleet-policy', severity: 'info' });
+                }}
+                onRollbackRollout={(entry) => {
+                    const record = entry && typeof entry === 'object' ? entry : {};
+                    const nodeIds = Array.isArray(record.nodeIds) ? record.nodeIds : [];
+                    nodeIds.forEach((nodeId) => {
+                        fleet.rollbackPolicy(nodeId, 'none');
+                    });
+                    setPolicyRolloutHistory((prev) => (Array.isArray(prev) ? prev.map((row) => (
+                        String(row.rolloutId || '') === String(record.rolloutId || '')
+                            ? {
+                                ...row,
+                                status: 'rolled_back',
+                                updatedAt: new Date().toISOString(),
+                            }
+                            : row
+                    )) : prev));
+                    appendRuntimeEvent('fleet.policy.rollout.rolled_back', {
+                        rolloutId: String(record.rolloutId || ''),
+                        targets: nodeIds.length,
+                    }, { source: 'fleet-policy', severity: 'warning' });
+                }}
+            />
+            <OfflineUpdateConsole
+                open={showOfflineUpdateConsole}
+                onClose={() => setShowOfflineUpdateConsole(false)}
+                fleet={fleet}
+            />
+            <MissionScheduler
+                open={showMissionScheduler}
+                onClose={() => setShowMissionScheduler(false)}
+                fleet={fleet}
+                onOpenIncidentMode={() => setShowIncidentMode(true)}
             />
             <NodeChainPanel
                 open={showNodeChainPanel}
