@@ -312,7 +312,7 @@ export default function AirGapOperationsCenter({
                                     {locked ? "locked" : "ready"}
                                 </div>
                             </div>
-                            <div className="max-h-[420px] overflow-auto pr-1 space-y-1.5">
+                            <div className="max-h-96 overflow-auto pr-1 space-y-1.5">
                                 {transferChain.map((entry) => (
                                     <article
                                         key={entry.transferId}

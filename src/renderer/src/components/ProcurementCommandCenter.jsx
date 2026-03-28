@@ -188,7 +188,7 @@ export default function ProcurementCommandCenter({
                             <div className="text-[9px] uppercase tracking-[0.14em] text-slate-300 font-bold">Pack Freshness</div>
                             <div className="text-[10px] text-slate-500 font-mono">Recent generation history and staleness indicator.</div>
                         </div>
-                        <div className="max-h-[320px] overflow-auto pr-1 space-y-1.5">
+                        <div className="max-h-80 overflow-auto pr-1 space-y-1.5">
                             {(Array.isArray(history) ? history : []).map((entry) => {
                                 const ageDays = daysSince(entry.generatedAt);
                                 return (

@@ -76,7 +76,7 @@ export default function TamperSimulationCenter({
                 <div className="flex-1 min-h-0 grid grid-cols-[0.95fr_1.05fr] gap-3 p-3 overflow-auto">
                     <section className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
                         <div className="text-[9px] uppercase tracking-[0.14em] text-slate-300 font-bold">Simulation Scenarios</div>
-                        <div className="max-h-[420px] overflow-auto pr-1 space-y-1.5">
+                        <div className="max-h-96 overflow-auto pr-1 space-y-1.5">
                             {(Array.isArray(scenarios) ? scenarios : []).map((scenario) => (
                                 <SimulationScenarioCard
                                     key={scenario.scenarioId}
@@ -107,7 +107,7 @@ export default function TamperSimulationCenter({
                                 Export Reports
                             </button>
                         </div>
-                        <div className="max-h-[390px] overflow-auto pr-1 space-y-1.5">
+                        <div className="max-h-96 overflow-auto pr-1 space-y-1.5">
                             {(Array.isArray(reports) ? reports : []).map((report) => (
                                 <article key={report.reportId} className={`rounded border px-2 py-1.5 ${
                                     report.passed

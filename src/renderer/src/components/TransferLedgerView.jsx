@@ -20,7 +20,7 @@ export default function TransferLedgerView({
                 <div className="text-[9px] uppercase tracking-[0.14em] text-slate-300 font-bold">Transfer Ledger</div>
                 <div className="text-[10px] text-slate-500 font-mono">Each handoff is recorded with quarantine, verification, and release transitions.</div>
             </div>
-            <div className="max-h-[350px] overflow-auto pr-1 space-y-1.5">
+            <div className="max-h-80 overflow-auto pr-1 space-y-1.5">
                 {safeEntries.map((entry) => (
                     <article key={entry.entryId} className={`rounded border px-2 py-1.5 ${tone(entry.status)}`}>
                         <div className="flex items-center justify-between gap-2">

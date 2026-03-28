@@ -102,7 +102,7 @@ export default function TrustChainViewer({
                 <div className="rounded border border-rose-300/35 bg-rose-500/10 px-2 py-1 text-rose-200">revoked {summary.revoked}</div>
             </div>
 
-            <div data-testid="trustchain-list" className="max-h-[300px] overflow-auto pr-1 space-y-1.5">
+            <div data-testid="trustchain-list" className="max-h-72 overflow-auto pr-1 space-y-1.5">
                 {safeCerts.map((certificate) => {
                     const key = String(certificate && certificate.certificateId ? certificate.certificateId : "");
                     const verification = verificationMap[key] || { ok: false, signatureValid: false, revoked: false, expiry: "expired" };

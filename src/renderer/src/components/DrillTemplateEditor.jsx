@@ -14,7 +14,7 @@ export default function DrillTemplateEditor({
                 <div className="text-[9px] uppercase tracking-[0.14em] text-slate-300 font-bold">Drill Templates</div>
                 <div className="text-[10px] text-slate-500 font-mono">Scenario definitions for repeatable continuity exercises.</div>
             </div>
-            <div className="space-y-1 max-h-[240px] overflow-auto pr-1">
+            <div className="space-y-1 max-h-60 overflow-auto pr-1">
                 {safeTemplates.map((template) => (
                     <button
                         key={template.templateId}

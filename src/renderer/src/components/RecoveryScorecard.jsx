@@ -35,7 +35,7 @@ export default function RecoveryScorecard({
                     total {score.total}
                 </div>
             </div>
-            <div className="max-h-[220px] overflow-auto pr-1 space-y-1.5">
+            <div className="max-h-56 overflow-auto pr-1 space-y-1.5">
                 {remediationTasks.map((task, index) => (
                     <article key={`${task.runId}-${task.key}-${index}`} className="rounded border border-amber-300/35 bg-amber-500/10 px-2 py-1.5">
                         <div className="text-[9px] font-mono text-amber-100">{task.key}</div>

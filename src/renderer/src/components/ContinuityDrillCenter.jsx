@@ -215,7 +215,7 @@ export default function ContinuityDrillCenter({
                         />
                         <section className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-1">
                             <div className="text-[9px] uppercase tracking-[0.14em] text-slate-300 font-bold">Scheduled Drills</div>
-                            <div className="max-h-[180px] overflow-auto pr-1 space-y-1">
+                            <div className="max-h-44 overflow-auto pr-1 space-y-1">
                                 {(Array.isArray(scheduledRuns) ? scheduledRuns : []).map((entry) => (
                                     <article key={entry.scheduleId} className="rounded border border-white/10 bg-black/20 px-2 py-1 text-[9px] font-mono text-slate-300">
                                         {entry.title} · {new Date(entry.scheduledAt).toLocaleString()}
@@ -232,7 +232,7 @@ export default function ContinuityDrillCenter({
                         <RecoveryScorecard score={score} runs={drillRuns} />
                         <section className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-1">
                             <div className="text-[9px] uppercase tracking-[0.14em] text-slate-300 font-bold">Drill Runs</div>
-                            <div className="max-h-[200px] overflow-auto pr-1 space-y-1.5">
+                            <div className="max-h-48 overflow-auto pr-1 space-y-1.5">
                                 {(Array.isArray(drillRuns) ? drillRuns : []).map((run) => (
                                     <article key={run.runId} className={`rounded border px-2 py-1.5 ${
                                         run.passed

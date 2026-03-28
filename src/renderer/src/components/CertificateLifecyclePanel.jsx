@@ -228,7 +228,7 @@ export default function CertificateLifecyclePanel({
                 Issue Certificate
             </button>
 
-            <div className="space-y-1 max-h-[260px] overflow-auto pr-1">
+            <div className="space-y-1 max-h-64 overflow-auto pr-1">
                 {safeCertificates.map((certificate) => {
                     const state = safeRevocations.includes(String(certificate.certificateId || ""))
                         ? "revoked"
