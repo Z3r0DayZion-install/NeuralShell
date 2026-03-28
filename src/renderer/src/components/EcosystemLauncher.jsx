@@ -574,7 +574,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'pilot_conversion' && (
+                    {activeModule && activeModule.id === 'pilot_conversion' && typeof onOpenPilotConversion === 'function' && (
                         <section data-testid="ecosystem-pilot-conversion-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Pilot Conversion Kit</div>
                             <div className="text-[11px] text-slate-200">
@@ -790,7 +790,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'managed_services' && (
+                    {activeModule && activeModule.id === 'managed_services' && typeof onOpenManagedServices === 'function' && (
                         <section data-testid="ecosystem-managed-services-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Managed Services Console</div>
                             <div className="text-[11px] text-slate-200">
@@ -808,7 +808,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'strategic_account' && (
+                    {activeModule && activeModule.id === 'strategic_account' && typeof onOpenStrategicAccount === 'function' && (
                         <section data-testid="ecosystem-strategic-account-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Strategic Account Orchestration</div>
                             <div className="text-[11px] text-slate-200">
@@ -826,7 +826,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'portfolio_rollout' && (
+                    {activeModule && activeModule.id === 'portfolio_rollout' && typeof onOpenPortfolioRollout === 'function' && (
                         <section data-testid="ecosystem-portfolio-rollout-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Portfolio Rollout Planner</div>
                             <div className="text-[11px] text-slate-200">
@@ -844,7 +844,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'revenue_ops' && (
+                    {activeModule && activeModule.id === 'revenue_ops' && typeof onOpenRevenueOps === 'function' && (
                         <section data-testid="ecosystem-revenue-ops-entry" className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-100 font-bold">Revenue Operations Console</div>
                             <div className="text-[11px] text-slate-200">
@@ -862,7 +862,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'channel_expansion' && (
+                    {activeModule && activeModule.id === 'channel_expansion' && typeof onOpenChannelExpansion === 'function' && (
                         <section data-testid="ecosystem-channel-expansion-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Channel Expansion Planner</div>
                             <div className="text-[11px] text-slate-200">
@@ -880,7 +880,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'cross_account_renewal' && (
+                    {activeModule && activeModule.id === 'cross_account_renewal' && typeof onOpenCrossAccountRenewal === 'function' && (
                         <section data-testid="ecosystem-cross-account-renewal-entry" className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-amber-100 font-bold">Cross-Account Renewal Matrix</div>
                             <div className="text-[11px] text-slate-200">
@@ -898,7 +898,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'executive_scale' && (
+                    {activeModule && activeModule.id === 'executive_scale' && typeof onOpenExecutiveScale === 'function' && (
                         <section data-testid="ecosystem-executive-scale-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Executive Scale Dashboard</div>
                             <div className="text-[11px] text-slate-200">
@@ -916,7 +916,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'ecosystem_portfolio' && (
+                    {activeModule && activeModule.id === 'ecosystem_portfolio' && typeof onOpenEcosystemPortfolio === 'function' && (
                         <section data-testid="ecosystem-portfolio-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Ecosystem Portfolio Console</div>
                             <div className="text-[11px] text-slate-200">
@@ -934,7 +934,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'service_line' && (
+                    {activeModule && activeModule.id === 'service_line' && typeof onOpenServiceLine === 'function' && (
                         <section data-testid="ecosystem-service-line-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Service Line Operating Layer</div>
                             <div className="text-[11px] text-slate-200">
@@ -952,7 +952,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'partner_network_governance' && (
+                    {activeModule && activeModule.id === 'partner_network_governance' && typeof onOpenPartnerNetworkGovernance === 'function' && (
                         <section data-testid="ecosystem-partner-network-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Partner Network Governance</div>
                             <div className="text-[11px] text-slate-200">
@@ -970,7 +970,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'global_planning' && (
+                    {activeModule && activeModule.id === 'global_planning' && typeof onOpenGlobalPlanning === 'function' && (
                         <section data-testid="ecosystem-global-planning-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Global Account & Region Planning</div>
                             <div className="text-[11px] text-slate-200">
@@ -1006,7 +1006,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'board_operating_pack' && (
+                    {activeModule && activeModule.id === 'board_operating_pack' && typeof onOpenBoardOperatingPack === 'function' && (
                         <section data-testid="ecosystem-board-operating-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Board / Investor Operating Pack</div>
                             <div className="text-[11px] text-slate-200">
@@ -1024,7 +1024,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'licensed_operator' && (
+                    {activeModule && activeModule.id === 'licensed_operator' && typeof onOpenLicensedOperator === 'function' && (
                         <section data-testid="ecosystem-licensed-operator-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Licensed Operator Framework</div>
                             <div className="text-[11px] text-slate-200">
@@ -1042,7 +1042,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'ecosystem_command' && (
+                    {activeModule && activeModule.id === 'ecosystem_command' && typeof onOpenEcosystemCommand === 'function' && (
                         <section data-testid="ecosystem-ecosystem-command-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Ecosystem Command Center</div>
                             <div className="text-[11px] text-slate-200">

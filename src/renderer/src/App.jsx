@@ -96,6 +96,7 @@ const DEMO_MODE_KEY = 'neuralshell_demo_mode_v1';
 const RUNTIME_ROLE_KEY = 'neuralshell_runtime_role_v1';
 const INCIDENTS_STORAGE_KEY = 'neuralshell_incidents_v1';
 const POLICY_ROLLOUT_HISTORY_KEY = 'neuralshell_policy_rollout_history_v1';
+const INTERNAL_GTM_MODE_KEY = 'neuralshell_internal_gtm_mode_v1';
 const DEFAULT_THREAD_RAIL_WIDTH = 288;
 const DEFAULT_WORKBENCH_RAIL_WIDTH = 288;
 const THREAD_RAIL_MIN_WIDTH = 236;
@@ -206,6 +207,11 @@ function loadNodeChainRules() {
     } catch {
         return starterNodeChainRules;
     }
+}
+
+function readInternalGtmMode() {
+    if (typeof window === 'undefined' || !window.localStorage) return false;
+    return window.localStorage.getItem(INTERNAL_GTM_MODE_KEY) === '1';
 }
 
 const RAIL_SIZE_PRESETS = {
@@ -371,6 +377,7 @@ function App() {
             return [];
         }
     });
+    const [internalGtmMode, setInternalGtmMode] = React.useState(() => readInternalGtmMode());
     const roleCapabilities = React.useMemo(() => getRoleCapabilities(activeRuntimeRole), [activeRuntimeRole]);
     const [showNodeChainPanel, setShowNodeChainPanel] = React.useState(false);
     const [showRuntimeAlerts, setShowRuntimeAlerts] = React.useState(false);
@@ -580,6 +587,11 @@ function App() {
         if (typeof window === 'undefined' || !window.localStorage) return;
         window.localStorage.setItem(DEMO_MODE_KEY, demoModeEnabled ? '1' : '0');
     }, [demoModeEnabled]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(INTERNAL_GTM_MODE_KEY, internalGtmMode ? '1' : '0');
+    }, [internalGtmMode]);
 
     React.useEffect(() => {
         if (typeof window === 'undefined' || !window.localStorage) return;
@@ -3080,10 +3092,10 @@ function App() {
                     setShowEcosystem(false);
                     setShowBuyerJourney(true);
                 }}
-                onOpenPilotConversion={() => {
+                onOpenPilotConversion={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowPilotConversion(true);
-                }}
+                } : undefined}
                 onOpenCommercialPackages={() => {
                     setShowEcosystem(false);
                     setShowCommercialPackages(true);
@@ -3128,66 +3140,66 @@ function App() {
                     setShowEcosystem(false);
                     setShowPartnerCertification(true);
                 }}
-                onOpenManagedServices={() => {
+                onOpenManagedServices={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowManagedServices(true);
-                }}
-                onOpenStrategicAccount={() => {
+                } : undefined}
+                onOpenStrategicAccount={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowStrategicAccount(true);
-                }}
-                onOpenPortfolioRollout={() => {
+                } : undefined}
+                onOpenPortfolioRollout={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowPortfolioRollout(true);
-                }}
-                onOpenRevenueOps={() => {
+                } : undefined}
+                onOpenRevenueOps={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowRevenueOps(true);
-                }}
-                onOpenChannelExpansion={() => {
+                } : undefined}
+                onOpenChannelExpansion={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowChannelExpansion(true);
-                }}
-                onOpenCrossAccountRenewal={() => {
+                } : undefined}
+                onOpenCrossAccountRenewal={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowCrossAccountRenewal(true);
-                }}
-                onOpenExecutiveScale={() => {
+                } : undefined}
+                onOpenExecutiveScale={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowExecutiveScale(true);
-                }}
-                onOpenEcosystemPortfolio={() => {
+                } : undefined}
+                onOpenEcosystemPortfolio={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowEcosystemPortfolio(true);
-                }}
-                onOpenServiceLine={() => {
+                } : undefined}
+                onOpenServiceLine={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowServiceLine(true);
-                }}
-                onOpenPartnerNetworkGovernance={() => {
+                } : undefined}
+                onOpenPartnerNetworkGovernance={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowPartnerNetworkGovernance(true);
-                }}
-                onOpenGlobalPlanning={() => {
+                } : undefined}
+                onOpenGlobalPlanning={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowGlobalPlanning(true);
-                }}
+                } : undefined}
                 onOpenEcosystemRevenue={() => {
                     setShowEcosystem(false);
                     setShowEcosystemRevenue(true);
                 }}
-                onOpenBoardOperatingPack={() => {
+                onOpenBoardOperatingPack={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowBoardOperatingPack(true);
-                }}
-                onOpenLicensedOperator={() => {
+                } : undefined}
+                onOpenLicensedOperator={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowLicensedOperator(true);
-                }}
-                onOpenEcosystemCommand={() => {
+                } : undefined}
+                onOpenEcosystemCommand={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowEcosystemCommand(true);
-                }}
+                } : undefined}
                 onOpenShiftConsole={() => {
                     setShowEcosystem(false);
                     setShowShiftConsole(true);
@@ -3232,7 +3244,7 @@ function App() {
                 onOpenTrainingDelivery={() => setShowTrainingDelivery(true)}
                 onOpenSupportOps={() => setShowSupportOps(true)}
                 onOpenBuyerJourney={() => setShowBuyerJourney(true)}
-                onOpenPilotConversion={() => setShowPilotConversion(true)}
+                onOpenPilotConversion={internalGtmMode ? () => setShowPilotConversion(true) : undefined}
                 onOpenCommercialPackages={() => setShowCommercialPackages(true)}
                 onOpenFieldLaunch={() => setShowFieldLaunch(true)}
                 onOpenPartnerRollout={() => setShowPartnerRollout(true)}
@@ -3244,21 +3256,21 @@ function App() {
                 onOpenFollowupGenerator={() => setShowFollowupGenerator(true)}
                 onOpenFieldFeedback={() => setShowFieldFeedback(true)}
                 onOpenPartnerCertification={() => setShowPartnerCertification(true)}
-                onOpenManagedServices={() => setShowManagedServices(true)}
-                onOpenStrategicAccount={() => setShowStrategicAccount(true)}
-                onOpenPortfolioRollout={() => setShowPortfolioRollout(true)}
-                onOpenRevenueOps={() => setShowRevenueOps(true)}
-                onOpenChannelExpansion={() => setShowChannelExpansion(true)}
-                onOpenCrossAccountRenewal={() => setShowCrossAccountRenewal(true)}
-                onOpenExecutiveScale={() => setShowExecutiveScale(true)}
-                onOpenEcosystemPortfolio={() => setShowEcosystemPortfolio(true)}
-                onOpenServiceLine={() => setShowServiceLine(true)}
-                onOpenPartnerNetworkGovernance={() => setShowPartnerNetworkGovernance(true)}
-                onOpenGlobalPlanning={() => setShowGlobalPlanning(true)}
+                onOpenManagedServices={internalGtmMode ? () => setShowManagedServices(true) : undefined}
+                onOpenStrategicAccount={internalGtmMode ? () => setShowStrategicAccount(true) : undefined}
+                onOpenPortfolioRollout={internalGtmMode ? () => setShowPortfolioRollout(true) : undefined}
+                onOpenRevenueOps={internalGtmMode ? () => setShowRevenueOps(true) : undefined}
+                onOpenChannelExpansion={internalGtmMode ? () => setShowChannelExpansion(true) : undefined}
+                onOpenCrossAccountRenewal={internalGtmMode ? () => setShowCrossAccountRenewal(true) : undefined}
+                onOpenExecutiveScale={internalGtmMode ? () => setShowExecutiveScale(true) : undefined}
+                onOpenEcosystemPortfolio={internalGtmMode ? () => setShowEcosystemPortfolio(true) : undefined}
+                onOpenServiceLine={internalGtmMode ? () => setShowServiceLine(true) : undefined}
+                onOpenPartnerNetworkGovernance={internalGtmMode ? () => setShowPartnerNetworkGovernance(true) : undefined}
+                onOpenGlobalPlanning={internalGtmMode ? () => setShowGlobalPlanning(true) : undefined}
                 onOpenEcosystemRevenue={() => setShowEcosystemRevenue(true)}
-                onOpenBoardOperatingPack={() => setShowBoardOperatingPack(true)}
-                onOpenLicensedOperator={() => setShowLicensedOperator(true)}
-                onOpenEcosystemCommand={() => setShowEcosystemCommand(true)}
+                onOpenBoardOperatingPack={internalGtmMode ? () => setShowBoardOperatingPack(true) : undefined}
+                onOpenLicensedOperator={internalGtmMode ? () => setShowLicensedOperator(true) : undefined}
+                onOpenEcosystemCommand={internalGtmMode ? () => setShowEcosystemCommand(true) : undefined}
                 onOpenShift={() => setShowShiftConsole(true)}
                 onOpenIncidentMode={() => setShowIncidentMode(true)}
                 onOpenPolicyRollout={() => setShowPolicyRollout(true)}
@@ -3386,10 +3398,12 @@ function App() {
                 open={showBuyerJourney}
                 onClose={() => setShowBuyerJourney(false)}
             />
-            <PilotConversionConsole
-                open={showPilotConversion}
-                onClose={() => setShowPilotConversion(false)}
-            />
+            {internalGtmMode && (
+                <PilotConversionConsole
+                    open={showPilotConversion}
+                    onClose={() => setShowPilotConversion(false)}
+                />
+            )}
             <CommercialPackageConsole
                 open={showCommercialPackages}
                 onClose={() => setShowCommercialPackages(false)}
@@ -3436,68 +3450,96 @@ function App() {
                 open={showPartnerCertification}
                 onClose={() => setShowPartnerCertification(false)}
             />
-            <ManagedServicesConsole
-                open={showManagedServices}
-                onClose={() => setShowManagedServices(false)}
-            />
-            <StrategicAccountConsole
-                open={showStrategicAccount}
-                onClose={() => setShowStrategicAccount(false)}
-            />
-            <PortfolioRolloutPlanner
-                open={showPortfolioRollout}
-                onClose={() => setShowPortfolioRollout(false)}
-            />
-            <RevenueOpsConsole
-                open={showRevenueOps}
-                onClose={() => setShowRevenueOps(false)}
-            />
-            <ChannelExpansionPlanner
-                open={showChannelExpansion}
-                onClose={() => setShowChannelExpansion(false)}
-            />
-            <CrossAccountRenewalMatrix
-                open={showCrossAccountRenewal}
-                onClose={() => setShowCrossAccountRenewal(false)}
-            />
-            <ExecutiveScaleDashboard
-                open={showExecutiveScale}
-                onClose={() => setShowExecutiveScale(false)}
-                onOpenPanel={openRuntimePanelById}
-            />
-            <EcosystemPortfolioConsole
-                open={showEcosystemPortfolio}
-                onClose={() => setShowEcosystemPortfolio(false)}
-            />
-            <ServiceLineConsole
-                open={showServiceLine}
-                onClose={() => setShowServiceLine(false)}
-            />
-            <PartnerNetworkGovernance
-                open={showPartnerNetworkGovernance}
-                onClose={() => setShowPartnerNetworkGovernance(false)}
-            />
-            <GlobalPlanningConsole
-                open={showGlobalPlanning}
-                onClose={() => setShowGlobalPlanning(false)}
-            />
+            {internalGtmMode && (
+                <ManagedServicesConsole
+                    open={showManagedServices}
+                    onClose={() => setShowManagedServices(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <StrategicAccountConsole
+                    open={showStrategicAccount}
+                    onClose={() => setShowStrategicAccount(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <PortfolioRolloutPlanner
+                    open={showPortfolioRollout}
+                    onClose={() => setShowPortfolioRollout(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <RevenueOpsConsole
+                    open={showRevenueOps}
+                    onClose={() => setShowRevenueOps(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <ChannelExpansionPlanner
+                    open={showChannelExpansion}
+                    onClose={() => setShowChannelExpansion(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <CrossAccountRenewalMatrix
+                    open={showCrossAccountRenewal}
+                    onClose={() => setShowCrossAccountRenewal(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <ExecutiveScaleDashboard
+                    open={showExecutiveScale}
+                    onClose={() => setShowExecutiveScale(false)}
+                    onOpenPanel={openRuntimePanelById}
+                />
+            )}
+            {internalGtmMode && (
+                <EcosystemPortfolioConsole
+                    open={showEcosystemPortfolio}
+                    onClose={() => setShowEcosystemPortfolio(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <ServiceLineConsole
+                    open={showServiceLine}
+                    onClose={() => setShowServiceLine(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <PartnerNetworkGovernance
+                    open={showPartnerNetworkGovernance}
+                    onClose={() => setShowPartnerNetworkGovernance(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <GlobalPlanningConsole
+                    open={showGlobalPlanning}
+                    onClose={() => setShowGlobalPlanning(false)}
+                />
+            )}
             <EcosystemRevenuePlanner
                 open={showEcosystemRevenue}
                 onClose={() => setShowEcosystemRevenue(false)}
             />
-            <BoardOperatingPackConsole
-                open={showBoardOperatingPack}
-                onClose={() => setShowBoardOperatingPack(false)}
-            />
-            <LicensedOperatorFramework
-                open={showLicensedOperator}
-                onClose={() => setShowLicensedOperator(false)}
-            />
-            <EcosystemCommandCenter
-                open={showEcosystemCommand}
-                onClose={() => setShowEcosystemCommand(false)}
-                onOpenPanel={openRuntimePanelById}
-            />
+            {internalGtmMode && (
+                <BoardOperatingPackConsole
+                    open={showBoardOperatingPack}
+                    onClose={() => setShowBoardOperatingPack(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <LicensedOperatorFramework
+                    open={showLicensedOperator}
+                    onClose={() => setShowLicensedOperator(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <EcosystemCommandCenter
+                    open={showEcosystemCommand}
+                    onClose={() => setShowEcosystemCommand(false)}
+                    onOpenPanel={openRuntimePanelById}
+                />
+            )}
             <ShiftConsole
                 open={showShiftConsole}
                 onClose={() => setShowShiftConsole(false)}
