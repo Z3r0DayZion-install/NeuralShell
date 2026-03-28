@@ -11,6 +11,7 @@ export function WorkbenchRail({
     onInsertPrompt,
     auditOnly,
     widthPx = 288,
+    connectionInfo,
 }) {
     const [gitSummary, setGitSummary] = React.useState(null);
     const railWidth = Number.isFinite(Number(widthPx)) ? Math.max(220, Math.round(Number(widthPx))) : 288;
@@ -63,8 +64,8 @@ export function WorkbenchRail({
             style={{ width: `${railWidth}px` }}
         >
             <header className="p-6 border-b border-white/5">
-                <div className="text-[9px] font-black uppercase tracking-[0.4em] text-cyan-500/60 mb-2">Console_Control</div>
-                <h2 className="text-sm font-bold tracking-tight text-slate-100 uppercase tracking-[0.1em]">Analytics_Engine</h2>
+                <div className="text-[9px] font-black uppercase tracking-[0.4em] text-cyan-500/60 mb-2">Workspace</div>
+                <h2 className="text-sm font-bold tracking-tight text-slate-100 uppercase tracking-[0.1em]">Context</h2>
             </header>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
@@ -148,35 +149,24 @@ export function WorkbenchRail({
                         runCommand(command);
                     }}
                 />
-
-                <div className="p-4 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.04] space-y-3">
-                    <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-300/80">Deal_Closer</div>
-                    <p className="text-[10px] text-emerald-100/80 font-mono leading-relaxed">
-                        Run a live trust proof and ROI snapshot directly in-session. Let the product demonstrate value before any pitch.
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            data-testid="run-proof-btn"
-                            onClick={() => runCommand('/proof')}
-                            className="px-2.5 py-2 rounded border border-emerald-300/30 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-200 hover:bg-emerald-300/10"
-                        >
-                            Run /Proof
-                        </button>
-                        <button
-                            data-testid="run-roi-btn"
-                            onClick={() => runCommand('/roi')}
-                            className="px-2.5 py-2 rounded border border-cyan-300/30 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-200 hover:bg-cyan-300/10"
-                        >
-                            Run /ROI
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <footer className="p-5 border-t border-white/5 bg-black/20">
                 <div className="flex justify-between items-center text-[9px] font-mono text-slate-500">
-                    <span>Node_Status: OK</span>
-                    <span className="animate-pulse text-emerald-500/60">SYS_LINK_UP</span>
+                    <span>Bridge: {connectionInfo?.provider || 'none'}</span>
+                    <span className={
+                        connectionInfo?.health === 'healthy' || connectionInfo?.health === 'online'
+                            ? 'text-emerald-500/80'
+                            : connectionInfo?.health === 'degraded'
+                                ? 'text-amber-500/80'
+                                : 'text-slate-500'
+                    }>
+                        {connectionInfo?.health === 'healthy' || connectionInfo?.health === 'online'
+                            ? 'Connected'
+                            : connectionInfo?.health === 'degraded'
+                                ? 'Degraded'
+                                : 'Offline'}
+                    </span>
                 </div>
             </footer>
         </aside>

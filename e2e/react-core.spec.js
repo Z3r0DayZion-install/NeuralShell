@@ -108,7 +108,9 @@ test.describe("NeuralShell React Core UI", () => {
 
     test("Trust indicators are present", async () => {
         const topBar = page.locator('[data-testid="top-status-bar"]');
-        await expect(topBar).toContainText("Trust_Node_Sovereign");
+        const trustIndicator = page.locator('[data-testid="trust-indicator"]');
+        await expect(trustIndicator).toContainText("NeuralShell");
+        await expect(trustIndicator).toBeVisible();
     });
 
     test("Settings drawer opens, changes state, and preserves values", async () => {
@@ -307,10 +309,10 @@ test.describe("NeuralShell React Core UI", () => {
         await expect(chatLog.nth(1)).toContainText("NeuralShell Operator Guide");
     });
 
-    test("Deal_Closer actions execute proof and ROI narratives", async () => {
+    test("Proof and ROI commands execute narratives", async () => {
         await sendCommand("/clear");
 
-        await page.getByTestId("run-proof-btn").click();
+        await sendCommand("/proof");
         await expect(
             page.locator('[data-testid="chat-message"]').filter({ hasText: "90-Second Value Proof" })
         ).toHaveCount(1, { timeout: 10000 });
@@ -321,7 +323,7 @@ test.describe("NeuralShell React Core UI", () => {
             await page.waitForTimeout(120);
         }
 
-        await page.getByTestId("run-roi-btn").click();
+        await sendCommand("/roi");
         await expect(
             page.locator('[data-testid="chat-message"]').filter({ hasText: "NeuralShell ROI Snapshot" })
         ).toHaveCount(1, { timeout: 10000 });

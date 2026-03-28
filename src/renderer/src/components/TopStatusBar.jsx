@@ -8,6 +8,7 @@ import WatchdogStatusBadge from './WatchdogStatusBadge.jsx';
 import ApplianceModeBadge from './ApplianceModeBadge.jsx';
 import AirGapModeBadge from './AirGapModeBadge.jsx';
 import DemoModeBadge from './DemoModeBadge.jsx';
+import { version as APP_VERSION } from '../../../../package.json';
 
 function estimateCostPer1k(providerId) {
     const provider = String(providerId || '').trim().toLowerCase();
@@ -71,7 +72,6 @@ export function TopStatusBar({
     tierId,
     tierLabel,
 }) {
-    const tierName = ['INITIATE', 'OPERATOR', 'ANALYST', 'EXECUTOR', 'WARLORD', 'EXECUTIONER', 'APEX', 'GOD_MODE', 'PHASE_24_MUTANT'][Math.min((xpState?.tier || 1) - 1, 8)];
     const safeRuntimeTier = String(runtimeTier || 'PREVIEW').toUpperCase();
     const providerId = String((connectionInfo && connectionInfo.provider) || 'ollama');
     const connectionHealth = String((connectionInfo && connectionInfo.health) || 'unknown');
@@ -116,9 +116,9 @@ export function TopStatusBar({
         <header data-testid="top-status-bar" className="h-14 border-b border-white/5 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-6 z-30 shrink-0">
             <div className="flex gap-8 items-center">
                 <div data-testid="trust-indicator" className="flex flex-col">
-                    <div className="text-[9px] uppercase tracking-[0.4em] text-cyan-500/60 font-black mb-0.5">Trust_Node_Sovereign</div>
+                    <div className="text-[9px] uppercase tracking-[0.4em] text-cyan-500/60 font-black mb-0.5">NeuralShell</div>
                     <div className="text-[13px] font-bold text-slate-100 flex items-center gap-2 tracking-tight">
-                        NeuralShell_V2.2.0
+                        v{APP_VERSION}
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-pulse" />
                         <span className="px-1.5 py-0.5 rounded border border-cyan-400/30 bg-cyan-500/10 text-[8px] font-mono text-cyan-200 uppercase tracking-[0.16em]">
                             Proof-First
@@ -133,27 +133,6 @@ export function TopStatusBar({
                             </span>
                         )}
                         <TierBadge tierId={tierId} tierLabel={tierLabel} />
-                    </div>
-                </div>
-
-                <div className="h-6 w-px bg-white/5 mx-1" />
-
-                <div className="flex gap-8 items-center">
-                    <div className="flex flex-col">
-                        <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 mb-0.5 font-bold">Security_Clearance</div>
-                        <div className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-widest">{tierName}</div>
-                    </div>
-                    <div className="flex flex-col min-w-36">
-                        <div className="flex justify-between text-[9px] uppercase tracking-[0.2em] text-cyan-500 mb-0.5 font-bold">
-                            <span>System_Rank_{xpState?.tier || 1}</span>
-                            <span className="text-cyan-400/80 font-mono tracking-tighter">{xpState?.xp || 0}</span>
-                        </div>
-                        <div className="h-1 w-full bg-white/[0.03] rounded-full overflow-hidden border border-white/5 shadow-inner">
-                            <div
-                                className="h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-cyan-500 transition-all duration-1000 shadow-glow-cyan"
-                                style={{ width: `${Math.min((xpState?.xp % 1000) / 10, 100)}%` }}
-                            />
-                        </div>
                     </div>
                 </div>
             </div>

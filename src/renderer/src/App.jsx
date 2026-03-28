@@ -2901,6 +2901,7 @@ function App() {
                             onInsertPrompt={handleInsertPrompt}
                             auditOnly={auditOnly}
                             widthPx={inlineWorkbenchRailWidth}
+                            connectionInfo={connectionInfo}
                         />
                     </>
                 )}
@@ -2990,6 +2991,7 @@ function App() {
                             onInsertPrompt={handleInsertPrompt}
                             auditOnly={auditOnly}
                             widthPx={overlayWorkbenchRailWidth}
+                            connectionInfo={connectionInfo}
                         />
                     </div>
                 </>
