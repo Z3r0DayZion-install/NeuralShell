@@ -141,22 +141,26 @@ export default function MissionControl({
                         >
                             AirGap
                         </button>
-                        <button
-                            type="button"
-                            data-testid="mission-control-open-trust-fabric-btn"
-                            onClick={onOpenTrustFabric}
-                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
-                        >
-                            PKI
-                        </button>
-                        <button
-                            type="button"
-                            data-testid="mission-control-open-hardware-appliance-btn"
-                            onClick={onOpenHardwareAppliance}
-                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
-                        >
-                            Hardware
-                        </button>
+                        {typeof onOpenTrustFabric === 'function' && (
+                            <button
+                                type="button"
+                                data-testid="mission-control-open-trust-fabric-btn"
+                                onClick={onOpenTrustFabric}
+                                className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                            >
+                                PKI
+                            </button>
+                        )}
+                        {typeof onOpenHardwareAppliance === 'function' && (
+                            <button
+                                type="button"
+                                data-testid="mission-control-open-hardware-appliance-btn"
+                                onClick={onOpenHardwareAppliance}
+                                className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                            >
+                                Hardware
+                            </button>
+                        )}
                         <button
                             type="button"
                             data-testid="mission-control-open-courier-transfer-btn"
@@ -165,14 +169,16 @@ export default function MissionControl({
                         >
                             Courier
                         </button>
-                        <button
-                            type="button"
-                            data-testid="mission-control-open-continuity-drills-btn"
-                            onClick={onOpenContinuityDrills}
-                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
-                        >
-                            Drills
-                        </button>
+                        {typeof onOpenContinuityDrills === 'function' && (
+                            <button
+                                type="button"
+                                data-testid="mission-control-open-continuity-drills-btn"
+                                onClick={onOpenContinuityDrills}
+                                className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                            >
+                                Drills
+                            </button>
+                        )}
                         <button
                             type="button"
                             data-testid="mission-control-open-procurement-command-btn"

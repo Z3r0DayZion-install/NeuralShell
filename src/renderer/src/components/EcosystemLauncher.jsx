@@ -358,7 +358,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'trust_fabric' && (
+                    {activeModule && activeModule.id === 'trust_fabric' && typeof onOpenTrustFabric === 'function' && (
                         <section data-testid="ecosystem-trust-fabric-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">PKI Trust Fabric</div>
                             <div className="text-[11px] text-slate-200">
@@ -376,7 +376,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'hardware_appliance' && (
+                    {activeModule && activeModule.id === 'hardware_appliance' && typeof onOpenHardwareAppliance === 'function' && (
                         <section data-testid="ecosystem-hardware-appliance-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Hardware Appliance Program</div>
                             <div className="text-[11px] text-slate-200">
@@ -412,7 +412,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'continuity_drills' && (
+                    {activeModule && activeModule.id === 'continuity_drills' && typeof onOpenContinuityDrills === 'function' && (
                         <section data-testid="ecosystem-continuity-drills-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Continuity Drills</div>
                             <div className="text-[11px] text-slate-200">
@@ -424,11 +424,11 @@ export default function EcosystemLauncher({
                                 onClick={() => {
                                     if (typeof onOpenContinuityDrills === 'function') onOpenContinuityDrills();
                                 }}
-                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-100/30"
                             >
                                 Open Continuity Drills
                             </button>
-                        </section>
+        </section>
                     )}
                     {activeModule && activeModule.id === 'procurement_command' && (
                         <section data-testid="ecosystem-procurement-command-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
