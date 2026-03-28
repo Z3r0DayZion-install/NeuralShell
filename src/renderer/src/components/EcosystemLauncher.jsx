@@ -43,6 +43,14 @@ const APPLIANCE_ALLOWED_MODULES = new Set([
     'pilot_conversion',
     'commercial_packages',
     'field_launch',
+    'partner_rollout',
+    'buyer_ops',
+    'demo_to_pilot',
+    'pilot_expansion',
+    'renewal_risk',
+    'launch_week',
+    'followup_generator',
+    'field_feedback',
     'shift_console',
     'incident_mode',
     'policy_rollout',
@@ -110,6 +118,14 @@ export default function EcosystemLauncher({
     onOpenPilotConversion,
     onOpenCommercialPackages,
     onOpenFieldLaunch,
+    onOpenPartnerRollout,
+    onOpenBuyerOps,
+    onOpenDemoToPilot,
+    onOpenPilotExpansion,
+    onOpenRenewalRisk,
+    onOpenLaunchWeek,
+    onOpenFollowupGenerator,
+    onOpenFieldFeedback,
     onOpenShiftConsole,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -577,6 +593,150 @@ export default function EcosystemLauncher({
                                 className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
                             >
                                 Open Field Launch
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'partner_rollout' && (
+                        <section data-testid="ecosystem-partner-rollout-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Partner Rollout Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Track partner activation, readiness scoring, blocker queue, and handoff exports.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-partner-rollout-btn"
+                                onClick={() => {
+                                    if (typeof onOpenPartnerRollout === 'function') onOpenPartnerRollout();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Partner Rollout
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'buyer_ops' && (
+                        <section data-testid="ecosystem-buyer-ops-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Buyer Ops Automation</div>
+                            <div className="text-[11px] text-slate-200">
+                                Generate stage-aware follow-up packs and maintain buyer timeline discipline.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-buyer-ops-btn"
+                                onClick={() => {
+                                    if (typeof onOpenBuyerOps === 'function') onOpenBuyerOps();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Buyer Ops
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'demo_to_pilot' && (
+                        <section data-testid="ecosystem-demo-to-pilot-entry" className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-100 font-bold">Demo-to-Pilot Engine</div>
+                            <div className="text-[11px] text-slate-200">
+                                Capture demo outcomes, score pilot fit, and trigger pilot launch packs.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-demo-to-pilot-btn"
+                                onClick={() => {
+                                    if (typeof onOpenDemoToPilot === 'function') onOpenDemoToPilot();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-emerald-200/35 bg-emerald-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/30"
+                            >
+                                Open Demo-to-Pilot
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'pilot_expansion' && (
+                        <section data-testid="ecosystem-pilot-expansion-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Pilot Expansion Command</div>
+                            <div className="text-[11px] text-slate-200">
+                                Convert pilot outcomes into expansion proposals with deployment phase mapping.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-pilot-expansion-btn"
+                                onClick={() => {
+                                    if (typeof onOpenPilotExpansion === 'function') onOpenPilotExpansion();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Pilot Expansion
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'renewal_risk' && (
+                        <section data-testid="ecosystem-renewal-risk-entry" className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-amber-100 font-bold">Renewal Risk Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Monitor renewal timelines, explain risk scoring, and export intervention plans.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-renewal-risk-btn"
+                                onClick={() => {
+                                    if (typeof onOpenRenewalRisk === 'function') onOpenRenewalRisk();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-amber-200/35 bg-amber-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-amber-100 hover:bg-amber-500/30"
+                            >
+                                Open Renewal Risk
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'launch_week' && (
+                        <section data-testid="ecosystem-launch-week-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Launch Week Command Discipline</div>
+                            <div className="text-[11px] text-slate-200">
+                                Run launch-day checklist, escalations, priorities, and end-of-day command exports.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-launch-week-btn"
+                                onClick={() => {
+                                    if (typeof onOpenLaunchWeek === 'function') onOpenLaunchWeek();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-blue-200/35 bg-blue-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/30"
+                            >
+                                Open Launch Week
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'followup_generator' && (
+                        <section data-testid="ecosystem-followup-generator-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Proof-Backed Follow-Up</div>
+                            <div className="text-[11px] text-slate-200">
+                                Create stage-aware follow-up drafts with explicit evidence references and deltas.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-followup-generator-btn"
+                                onClick={() => {
+                                    if (typeof onOpenFollowupGenerator === 'function') onOpenFollowupGenerator();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Follow-Up Generator
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'field_feedback' && (
+                        <section data-testid="ecosystem-field-feedback-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Field Feedback Routing</div>
+                            <div className="text-[11px] text-slate-200">
+                                Capture structured field notes and route them into product/support/docs/training queues.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-field-feedback-btn"
+                                onClick={() => {
+                                    if (typeof onOpenFieldFeedback === 'function') onOpenFieldFeedback();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Field Feedback
                             </button>
                         </section>
                     )}

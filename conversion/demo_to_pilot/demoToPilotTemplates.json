@@ -1,0 +1,26 @@
+{
+  "requiredArtifacts": [
+    "demo_recap",
+    "security_review_status",
+    "deployment_profile_selection",
+    "success_criteria_worksheet",
+    "pilot_owner_assignment"
+  ],
+  "pilotFitDimensions": [
+    { "id": "technical_fit", "label": "Technical Fit", "weight": 25 },
+    { "id": "security_fit", "label": "Security Fit", "weight": 20 },
+    { "id": "operational_fit", "label": "Operational Fit", "weight": 20 },
+    { "id": "stakeholder_alignment", "label": "Stakeholder Alignment", "weight": 20 },
+    { "id": "timeline_readiness", "label": "Timeline Readiness", "weight": 15 }
+  ],
+  "decisionThresholds": {
+    "ready_for_pilot": 80,
+    "revisit": 55
+  },
+  "conversionChecklist": [
+    "Document demo outcomes with evidence links.",
+    "Score pilot fit dimensions with reviewer initials.",
+    "Resolve blockers or assign owner and due date.",
+    "Confirm pilot scope, success criteria, and timeline."
+  ]
+}

@@ -25,11 +25,29 @@ export default function FieldLaunchCommandCenter({ open, onClose, onOpenPanel })
         const trainingHistory = readHistory("neuralshell_training_bundle_history_v1");
         const pilotHistory = readHistory("neuralshell_pilot_conversion_history_v1");
         const supportQueue = readHistory("neuralshell_support_triage_queue_v1");
+        const buyerOpsHistory = readHistory("neuralshell_buyer_ops_timeline_v1");
+        const demoToPilotHistory = readHistory("neuralshell_demo_to_pilot_history_v1");
+        const pilotExpansionHistory = readHistory("neuralshell_pilot_expansion_history_v1");
+        const renewalRiskHistory = readHistory("neuralshell_renewal_risk_history_v1");
+        const followupHistory = readHistory("neuralshell_followup_generation_history_v1");
+        const feedbackNotes = readHistory("neuralshell_field_feedback_notes_v1");
+        let partnerRollout = null;
+        let launchWeek = null;
         let preflightReport = null;
         try {
             preflightReport = JSON.parse(window.localStorage.getItem("neuralshell_deployment_preflight_report_v1") || "null");
         } catch {
             preflightReport = null;
+        }
+        try {
+            partnerRollout = JSON.parse(window.localStorage.getItem("neuralshell_partner_rollout_v1") || "null");
+        } catch {
+            partnerRollout = null;
+        }
+        try {
+            launchWeek = JSON.parse(window.localStorage.getItem("neuralshell_launch_week_state_v1") || "null");
+        } catch {
+            launchWeek = null;
         }
         const latestProc = procurementHistory[0] || null;
         const latestTraining = trainingHistory[0] || null;
@@ -44,6 +62,14 @@ export default function FieldLaunchCommandCenter({ open, onClose, onOpenPanel })
             pilotFreshnessDays: latestPilot ? daysSince(latestPilot.generatedAt) : 999,
             commercialMatrixLoaded: true,
             releaseTruthStatus: "pass",
+            partnerBlockers: partnerRollout && Array.isArray(partnerRollout.blockers) ? partnerRollout.blockers.length : 0,
+            buyerOpsRuns: Array.isArray(buyerOpsHistory) ? buyerOpsHistory.length : 0,
+            demoToPilotRuns: Array.isArray(demoToPilotHistory) ? demoToPilotHistory.length : 0,
+            pilotExpansionRuns: Array.isArray(pilotExpansionHistory) ? pilotExpansionHistory.length : 0,
+            renewalRuns: Array.isArray(renewalRiskHistory) ? renewalRiskHistory.length : 0,
+            launchIssues: launchWeek && Array.isArray(launchWeek.issues) ? launchWeek.issues.length : 0,
+            followupDrafts: Array.isArray(followupHistory) ? followupHistory.length : 0,
+            feedbackNotes: Array.isArray(feedbackNotes) ? feedbackNotes.length : 0,
         });
     }, []);
 
@@ -64,6 +90,14 @@ export default function FieldLaunchCommandCenter({ open, onClose, onOpenPanel })
         ["Buyer assets", `${Number(summary.buyerPackFreshnessDays || 0)}d`],
         ["Pilot assets", `${Number(summary.pilotFreshnessDays || 0)}d`],
         ["Commercial matrix", summary.commercialMatrixLoaded ? "loaded" : "missing"],
+        ["Partner blockers", `${Number(summary.partnerBlockers || 0)} open`],
+        ["Buyer ops runs", `${Number(summary.buyerOpsRuns || 0)}`],
+        ["Demo->Pilot", `${Number(summary.demoToPilotRuns || 0)} runs`],
+        ["Pilot expansion", `${Number(summary.pilotExpansionRuns || 0)} runs`],
+        ["Renewal summaries", `${Number(summary.renewalRuns || 0)}`],
+        ["Launch-week issues", `${Number(summary.launchIssues || 0)}`],
+        ["Follow-up drafts", `${Number(summary.followupDrafts || 0)}`],
+        ["Field feedback", `${Number(summary.feedbackNotes || 0)} notes`],
         ["Release truth", String(summary.releaseTruthStatus || "unknown")],
     ];
 
@@ -103,6 +137,14 @@ export default function FieldLaunchCommandCenter({ open, onClose, onOpenPanel })
                                 ["pilot-conversion", "Pilot"],
                                 ["commercial-packages", "Commercial"],
                                 ["institutional-command", "Institutional"],
+                                ["partner-rollout", "Partner"],
+                                ["buyer-ops", "Buyer Ops"],
+                                ["demo-to-pilot", "Demo->Pilot"],
+                                ["pilot-expansion", "Expansion"],
+                                ["renewal-risk", "Renewal"],
+                                ["launch-week", "Launch Week"],
+                                ["followup-generator", "Follow-Up"],
+                                ["field-feedback", "Feedback"],
                             ].map(([panelId, label]) => (
                                 <button
                                     key={panelId}

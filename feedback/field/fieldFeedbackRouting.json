@@ -1,0 +1,17 @@
+{
+  "categories": [
+    { "id": "product_gap", "label": "Product Gap", "route": "product_queue" },
+    { "id": "deployment_friction", "label": "Deployment Friction", "route": "deployment_queue" },
+    { "id": "buyer_confusion", "label": "Buyer Confusion", "route": "buyer_docs_queue" },
+    { "id": "support_issue", "label": "Support Issue", "route": "support_queue" },
+    { "id": "docs_training_gap", "label": "Docs/Training Gap", "route": "enablement_queue" },
+    { "id": "packaging_pricing_confusion", "label": "Packaging/Pricing Confusion", "route": "commercial_queue" }
+  ],
+  "severityLevels": ["low", "medium", "high", "critical"],
+  "weeklySummarySections": [
+    "Top recurring themes",
+    "High-severity account blockers",
+    "Routes and owners",
+    "Recommended product/support/doc actions"
+  ]
+}

@@ -47,6 +47,14 @@ export default function MissionControl({
     onOpenPilotConversion,
     onOpenCommercialPackages,
     onOpenFieldLaunch,
+    onOpenPartnerRollout,
+    onOpenBuyerOps,
+    onOpenDemoToPilot,
+    onOpenPilotExpansion,
+    onOpenRenewalRisk,
+    onOpenLaunchWeek,
+    onOpenFollowupGenerator,
+    onOpenFieldFeedback,
     onOpenShift,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -236,6 +244,70 @@ export default function MissionControl({
                             className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
                         >
                             Launch
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-partner-rollout-btn"
+                            onClick={onOpenPartnerRollout}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Partner
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-buyer-ops-btn"
+                            onClick={onOpenBuyerOps}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            BuyerOps
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-demo-to-pilot-btn"
+                            onClick={onOpenDemoToPilot}
+                            className="px-2.5 py-1.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/20"
+                        >
+                            D2P
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-pilot-expansion-btn"
+                            onClick={onOpenPilotExpansion}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Expand
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-renewal-risk-btn"
+                            onClick={onOpenRenewalRisk}
+                            className="px-2.5 py-1.5 rounded border border-amber-300/30 bg-amber-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-amber-100 hover:bg-amber-500/20"
+                        >
+                            Renewal
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-launch-week-btn"
+                            onClick={onOpenLaunchWeek}
+                            className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
+                        >
+                            LaunchWeek
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-followup-generator-btn"
+                            onClick={onOpenFollowupGenerator}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            FollowUp
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-field-feedback-btn"
+                            onClick={onOpenFieldFeedback}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Feedback
                         </button>
                         <button
                             type="button"

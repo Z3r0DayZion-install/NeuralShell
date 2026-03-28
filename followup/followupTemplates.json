@@ -1,0 +1,34 @@
+{
+  "stages": [
+    {
+      "id": "demo_followup",
+      "title": "Demo Follow-Up",
+      "requiredEvidence": ["demo_recap", "field_launch_health"],
+      "sections": ["What we demonstrated", "Proof references", "Recommended next steps"]
+    },
+    {
+      "id": "security_followup",
+      "title": "Security Review Follow-Up",
+      "requiredEvidence": ["security_review_pack", "trust_fabric_status"],
+      "sections": ["Security posture summary", "Attached artifacts", "Open questions and owners"]
+    },
+    {
+      "id": "pilot_kickoff",
+      "title": "Pilot Kickoff Follow-Up",
+      "requiredEvidence": ["demo_to_pilot_pack", "deployment_program_pack"],
+      "sections": ["Pilot scope", "Success criteria", "Timeline and owners"]
+    },
+    {
+      "id": "expansion_followup",
+      "title": "Expansion Follow-Up",
+      "requiredEvidence": ["expansion_summary_pack", "proof_of_value"],
+      "sections": ["Pilot outcomes", "Expansion options", "Decision support"]
+    },
+    {
+      "id": "renewal_followup",
+      "title": "Renewal Follow-Up",
+      "requiredEvidence": ["renewal_summary", "support_ops_status"],
+      "sections": ["Renewal posture", "Risk and mitigation", "Recommended plan"]
+    }
+  ]
+}

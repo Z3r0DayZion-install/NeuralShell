@@ -1,0 +1,30 @@
+{
+  "pilotMilestones": [
+    "pilot_kickoff",
+    "week2_review",
+    "week4_review",
+    "proof_validation",
+    "expansion_decision"
+  ],
+  "expansionPaths": [
+    "additional_seats",
+    "appliance_rollout",
+    "oversight_node",
+    "training_bundle",
+    "support_tier_upgrade",
+    "federation_enablement"
+  ],
+  "stakeholderSummarySections": [
+    "Pilot objective and scope",
+    "Evidence highlights",
+    "Operational outcomes",
+    "Risk and mitigation",
+    "Expansion recommendation"
+  ],
+  "deploymentPhases": [
+    "single_site",
+    "multi_site",
+    "regional",
+    "federated"
+  ]
+}

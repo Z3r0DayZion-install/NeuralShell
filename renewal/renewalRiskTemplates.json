@@ -1,0 +1,27 @@
+{
+  "riskFactors": [
+    { "id": "support_load", "label": "Support Load", "weight": 20, "higherIsRiskier": true },
+    { "id": "incident_backlog", "label": "Incident Backlog", "weight": 20, "higherIsRiskier": true },
+    { "id": "deployment_health", "label": "Deployment Health", "weight": 20, "higherIsRiskier": false },
+    { "id": "adoption_health", "label": "Adoption Health", "weight": 20, "higherIsRiskier": false },
+    { "id": "executive_sponsor", "label": "Executive Sponsor Confidence", "weight": 20, "higherIsRiskier": false }
+  ],
+  "interventions": [
+    {
+      "id": "exec_review",
+      "trigger": "risk>=70",
+      "action": "Schedule executive risk review within 48 hours."
+    },
+    {
+      "id": "support_surge",
+      "trigger": "support_load>=80",
+      "action": "Assign temporary support surge owner and daily triage."
+    },
+    {
+      "id": "adoption_plan",
+      "trigger": "adoption_health<=50",
+      "action": "Run targeted operator enablement and training refresh."
+    }
+  ],
+  "renewalTimelineDays": [120, 90, 60, 30, 14, 7]
+}

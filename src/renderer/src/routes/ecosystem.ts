@@ -21,6 +21,14 @@ export type EcosystemModuleId =
     | 'pilot_conversion'
     | 'commercial_packages'
     | 'field_launch'
+    | 'partner_rollout'
+    | 'buyer_ops'
+    | 'demo_to_pilot'
+    | 'pilot_expansion'
+    | 'renewal_risk'
+    | 'launch_week'
+    | 'followup_generator'
+    | 'field_feedback'
     | 'shift_console'
     | 'incident_mode'
     | 'policy_rollout'
@@ -190,6 +198,62 @@ export const ECOSYSTEM_MODULES: EcosystemModule[] = [
         id: 'field_launch',
         title: 'Field Launch Command Center',
         description: 'One-screen commercialization and deployment readiness tracker with blockers.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support', 'operator'],
+    },
+    {
+        id: 'partner_rollout',
+        title: 'Partner Rollout Console',
+        description: 'Partner activation checklist, readiness scoring, blocker queue, and handoff summary export.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'buyer_ops',
+        title: 'Buyer Ops Automation',
+        description: 'Stage-aware buyer follow-up generation with timeline and stale-evaluator controls.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'demo_to_pilot',
+        title: 'Demo-to-Pilot Engine',
+        description: 'Demo outcome capture, pilot-fit scorecard, and conversion decision workflow.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'pilot_expansion',
+        title: 'Pilot Expansion Command',
+        description: 'Pilot milestone tracking and expansion proposal generation from evidence inputs.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'renewal_risk',
+        title: 'Renewal Risk Console',
+        description: 'Renewal timeline, explainable risk scoring, and retention intervention summaries.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'launch_week',
+        title: 'Launch Week Command Discipline',
+        description: 'Live launch-day checklist, escalation board, and end-of-day command exports.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support', 'operator'],
+    },
+    {
+        id: 'followup_generator',
+        title: 'Proof-Backed Follow-Up',
+        description: 'Generate stage-aware follow-up drafts grounded in explicit proof references.',
+        minTier: 'pro',
+        roles: ['founder', 'sales', 'support'],
+    },
+    {
+        id: 'field_feedback',
+        title: 'Field Feedback Routing',
+        description: 'Capture and classify field feedback for routing to product/support/docs/training queues.',
         minTier: 'pro',
         roles: ['founder', 'sales', 'support', 'operator'],
     },

@@ -42,6 +42,14 @@ import BuyerEvaluationCenter from './components/BuyerEvaluationCenter.jsx';
 import PilotConversionConsole from './components/PilotConversionConsole.jsx';
 import CommercialPackageConsole from './components/CommercialPackageConsole.jsx';
 import FieldLaunchCommandCenter from './components/FieldLaunchCommandCenter.jsx';
+import PartnerRolloutConsole from './components/PartnerRolloutConsole.jsx';
+import BuyerOpsConsole from './components/BuyerOpsConsole.jsx';
+import DemoToPilotConsole from './components/DemoToPilotConsole.jsx';
+import PilotExpansionConsole from './components/PilotExpansionConsole.jsx';
+import RenewalRiskConsole from './components/RenewalRiskConsole.jsx';
+import LaunchWeekCommandCenter from './components/LaunchWeekCommandCenter.jsx';
+import FollowupGenerator from './components/FollowupGenerator.jsx';
+import FieldFeedbackConsole from './components/FieldFeedbackConsole.jsx';
 import { useAccent } from './hooks/useAccent.ts';
 import { useCollabRoom } from './hooks/useCollabRoom.ts';
 import { useRuntimeState } from './hooks/useRuntimeState.ts';
@@ -285,6 +293,14 @@ function App() {
     const [showPilotConversion, setShowPilotConversion] = React.useState(false);
     const [showCommercialPackages, setShowCommercialPackages] = React.useState(false);
     const [showFieldLaunch, setShowFieldLaunch] = React.useState(false);
+    const [showPartnerRollout, setShowPartnerRollout] = React.useState(false);
+    const [showBuyerOps, setShowBuyerOps] = React.useState(false);
+    const [showDemoToPilot, setShowDemoToPilot] = React.useState(false);
+    const [showPilotExpansion, setShowPilotExpansion] = React.useState(false);
+    const [showRenewalRisk, setShowRenewalRisk] = React.useState(false);
+    const [showLaunchWeek, setShowLaunchWeek] = React.useState(false);
+    const [showFollowupGenerator, setShowFollowupGenerator] = React.useState(false);
+    const [showFieldFeedback, setShowFieldFeedback] = React.useState(false);
     const [applianceModeEnabled, setApplianceModeEnabled] = React.useState(() => {
         if (typeof window === 'undefined' || !window.localStorage) return false;
         return window.localStorage.getItem(APPLIANCE_MODE_KEY) === '1';
@@ -934,6 +950,38 @@ function App() {
             setShowFieldLaunch(true);
             return;
         }
+        if (safePanel === 'partner' || safePanel === 'partner-rollout' || safePanel === 'partner_rollout') {
+            setShowPartnerRollout(true);
+            return;
+        }
+        if (safePanel === 'buyerops' || safePanel === 'buyer-ops' || safePanel === 'buyer_ops') {
+            setShowBuyerOps(true);
+            return;
+        }
+        if (safePanel === 'demotopilot' || safePanel === 'demo-to-pilot' || safePanel === 'demo_to_pilot') {
+            setShowDemoToPilot(true);
+            return;
+        }
+        if (safePanel === 'expansion' || safePanel === 'pilot-expansion' || safePanel === 'pilot_expansion') {
+            setShowPilotExpansion(true);
+            return;
+        }
+        if (safePanel === 'renewal' || safePanel === 'renewal-risk' || safePanel === 'renewal_risk') {
+            setShowRenewalRisk(true);
+            return;
+        }
+        if (safePanel === 'launchweek' || safePanel === 'launch-week' || safePanel === 'launch_week') {
+            setShowLaunchWeek(true);
+            return;
+        }
+        if (safePanel === 'followup' || safePanel === 'followup-generator' || safePanel === 'followup_generator') {
+            setShowFollowupGenerator(true);
+            return;
+        }
+        if (safePanel === 'feedback' || safePanel === 'field-feedback' || safePanel === 'field_feedback') {
+            setShowFieldFeedback(true);
+            return;
+        }
         if (safePanel === 'shift' || safePanel === 'shift-console') {
             setShowShiftConsole(true);
             return;
@@ -1379,6 +1427,30 @@ function App() {
                 if (showFieldLaunch) {
                     setShowFieldLaunch(false);
                 }
+                if (showPartnerRollout) {
+                    setShowPartnerRollout(false);
+                }
+                if (showBuyerOps) {
+                    setShowBuyerOps(false);
+                }
+                if (showDemoToPilot) {
+                    setShowDemoToPilot(false);
+                }
+                if (showPilotExpansion) {
+                    setShowPilotExpansion(false);
+                }
+                if (showRenewalRisk) {
+                    setShowRenewalRisk(false);
+                }
+                if (showLaunchWeek) {
+                    setShowLaunchWeek(false);
+                }
+                if (showFollowupGenerator) {
+                    setShowFollowupGenerator(false);
+                }
+                if (showFieldFeedback) {
+                    setShowFieldFeedback(false);
+                }
                 if (showShiftConsole) {
                     setShowShiftConsole(false);
                 }
@@ -1444,6 +1516,14 @@ function App() {
         showPilotConversion,
         showCommercialPackages,
         showFieldLaunch,
+        showPartnerRollout,
+        showBuyerOps,
+        showDemoToPilot,
+        showPilotExpansion,
+        showRenewalRisk,
+        showLaunchWeek,
+        showFollowupGenerator,
+        showFieldFeedback,
         showShiftConsole,
         showIncidentMode,
         showPolicyRollout,
@@ -1585,7 +1665,7 @@ function App() {
                 if (command === '/help') {
                     appendChat({
                         role: 'kernel',
-                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/fleet` : Open Fleet Control panel\n- `/recovery` : Open Recovery Center\n- `/appliance` : Open Appliance Console\n- `/airgap` : Open Air-Gapped Operations Center\n- `/trustfabric` : Open PKI Trust Fabric\n- `/hardware` : Open Hardware Appliance Program\n- `/courier` : Open Offline Evidence Courier\n- `/drills` : Open Continuity Drill Center\n- `/procurement` : Open Procurement Command Center\n- `/simulate` : Open Tamper Simulation Center\n- `/institutional` : Open Institutional Command Console\n- `/demoflow` : Open Demo Flow Console\n- `/deployment` : Open Deployment Program Pack\n- `/training` : Open Training Delivery Center\n- `/support` : Open Support Ops Console\n- `/buyer` : Open Buyer Evaluation Journey\n- `/pilot` : Open Pilot Conversion Console\n- `/commercial` : Open Commercial Package Console\n- `/launch` : Open Field Launch Command Center\n- `/shift` : Open Shift Console\n- `/incident` : Open Incident Mode\n- `/rollout` : Open Policy Rollout Console\n- `/updates` : Open Offline Update Console\n- `/missions` : Open Mission Scheduler\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
+                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/fleet` : Open Fleet Control panel\n- `/recovery` : Open Recovery Center\n- `/appliance` : Open Appliance Console\n- `/airgap` : Open Air-Gapped Operations Center\n- `/trustfabric` : Open PKI Trust Fabric\n- `/hardware` : Open Hardware Appliance Program\n- `/courier` : Open Offline Evidence Courier\n- `/drills` : Open Continuity Drill Center\n- `/procurement` : Open Procurement Command Center\n- `/simulate` : Open Tamper Simulation Center\n- `/institutional` : Open Institutional Command Console\n- `/demoflow` : Open Demo Flow Console\n- `/deployment` : Open Deployment Program Pack\n- `/training` : Open Training Delivery Center\n- `/support` : Open Support Ops Console\n- `/buyer` : Open Buyer Evaluation Journey\n- `/pilot` : Open Pilot Conversion Console\n- `/commercial` : Open Commercial Package Console\n- `/launch` : Open Field Launch Command Center\n- `/partner` : Open Partner Rollout Console\n- `/buyerops` : Open Buyer Ops Automation\n- `/demotopilot` : Open Demo-to-Pilot Engine\n- `/expansion` : Open Pilot Expansion Command\n- `/renewal` : Open Renewal Risk Console\n- `/launchweek` : Open Launch Week Command Center\n- `/followup` : Open Follow-Up Generator\n- `/feedback` : Open Field Feedback Console\n- `/shift` : Open Shift Console\n- `/incident` : Open Incident Mode\n- `/rollout` : Open Policy Rollout Console\n- `/updates` : Open Offline Update Console\n- `/missions` : Open Mission Scheduler\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
                     });
                 } else if (command === '/status') {
                     appendChat({
@@ -1754,6 +1834,62 @@ function App() {
                         content: 'Opening Field Launch Command Center.',
                     });
                     appendRuntimeEvent('runtime.panel.opened', { panel: 'field-launch' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/partner' || command === '/partnerrollout') {
+                    setShowPartnerRollout(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Partner Rollout Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'partner-rollout' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/buyerops') {
+                    setShowBuyerOps(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Buyer Ops Automation.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'buyer-ops' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/demotopilot') {
+                    setShowDemoToPilot(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Demo-to-Pilot Conversion Engine.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'demo-to-pilot' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/expansion') {
+                    setShowPilotExpansion(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Pilot Expansion Command.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'pilot-expansion' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/renewal') {
+                    setShowRenewalRisk(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Renewal Risk Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'renewal-risk' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/launchweek') {
+                    setShowLaunchWeek(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Launch Week Command Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'launch-week' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/followup') {
+                    setShowFollowupGenerator(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Proof-Backed Follow-Up Generator.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'followup-generator' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/feedback' || command === '/fieldfeedback') {
+                    setShowFieldFeedback(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Field Feedback Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'field-feedback' }, { source: 'runtime', severity: 'info' });
                 } else if (command === '/shift') {
                     setShowShiftConsole(true);
                     appendChat({
@@ -2794,6 +2930,38 @@ function App() {
                     setShowEcosystem(false);
                     setShowFieldLaunch(true);
                 }}
+                onOpenPartnerRollout={() => {
+                    setShowEcosystem(false);
+                    setShowPartnerRollout(true);
+                }}
+                onOpenBuyerOps={() => {
+                    setShowEcosystem(false);
+                    setShowBuyerOps(true);
+                }}
+                onOpenDemoToPilot={() => {
+                    setShowEcosystem(false);
+                    setShowDemoToPilot(true);
+                }}
+                onOpenPilotExpansion={() => {
+                    setShowEcosystem(false);
+                    setShowPilotExpansion(true);
+                }}
+                onOpenRenewalRisk={() => {
+                    setShowEcosystem(false);
+                    setShowRenewalRisk(true);
+                }}
+                onOpenLaunchWeek={() => {
+                    setShowEcosystem(false);
+                    setShowLaunchWeek(true);
+                }}
+                onOpenFollowupGenerator={() => {
+                    setShowEcosystem(false);
+                    setShowFollowupGenerator(true);
+                }}
+                onOpenFieldFeedback={() => {
+                    setShowEcosystem(false);
+                    setShowFieldFeedback(true);
+                }}
                 onOpenShiftConsole={() => {
                     setShowEcosystem(false);
                     setShowShiftConsole(true);
@@ -2841,6 +3009,14 @@ function App() {
                 onOpenPilotConversion={() => setShowPilotConversion(true)}
                 onOpenCommercialPackages={() => setShowCommercialPackages(true)}
                 onOpenFieldLaunch={() => setShowFieldLaunch(true)}
+                onOpenPartnerRollout={() => setShowPartnerRollout(true)}
+                onOpenBuyerOps={() => setShowBuyerOps(true)}
+                onOpenDemoToPilot={() => setShowDemoToPilot(true)}
+                onOpenPilotExpansion={() => setShowPilotExpansion(true)}
+                onOpenRenewalRisk={() => setShowRenewalRisk(true)}
+                onOpenLaunchWeek={() => setShowLaunchWeek(true)}
+                onOpenFollowupGenerator={() => setShowFollowupGenerator(true)}
+                onOpenFieldFeedback={() => setShowFieldFeedback(true)}
                 onOpenShift={() => setShowShiftConsole(true)}
                 onOpenIncidentMode={() => setShowIncidentMode(true)}
                 onOpenPolicyRollout={() => setShowPolicyRollout(true)}
@@ -2980,6 +3156,39 @@ function App() {
                 open={showFieldLaunch}
                 onClose={() => setShowFieldLaunch(false)}
                 onOpenPanel={openRuntimePanelById}
+            />
+            <PartnerRolloutConsole
+                open={showPartnerRollout}
+                onClose={() => setShowPartnerRollout(false)}
+            />
+            <BuyerOpsConsole
+                open={showBuyerOps}
+                onClose={() => setShowBuyerOps(false)}
+            />
+            <DemoToPilotConsole
+                open={showDemoToPilot}
+                onClose={() => setShowDemoToPilot(false)}
+            />
+            <PilotExpansionConsole
+                open={showPilotExpansion}
+                onClose={() => setShowPilotExpansion(false)}
+            />
+            <RenewalRiskConsole
+                open={showRenewalRisk}
+                onClose={() => setShowRenewalRisk(false)}
+            />
+            <LaunchWeekCommandCenter
+                open={showLaunchWeek}
+                onClose={() => setShowLaunchWeek(false)}
+                onOpenPanel={openRuntimePanelById}
+            />
+            <FollowupGenerator
+                open={showFollowupGenerator}
+                onClose={() => setShowFollowupGenerator(false)}
+            />
+            <FieldFeedbackConsole
+                open={showFieldFeedback}
+                onClose={() => setShowFieldFeedback(false)}
             />
             <ShiftConsole
                 open={showShiftConsole}
