@@ -6,6 +6,7 @@ import CollabBadge from './CollabBadge';
 import TierBadge from './TierBadge';
 import WatchdogStatusBadge from './WatchdogStatusBadge.jsx';
 import ApplianceModeBadge from './ApplianceModeBadge.jsx';
+import AirGapModeBadge from './AirGapModeBadge.jsx';
 
 function estimateCostPer1k(providerId) {
     const provider = String(providerId || '').trim().toLowerCase();
@@ -45,6 +46,8 @@ export function TopStatusBar({
     onOpenMissionControl,
     onOpenFleetControl,
     onOpenApplianceConsole,
+    onOpenAirGapOperations,
+    onOpenInstitutionalCommand,
     onToggleScratchpad,
     watchdogStatus,
     watchdogAlertCount,
@@ -57,6 +60,7 @@ export function TopStatusBar({
     collabPeerCount,
     accelStatus,
     applianceModeEnabled,
+    airGapLocked,
     feedbackDisabled,
     feedbackUrl,
     onOpenIssueAssist,
@@ -289,6 +293,14 @@ export function TopStatusBar({
                 >
                     Fleet
                 </button>
+                <button
+                    data-testid="institutional-command-open-btn"
+                    onClick={onOpenInstitutionalCommand}
+                    className="px-2.5 py-1.5 rounded-lg border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono text-cyan-100 hover:bg-cyan-500/20"
+                    title="Institutional Command Console"
+                >
+                    Institutional
+                </button>
                 <WatchdogStatusBadge
                     status={watchdogStatus}
                     alertCount={watchdogAlertCount}
@@ -297,6 +309,10 @@ export function TopStatusBar({
                 <ApplianceModeBadge
                     enabled={applianceModeEnabled}
                     onOpen={onOpenApplianceConsole}
+                />
+                <AirGapModeBadge
+                    locked={airGapLocked}
+                    onOpen={onOpenAirGapOperations}
                 />
                 <button
                     type="button"

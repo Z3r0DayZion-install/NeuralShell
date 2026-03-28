@@ -26,6 +26,14 @@ import IncidentModePanel from './components/IncidentModePanel.jsx';
 import PolicyRolloutConsole from './components/PolicyRolloutConsole.jsx';
 import OfflineUpdateConsole from './components/OfflineUpdateConsole.jsx';
 import MissionScheduler from './components/MissionScheduler.jsx';
+import AirGapOperationsCenter from './components/AirGapOperationsCenter.jsx';
+import TrustFabricConsole from './components/TrustFabricConsole.jsx';
+import HardwareApplianceManager from './components/HardwareApplianceManager.jsx';
+import CourierTransferCenter from './components/CourierTransferCenter.jsx';
+import ContinuityDrillCenter from './components/ContinuityDrillCenter.jsx';
+import ProcurementCommandCenter from './components/ProcurementCommandCenter.jsx';
+import TamperSimulationCenter from './components/TamperSimulationCenter.jsx';
+import InstitutionalCommandConsole from './components/InstitutionalCommandConsole.jsx';
 import { useAccent } from './hooks/useAccent.ts';
 import { useCollabRoom } from './hooks/useCollabRoom.ts';
 import { useRuntimeState } from './hooks/useRuntimeState.ts';
@@ -51,6 +59,7 @@ const RAIL_LAYOUT_PREFS_KEY = 'neuralshell_rail_layout_prefs_v1';
 const RAIL_COLLAPSE_PREFS_KEY = 'neuralshell_rail_collapse_prefs_v1';
 const RAIL_RESIZE_HINT_DISMISSED_KEY = 'neuralshell_rail_resize_hint_dismissed_v1';
 const APPLIANCE_MODE_KEY = 'neuralshell_appliance_mode_v1';
+const AIRGAP_MODE_KEY = 'neuralshell_airgap_mode_v1';
 const RUNTIME_ROLE_KEY = 'neuralshell_runtime_role_v1';
 const INCIDENTS_STORAGE_KEY = 'neuralshell_incidents_v1';
 const POLICY_ROLLOUT_HISTORY_KEY = 'neuralshell_policy_rollout_history_v1';
@@ -246,6 +255,14 @@ function App() {
     const [showFleetControl, setShowFleetControl] = React.useState(false);
     const [showRecoveryCenter, setShowRecoveryCenter] = React.useState(false);
     const [showApplianceConsole, setShowApplianceConsole] = React.useState(false);
+    const [showAirGapOperations, setShowAirGapOperations] = React.useState(false);
+    const [showTrustFabric, setShowTrustFabric] = React.useState(false);
+    const [showHardwareAppliance, setShowHardwareAppliance] = React.useState(false);
+    const [showCourierTransfer, setShowCourierTransfer] = React.useState(false);
+    const [showContinuityDrills, setShowContinuityDrills] = React.useState(false);
+    const [showProcurementCommand, setShowProcurementCommand] = React.useState(false);
+    const [showTamperSimulation, setShowTamperSimulation] = React.useState(false);
+    const [showInstitutionalCommand, setShowInstitutionalCommand] = React.useState(false);
     const [showShiftConsole, setShowShiftConsole] = React.useState(false);
     const [showIncidentMode, setShowIncidentMode] = React.useState(false);
     const [showPolicyRollout, setShowPolicyRollout] = React.useState(false);
@@ -254,6 +271,10 @@ function App() {
     const [applianceModeEnabled, setApplianceModeEnabled] = React.useState(() => {
         if (typeof window === 'undefined' || !window.localStorage) return false;
         return window.localStorage.getItem(APPLIANCE_MODE_KEY) === '1';
+    });
+    const [airGapLocked, setAirGapLocked] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return false;
+        return window.localStorage.getItem(AIRGAP_MODE_KEY) === '1';
     });
     const [activeRuntimeRole, setActiveRuntimeRole] = React.useState(() => {
         if (typeof window === 'undefined' || !window.localStorage) return 'operator';
@@ -480,6 +501,11 @@ function App() {
         if (typeof window === 'undefined' || !window.localStorage) return;
         window.localStorage.setItem(APPLIANCE_MODE_KEY, applianceModeEnabled ? '1' : '0');
     }, [applianceModeEnabled]);
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(AIRGAP_MODE_KEY, airGapLocked ? '1' : '0');
+    }, [airGapLocked]);
 
     React.useEffect(() => {
         if (typeof window === 'undefined' || !window.localStorage) return;
@@ -816,6 +842,38 @@ function App() {
                 return;
             }
             setShowApplianceConsole(true);
+            return;
+        }
+        if (safePanel === 'airgap' || safePanel === 'air-gap' || safePanel === 'airgap-operations') {
+            setShowAirGapOperations(true);
+            return;
+        }
+        if (safePanel === 'trust' || safePanel === 'trust-fabric' || safePanel === 'pki') {
+            setShowTrustFabric(true);
+            return;
+        }
+        if (safePanel === 'hardware' || safePanel === 'hardware-appliance') {
+            setShowHardwareAppliance(true);
+            return;
+        }
+        if (safePanel === 'courier' || safePanel === 'courier-transfer') {
+            setShowCourierTransfer(true);
+            return;
+        }
+        if (safePanel === 'continuity' || safePanel === 'continuity-drills') {
+            setShowContinuityDrills(true);
+            return;
+        }
+        if (safePanel === 'procurement' || safePanel === 'procurement-command') {
+            setShowProcurementCommand(true);
+            return;
+        }
+        if (safePanel === 'tamper' || safePanel === 'tamper-simulation') {
+            setShowTamperSimulation(true);
+            return;
+        }
+        if (safePanel === 'institutional' || safePanel === 'institutional-command') {
+            setShowInstitutionalCommand(true);
             return;
         }
         if (safePanel === 'shift' || safePanel === 'shift-console') {
@@ -1215,6 +1273,30 @@ function App() {
                 if (showApplianceConsole) {
                     setShowApplianceConsole(false);
                 }
+                if (showAirGapOperations) {
+                    setShowAirGapOperations(false);
+                }
+                if (showTrustFabric) {
+                    setShowTrustFabric(false);
+                }
+                if (showHardwareAppliance) {
+                    setShowHardwareAppliance(false);
+                }
+                if (showCourierTransfer) {
+                    setShowCourierTransfer(false);
+                }
+                if (showContinuityDrills) {
+                    setShowContinuityDrills(false);
+                }
+                if (showProcurementCommand) {
+                    setShowProcurementCommand(false);
+                }
+                if (showTamperSimulation) {
+                    setShowTamperSimulation(false);
+                }
+                if (showInstitutionalCommand) {
+                    setShowInstitutionalCommand(false);
+                }
                 if (showShiftConsole) {
                     setShowShiftConsole(false);
                 }
@@ -1264,6 +1346,14 @@ function App() {
         showFleetControl,
         showRecoveryCenter,
         showApplianceConsole,
+        showAirGapOperations,
+        showTrustFabric,
+        showHardwareAppliance,
+        showCourierTransfer,
+        showContinuityDrills,
+        showProcurementCommand,
+        showTamperSimulation,
+        showInstitutionalCommand,
         showShiftConsole,
         showIncidentMode,
         showPolicyRollout,
@@ -1405,7 +1495,7 @@ function App() {
                 if (command === '/help') {
                     appendChat({
                         role: 'kernel',
-                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/fleet` : Open Fleet Control panel\n- `/recovery` : Open Recovery Center\n- `/appliance` : Open Appliance Console\n- `/shift` : Open Shift Console\n- `/incident` : Open Incident Mode\n- `/rollout` : Open Policy Rollout Console\n- `/updates` : Open Offline Update Console\n- `/missions` : Open Mission Scheduler\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
+                        content: '### NeuralShell Operator Guide\n\n- `/help` : Show this guide\n- `/status` : Check node telemetry\n- `/clear` : Wipe current thread\n- `/workflows` : List active sessions\n- `/guard` : Audit security status\n- `/proof` : Run a 90-second value proof\n- `/roi` : Show operator ROI snapshot\n- `/ecosystem` : Open ecosystem launcher\n- `/mission` : Open Mission Control cockpit\n- `/fleet` : Open Fleet Control panel\n- `/recovery` : Open Recovery Center\n- `/appliance` : Open Appliance Console\n- `/airgap` : Open Air-Gapped Operations Center\n- `/trustfabric` : Open PKI Trust Fabric\n- `/hardware` : Open Hardware Appliance Program\n- `/courier` : Open Offline Evidence Courier\n- `/drills` : Open Continuity Drill Center\n- `/procurement` : Open Procurement Command Center\n- `/simulate` : Open Tamper Simulation Center\n- `/institutional` : Open Institutional Command Console\n- `/shift` : Open Shift Console\n- `/incident` : Open Incident Mode\n- `/rollout` : Open Policy Rollout Console\n- `/updates` : Open Offline Update Console\n- `/missions` : Open Mission Scheduler\n- `/nodechain` : Open NodeChain runtime panel\n- `/watchdog` : Open watchdog alerts drawer\n- `/firstboot` : Open first-boot authority funnel\n- `/split` : Open split workspace\n- `Ctrl+P` : Open Command Palette',
                     });
                 } else if (command === '/status') {
                     appendChat({
@@ -1462,6 +1552,62 @@ function App() {
                         content: 'Opening Appliance Console.',
                     });
                     appendRuntimeEvent('runtime.panel.opened', { panel: 'appliance-console' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/airgap') {
+                    setShowAirGapOperations(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Air-Gapped Operations Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'airgap-operations' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/trustfabric' || command === '/trust') {
+                    setShowTrustFabric(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening PKI Trust Fabric.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'trust-fabric' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/hardware') {
+                    setShowHardwareAppliance(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Hardware Appliance Program.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'hardware-appliance' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/courier') {
+                    setShowCourierTransfer(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Offline Evidence Courier.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'courier-transfer' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/drills' || command === '/continuity') {
+                    setShowContinuityDrills(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Continuity Drill Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'continuity-drills' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/procurement') {
+                    setShowProcurementCommand(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Procurement Command Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'procurement-command' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/simulate' || command === '/tamper') {
+                    setShowTamperSimulation(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Tamper Simulation Center.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'tamper-simulation' }, { source: 'runtime', severity: 'warning' });
+                } else if (command === '/institutional') {
+                    setShowInstitutionalCommand(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Opening Institutional Command Console.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'institutional-command' }, { source: 'runtime', severity: 'info' });
                 } else if (command === '/shift') {
                     setShowShiftConsole(true);
                     appendChat({
@@ -2039,6 +2185,8 @@ function App() {
                 onOpenMissionControl={() => setShowMissionControl(true)}
                 onOpenFleetControl={() => setShowFleetControl(true)}
                 onOpenApplianceConsole={() => setShowApplianceConsole(true)}
+                onOpenAirGapOperations={() => setShowAirGapOperations(true)}
+                onOpenInstitutionalCommand={() => setShowInstitutionalCommand(true)}
                 onToggleScratchpad={() => setShowScratchpad((prev) => !prev)}
                 watchdogStatus={watchdogStatus}
                 watchdogAlertCount={unacknowledgedWatchdogAlerts.length}
@@ -2051,6 +2199,7 @@ function App() {
                 collabPeerCount={collabPeerCount}
                 accelStatus={accelStatus}
                 applianceModeEnabled={applianceModeEnabled}
+                airGapLocked={airGapLocked}
                 feedbackDisabled={!connectionInfo.allowRemoteBridge}
                 feedbackUrl={FEEDBACK_URL}
                 onOpenIssueAssist={canUseIssueAssist ? () => setShowIssueAssist(true) : undefined}
@@ -2432,6 +2581,38 @@ function App() {
                     setShowEcosystem(false);
                     setShowApplianceConsole(true);
                 }}
+                onOpenAirGapOperations={() => {
+                    setShowEcosystem(false);
+                    setShowAirGapOperations(true);
+                }}
+                onOpenTrustFabric={() => {
+                    setShowEcosystem(false);
+                    setShowTrustFabric(true);
+                }}
+                onOpenHardwareAppliance={() => {
+                    setShowEcosystem(false);
+                    setShowHardwareAppliance(true);
+                }}
+                onOpenCourierTransfer={() => {
+                    setShowEcosystem(false);
+                    setShowCourierTransfer(true);
+                }}
+                onOpenContinuityDrills={() => {
+                    setShowEcosystem(false);
+                    setShowContinuityDrills(true);
+                }}
+                onOpenProcurementCommand={() => {
+                    setShowEcosystem(false);
+                    setShowProcurementCommand(true);
+                }}
+                onOpenTamperSimulation={() => {
+                    setShowEcosystem(false);
+                    setShowTamperSimulation(true);
+                }}
+                onOpenInstitutionalCommand={() => {
+                    setShowEcosystem(false);
+                    setShowInstitutionalCommand(true);
+                }}
                 onOpenShiftConsole={() => {
                     setShowEcosystem(false);
                     setShowShiftConsole(true);
@@ -2463,6 +2644,14 @@ function App() {
                 onOpenFleet={() => setShowFleetControl(true)}
                 onOpenRecovery={() => setShowRecoveryCenter(true)}
                 onOpenAppliance={() => setShowApplianceConsole(true)}
+                onOpenAirGap={() => setShowAirGapOperations(true)}
+                onOpenTrustFabric={() => setShowTrustFabric(true)}
+                onOpenHardwareAppliance={() => setShowHardwareAppliance(true)}
+                onOpenCourierTransfer={() => setShowCourierTransfer(true)}
+                onOpenContinuityDrills={() => setShowContinuityDrills(true)}
+                onOpenProcurementCommand={() => setShowProcurementCommand(true)}
+                onOpenTamperSimulation={() => setShowTamperSimulation(true)}
+                onOpenInstitutionalCommand={() => setShowInstitutionalCommand(true)}
                 onOpenShift={() => setShowShiftConsole(true)}
                 onOpenIncidentMode={() => setShowIncidentMode(true)}
                 onOpenPolicyRollout={() => setShowPolicyRollout(true)}
@@ -2510,6 +2699,62 @@ function App() {
                 }}
                 runtimeState={runtimeState}
                 fleetSummary={fleet.healthSummary}
+            />
+            <AirGapOperationsCenter
+                open={showAirGapOperations}
+                onClose={() => setShowAirGapOperations(false)}
+                locked={airGapLocked}
+                onToggleLocked={async (nextLocked) => {
+                    const shouldLock = Boolean(nextLocked);
+                    setAirGapLocked(shouldLock);
+                    if (!(window.api && window.api.settings && typeof window.api.settings.get === 'function')) return;
+                    try {
+                        const current = await window.api.settings.get();
+                        const base = current && typeof current === 'object' ? current : {};
+                        await window.api.settings.update({
+                            ...base,
+                            offlineOnlyEnforced: shouldLock,
+                            allowRemoteBridge: shouldLock ? false : Boolean(base.allowRemoteBridge),
+                            autoUpdateChannel: shouldLock ? 'frozen' : String(base.autoUpdateChannel || 'stable'),
+                        });
+                    } catch {
+                        // best effort update
+                    }
+                    appendRuntimeEvent(
+                        shouldLock ? 'airgap.lock.enabled' : 'airgap.lock.disabled',
+                        { source: 'airgap-operations' },
+                        { source: 'airgap', severity: shouldLock ? 'critical' : 'warning' },
+                    );
+                }}
+            />
+            <TrustFabricConsole
+                open={showTrustFabric}
+                onClose={() => setShowTrustFabric(false)}
+            />
+            <HardwareApplianceManager
+                open={showHardwareAppliance}
+                onClose={() => setShowHardwareAppliance(false)}
+            />
+            <CourierTransferCenter
+                open={showCourierTransfer}
+                onClose={() => setShowCourierTransfer(false)}
+            />
+            <ContinuityDrillCenter
+                open={showContinuityDrills}
+                onClose={() => setShowContinuityDrills(false)}
+            />
+            <ProcurementCommandCenter
+                open={showProcurementCommand}
+                onClose={() => setShowProcurementCommand(false)}
+            />
+            <TamperSimulationCenter
+                open={showTamperSimulation}
+                onClose={() => setShowTamperSimulation(false)}
+            />
+            <InstitutionalCommandConsole
+                open={showInstitutionalCommand}
+                onClose={() => setShowInstitutionalCommand(false)}
+                onOpenPanel={openRuntimePanelById}
             />
             <ShiftConsole
                 open={showShiftConsole}

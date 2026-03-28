@@ -31,6 +31,14 @@ export default function MissionControl({
     onOpenFleet,
     onOpenRecovery,
     onOpenAppliance,
+    onOpenAirGap,
+    onOpenTrustFabric,
+    onOpenHardwareAppliance,
+    onOpenCourierTransfer,
+    onOpenContinuityDrills,
+    onOpenProcurementCommand,
+    onOpenTamperSimulation,
+    onOpenInstitutionalCommand,
     onOpenShift,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -92,6 +100,70 @@ export default function MissionControl({
                             className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
                         >
                             Appliance
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-airgap-btn"
+                            onClick={onOpenAirGap}
+                            className="px-2.5 py-1.5 rounded border border-slate-300/30 bg-slate-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-100 hover:bg-slate-500/20"
+                        >
+                            AirGap
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-trust-fabric-btn"
+                            onClick={onOpenTrustFabric}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            PKI
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-hardware-appliance-btn"
+                            onClick={onOpenHardwareAppliance}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Hardware
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-courier-transfer-btn"
+                            onClick={onOpenCourierTransfer}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Courier
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-continuity-drills-btn"
+                            onClick={onOpenContinuityDrills}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Drills
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-procurement-command-btn"
+                            onClick={onOpenProcurementCommand}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Procurement
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-tamper-simulation-btn"
+                            onClick={onOpenTamperSimulation}
+                            className="px-2.5 py-1.5 rounded border border-rose-300/30 bg-rose-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-rose-100 hover:bg-rose-500/20"
+                        >
+                            Simulate
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="mission-control-open-institutional-command-btn"
+                            onClick={onOpenInstitutionalCommand}
+                            className="px-2.5 py-1.5 rounded border border-cyan-300/30 bg-cyan-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/20"
+                        >
+                            Institutional
                         </button>
                         <button
                             type="button"

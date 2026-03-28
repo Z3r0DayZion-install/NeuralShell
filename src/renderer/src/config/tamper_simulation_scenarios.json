@@ -1,0 +1,82 @@
+[
+  {
+    "scenarioId": "invalid_signature_injection",
+    "title": "Invalid Signature Injection",
+    "expectedResponse": [
+      "signature_validation_failed",
+      "quarantine_artifact",
+      "raise_incident_event"
+    ],
+    "severity": "critical"
+  },
+  {
+    "scenarioId": "tampered_evidence_envelope",
+    "title": "Tampered Evidence Envelope",
+    "expectedResponse": [
+      "hash_mismatch_detected",
+      "block_release",
+      "append_audit_event"
+    ],
+    "severity": "critical"
+  },
+  {
+    "scenarioId": "revoked_cert_presented",
+    "title": "Revoked Certificate Presented",
+    "expectedResponse": [
+      "trust_path_invalid",
+      "deny_operation",
+      "raise_trust_alert"
+    ],
+    "severity": "critical"
+  },
+  {
+    "scenarioId": "policy_bundle_mismatch",
+    "title": "Policy Bundle Mismatch",
+    "expectedResponse": [
+      "policy_diff_alert",
+      "rollback_gate",
+      "operator_confirmation_required"
+    ],
+    "severity": "warning"
+  },
+  {
+    "scenarioId": "relay_path_failure_burst",
+    "title": "Relay Path Failure Burst",
+    "expectedResponse": [
+      "switch_to_local_mode",
+      "degraded_alert",
+      "capture_watchdog_event"
+    ],
+    "severity": "degraded"
+  },
+  {
+    "scenarioId": "node_heartbeat_dropout",
+    "title": "Node Heartbeat Dropout",
+    "expectedResponse": [
+      "mark_node_degraded",
+      "incident_mode_suggestion",
+      "append_fleet_event"
+    ],
+    "severity": "degraded"
+  },
+  {
+    "scenarioId": "stale_update_pack_presented",
+    "title": "Stale Update Pack Presented",
+    "expectedResponse": [
+      "reject_update_pack",
+      "keep_quarantine",
+      "append_update_alert"
+    ],
+    "severity": "warning"
+  },
+  {
+    "scenarioId": "break_glass_misuse",
+    "title": "Break-Glass Misuse Simulation",
+    "expectedResponse": [
+      "deny_unapproved_override",
+      "require_dual_signoff",
+      "append_security_audit"
+    ],
+    "severity": "critical"
+  }
+]

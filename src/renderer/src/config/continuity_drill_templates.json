@@ -1,0 +1,60 @@
+[
+  {
+    "templateId": "drill-fleet-restore",
+    "scenarioId": "fleet_restore",
+    "title": "Fleet Restore Drill",
+    "expectedState": {
+      "fleetHealth": "healthy",
+      "restoredNodes": 3,
+      "trustState": "valid"
+    },
+    "checklist": [
+      "recover backup bundle",
+      "verify trust chain",
+      "confirm node telemetry"
+    ]
+  },
+  {
+    "templateId": "drill-appliance-replacement",
+    "scenarioId": "appliance_replacement",
+    "title": "Appliance Replacement Drill",
+    "expectedState": {
+      "provisioned": true,
+      "trustState": "valid",
+      "policyProfile": "sealed"
+    },
+    "checklist": [
+      "replace hardware",
+      "provision role",
+      "verify diagnostics"
+    ]
+  },
+  {
+    "templateId": "drill-policy-rollback",
+    "scenarioId": "regional_policy_rollback",
+    "title": "Regional Policy Rollback Drill",
+    "expectedState": {
+      "rollbackApplied": true,
+      "incidentsOpen": 0
+    },
+    "checklist": [
+      "apply rollback",
+      "verify signatures",
+      "validate runtime status"
+    ]
+  },
+  {
+    "templateId": "drill-revoked-trust",
+    "scenarioId": "revoked_trust_relationship",
+    "title": "Revoked Trust Relationship Drill",
+    "expectedState": {
+      "revokedBlocked": true,
+      "alertsRaised": 1
+    },
+    "checklist": [
+      "present revoked certificate",
+      "confirm trust path invalidated",
+      "capture incident evidence"
+    ]
+  }
+]

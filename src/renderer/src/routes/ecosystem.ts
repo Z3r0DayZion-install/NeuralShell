@@ -5,6 +5,14 @@ export type EcosystemModuleId =
     | 'fleet_control'
     | 'recovery_center'
     | 'appliance_console'
+    | 'airgap_operations'
+    | 'trust_fabric'
+    | 'hardware_appliance'
+    | 'courier_transfer'
+    | 'continuity_drills'
+    | 'procurement_command'
+    | 'tamper_simulation'
+    | 'institutional_command'
     | 'shift_console'
     | 'incident_mode'
     | 'policy_rollout'
@@ -64,6 +72,62 @@ export const ECOSYSTEM_MODULES: EcosystemModule[] = [
         description: 'Operator-only hardened appliance mode for relay/control deployments.',
         minTier: 'enterprise',
         roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'airgap_operations',
+        title: 'Air-Gapped Operations',
+        description: 'Import/export station ledger, verification gates, and air-gap lock posture controls.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'trust_fabric',
+        title: 'PKI Trust Fabric',
+        description: 'Local CA controls, certificate lifecycle, revocation, and trust-chain export.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'hardware_appliance',
+        title: 'Hardware Appliance Program',
+        description: 'Provisioning, profile health, support diagnostics scope, and decommission workflows.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'courier_transfer',
+        title: 'Offline Evidence Courier',
+        description: 'Signed courier package movement with quarantine, receipt verification, and release controls.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'continuity_drills',
+        title: 'Continuity Drills',
+        description: 'Schedule and score continuity exercises with recovery evidence exports.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support'],
+    },
+    {
+        id: 'procurement_command',
+        title: 'Procurement Command Center',
+        description: 'Generate buyer-ready security/procurement review packs and version deltas.',
+        minTier: 'enterprise',
+        roles: ['founder', 'support', 'sales'],
+    },
+    {
+        id: 'tamper_simulation',
+        title: 'Tamper Simulation Mode',
+        description: 'Safe simulation of detection, quarantine, and response workflows.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support', 'sales'],
+    },
+    {
+        id: 'institutional_command',
+        title: 'Institutional Command Console',
+        description: 'Unified executive/operator command surface across all institutional tracks.',
+        minTier: 'enterprise',
+        roles: ['founder', 'operator', 'support', 'sales'],
     },
     {
         id: 'shift_console',

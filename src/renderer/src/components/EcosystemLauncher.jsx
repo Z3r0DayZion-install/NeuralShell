@@ -27,6 +27,14 @@ const APPLIANCE_ALLOWED_MODULES = new Set([
     'fleet_control',
     'recovery_center',
     'appliance_console',
+    'airgap_operations',
+    'trust_fabric',
+    'hardware_appliance',
+    'courier_transfer',
+    'continuity_drills',
+    'procurement_command',
+    'tamper_simulation',
+    'institutional_command',
     'shift_console',
     'incident_mode',
     'policy_rollout',
@@ -78,6 +86,14 @@ export default function EcosystemLauncher({
     onOpenFleetControl,
     onOpenRecoveryCenter,
     onOpenApplianceConsole,
+    onOpenAirGapOperations,
+    onOpenTrustFabric,
+    onOpenHardwareAppliance,
+    onOpenCourierTransfer,
+    onOpenContinuityDrills,
+    onOpenProcurementCommand,
+    onOpenTamperSimulation,
+    onOpenInstitutionalCommand,
     onOpenShiftConsole,
     onOpenIncidentMode,
     onOpenPolicyRollout,
@@ -257,6 +273,150 @@ export default function EcosystemLauncher({
                                 className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
                             >
                                 Open Appliance Console
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'airgap_operations' && (
+                        <section data-testid="ecosystem-airgap-entry" className="rounded-2xl border border-slate-300/30 bg-slate-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-slate-100 font-bold">Air-Gapped Operations</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open controlled transfer-station workflows for offline artifacts with verification gates and air-gap lock controls.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-airgap-btn"
+                                onClick={() => {
+                                    if (typeof onOpenAirGapOperations === 'function') onOpenAirGapOperations();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-slate-300/35 bg-slate-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-100 hover:bg-slate-500/30"
+                            >
+                                Open Air-Gapped Operations
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'trust_fabric' && (
+                        <section data-testid="ecosystem-trust-fabric-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">PKI Trust Fabric</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open local certificate authority controls, lifecycle operations, and trust-chain export view.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-trust-fabric-btn"
+                                onClick={() => {
+                                    if (typeof onOpenTrustFabric === 'function') onOpenTrustFabric();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Trust Fabric
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'hardware_appliance' && (
+                        <section data-testid="ecosystem-hardware-appliance-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Hardware Appliance Program</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open profile manager for provisioning, appliance health simulation, and decommission exports.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-hardware-appliance-btn"
+                                onClick={() => {
+                                    if (typeof onOpenHardwareAppliance === 'function') onOpenHardwareAppliance();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Hardware Appliance
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'courier_transfer' && (
+                        <section data-testid="ecosystem-courier-transfer-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Offline Evidence Courier</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open transfer chain controls for package quarantine, receipt verification, and release gates.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-courier-transfer-btn"
+                                onClick={() => {
+                                    if (typeof onOpenCourierTransfer === 'function') onOpenCourierTransfer();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Courier Transfer
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'continuity_drills' && (
+                        <section data-testid="ecosystem-continuity-drills-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Continuity Drills</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open drill scheduling, readiness scorecard, and continuity evidence export workflows.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-continuity-drills-btn"
+                                onClick={() => {
+                                    if (typeof onOpenContinuityDrills === 'function') onOpenContinuityDrills();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Continuity Drills
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'procurement_command' && (
+                        <section data-testid="ecosystem-procurement-command-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Procurement Command Center</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open buyer/security review pack controls with version delta generation.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-procurement-command-btn"
+                                onClick={() => {
+                                    if (typeof onOpenProcurementCommand === 'function') onOpenProcurementCommand();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Procurement Center
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'tamper_simulation' && (
+                        <section data-testid="ecosystem-tamper-simulation-entry" className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-rose-100 font-bold">Tamper Simulation Mode</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open sandboxed simulation workflows for detection and response drills.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-tamper-simulation-btn"
+                                onClick={() => {
+                                    if (typeof onOpenTamperSimulation === 'function') onOpenTamperSimulation();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-rose-200/35 bg-rose-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-rose-100 hover:bg-rose-500/30"
+                            >
+                                Open Tamper Simulation
+                            </button>
+                        </section>
+                    )}
+                    {activeModule && activeModule.id === 'institutional_command' && (
+                        <section data-testid="ecosystem-institutional-command-entry" className="rounded-2xl border border-cyan-300/30 bg-cyan-500/10 p-4 space-y-3">
+                            <div className="text-[10px] uppercase tracking-[0.16em] text-cyan-100 font-bold">Institutional Command Console</div>
+                            <div className="text-[11px] text-slate-200">
+                                Open one-screen institutional posture summary with direct drill-down controls.
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="ecosystem-open-institutional-command-btn"
+                                onClick={() => {
+                                    if (typeof onOpenInstitutionalCommand === 'function') onOpenInstitutionalCommand();
+                                }}
+                                className="px-3 py-2 rounded-lg border border-cyan-200/35 bg-cyan-500/20 text-[10px] font-mono uppercase tracking-[0.14em] text-cyan-100 hover:bg-cyan-500/30"
+                            >
+                                Open Institutional Command
                             </button>
                         </section>
                     )}
