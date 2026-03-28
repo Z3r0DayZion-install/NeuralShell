@@ -3044,22 +3044,22 @@ function App() {
                     setShowEcosystem(false);
                     setShowAirGapOperations(true);
                 }}
-                onOpenTrustFabric={() => {
+                onOpenTrustFabric={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowTrustFabric(true);
-                }}
-                onOpenHardwareAppliance={() => {
+                } : undefined}
+                onOpenHardwareAppliance={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowHardwareAppliance(true);
-                }}
+                } : undefined}
                 onOpenCourierTransfer={() => {
                     setShowEcosystem(false);
                     setShowCourierTransfer(true);
                 }}
-                onOpenContinuityDrills={() => {
+                onOpenContinuityDrills={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowContinuityDrills(true);
-                }}
+                } : undefined}
                 onOpenProcurementCommand={() => {
                     setShowEcosystem(false);
                     setShowProcurementCommand(true);
@@ -3232,10 +3232,10 @@ function App() {
                 onOpenRecovery={() => setShowRecoveryCenter(true)}
                 onOpenAppliance={() => setShowApplianceConsole(true)}
                 onOpenAirGap={() => setShowAirGapOperations(true)}
-                onOpenTrustFabric={() => setShowTrustFabric(true)}
-                onOpenHardwareAppliance={() => setShowHardwareAppliance(true)}
+                onOpenTrustFabric={internalGtmMode ? () => setShowTrustFabric(true) : undefined}
+                onOpenHardwareAppliance={internalGtmMode ? () => setShowHardwareAppliance(true) : undefined}
                 onOpenCourierTransfer={() => setShowCourierTransfer(true)}
-                onOpenContinuityDrills={() => setShowContinuityDrills(true)}
+                onOpenContinuityDrills={internalGtmMode ? () => setShowContinuityDrills(true) : undefined}
                 onOpenProcurementCommand={() => setShowProcurementCommand(true)}
                 onOpenTamperSimulation={() => setShowTamperSimulation(true)}
                 onOpenInstitutionalCommand={() => setShowInstitutionalCommand(true)}
@@ -3346,22 +3346,28 @@ function App() {
                     );
                 }}
             />
-            <TrustFabricConsole
-                open={showTrustFabric}
-                onClose={() => setShowTrustFabric(false)}
-            />
-            <HardwareApplianceManager
-                open={showHardwareAppliance}
-                onClose={() => setShowHardwareAppliance(false)}
-            />
+            {internalGtmMode && (
+                <TrustFabricConsole
+                    open={showTrustFabric}
+                    onClose={() => setShowTrustFabric(false)}
+                />
+            )}
+            {internalGtmMode && (
+                <HardwareApplianceManager
+                    open={showHardwareAppliance}
+                    onClose={() => setShowHardwareAppliance(false)}
+                />
+            )}
             <CourierTransferCenter
                 open={showCourierTransfer}
                 onClose={() => setShowCourierTransfer(false)}
             />
-            <ContinuityDrillCenter
-                open={showContinuityDrills}
-                onClose={() => setShowContinuityDrills(false)}
-            />
+            {internalGtmMode && (
+                <ContinuityDrillCenter
+                    open={showContinuityDrills}
+                    onClose={() => setShowContinuityDrills(false)}
+                />
+            )}
             <ProcurementCommandCenter
                 open={showProcurementCommand}
                 onClose={() => setShowProcurementCommand(false)}
