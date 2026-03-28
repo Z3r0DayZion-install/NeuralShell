@@ -195,9 +195,19 @@ function loadPersistedLicenseStatus() {
   const targetPath = resolveLicenseStorePath();
   if (!fs.existsSync(targetPath)) return null;
   const parsed = JSON.parse(fs.readFileSync(targetPath, "utf8"));
-  const verified = verifyLicenseBlob(parsed, { now: new Date() });
-  if (!verified || !verified.ok) return null;
-  return verified;
+  try {
+    const verified = verifyLicenseBlob(parsed, { now: new Date() });
+    if (!verified || !verified.ok) return null;
+    return verified;
+  } catch (err) {
+    // License verification failed (likely missing signing key)
+    if (logger && typeof logger.log === "function") {
+      logger.log("error", "license_verification_error", {
+        error: err.message || String(err)
+      });
+    }
+    return null;
+  }
 }
 
 function refreshActiveLicenseStatus() {
@@ -2249,42 +2259,58 @@ ipcMain.handle("license:status", async () => {
 });
 
 ipcMain.handle("license:activateBlob", async (_event, rawBlob) => {
-  const blob = typeof rawBlob === "string" ? JSON.parse(rawBlob) : rawBlob;
-  const verification = verifyLicenseBlob(blob, { now: new Date() });
-  if (!verification || !verification.ok) {
+  try {
+    const blob = typeof rawBlob === "string" ? JSON.parse(rawBlob) : rawBlob;
+    const verification = verifyLicenseBlob(blob, { now: new Date() });
+    if (!verification || !verification.ok) {
+      return {
+        ok: false,
+        status: verification && verification.status ? verification.status : "invalid",
+        reason: verification && verification.reason ? verification.reason : "license_verification_failed"
+      };
+    }
+    const storagePath = persistActiveLicenseBlob(blob);
+    activeLicenseStatus = verification;
+    if (logger && typeof logger.log === "function") {
+      logger.log("info", "license_activated", {
+        planId: verification.planId,
+        seats: verification.seats,
+        storagePath
+      });
+    }
+    if (auditChain && typeof auditChain.append === "function") {
+      auditChain.append({
+        event: "license_activated",
+        planId: verification.planId,
+        seats: verification.seats,
+        at: new Date().toISOString()
+      });
+    }
+    return {
+      ok: true,
+      status: verification.status,
+      planId: verification.planId,
+      planLabel: verification.planLabel,
+      seats: verification.seats,
+      expiresAt: verification.expiresAt,
+      graceEndsAt: verification.graceEndsAt,
+      graceRemainingDays: verification.graceRemainingDays
+    };
+  } catch (err) {
+    // License verification threw an error (likely missing signing key)
+    const errorMessage = err.message || String(err);
+    if (logger && typeof logger.log === "function") {
+      logger.log("error", "license_activation_error", { error: errorMessage });
+    }
     return {
       ok: false,
-      status: verification && verification.status ? verification.status : "invalid",
-      reason: verification && verification.reason ? verification.reason : "license_verification_failed"
+      status: "error",
+      reason: errorMessage.includes("NS_LICENSE_SIGNING_KEY")
+        ? "license_signing_key_not_configured"
+        : "license_verification_error",
+      errorMessage
     };
   }
-  const storagePath = persistActiveLicenseBlob(blob);
-  activeLicenseStatus = verification;
-  if (logger && typeof logger.log === "function") {
-    logger.log("info", "license_activated", {
-      planId: verification.planId,
-      seats: verification.seats,
-      storagePath
-    });
-  }
-  if (auditChain && typeof auditChain.append === "function") {
-    auditChain.append({
-      event: "license_activated",
-      planId: verification.planId,
-      seats: verification.seats,
-      at: new Date().toISOString()
-    });
-  }
-  return {
-    ok: true,
-    status: verification.status,
-    planId: verification.planId,
-    planLabel: verification.planLabel,
-    seats: verification.seats,
-    expiresAt: verification.expiresAt,
-    graceEndsAt: verification.graceEndsAt,
-    graceRemainingDays: verification.graceRemainingDays
-  };
 });
 
 ipcMain.handle("license:clear", async () => {

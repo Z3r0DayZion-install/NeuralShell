@@ -3,6 +3,11 @@ const fs = require("fs");
 const path = require("path");
 const { createSignedLicense } = require("../billing/licenseEngine");
 
+// NOTE: This script requires NS_LICENSE_SIGNING_KEY to be set.
+// For local development/testing, you can use NS_ALLOW_DEV_LICENSE_KEY=1
+// to use the dev fallback key. For production license generation,
+// always set NS_LICENSE_SIGNING_KEY to a secure key.
+
 function parseArgs(argv) {
   const out = {
     planId: "pro",
@@ -22,21 +27,26 @@ function parseArgs(argv) {
 }
 
 function main() {
-  const args = parseArgs(process.argv);
-  const license = createSignedLicense({
-    planId: args.planId,
-    customer: args.customer,
-    seats: args.seats,
-    expiresAt: args.expiresAt
-  });
-  if (args.output) {
-    const outputPath = path.resolve(args.output);
-    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, `${JSON.stringify(license, null, 2)}\n`, "utf8");
-    process.stdout.write(`${outputPath}\n`);
-    return;
+  try {
+    const args = parseArgs(process.argv);
+    const license = createSignedLicense({
+      planId: args.planId,
+      customer: args.customer,
+      seats: args.seats,
+      expiresAt: args.expiresAt
+    });
+    if (args.output) {
+      const outputPath = path.resolve(args.output);
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+      fs.writeFileSync(outputPath, `${JSON.stringify(license, null, 2)}\n`, "utf8");
+      process.stdout.write(`${outputPath}\n`);
+      return;
+    }
+    process.stdout.write(`${JSON.stringify(license, null, 2)}\n`);
+  } catch (err) {
+    process.stderr.write(`Error generating license: ${err.message}\n`);
+    process.exit(1);
   }
-  process.stdout.write(`${JSON.stringify(license, null, 2)}\n`);
 }
 
 main();

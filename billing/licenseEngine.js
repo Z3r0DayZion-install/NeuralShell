@@ -3,7 +3,26 @@ const fs = require("fs");
 const path = require("path");
 
 const PLANS_PATH = path.resolve(process.cwd(), "config", "plans.json");
-const SIGNING_KEY = String(process.env.NS_LICENSE_SIGNING_KEY || "neuralshell-license-dev-signing-key-v1");
+const DEV_FALLBACK_KEY = "neuralshell-license-dev-signing-key-v1";
+
+function resolveSigningKey() {
+  const envKey = String(process.env.NS_LICENSE_SIGNING_KEY || "").trim();
+  if (envKey) {
+    return envKey;
+  }
+
+  const allowDevKey = process.env.NS_ALLOW_DEV_LICENSE_KEY === "1";
+  if (allowDevKey) {
+    return DEV_FALLBACK_KEY;
+  }
+
+  throw new Error(
+    "[NeuralShell License] NS_LICENSE_SIGNING_KEY is not set. " +
+    "License signing and verification require an explicit signing key. " +
+    "For local development, set NS_ALLOW_DEV_LICENSE_KEY=1 to use the dev fallback key. " +
+    "For production, set NS_LICENSE_SIGNING_KEY to a secure key."
+  );
+}
 
 function readJson(filePath, fallback) {
   try {
@@ -48,8 +67,9 @@ function stableStringify(payload) {
 }
 
 function signPayload(payload) {
+  const signingKey = resolveSigningKey();
   const canonical = stableStringify(payload);
-  return crypto.createHmac("sha256", SIGNING_KEY).update(canonical).digest("hex");
+  return crypto.createHmac("sha256", signingKey).update(canonical).digest("hex");
 }
 
 function parseIsoDate(value) {
