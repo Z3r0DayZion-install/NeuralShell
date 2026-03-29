@@ -484,7 +484,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'demo_flow' && (
+                    {activeModule && activeModule.id === 'demo_flow' && typeof onOpenDemoFlow === 'function' && (
                         <section data-testid="ecosystem-demo-flow-entry" className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-100 font-bold">Institutional Demo Flow</div>
                             <div className="text-[11px] text-slate-200">
@@ -610,7 +610,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'field_launch' && (
+                    {activeModule && activeModule.id === 'field_launch' && typeof onOpenFieldLaunch === 'function' && (
                         <section data-testid="ecosystem-field-launch-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Field Launch Command Center</div>
                             <div className="text-[11px] text-slate-200">
@@ -718,7 +718,7 @@ export default function EcosystemLauncher({
                             </button>
                         </section>
                     )}
-                    {activeModule && activeModule.id === 'launch_week' && (
+                    {activeModule && activeModule.id === 'launch_week' && typeof onOpenLaunchWeek === 'function' && (
                         <section data-testid="ecosystem-launch-week-entry" className="rounded-2xl border border-blue-300/30 bg-blue-500/10 p-4 space-y-3">
                             <div className="text-[10px] uppercase tracking-[0.16em] text-blue-100 font-bold">Launch Week Command Discipline</div>
                             <div className="text-[11px] text-slate-200">

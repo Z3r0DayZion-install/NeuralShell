@@ -203,14 +203,16 @@ export default function MissionControl({
                         >
                             Institutional
                         </button>
-                        <button
-                            type="button"
-                            data-testid="mission-control-open-demo-flow-btn"
-                            onClick={onOpenDemoFlow}
-                            className="px-2.5 py-1.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/20"
-                        >
-                            Demo
-                        </button>
+                        {typeof onOpenDemoFlow === 'function' && (
+                            <button
+                                type="button"
+                                data-testid="mission-control-open-demo-flow-btn"
+                                onClick={onOpenDemoFlow}
+                                className="px-2.5 py-1.5 rounded border border-emerald-300/30 bg-emerald-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-emerald-100 hover:bg-emerald-500/20"
+                            >
+                                Demo
+                            </button>
+                        )}
                         <button
                             type="button"
                             data-testid="mission-control-open-deployment-program-btn"
@@ -261,14 +263,16 @@ export default function MissionControl({
                         >
                             Commercial
                         </button>
-                        <button
-                            type="button"
-                            data-testid="mission-control-open-field-launch-btn"
-                            onClick={onOpenFieldLaunch}
-                            className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
-                        >
-                            Launch
-                        </button>
+                        {typeof onOpenFieldLaunch === 'function' && (
+                            <button
+                                type="button"
+                                data-testid="mission-control-open-field-launch-btn"
+                                onClick={onOpenFieldLaunch}
+                                className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
+                            >
+                                Launch
+                            </button>
+                        )}
                         <button
                             type="button"
                             data-testid="mission-control-open-partner-rollout-btn"
@@ -309,14 +313,16 @@ export default function MissionControl({
                         >
                             Renewal
                         </button>
-                        <button
-                            type="button"
-                            data-testid="mission-control-open-launch-week-btn"
-                            onClick={onOpenLaunchWeek}
-                            className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
-                        >
-                            LaunchWeek
-                        </button>
+                        {typeof onOpenLaunchWeek === 'function' && (
+                            <button
+                                type="button"
+                                data-testid="mission-control-open-launch-week-btn"
+                                onClick={onOpenLaunchWeek}
+                                className="px-2.5 py-1.5 rounded border border-blue-300/30 bg-blue-500/10 text-[10px] font-mono uppercase tracking-[0.14em] text-blue-100 hover:bg-blue-500/20"
+                            >
+                                LaunchWeek
+                            </button>
+                        )}
                         <button
                             type="button"
                             data-testid="mission-control-open-followup-generator-btn"

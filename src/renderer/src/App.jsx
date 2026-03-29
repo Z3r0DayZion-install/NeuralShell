@@ -2641,8 +2641,8 @@ function App() {
                 onOpenApplianceConsole={() => setShowApplianceConsole(true)}
                 onOpenAirGapOperations={() => setShowAirGapOperations(true)}
                 onOpenInstitutionalCommand={() => setShowInstitutionalCommand(true)}
-                onOpenDemoFlow={() => setShowDemoFlow(true)}
-                onOpenFieldLaunch={() => setShowFieldLaunch(true)}
+                onOpenDemoFlow={internalGtmMode ? () => setShowDemoFlow(true) : undefined}
+                onOpenFieldLaunch={internalGtmMode ? () => setShowFieldLaunch(true) : undefined}
                 onToggleScratchpad={() => setShowScratchpad((prev) => !prev)}
                 watchdogStatus={watchdogStatus}
                 watchdogAlertCount={unacknowledgedWatchdogAlerts.length}
@@ -3072,10 +3072,10 @@ function App() {
                     setShowEcosystem(false);
                     setShowInstitutionalCommand(true);
                 }}
-                onOpenDemoFlow={() => {
+                onOpenDemoFlow={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowDemoFlow(true);
-                }}
+                } : undefined}
                 onOpenDeploymentProgram={() => {
                     setShowEcosystem(false);
                     setShowDeploymentProgram(true);
@@ -3100,10 +3100,10 @@ function App() {
                     setShowEcosystem(false);
                     setShowCommercialPackages(true);
                 }}
-                onOpenFieldLaunch={() => {
+                onOpenFieldLaunch={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowFieldLaunch(true);
-                }}
+                } : undefined}
                 onOpenPartnerRollout={() => {
                     setShowEcosystem(false);
                     setShowPartnerRollout(true);
@@ -3124,10 +3124,10 @@ function App() {
                     setShowEcosystem(false);
                     setShowRenewalRisk(true);
                 }}
-                onOpenLaunchWeek={() => {
+                onOpenLaunchWeek={internalGtmMode ? () => {
                     setShowEcosystem(false);
                     setShowLaunchWeek(true);
-                }}
+                } : undefined}
                 onOpenFollowupGenerator={() => {
                     setShowEcosystem(false);
                     setShowFollowupGenerator(true);
@@ -3239,20 +3239,20 @@ function App() {
                 onOpenProcurementCommand={() => setShowProcurementCommand(true)}
                 onOpenTamperSimulation={() => setShowTamperSimulation(true)}
                 onOpenInstitutionalCommand={() => setShowInstitutionalCommand(true)}
-                onOpenDemoFlow={() => setShowDemoFlow(true)}
+                onOpenDemoFlow={internalGtmMode ? () => setShowDemoFlow(true) : undefined}
                 onOpenDeploymentProgram={() => setShowDeploymentProgram(true)}
                 onOpenTrainingDelivery={() => setShowTrainingDelivery(true)}
                 onOpenSupportOps={() => setShowSupportOps(true)}
                 onOpenBuyerJourney={() => setShowBuyerJourney(true)}
                 onOpenPilotConversion={internalGtmMode ? () => setShowPilotConversion(true) : undefined}
                 onOpenCommercialPackages={() => setShowCommercialPackages(true)}
-                onOpenFieldLaunch={() => setShowFieldLaunch(true)}
+                onOpenFieldLaunch={internalGtmMode ? () => setShowFieldLaunch(true) : undefined}
                 onOpenPartnerRollout={() => setShowPartnerRollout(true)}
                 onOpenBuyerOps={() => setShowBuyerOps(true)}
                 onOpenDemoToPilot={() => setShowDemoToPilot(true)}
                 onOpenPilotExpansion={() => setShowPilotExpansion(true)}
                 onOpenRenewalRisk={() => setShowRenewalRisk(true)}
-                onOpenLaunchWeek={() => setShowLaunchWeek(true)}
+                onOpenLaunchWeek={internalGtmMode ? () => setShowLaunchWeek(true) : undefined}
                 onOpenFollowupGenerator={() => setShowFollowupGenerator(true)}
                 onOpenFieldFeedback={() => setShowFieldFeedback(true)}
                 onOpenPartnerCertification={() => setShowPartnerCertification(true)}
@@ -3381,13 +3381,15 @@ function App() {
                 onClose={() => setShowInstitutionalCommand(false)}
                 onOpenPanel={openRuntimePanelById}
             />
-            <DemoFlowConsole
-                open={showDemoFlow}
-                onClose={() => setShowDemoFlow(false)}
-                enabled={demoModeEnabled}
-                onToggleEnabled={setDemoModeEnabled}
-                onOpenPanel={openRuntimePanelById}
-            />
+            {internalGtmMode && (
+                <DemoFlowConsole
+                    open={showDemoFlow}
+                    onClose={() => setShowDemoFlow(false)}
+                    enabled={demoModeEnabled}
+                    onToggleEnabled={setDemoModeEnabled}
+                    onOpenPanel={openRuntimePanelById}
+                />
+            )}
             <DeploymentProgramCenter
                 open={showDeploymentProgram}
                 onClose={() => setShowDeploymentProgram(false)}
@@ -3414,11 +3416,13 @@ function App() {
                 open={showCommercialPackages}
                 onClose={() => setShowCommercialPackages(false)}
             />
-            <FieldLaunchCommandCenter
-                open={showFieldLaunch}
-                onClose={() => setShowFieldLaunch(false)}
-                onOpenPanel={openRuntimePanelById}
-            />
+            {internalGtmMode && (
+                <FieldLaunchCommandCenter
+                    open={showFieldLaunch}
+                    onClose={() => setShowFieldLaunch(false)}
+                    onOpenPanel={openRuntimePanelById}
+                />
+            )}
             <PartnerRolloutConsole
                 open={showPartnerRollout}
                 onClose={() => setShowPartnerRollout(false)}
@@ -3439,11 +3443,13 @@ function App() {
                 open={showRenewalRisk}
                 onClose={() => setShowRenewalRisk(false)}
             />
-            <LaunchWeekCommandCenter
-                open={showLaunchWeek}
-                onClose={() => setShowLaunchWeek(false)}
-                onOpenPanel={openRuntimePanelById}
-            />
+            {internalGtmMode && (
+                <LaunchWeekCommandCenter
+                    open={showLaunchWeek}
+                    onClose={() => setShowLaunchWeek(false)}
+                    onOpenPanel={openRuntimePanelById}
+                />
+            )}
             <FollowupGenerator
                 open={showFollowupGenerator}
                 onClose={() => setShowFollowupGenerator(false)}
