@@ -410,6 +410,12 @@
       background: rgba(169, 57, 47, 0.1);
     }
 
+    .proof-badge.warn {
+      color: #8a5a19;
+      border-color: rgba(138, 90, 25, 0.32);
+      background: rgba(184, 111, 32, 0.12);
+    }
+
     .proof-meta {
       color: var(--ink-soft);
       font-size: 0.86rem;
@@ -462,6 +468,12 @@
       color: #8a5a19;
       border-color: rgba(138, 90, 25, 0.32);
       background: rgba(184, 111, 32, 0.12);
+    }
+
+    .proof-status .state.unavailable {
+      color: #546273;
+      border-color: rgba(84, 98, 115, 0.26);
+      background: rgba(84, 98, 115, 0.12);
     }
 
     .proof-links {
@@ -534,6 +546,29 @@
       letter-spacing: 0.05em;
     }
 
+    .proof-kv strong.pass {
+      color: #0a7a69;
+    }
+
+    .proof-kv strong.fail {
+      color: #a9392f;
+    }
+
+    .proof-kv strong.warn {
+      color: #8a5a19;
+    }
+
+    .proof-kv strong.unavailable {
+      color: #546273;
+    }
+
+    .proof-kv-meta {
+      margin-top: -0.15rem;
+      color: var(--ink-soft);
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.74rem;
+    }
+
     .proof-pack-band {
       margin-top: 0.95rem;
       border: 1px solid rgba(10, 122, 105, 0.32);
@@ -552,6 +587,145 @@
       color: var(--ink-soft);
       font-size: 0.9rem;
       max-width: 62ch;
+    }
+
+    .proof-sequence {
+      margin-top: 1rem;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .proof-seq {
+      border: 1px solid rgba(16, 32, 51, 0.13);
+      border-radius: var(--radius-md);
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.95) 0%, rgba(247, 249, 245, 0.82) 100%);
+      padding: 0.9rem;
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 0.8rem;
+      align-items: start;
+    }
+
+    .proof-seq-index {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      height: 2.15rem;
+      width: 2.15rem;
+      border-radius: 50%;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.76rem;
+      color: var(--navy);
+      border: 1px solid rgba(25, 51, 79, 0.25);
+      background: rgba(25, 51, 79, 0.08);
+      margin-bottom: 0.5rem;
+    }
+
+    .proof-seq-head h3 {
+      margin: 0;
+      font-size: 1.02rem;
+    }
+
+    .proof-seq-head p {
+      margin-top: 0.35rem;
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+    }
+
+    .proof-seq-media {
+      margin-top: 0.7rem;
+      border: 1px solid rgba(16, 32, 51, 0.14);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #dce7e6;
+    }
+
+    .proof-seq-media img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
+
+    .proof-seq-note {
+      margin-top: 0.65rem;
+      border: 1px dashed rgba(16, 32, 51, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 0.55rem 0.65rem;
+      font-size: 0.84rem;
+      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .proof-seq-actions {
+      margin-top: 0.65rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .proof-seq-link {
+      text-decoration: none;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 32, 51, 0.18);
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--navy);
+      padding: 0.42rem 0.65rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .proof-seq-link:hover {
+      background: rgba(25, 51, 79, 0.12);
+    }
+
+    .status-chip-row {
+      margin-top: 0.65rem;
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      border-radius: 999px;
+      border: 1px solid rgba(16, 32, 51, 0.2);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--ink-soft);
+      padding: 0.28rem 0.52rem;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .status-chip.pass {
+      color: #0a7a69;
+      border-color: rgba(10, 122, 105, 0.35);
+      background: rgba(10, 122, 105, 0.1);
+    }
+
+    .status-chip.fail {
+      color: #a9392f;
+      border-color: rgba(169, 57, 47, 0.3);
+      background: rgba(169, 57, 47, 0.1);
+    }
+
+    .status-chip.warn {
+      color: #8a5a19;
+      border-color: rgba(138, 90, 25, 0.32);
+      background: rgba(184, 111, 32, 0.12);
+    }
+
+    .status-chip.unavailable {
+      color: #546273;
+      border-color: rgba(84, 98, 115, 0.28);
+      background: rgba(84, 98, 115, 0.1);
+    }
+
+    .delivery-grid {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.95rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .boundary {
@@ -655,8 +829,17 @@
       .proof-grid,
       .proof-status-grid,
       .proof-links,
+      .delivery-grid,
       .cta-band {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .proof-seq {
+        grid-template-columns: 1fr;
+      }
+
+      .proof-seq-index {
+        margin-bottom: 0;
       }
     }
 
@@ -681,6 +864,7 @@
       .proof-grid,
       .proof-status-grid,
       .proof-links,
+      .delivery-grid,
       .cta-band {
         grid-template-columns: 1fr;
       }
@@ -703,6 +887,7 @@
       <nav>
         <a href="#proof-stack">Proof Stack</a>
         <a href="#flow">Buyer Flow</a>
+        <a href="#delivery">Delivery</a>
         <a href="#buy">Checkout</a>
       </nav>
     </header>
@@ -735,14 +920,16 @@
         <article class="proof-pillar">
           <h3>Checkout Integrity</h3>
           <p>Live page, Gumroad product, and checkout path are automatically verified against the launch offer.</p>
-          <div class="proof-kv"><span>Commerce Status</span><strong id="proof-checkout-status">SYNCING</strong></div>
+          <div class="proof-kv"><span>Commerce Status</span><strong id="proof-checkout-status" class="unavailable">Report Temporarily Unavailable</strong></div>
+          <div id="proof-checkout-time" class="proof-kv-meta">Last verified: unavailable</div>
           <a class="btn btn-ghost" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce Report</a>
         </article>
 
         <article class="proof-pillar">
           <h3>Runtime Evidence</h3>
           <p>Packaged app proof run validates proof, ROI, and lock/unlock continuity with screenshot capture.</p>
-          <div class="proof-kv"><span>Packaged Runtime</span><strong id="runtime-proof-status">SYNCING</strong></div>
+          <div class="proof-kv"><span>Packaged Runtime</span><strong id="runtime-proof-status" class="unavailable">Report Temporarily Unavailable</strong></div>
+          <div id="runtime-proof-time" class="proof-kv-meta">Last verified: unavailable</div>
           <a class="btn btn-ghost" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime Report</a>
         </article>
 
@@ -821,39 +1008,127 @@
     </section>
 
     <section id="proof">
-      <h2>Visual Proof Assets</h2>
-      <p class="lede">Screenshots below are captured from runtime proof flows and packaged execution paths.</p>
-      <div class="proof-grid">
-        <figure class="proof">
-          <img src="./assets/ui_sales_quickstart_packaged.png" alt="NeuralShell quickstart runtime view" loading="lazy" />
-          <span>Runtime quickstart surface</span>
-        </figure>
-        <figure class="proof">
-          <img src="./assets/ui_sales_proof_output_packaged.png" alt="NeuralShell proof output modal" loading="lazy" />
-          <span>Proof capture interaction</span>
-        </figure>
-        <figure class="proof">
-          <img src="./assets/ui_sales_lock_flow_packaged.png" alt="NeuralShell lock flow" loading="lazy" />
-          <span>Session lock flow</span>
-        </figure>
-        <figure class="proof">
-          <img src="./assets/ui_sales_unlock_restored_packaged.png" alt="NeuralShell unlock restored state" loading="lazy" />
-          <span>Unlock + continuity restore</span>
-        </figure>
-      </div>
+      <h2>Proof Path (Linear)</h2>
+      <p class="lede">Audit sequence: live offer, Gumroad listing, checkout path, packaged runtime proof, then delivery/support.</p>
 
       <div class="proof-console-head">
-        <div id="proof-overall" class="proof-badge">Proof Syncing...</div>
-        <div id="proof-generated-at" class="proof-meta">Awaiting latest launch-readiness run</div>
+        <div id="proof-overall" class="proof-badge fail">Proof report temporarily unavailable</div>
+        <div id="proof-generated-at" class="proof-meta">Last verified: unavailable</div>
       </div>
 
       <div id="proof-status-grid" class="proof-status-grid"></div>
 
-      <div class="proof-links">
-        <a href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Read JSON Report</a>
-        <a href="./assets/proof-live-latest.png" target="_blank" rel="noopener noreferrer">Live Site Proof</a>
-        <a href="./assets/proof-gumroad-latest.png" target="_blank" rel="noopener noreferrer">Gumroad Proof</a>
-        <a href="./assets/proof-checkout-latest.png" target="_blank" rel="noopener noreferrer">Checkout Proof</a>
+      <div class="proof-sequence">
+        <article class="proof-seq">
+          <div><span class="proof-seq-index">01</span></div>
+          <div>
+            <div class="proof-seq-head">
+              <h3>Live Offer Proof</h3>
+              <p>Public landing page capture showing the Operator offer, price, and support route.</p>
+            </div>
+            <div class="proof-seq-media">
+              <img src="./assets/proof-live-latest.png" alt="Live NeuralShell landing page proof capture" loading="lazy" />
+            </div>
+            <div class="proof-seq-actions">
+              <a class="proof-seq-link" href="./assets/proof-live-latest.png" target="_blank" rel="noopener noreferrer">Open Live Site Proof</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="proof-seq">
+          <div><span class="proof-seq-index">02</span></div>
+          <div>
+            <div class="proof-seq-head">
+              <h3>Gumroad Product Proof</h3>
+              <p>Product listing shows <span class="mono">NeuralShell Operator</span> with the same <span class="mono">$149</span> offer language.</p>
+            </div>
+            <div class="proof-seq-media">
+              <img src="./assets/proof-gumroad-latest.png" alt="Gumroad product listing proof capture" loading="lazy" />
+            </div>
+            <div class="proof-seq-actions">
+              <a class="proof-seq-link" href="./assets/proof-gumroad-latest.png" target="_blank" rel="noopener noreferrer">Open Gumroad Proof</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="proof-seq">
+          <div><span class="proof-seq-index">03</span></div>
+          <div>
+            <div class="proof-seq-head">
+              <h3>Checkout Path Proof</h3>
+              <p>Checkout reachability is validated from the commerce report; status chips below are report-driven.</p>
+            </div>
+            <div class="status-chip-row">
+              <span id="checkout-chip-route" class="status-chip unavailable">Checkout route unavailable</span>
+              <span id="checkout-chip-price" class="status-chip unavailable">Price check unavailable</span>
+              <span id="checkout-chip-product" class="status-chip unavailable">Product match unavailable</span>
+            </div>
+            <div id="checkout-proof-note" class="proof-seq-note">Report note unavailable.</div>
+            <div class="proof-seq-actions">
+              <a class="proof-seq-link" href="./assets/proof-checkout-latest.png" target="_blank" rel="noopener noreferrer">Open Checkout Proof</a>
+              <a class="proof-seq-link" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce JSON</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="proof-seq">
+          <div><span class="proof-seq-index">04</span></div>
+          <div>
+            <div class="proof-seq-head">
+              <h3>Packaged Runtime Proof</h3>
+              <p>Packaged build run validates proof output, ROI output, and lock/unlock continuity.</p>
+            </div>
+            <div class="proof-seq-media">
+              <img src="./assets/ui_sales_proof_output_packaged.png" alt="Packaged runtime proof capture in NeuralShell" loading="lazy" />
+            </div>
+            <div class="status-chip-row">
+              <span id="runtime-chip-proof" class="status-chip unavailable">Proof check unavailable</span>
+              <span id="runtime-chip-roi" class="status-chip unavailable">ROI check unavailable</span>
+              <span id="runtime-chip-lock" class="status-chip unavailable">Lock flow unavailable</span>
+            </div>
+            <div class="proof-seq-actions">
+              <a class="proof-seq-link" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime JSON</a>
+              <a class="proof-seq-link" href="./assets/ui_sales_lock_flow_packaged.png" target="_blank" rel="noopener noreferrer">Open Lock/Unlock Proof</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="proof-seq">
+          <div><span class="proof-seq-index">05</span></div>
+          <div>
+            <div class="proof-seq-head">
+              <h3>Delivery and Support Path</h3>
+              <p>After payment: receipt, access path, install + activation steps, and support/refund contact.</p>
+            </div>
+            <div class="proof-seq-actions">
+              <a class="proof-seq-link" href="mailto:support@neuralshell.app">Support and Refund Contact</a>
+              <a class="proof-seq-link" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Open Checkout Page</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="delivery">
+      <h2>After Payment: What Happens</h2>
+      <p class="lede">Plain flow. No hidden steps. No tier maze.</p>
+      <div class="delivery-grid">
+        <article class="card">
+          <h3>What You Get</h3>
+          <p>Gumroad receipt plus access to the current Operator package and proof-linked onboarding context.</p>
+        </article>
+        <article class="card">
+          <h3>Install + Activate</h3>
+          <p>Install the desktop build and activate on one primary device using hardware-bound licensing.</p>
+        </article>
+        <article class="card">
+          <h3>First Validation Run</h3>
+          <p>Run proof/ROI and save-lock-unlock flows to verify deterministic behavior on your own machine.</p>
+        </article>
+        <article class="card">
+          <h3>Support + Refund</h3>
+          <p>support@neuralshell.app handles install questions, activation issues, and refund routing.</p>
+        </article>
       </div>
     </section>
 
@@ -881,7 +1156,17 @@
       const generatedAt = document.getElementById("proof-generated-at");
       const grid = document.getElementById("proof-status-grid");
       const checkoutStatus = document.getElementById("proof-checkout-status");
+      const checkoutTime = document.getElementById("proof-checkout-time");
       const runtimeStatus = document.getElementById("runtime-proof-status");
+      const runtimeTime = document.getElementById("runtime-proof-time");
+      const checkoutChipRoute = document.getElementById("checkout-chip-route");
+      const checkoutChipPrice = document.getElementById("checkout-chip-price");
+      const checkoutChipProduct = document.getElementById("checkout-chip-product");
+      const checkoutNote = document.getElementById("checkout-proof-note");
+      const runtimeChipProof = document.getElementById("runtime-chip-proof");
+      const runtimeChipRoi = document.getElementById("runtime-chip-roi");
+      const runtimeChipLock = document.getElementById("runtime-chip-lock");
+      const MAX_REPORT_AGE_HOURS = 168;
       const order = [
         ["livePageLoaded", "Live Page Reachable"],
         ["liveHas149", "Price Check: $149 Visible"],
@@ -893,7 +1178,45 @@
         ["checkoutPathReachable", "Checkout Path Reachable"]
       ];
 
-      function addRow(label, value) {
+      function parseDateMaybe(value) {
+        if (!value) return null;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+
+      function formatVerifiedAt(value) {
+        const date = parseDateMaybe(value);
+        if (!date) return "Last verified: unavailable";
+        return `Last verified: ${date.toLocaleString()} (${date.toISOString()})`;
+      }
+
+      function isCurrent(value) {
+        const date = parseDateMaybe(value);
+        if (!date) return false;
+        const ageHours = (Date.now() - date.getTime()) / (1000 * 60 * 60);
+        return ageHours <= MAX_REPORT_AGE_HOURS;
+      }
+
+      function setStatusText(element, text, kind) {
+        if (!element) return;
+        element.textContent = text;
+        element.classList.remove("pass", "fail", "warn", "unavailable");
+        if (kind) element.classList.add(kind);
+      }
+
+      function setChip(element, text, kind) {
+        if (!element) return;
+        element.textContent = text;
+        element.classList.remove("pass", "fail", "warn", "unavailable");
+        if (kind) element.classList.add(kind);
+      }
+
+      function clearRows() {
+        if (grid) grid.innerHTML = "";
+      }
+
+      function addRow(label, kind, stateText) {
+        if (!grid) return;
         const row = document.createElement("div");
         row.className = "proof-status";
 
@@ -901,8 +1224,8 @@
         name.textContent = label;
 
         const state = document.createElement("span");
-        state.className = `state ${value ? "pass" : "fail"}`;
-        state.textContent = value ? "PASS" : "FAIL";
+        state.className = `state ${kind}`;
+        state.textContent = stateText;
 
         row.appendChild(name);
         row.appendChild(state);
@@ -916,40 +1239,62 @@
         const checks = data && data.checks ? data.checks : {};
 
         let allPass = true;
+        clearRows();
         for (const [key, label] of order) {
           const pass = Boolean(checks[key]);
           if (!pass) allPass = false;
-          addRow(label, pass);
+          addRow(label, pass ? "pass" : "fail", pass ? "PASS" : "FAIL");
         }
 
-        overall.textContent = allPass ? "Proof Verified" : "Proof Needs Attention";
-        overall.classList.add(allPass ? "pass" : "fail");
-        if (checkoutStatus) checkoutStatus.textContent = allPass ? "PASS" : "CHECK";
-
-        if (data && data.generatedAt) {
-          const d = new Date(data.generatedAt);
-          generatedAt.textContent = `Last automated proof run: ${d.toLocaleString()} (${d.toISOString()})`;
+        const current = isCurrent(data.generatedAt);
+        if (allPass && current) {
+          setStatusText(overall, "Commerce Proof Verified", "pass");
+          setStatusText(checkoutStatus, "Verified", "pass");
+        } else if (allPass && !current) {
+          setStatusText(overall, "Commerce Proof Pass (Stale)", "warn");
+          setStatusText(checkoutStatus, "Pass (Stale)", "warn");
         } else {
-          generatedAt.textContent = "Last automated proof run: timestamp unavailable";
+          setStatusText(overall, "Commerce Proof Needs Review", "fail");
+          setStatusText(checkoutStatus, "Check Required", "fail");
+        }
+
+        const commerceTimeText = formatVerifiedAt(data && data.generatedAt);
+        if (generatedAt) generatedAt.textContent = commerceTimeText;
+        if (checkoutTime) checkoutTime.textContent = commerceTimeText;
+
+        setChip(
+          checkoutChipRoute,
+          checks.checkoutPathReachable ? "Checkout route reachable" : "Checkout route check failed",
+          checks.checkoutPathReachable ? "pass" : "fail"
+        );
+        setChip(
+          checkoutChipPrice,
+          checks.gumroadHas149 ? "Price check $149 passed" : "Price check failed",
+          checks.gumroadHas149 ? "pass" : "fail"
+        );
+        setChip(
+          checkoutChipProduct,
+          checks.gumroadHasProductName ? "Product name match passed" : "Product name match failed",
+          checks.gumroadHasProductName ? "pass" : "fail"
+        );
+
+        if (checkoutNote) {
+          const note = data && Array.isArray(data.notes) && data.notes.length ? data.notes[0] : "No report note.";
+          checkoutNote.textContent = `Report note: ${note}`;
         }
       } catch (_err) {
-        overall.textContent = "Proof Report Unavailable";
-        overall.classList.add("fail");
-        if (checkoutStatus) checkoutStatus.textContent = "MISSING";
-        generatedAt.textContent = "Unable to load launch-readiness report";
+        setStatusText(overall, "Proof Report Temporarily Unavailable", "fail");
+        setStatusText(checkoutStatus, "Report Temporarily Unavailable", "unavailable");
+        if (generatedAt) generatedAt.textContent = "Last verified: unavailable";
+        if (checkoutTime) checkoutTime.textContent = "Last verified: unavailable";
+        clearRows();
         for (const [, label] of order) {
-          const row = document.createElement("div");
-          row.className = "proof-status";
-
-          const name = document.createElement("span");
-          name.textContent = label;
-          const state = document.createElement("span");
-          state.className = "state pending";
-          state.textContent = "PENDING";
-          row.appendChild(name);
-          row.appendChild(state);
-          grid.appendChild(row);
+          addRow(label, "unavailable", "UNAVAILABLE");
         }
+        setChip(checkoutChipRoute, "Checkout route unavailable", "unavailable");
+        setChip(checkoutChipPrice, "Price check unavailable", "unavailable");
+        setChip(checkoutChipProduct, "Product match unavailable", "unavailable");
+        if (checkoutNote) checkoutNote.textContent = "Report note: unavailable";
       }
 
       try {
@@ -958,9 +1303,26 @@
         const runtimeData = await runtimeRes.json();
         const checks = runtimeData && runtimeData.checks ? runtimeData.checks : {};
         const runtimePass = Boolean(checks.proof && checks.roi && checks.lockFlow);
-        if (runtimeStatus) runtimeStatus.textContent = runtimePass ? "PASS" : "CHECK";
+        const runtimeCurrent = isCurrent(runtimeData && runtimeData.generatedAt);
+
+        if (runtimePass && runtimeCurrent) {
+          setStatusText(runtimeStatus, "Verified", "pass");
+        } else if (runtimePass && !runtimeCurrent) {
+          setStatusText(runtimeStatus, "Pass (Stale)", "warn");
+        } else {
+          setStatusText(runtimeStatus, "Check Required", "fail");
+        }
+        if (runtimeTime) runtimeTime.textContent = formatVerifiedAt(runtimeData && runtimeData.generatedAt);
+
+        setChip(runtimeChipProof, checks.proof ? "Proof check passed" : "Proof check failed", checks.proof ? "pass" : "fail");
+        setChip(runtimeChipRoi, checks.roi ? "ROI check passed" : "ROI check failed", checks.roi ? "pass" : "fail");
+        setChip(runtimeChipLock, checks.lockFlow ? "Lock flow check passed" : "Lock flow check failed", checks.lockFlow ? "pass" : "fail");
       } catch (_runtimeErr) {
-        if (runtimeStatus) runtimeStatus.textContent = "MISSING";
+        setStatusText(runtimeStatus, "Report Temporarily Unavailable", "unavailable");
+        if (runtimeTime) runtimeTime.textContent = "Last verified: unavailable";
+        setChip(runtimeChipProof, "Proof check unavailable", "unavailable");
+        setChip(runtimeChipRoi, "ROI check unavailable", "unavailable");
+        setChip(runtimeChipLock, "Lock flow unavailable", "unavailable");
       }
     })();
   </script>
