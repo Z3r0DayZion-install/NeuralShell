@@ -10,9 +10,21 @@ HSG is a trust-preservation doctrine for evidence-based product visibility. It g
 
 ## Cumulative Progress
 
-### Total Confirmed Hollow Surfaces Gated: 18
+### Total Confirmed Hollow Surfaces Gated: 21
 ### Confirmed Real Surfaces Preserved: 2 (Batch 3)
-### Remaining Suspected Surfaces: 22
+### Remaining Suspected Surfaces: 19
+
+---
+
+## Batch Summary
+
+| Batch | Surfaces Gated | Key Note | Commit |
+|-------|----------------|----------|--------|
+| Batch 1 | 5 | Initial GTM console gating | — |
+| Batch 2 | 10 | Enterprise console gating | — |
+| Batch 3 | 3 | Ambiguous audit (2 real preserved) | — |
+| Batch 4 | 3 | GTM command center gating | `2a8f6da` |
+| **Total** | **21** | **2 real preserved** | — |
 
 ---
 
@@ -114,6 +126,41 @@ HSG is a trust-preservation doctrine for evidence-based product visibility. It g
 
 ---
 
+## Batch 4 — GTM Command Center Gating
+
+**Status:** Complete  
+**Commit:** `2a8f6da`  
+**Surfaces Gated:** 3  
+**Surfaces Preserved:** 0  
+**Implementation:** 17 conditional gates across 3 files
+
+### Surfaces Gated (3)
+1. FieldLaunchCommandCenter — localStorage aggregator (15+ GTM surfaces), hardcoded "pass" status
+2. DemoFlowConsole — localStorage manipulation, cosmetic demo mode flag, no real product behavior
+3. LaunchWeekCommandCenter — localStorage-only, hardcoded checklist, JSON export only
+
+### Implementation Details
+- 3 direct render gates in App.jsx (conditional blocks)
+- 8 callback gates in App.jsx (2 TopStatusBar + 3 EcosystemLauncher + 3 MissionControl)
+- 3 section wraps in EcosystemLauncher.jsx (function checks)
+- 3 button wraps in MissionControl.jsx (function checks)
+
+### Reserve Surfaces Deferred
+- BuyerOpsConsole — remained deferred (no justification to widen scope)
+- FollowupGenerator — remained deferred (no justification to widen scope)
+
+### Verification
+- Full unit/contract/smoke/security suite: All tests passing
+- E2E tests: 14 react-core tests passed (12.8s)
+- Flag off: Gated surfaces not visible in DOM
+- Flag on: Gated surfaces render correctly
+
+### Documentation
+- Audit report: `docs/lanes/hsg-batch4-audit.md`
+- Triage report: `docs/lanes/hsg-batch4-triage.md`
+
+---
+
 ## Pattern Documentation
 
 ### Core Pattern
@@ -127,31 +174,66 @@ HSG is a trust-preservation doctrine for evidence-based product visibility. It g
 
 ---
 
-## Remaining Suspected Surfaces (22)
+## Confirmed Real Surfaces Preserved
 
-The following surfaces have not been audited and remain visible to all users:
+These surfaces were audited and confirmed to have real backend integration. They remain visible to all users.
+
+### From Batch 3 (2 surfaces)
+
+1. **OfflineUpdateConsole**
+   - Real fleet integration via `useFleetState` hook
+   - Real Ed25519 signature verification
+   - Real crypto operations via `window.crypto.subtle.digest()`
+   - Real runtime events via `appendRuntimeEvent` and `onRuntimeEvent`
+   - Real update ring management and promotion workflows
+
+2. **CourierTransferCenter**
+   - Real artifact verification with Ed25519 signatures
+   - Real SHA-256 hash verification via `window.crypto.subtle.digest()`
+   - Real quarantine workflow with security gates
+   - Real receipt verification and release controls
+   - Real signed package movement tracking
+
+---
+
+## Remaining Suspected Surfaces (19)
+
+The following surfaces have not been audited and remain visible to all users.
+
+**Note:** BuyerOpsConsole and FollowupGenerator were identified as Batch 4 reserve candidates but remained deferred. They are included in this count.
 
 1. ProcurementCommandCenter
 2. TamperSimulationCenter
 3. InstitutionalCommandConsole
-4. DemoFlowConsole
-5. DeploymentProgramCenter
-6. TrainingDeliveryCenter
-7. SupportOpsConsole
-8. BuyerEvaluationCenter
-9. CommercialPackageConsole
-10. FieldLaunchCommandCenter
-11. PartnerRolloutConsole
-12. BuyerOpsConsole
-13. DemoToPilotConsole
-14. PilotExpansionConsole
-15. RenewalRiskConsole
-16. LaunchWeekCommandCenter
-17. FollowupGenerator
-18. FieldFeedbackConsole
-19. PartnerCertificationHub
-20. EcosystemRevenuePlanner
-21. (2 additional surfaces to be identified)
+4. DeploymentProgramCenter
+5. TrainingDeliveryCenter
+6. SupportOpsConsole
+7. BuyerEvaluationCenter
+8. CommercialPackageConsole
+9. PartnerRolloutConsole
+10. BuyerOpsConsole (Batch 4 reserve, deferred)
+11. DemoToPilotConsole
+12. PilotExpansionConsole
+13. RenewalRiskConsole
+14. FollowupGenerator (Batch 4 reserve, deferred)
+15. FieldFeedbackConsole
+16. PartnerCertificationHub
+17. EcosystemRevenuePlanner
+18. (2 additional surfaces to be identified)
+
+---
+
+## Operating Rule for Future Batches
+
+Do not open Batch 5 simply because 19 suspected surfaces remain.
+
+Open Batch 5 only when specific surfaces earn scrutiny by:
+- Evidence of user confusion or trust damage
+- High visibility in user-facing workflows
+- Ambiguity requiring classification
+- Overlap with real product claims
+
+HSG is a precision instrument, not a cleanup queue.
 
 ---
 
