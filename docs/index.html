@@ -376,6 +376,119 @@
       color: var(--ink-soft);
     }
 
+    .proof-console-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      margin-top: 0.95rem;
+    }
+
+    .proof-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      border-radius: 999px;
+      padding: 0.44rem 0.76rem;
+      font-weight: 700;
+      font-size: 0.84rem;
+      border: 1px solid rgba(16, 32, 51, 0.15);
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--navy);
+    }
+
+    .proof-badge.pass {
+      color: #0a7a69;
+      border-color: rgba(10, 122, 105, 0.32);
+      background: rgba(10, 122, 105, 0.1);
+    }
+
+    .proof-badge.fail {
+      color: #a9392f;
+      border-color: rgba(169, 57, 47, 0.3);
+      background: rgba(169, 57, 47, 0.1);
+    }
+
+    .proof-meta {
+      color: var(--ink-soft);
+      font-size: 0.86rem;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+    }
+
+    .proof-status-grid {
+      margin-top: 0.9rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .proof-status {
+      background: #ffffff;
+      border: 1px solid rgba(16, 32, 51, 0.12);
+      border-radius: var(--radius-sm);
+      padding: 0.62rem 0.7rem;
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .proof-status .state {
+      font-size: 0.76rem;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.22rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 32, 51, 0.2);
+    }
+
+    .proof-status .state.pass {
+      color: #0a7a69;
+      border-color: rgba(10, 122, 105, 0.35);
+      background: rgba(10, 122, 105, 0.1);
+    }
+
+    .proof-status .state.fail {
+      color: #a9392f;
+      border-color: rgba(169, 57, 47, 0.32);
+      background: rgba(169, 57, 47, 0.1);
+    }
+
+    .proof-status .state.pending {
+      color: #8a5a19;
+      border-color: rgba(138, 90, 25, 0.32);
+      background: rgba(184, 111, 32, 0.12);
+    }
+
+    .proof-links {
+      margin-top: 0.9rem;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .proof-links a {
+      text-decoration: none;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 32, 51, 0.18);
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--navy);
+      padding: 0.5rem 0.66rem;
+      text-align: center;
+      font-size: 0.84rem;
+      font-weight: 700;
+      transition: transform 170ms ease, background 170ms ease;
+    }
+
+    .proof-links a:hover {
+      transform: translateY(-2px);
+      background: rgba(25, 51, 79, 0.12);
+    }
+
     .boundary {
       border-left: 4px solid var(--amber);
       background: linear-gradient(90deg, rgba(184, 111, 32, 0.12), rgba(184, 111, 32, 0.03));
@@ -475,6 +588,8 @@
       .steps,
       .grid,
       .proof-grid,
+      .proof-status-grid,
+      .proof-links,
       .cta-band {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -499,6 +614,8 @@
       .steps,
       .grid,
       .proof-grid,
+      .proof-status-grid,
+      .proof-links,
       .cta-band {
         grid-template-columns: 1fr;
       }
@@ -619,6 +736,20 @@
           <span>Unlock + continuity restore</span>
         </figure>
       </div>
+
+      <div class="proof-console-head">
+        <div id="proof-overall" class="proof-badge">Proof Syncing...</div>
+        <div id="proof-generated-at" class="proof-meta">Awaiting latest launch-readiness run</div>
+      </div>
+
+      <div id="proof-status-grid" class="proof-status-grid"></div>
+
+      <div class="proof-links">
+        <a href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Read JSON Report</a>
+        <a href="./assets/proof-live-latest.png" target="_blank" rel="noopener noreferrer">Live Site Proof</a>
+        <a href="./assets/proof-gumroad-latest.png" target="_blank" rel="noopener noreferrer">Gumroad Proof</a>
+        <a href="./assets/proof-checkout-latest.png" target="_blank" rel="noopener noreferrer">Checkout Proof</a>
+      </div>
     </section>
 
     <section class="cta-band" id="buy">
@@ -639,5 +770,79 @@
       <p>NeuralShell Operator | <span class="mono">$149 one-time</span> | support@neuralshell.app</p>
     </footer>
   </main>
+  <script>
+    (async () => {
+      const overall = document.getElementById("proof-overall");
+      const generatedAt = document.getElementById("proof-generated-at");
+      const grid = document.getElementById("proof-status-grid");
+      const order = [
+        ["livePageLoaded", "Live Page Reachable"],
+        ["liveHas149", "Price Check: $149 Visible"],
+        ["liveHasSupport", "Support Path Visible"],
+        ["liveHasGumroadLink", "Checkout Link Present"],
+        ["gumroadProductLoaded", "Gumroad Product Reachable"],
+        ["gumroadHasProductName", "Product Name Match"],
+        ["gumroadHas149", "Gumroad Price Match"],
+        ["checkoutPathReachable", "Checkout Path Reachable"]
+      ];
+
+      function addRow(label, value) {
+        const row = document.createElement("div");
+        row.className = "proof-status";
+
+        const name = document.createElement("span");
+        name.textContent = label;
+
+        const state = document.createElement("span");
+        state.className = `state ${value ? "pass" : "fail"}`;
+        state.textContent = value ? "PASS" : "FAIL";
+
+        row.appendChild(name);
+        row.appendChild(state);
+        grid.appendChild(row);
+      }
+
+      try {
+        const res = await fetch("./assets/launch-readiness-latest.json", { cache: "no-store" });
+        if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+        const data = await res.json();
+        const checks = data && data.checks ? data.checks : {};
+
+        let allPass = true;
+        for (const [key, label] of order) {
+          const pass = Boolean(checks[key]);
+          if (!pass) allPass = false;
+          addRow(label, pass);
+        }
+
+        overall.textContent = allPass ? "Proof Verified" : "Proof Needs Attention";
+        overall.classList.add(allPass ? "pass" : "fail");
+
+        if (data && data.generatedAt) {
+          const d = new Date(data.generatedAt);
+          generatedAt.textContent = `Last automated proof run: ${d.toLocaleString()} (${d.toISOString()})`;
+        } else {
+          generatedAt.textContent = "Last automated proof run: timestamp unavailable";
+        }
+      } catch (_err) {
+        overall.textContent = "Proof Report Unavailable";
+        overall.classList.add("fail");
+        generatedAt.textContent = "Unable to load launch-readiness report";
+        for (const [, label] of order) {
+          const row = document.createElement("div");
+          row.className = "proof-status";
+
+          const name = document.createElement("span");
+          name.textContent = label;
+          const state = document.createElement("span");
+          state.className = "state pending";
+          state.textContent = "PENDING";
+          row.appendChild(name);
+          row.appendChild(state);
+          grid.appendChild(row);
+        }
+      }
+    })();
+  </script>
 </body>
 </html>
