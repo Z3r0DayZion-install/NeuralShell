@@ -38,18 +38,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #f4f1ea;
-      --bg-soft: #faf8f3;
+      --bg: #f2ede6;
+      --bg-soft: #f9f6f1;
       --ink: #102033;
-      --ink-soft: #3f5166;
-      --line: #d4c8b6;
+      --ink-soft: #445669;
+      --line: #d2d9dc;
       --mint: #0fa38c;
       --mint-strong: #0a7a69;
       --amber: #b86f20;
       --navy: #19334f;
       --white: #ffffff;
-      --shadow: 0 20px 50px rgba(16, 32, 51, 0.12);
-      --radius-lg: 22px;
+      --shadow: 0 22px 52px rgba(16, 32, 51, 0.13);
+      --radius-lg: 24px;
       --radius-md: 14px;
       --radius-sm: 10px;
     }
@@ -62,7 +62,10 @@
 
     body {
       font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
-      background: radial-gradient(circle at 15% 0%, #fff7e8 0%, var(--bg) 48%, #ece6dc 100%);
+      background:
+        radial-gradient(56rem 24rem at 90% -12%, rgba(15, 163, 140, 0.14), transparent 70%),
+        radial-gradient(30rem 20rem at -8% 84%, rgba(184, 111, 32, 0.14), transparent 70%),
+        linear-gradient(180deg, #f8f5ed 0%, var(--bg) 100%);
       color: var(--ink);
       line-height: 1.55;
       min-height: 100vh;
@@ -80,21 +83,25 @@
     }
 
     .shell {
-      width: min(1120px, calc(100% - 2.4rem));
-      margin: 1.6rem auto 3rem;
+      width: min(1180px, calc(100% - 2.4rem));
+      margin: 1.35rem auto 3rem;
     }
 
     .topbar {
+      position: sticky;
+      top: 0.7rem;
+      z-index: 15;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 1rem;
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(16, 32, 51, 0.1);
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(16, 32, 51, 0.12);
       border-radius: 999px;
-      padding: 0.65rem 0.9rem 0.65rem 1.1rem;
-      backdrop-filter: blur(8px);
+      padding: 0.62rem 0.86rem 0.62rem 1.02rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 9px 22px rgba(16, 32, 51, 0.07);
     }
 
     .brand {
@@ -119,26 +126,35 @@
     .topbar a {
       text-decoration: none;
       color: var(--ink);
-      font-size: 0.9rem;
+      font-size: 0.84rem;
       font-weight: 600;
-      padding: 0.45rem 0.85rem;
+      padding: 0.42rem 0.75rem;
       border-radius: 999px;
-      transition: background 180ms ease, color 180ms ease;
+      border: 1px solid transparent;
+      transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
     }
 
     .topbar a:hover {
       background: rgba(16, 32, 51, 0.08);
+      border-color: rgba(16, 32, 51, 0.1);
     }
 
     .hero {
       position: relative;
       margin-top: 1.3rem;
       background: linear-gradient(140deg, rgba(255, 255, 255, 0.88) 0%, rgba(250, 248, 243, 0.9) 62%, rgba(230, 243, 240, 0.92) 100%);
-      border: 1px solid rgba(16, 32, 51, 0.12);
+      border: 1px solid rgba(16, 32, 51, 0.14);
       border-radius: var(--radius-lg);
       padding: 2.6rem;
       box-shadow: var(--shadow);
       overflow: hidden;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 0.95rem;
+      align-items: stretch;
     }
 
     .hero::after {
@@ -169,10 +185,10 @@
 
     h1 {
       margin-top: 1rem;
-      font-size: clamp(2rem, 4.8vw, 3.6rem);
-      line-height: 1.05;
+      font-size: clamp(2rem, 4.7vw, 3.7rem);
+      line-height: 1.02;
       letter-spacing: -0.03em;
-      max-width: 16ch;
+      max-width: 14ch;
     }
 
     .hero p {
@@ -245,7 +261,7 @@
     }
 
     .trust-row {
-      margin-top: 1.6rem;
+      margin-top: 1.2rem;
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.55rem;
@@ -262,13 +278,53 @@
       color: var(--ink-soft);
     }
 
+    .hero-evidence {
+      border: 1px solid rgba(16, 32, 51, 0.15);
+      border-radius: var(--radius-md);
+      background: linear-gradient(155deg, rgba(255, 255, 255, 0.94) 0%, rgba(237, 245, 245, 0.92) 100%);
+      padding: 0.92rem;
+      display: grid;
+      gap: 0.5rem;
+      align-content: start;
+    }
+
+    .hero-evidence h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .hero-evidence p {
+      margin: 0;
+      font-size: 0.84rem;
+    }
+
+    .hero-pair {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid rgba(16, 32, 51, 0.15);
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.55rem;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.73rem;
+      color: #3b5167;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .hero-pair .value {
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      color: #203a55;
+      font-size: 0.72rem;
+    }
+
     section {
-      margin-top: 1rem;
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(16, 32, 51, 0.1);
+      margin-top: 1.2rem;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(16, 32, 51, 0.12);
       border-radius: var(--radius-lg);
-      padding: 1.7rem;
-      box-shadow: 0 14px 32px rgba(16, 32, 51, 0.07);
+      padding: 1.95rem;
+      box-shadow: 0 15px 32px rgba(16, 32, 51, 0.08);
       animation: rise 420ms ease both;
     }
 
@@ -293,7 +349,7 @@
 
     .card {
       background: linear-gradient(160deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 244, 236, 0.9) 100%);
-      border: 1px solid rgba(16, 32, 51, 0.11);
+      border: 1px solid rgba(16, 32, 51, 0.13);
       border-radius: var(--radius-md);
       padding: 1rem;
     }
@@ -398,22 +454,25 @@
       color: var(--navy);
     }
 
-    .proof-badge.pass {
+    .proof-badge.pass,
+    .proof-badge.verified {
       color: #0a7a69;
       border-color: rgba(10, 122, 105, 0.32);
       background: rgba(10, 122, 105, 0.1);
     }
 
-    .proof-badge.fail {
-      color: #a9392f;
-      border-color: rgba(169, 57, 47, 0.3);
-      background: rgba(169, 57, 47, 0.1);
-    }
-
-    .proof-badge.warn {
+    .proof-badge.warn,
+    .proof-badge.review {
       color: #8a5a19;
       border-color: rgba(138, 90, 25, 0.32);
       background: rgba(184, 111, 32, 0.12);
+    }
+
+    .proof-badge.fail,
+    .proof-badge.unavailable {
+      color: #5a6f83;
+      border-color: rgba(90, 111, 131, 0.32);
+      background: rgba(90, 111, 131, 0.12);
     }
 
     .proof-meta {
@@ -452,24 +511,20 @@
       border: 1px solid rgba(16, 32, 51, 0.2);
     }
 
-    .proof-status .state.pass {
+    .proof-status .state.pass,
+    .proof-status .state.verified {
       color: #0a7a69;
       border-color: rgba(10, 122, 105, 0.35);
       background: rgba(10, 122, 105, 0.1);
     }
 
-    .proof-status .state.fail {
-      color: #a9392f;
-      border-color: rgba(169, 57, 47, 0.32);
-      background: rgba(169, 57, 47, 0.1);
-    }
-
-    .proof-status .state.pending {
+    .proof-status .state.review {
       color: #8a5a19;
       border-color: rgba(138, 90, 25, 0.32);
       background: rgba(184, 111, 32, 0.12);
     }
 
+    .proof-status .state.fail,
     .proof-status .state.unavailable {
       color: #546273;
       border-color: rgba(84, 98, 115, 0.26);
@@ -546,18 +601,17 @@
       letter-spacing: 0.05em;
     }
 
-    .proof-kv strong.pass {
+    .proof-kv strong.pass,
+    .proof-kv strong.verified {
       color: #0a7a69;
     }
 
-    .proof-kv strong.fail {
-      color: #a9392f;
-    }
-
-    .proof-kv strong.warn {
+    .proof-kv strong.warn,
+    .proof-kv strong.review {
       color: #8a5a19;
     }
 
+    .proof-kv strong.fail,
     .proof-kv strong.unavailable {
       color: #546273;
     }
@@ -697,24 +751,21 @@
       letter-spacing: 0.02em;
     }
 
-    .status-chip.pass {
+    .status-chip.pass,
+    .status-chip.verified {
       color: #0a7a69;
       border-color: rgba(10, 122, 105, 0.35);
       background: rgba(10, 122, 105, 0.1);
     }
 
-    .status-chip.fail {
-      color: #a9392f;
-      border-color: rgba(169, 57, 47, 0.3);
-      background: rgba(169, 57, 47, 0.1);
-    }
-
-    .status-chip.warn {
+    .status-chip.warn,
+    .status-chip.review {
       color: #8a5a19;
       border-color: rgba(138, 90, 25, 0.32);
       background: rgba(184, 111, 32, 0.12);
     }
 
+    .status-chip.fail,
     .status-chip.unavailable {
       color: #546273;
       border-color: rgba(84, 98, 115, 0.28);
@@ -826,12 +877,17 @@
       .trust-row,
       .steps,
       .grid,
+      .proof-pillars,
       .proof-grid,
       .proof-status-grid,
       .proof-links,
       .delivery-grid,
       .cta-band {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr;
       }
 
       .proof-seq {
@@ -855,12 +911,14 @@
       }
 
       .topbar {
+        position: static;
         border-radius: var(--radius-md);
       }
 
       .trust-row,
       .steps,
       .grid,
+      .proof-pillars,
       .proof-grid,
       .proof-status-grid,
       .proof-links,
@@ -893,51 +951,76 @@
     </header>
 
     <section class="hero">
-      <div class="eyebrow">Primary Offer: Operator Tier</div>
-      <h1>Local-first AI operator shell for buyers who verify before they trust.</h1>
-      <p>
-        NeuralShell Operator gives you hardware-bound licensing, encrypted session continuity,
-        and command-driven runtime control without fake badge theater.
-      </p>
-      <div class="pricing-chip">$149 one-time | Single-device Operator license</div>
-      <div class="actions">
-        <a class="btn btn-primary" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Buy Operator on Gumroad</a>
-        <a class="btn btn-ghost" href="mailto:support@neuralshell.app">Questions? Contact Support</a>
-      </div>
-      <div class="trust-row">
-        <div class="trust-item">Local-first by default</div>
-        <div class="trust-item">Hardware-bound activation</div>
-        <div class="trust-item">Encrypted save/lock/unlock</div>
-        <div class="trust-item">Proof-backed launch language</div>
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">Primary Offer: Operator Tier</div>
+          <h1>NeuralShell Operator is a local-first AI shell for users who need deterministic control.</h1>
+          <p>
+            One one-time license for one primary device. Hardware-bound activation, encrypted session continuity,
+            and proof-linked checkout signals so a buyer can verify before paying.
+          </p>
+          <div class="pricing-chip">$149 one-time | Single-device Operator license</div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Buy Operator on Gumroad</a>
+            <a class="btn btn-ghost" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Verification Report</a>
+          </div>
+          <div class="trust-row">
+            <div class="trust-item">Local-first runtime</div>
+            <div class="trust-item">Hardware-bound licensing</div>
+            <div class="trust-item">Encrypted continuity flow</div>
+            <div class="trust-item">Proof-backed launch language</div>
+          </div>
+        </div>
+
+        <aside class="hero-evidence">
+          <h3>Launch Snapshot</h3>
+          <p>This panel mirrors report data from the page below, not hardcoded trust signals.</p>
+          <div class="hero-pair">
+            <span>Commerce report</span>
+            <strong id="hero-commerce-status" class="status-chip unavailable">REPORT TEMPORARILY UNAVAILABLE</strong>
+          </div>
+          <div class="hero-pair">
+            <span>Runtime report</span>
+            <strong id="hero-runtime-status" class="status-chip unavailable">REPORT TEMPORARILY UNAVAILABLE</strong>
+          </div>
+          <div class="hero-pair">
+            <span>Last checked</span>
+            <span id="hero-last-checked" class="value">Unavailable</span>
+          </div>
+          <div class="hero-pair">
+            <span>Support path</span>
+            <span class="value">support@neuralshell.app</span>
+          </div>
+        </aside>
       </div>
     </section>
 
     <section id="proof-stack">
-      <h2>Proof Stack: Audit Before You Buy</h2>
-      <p class="lede">This page is wired to current evidence, not static marketing claims. Checkout, product listing, and runtime proof are all visible.</p>
+      <h2>Proof Summary: Verify First, Scroll Deeper Second</h2>
+      <p class="lede">Top-level report state first. Full proof trail below. No fake trust blocks and no hidden qualifiers.</p>
 
       <div class="proof-pillars">
         <article class="proof-pillar">
           <h3>Checkout Integrity</h3>
-          <p>Live page, Gumroad product, and checkout path are automatically verified against the launch offer.</p>
-          <div class="proof-kv"><span>Commerce Status</span><strong id="proof-checkout-status" class="unavailable">Report Temporarily Unavailable</strong></div>
-          <div id="proof-checkout-time" class="proof-kv-meta">Last verified: unavailable</div>
+          <p>Live page, product listing, and checkout route are checked against the active offer.</p>
+          <div class="proof-kv"><span>Commerce Status</span><strong id="proof-checkout-status" class="unavailable">REPORT TEMPORARILY UNAVAILABLE</strong></div>
+          <div id="proof-checkout-time" class="proof-kv-meta">Last checked: unavailable</div>
           <a class="btn btn-ghost" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce Report</a>
         </article>
 
         <article class="proof-pillar">
           <h3>Runtime Evidence</h3>
-          <p>Packaged app proof run validates proof, ROI, and lock/unlock continuity with screenshot capture.</p>
-          <div class="proof-kv"><span>Packaged Runtime</span><strong id="runtime-proof-status" class="unavailable">Report Temporarily Unavailable</strong></div>
-          <div id="runtime-proof-time" class="proof-kv-meta">Last verified: unavailable</div>
+          <p>Packaged runtime report tracks proof output, ROI output, and lock/unlock continuity checks.</p>
+          <div class="proof-kv"><span>Packaged Runtime</span><strong id="runtime-proof-status" class="unavailable">REPORT TEMPORARILY UNAVAILABLE</strong></div>
+          <div id="runtime-proof-time" class="proof-kv-meta">Last checked: unavailable</div>
           <a class="btn btn-ghost" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime Report</a>
         </article>
 
         <article class="proof-pillar">
-          <h3>First Sale Event</h3>
-          <p>Seller sale notice plus buyer receipt were generated for the first live transaction on March 30, 2026.</p>
-          <div class="proof-kv"><span>Revenue Event</span><strong>RECORDED</strong></div>
-          <a class="btn btn-ghost" href="./assets/proof-gumroad-latest.png" target="_blank" rel="noopener noreferrer">View Commerce Screenshot</a>
+          <h3>Offer Integrity</h3>
+          <p>One offer. One price. One checkout path. The page is optimized for a single clear buying decision.</p>
+          <div class="proof-kv"><span>Offer State</span><strong>LIVE</strong></div>
+          <a class="btn btn-ghost" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Open Checkout</a>
         </article>
 
         <article class="proof-pillar">
@@ -955,7 +1038,7 @@
     </section>
 
     <section>
-      <h2>What You Get</h2>
+      <h2>What The Buyer Gets</h2>
       <p class="lede">
         One focused offer. No pricing maze. Operator is the primary tier for technical early adopters who need
         a real workflow shell and honest boundaries.
@@ -985,8 +1068,8 @@
     </section>
 
     <section id="flow">
-      <h2>Buyer Flow (No Confusion)</h2>
-      <p class="lede">A buyer should land, understand, pay, and know what happens next in a single pass.</p>
+      <h2>Buyer Path (No Guesswork)</h2>
+      <p class="lede">The path is designed to be deterministic: land, verify, pay, and know what happens next.</p>
       <div class="steps">
         <article class="step" data-step="01">
           <strong>Checkout</strong>
@@ -1008,12 +1091,12 @@
     </section>
 
     <section id="proof">
-      <h2>Proof Path (Linear)</h2>
-      <p class="lede">Audit sequence: live offer, Gumroad listing, checkout path, packaged runtime proof, then delivery/support.</p>
+      <h2>Why Trust This: Curated Proof Pipeline</h2>
+      <p class="lede">Each block has one role: live offer proof, product proof, checkout proof, runtime proof, and delivery/support proof.</p>
 
       <div class="proof-console-head">
-        <div id="proof-overall" class="proof-badge fail">Proof report temporarily unavailable</div>
-        <div id="proof-generated-at" class="proof-meta">Last verified: unavailable</div>
+        <div id="proof-overall" class="proof-badge unavailable">REPORT TEMPORARILY UNAVAILABLE</div>
+        <div id="proof-generated-at" class="proof-meta">Last checked: unavailable</div>
       </div>
 
       <div id="proof-status-grid" class="proof-status-grid"></div>
@@ -1111,7 +1194,7 @@
 
     <section id="delivery">
       <h2>After Payment: What Happens</h2>
-      <p class="lede">Plain flow. No hidden steps. No tier maze.</p>
+      <p class="lede">Plain flow, concrete steps, and a clear support path.</p>
       <div class="delivery-grid">
         <article class="card">
           <h3>What You Get</h3>
@@ -1136,8 +1219,8 @@
       <div>
         <h2>Launch Offer: NeuralShell Operator</h2>
         <p>
-          Price is <span class="mono">$149</span> one-time. This is the primary checkout path.
-          If you evaluate tools by evidence and operational clarity, start here.
+          <span class="mono">$149 one-time</span>, single-device Operator license.
+          If you evaluate software by evidence and clear operating boundaries, this is the direct checkout path.
         </p>
       </div>
       <aside class="cta-panel">
@@ -1152,6 +1235,12 @@
   </main>
   <script>
     (async () => {
+      const STATUS = {
+        verified: "VERIFIED",
+        review: "REVIEW REQUIRED",
+        unavailable: "REPORT TEMPORARILY UNAVAILABLE"
+      };
+
       const overall = document.getElementById("proof-overall");
       const generatedAt = document.getElementById("proof-generated-at");
       const grid = document.getElementById("proof-status-grid");
@@ -1159,6 +1248,9 @@
       const checkoutTime = document.getElementById("proof-checkout-time");
       const runtimeStatus = document.getElementById("runtime-proof-status");
       const runtimeTime = document.getElementById("runtime-proof-time");
+      const heroCommerceStatus = document.getElementById("hero-commerce-status");
+      const heroRuntimeStatus = document.getElementById("hero-runtime-status");
+      const heroLastChecked = document.getElementById("hero-last-checked");
       const checkoutChipRoute = document.getElementById("checkout-chip-route");
       const checkoutChipPrice = document.getElementById("checkout-chip-price");
       const checkoutChipProduct = document.getElementById("checkout-chip-product");
@@ -1186,8 +1278,8 @@
 
       function formatVerifiedAt(value) {
         const date = parseDateMaybe(value);
-        if (!date) return "Last verified: unavailable";
-        return `Last verified: ${date.toLocaleString()} (${date.toISOString()})`;
+        if (!date) return "Last checked: unavailable";
+        return `Last checked: ${date.toLocaleString()} (${date.toISOString()})`;
       }
 
       function isCurrent(value) {
@@ -1200,14 +1292,14 @@
       function setStatusText(element, text, kind) {
         if (!element) return;
         element.textContent = text;
-        element.classList.remove("pass", "fail", "warn", "unavailable");
+        element.classList.remove("pass", "fail", "warn", "verified", "review", "unavailable");
         if (kind) element.classList.add(kind);
       }
 
       function setChip(element, text, kind) {
         if (!element) return;
         element.textContent = text;
-        element.classList.remove("pass", "fail", "warn", "unavailable");
+        element.classList.remove("pass", "fail", "warn", "verified", "review", "unavailable");
         if (kind) element.classList.add(kind);
       }
 
@@ -1243,39 +1335,43 @@
         for (const [key, label] of order) {
           const pass = Boolean(checks[key]);
           if (!pass) allPass = false;
-          addRow(label, pass ? "pass" : "fail", pass ? "PASS" : "FAIL");
+          addRow(label, pass ? "verified" : "review", pass ? STATUS.verified : STATUS.review);
         }
 
         const current = isCurrent(data.generatedAt);
         if (allPass && current) {
-          setStatusText(overall, "Commerce Proof Verified", "pass");
-          setStatusText(checkoutStatus, "Verified", "pass");
+          setStatusText(overall, STATUS.verified, "verified");
+          setStatusText(checkoutStatus, STATUS.verified, "verified");
+          setStatusText(heroCommerceStatus, STATUS.verified, "verified");
         } else if (allPass && !current) {
-          setStatusText(overall, "Commerce Proof Pass (Stale)", "warn");
-          setStatusText(checkoutStatus, "Pass (Stale)", "warn");
+          setStatusText(overall, STATUS.review, "review");
+          setStatusText(checkoutStatus, STATUS.review, "review");
+          setStatusText(heroCommerceStatus, STATUS.review, "review");
         } else {
-          setStatusText(overall, "Commerce Proof Needs Review", "fail");
-          setStatusText(checkoutStatus, "Check Required", "fail");
+          setStatusText(overall, STATUS.review, "review");
+          setStatusText(checkoutStatus, STATUS.review, "review");
+          setStatusText(heroCommerceStatus, STATUS.review, "review");
         }
 
         const commerceTimeText = formatVerifiedAt(data && data.generatedAt);
         if (generatedAt) generatedAt.textContent = commerceTimeText;
         if (checkoutTime) checkoutTime.textContent = commerceTimeText;
+        if (heroLastChecked) heroLastChecked.textContent = commerceTimeText.replace("Last checked: ", "");
 
         setChip(
           checkoutChipRoute,
-          checks.checkoutPathReachable ? "Checkout route reachable" : "Checkout route check failed",
-          checks.checkoutPathReachable ? "pass" : "fail"
+          checks.checkoutPathReachable ? "Checkout route: VERIFIED" : "Checkout route: REVIEW REQUIRED",
+          checks.checkoutPathReachable ? "verified" : "review"
         );
         setChip(
           checkoutChipPrice,
-          checks.gumroadHas149 ? "Price check $149 passed" : "Price check failed",
-          checks.gumroadHas149 ? "pass" : "fail"
+          checks.gumroadHas149 ? "Price match: VERIFIED" : "Price match: REVIEW REQUIRED",
+          checks.gumroadHas149 ? "verified" : "review"
         );
         setChip(
           checkoutChipProduct,
-          checks.gumroadHasProductName ? "Product name match passed" : "Product name match failed",
-          checks.gumroadHasProductName ? "pass" : "fail"
+          checks.gumroadHasProductName ? "Product match: VERIFIED" : "Product match: REVIEW REQUIRED",
+          checks.gumroadHasProductName ? "verified" : "review"
         );
 
         if (checkoutNote) {
@@ -1283,17 +1379,19 @@
           checkoutNote.textContent = `Report note: ${note}`;
         }
       } catch (_err) {
-        setStatusText(overall, "Proof Report Temporarily Unavailable", "fail");
-        setStatusText(checkoutStatus, "Report Temporarily Unavailable", "unavailable");
-        if (generatedAt) generatedAt.textContent = "Last verified: unavailable";
-        if (checkoutTime) checkoutTime.textContent = "Last verified: unavailable";
+        setStatusText(overall, STATUS.unavailable, "unavailable");
+        setStatusText(checkoutStatus, STATUS.unavailable, "unavailable");
+        setStatusText(heroCommerceStatus, STATUS.unavailable, "unavailable");
+        if (generatedAt) generatedAt.textContent = "Last checked: unavailable";
+        if (checkoutTime) checkoutTime.textContent = "Last checked: unavailable";
+        if (heroLastChecked) heroLastChecked.textContent = "Unavailable";
         clearRows();
         for (const [, label] of order) {
           addRow(label, "unavailable", "UNAVAILABLE");
         }
-        setChip(checkoutChipRoute, "Checkout route unavailable", "unavailable");
-        setChip(checkoutChipPrice, "Price check unavailable", "unavailable");
-        setChip(checkoutChipProduct, "Product match unavailable", "unavailable");
+        setChip(checkoutChipRoute, "Checkout route: unavailable", "unavailable");
+        setChip(checkoutChipPrice, "Price match: unavailable", "unavailable");
+        setChip(checkoutChipProduct, "Product match: unavailable", "unavailable");
         if (checkoutNote) checkoutNote.textContent = "Report note: unavailable";
       }
 
@@ -1306,23 +1404,27 @@
         const runtimeCurrent = isCurrent(runtimeData && runtimeData.generatedAt);
 
         if (runtimePass && runtimeCurrent) {
-          setStatusText(runtimeStatus, "Verified", "pass");
+          setStatusText(runtimeStatus, STATUS.verified, "verified");
+          setStatusText(heroRuntimeStatus, STATUS.verified, "verified");
         } else if (runtimePass && !runtimeCurrent) {
-          setStatusText(runtimeStatus, "Pass (Stale)", "warn");
+          setStatusText(runtimeStatus, STATUS.review, "review");
+          setStatusText(heroRuntimeStatus, STATUS.review, "review");
         } else {
-          setStatusText(runtimeStatus, "Check Required", "fail");
+          setStatusText(runtimeStatus, STATUS.review, "review");
+          setStatusText(heroRuntimeStatus, STATUS.review, "review");
         }
         if (runtimeTime) runtimeTime.textContent = formatVerifiedAt(runtimeData && runtimeData.generatedAt);
 
-        setChip(runtimeChipProof, checks.proof ? "Proof check passed" : "Proof check failed", checks.proof ? "pass" : "fail");
-        setChip(runtimeChipRoi, checks.roi ? "ROI check passed" : "ROI check failed", checks.roi ? "pass" : "fail");
-        setChip(runtimeChipLock, checks.lockFlow ? "Lock flow check passed" : "Lock flow check failed", checks.lockFlow ? "pass" : "fail");
+        setChip(runtimeChipProof, checks.proof ? "Proof output: VERIFIED" : "Proof output: REVIEW REQUIRED", checks.proof ? "verified" : "review");
+        setChip(runtimeChipRoi, checks.roi ? "ROI output: VERIFIED" : "ROI output: REVIEW REQUIRED", checks.roi ? "verified" : "review");
+        setChip(runtimeChipLock, checks.lockFlow ? "Lock flow: VERIFIED" : "Lock flow: REVIEW REQUIRED", checks.lockFlow ? "verified" : "review");
       } catch (_runtimeErr) {
-        setStatusText(runtimeStatus, "Report Temporarily Unavailable", "unavailable");
-        if (runtimeTime) runtimeTime.textContent = "Last verified: unavailable";
-        setChip(runtimeChipProof, "Proof check unavailable", "unavailable");
-        setChip(runtimeChipRoi, "ROI check unavailable", "unavailable");
-        setChip(runtimeChipLock, "Lock flow unavailable", "unavailable");
+        setStatusText(runtimeStatus, STATUS.unavailable, "unavailable");
+        setStatusText(heroRuntimeStatus, STATUS.unavailable, "unavailable");
+        if (runtimeTime) runtimeTime.textContent = "Last checked: unavailable";
+        setChip(runtimeChipProof, "Proof output: unavailable", "unavailable");
+        setChip(runtimeChipRoi, "ROI output: unavailable", "unavailable");
+        setChip(runtimeChipLock, "Lock flow: unavailable", "unavailable");
       }
     })();
   </script>

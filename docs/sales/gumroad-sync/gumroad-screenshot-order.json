@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-03-30T19:35:00Z",
+  "product": "NeuralShell Operator",
+  "uploadOrder": [
+    {
+      "order": 1,
+      "file": "docs/sales/gumroad-sync/screenshots/gumroad-shot-01-hero-overview.png",
+      "role": "Premium product overview"
+    },
+    {
+      "order": 2,
+      "file": "docs/sales/gumroad-sync/screenshots/gumroad-shot-02-main-workspace.png",
+      "role": "Main workspace / core interface"
+    },
+    {
+      "order": 3,
+      "file": "docs/sales/gumroad-sync/screenshots/gumroad-shot-03-proof-verification.png",
+      "role": "Proof / verification view"
+    },
+    {
+      "order": 4,
+      "file": "docs/sales/gumroad-sync/screenshots/gumroad-shot-04-lock-continuity.png",
+      "role": "Lock / continuity surface"
+    },
+    {
+      "order": 5,
+      "file": "docs/sales/gumroad-sync/screenshots/gumroad-shot-05-operator-controls.png",
+      "role": "Operator-grade controls view"
+    },
+    {
+      "order": 6,
+      "file": "docs/sales/gumroad-sync/screenshots/gumroad-shot-06-delivery-support-trust.png",
+      "role": "Delivery/support trust framing"
+    }
+  ]
+}
