@@ -1,0 +1,24 @@
+{
+  "generatedAt": "2026-03-30T18:31:36.781Z",
+  "checks": {
+    "livePageLoaded": true,
+    "liveHas149": true,
+    "liveHasSupport": true,
+    "liveHasGumroadLink": true,
+    "gumroadProductLoaded": true,
+    "gumroadHasProductName": true,
+    "gumroadHas149": true,
+    "checkoutPathReachable": true
+  },
+  "evidence": {
+    "liveScreenshot": "screenshots/launch-ops/live-2026-03-30T18-31-36-780Z.png",
+    "gumroadScreenshot": "screenshots/launch-ops/gumroad-2026-03-30T18-31-36-780Z.png",
+    "checkoutScreenshot": "screenshots/launch-ops/checkout-2026-03-30T18-31-36-780Z.png"
+  },
+  "notes": [
+    "Checkout CTA click was not deterministic in headless mode; used fallback buyer-page probe."
+  ],
+  "liveUrl": "https://z3r0dayzion-install.github.io/NeuralShell/",
+  "gumroadUrl": "https://cashdominion.gumroad.com/l/neuralshell-operator",
+  "ok": true
+}
