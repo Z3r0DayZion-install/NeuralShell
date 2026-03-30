@@ -489,6 +489,71 @@
       background: rgba(25, 51, 79, 0.12);
     }
 
+    .proof-pillars {
+      margin-top: 0.95rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .proof-pillar {
+      border: 1px solid rgba(16, 32, 51, 0.13);
+      border-radius: var(--radius-md);
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(239, 247, 244, 0.72) 100%);
+      padding: 0.9rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .proof-pillar h3 {
+      font-size: 0.96rem;
+    }
+
+    .proof-pillar p {
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+    }
+
+    .proof-kv {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.76rem;
+      padding: 0.42rem 0.5rem;
+      border: 1px solid rgba(16, 32, 51, 0.15);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .proof-kv strong {
+      color: var(--navy);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .proof-pack-band {
+      margin-top: 0.95rem;
+      border: 1px solid rgba(10, 122, 105, 0.32);
+      border-radius: var(--radius-md);
+      background: linear-gradient(145deg, rgba(10, 122, 105, 0.12) 0%, rgba(16, 32, 51, 0.04) 100%);
+      padding: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+
+    .proof-pack-band p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+      max-width: 62ch;
+    }
+
     .boundary {
       border-left: 4px solid var(--amber);
       background: linear-gradient(90deg, rgba(184, 111, 32, 0.12), rgba(184, 111, 32, 0.03));
@@ -636,7 +701,7 @@
     <header class="topbar">
       <div class="brand"><span class="brand-dot" aria-hidden="true"></span>NeuralShell Operator</div>
       <nav>
-        <a href="#proof">Proof</a>
+        <a href="#proof-stack">Proof Stack</a>
         <a href="#flow">Buyer Flow</a>
         <a href="#buy">Checkout</a>
       </nav>
@@ -659,6 +724,46 @@
         <div class="trust-item">Hardware-bound activation</div>
         <div class="trust-item">Encrypted save/lock/unlock</div>
         <div class="trust-item">Proof-backed launch language</div>
+      </div>
+    </section>
+
+    <section id="proof-stack">
+      <h2>Proof Stack: Audit Before You Buy</h2>
+      <p class="lede">This page is wired to current evidence, not static marketing claims. Checkout, product listing, and runtime proof are all visible.</p>
+
+      <div class="proof-pillars">
+        <article class="proof-pillar">
+          <h3>Checkout Integrity</h3>
+          <p>Live page, Gumroad product, and checkout path are automatically verified against the launch offer.</p>
+          <div class="proof-kv"><span>Commerce Status</span><strong id="proof-checkout-status">SYNCING</strong></div>
+          <a class="btn btn-ghost" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce Report</a>
+        </article>
+
+        <article class="proof-pillar">
+          <h3>Runtime Evidence</h3>
+          <p>Packaged app proof run validates proof, ROI, and lock/unlock continuity with screenshot capture.</p>
+          <div class="proof-kv"><span>Packaged Runtime</span><strong id="runtime-proof-status">SYNCING</strong></div>
+          <a class="btn btn-ghost" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime Report</a>
+        </article>
+
+        <article class="proof-pillar">
+          <h3>First Sale Event</h3>
+          <p>Seller sale notice plus buyer receipt were generated for the first live transaction on March 30, 2026.</p>
+          <div class="proof-kv"><span>Revenue Event</span><strong>RECORDED</strong></div>
+          <a class="btn btn-ghost" href="./assets/proof-gumroad-latest.png" target="_blank" rel="noopener noreferrer">View Commerce Screenshot</a>
+        </article>
+
+        <article class="proof-pillar">
+          <h3>Delivery + Support Path</h3>
+          <p>Single offer, clear delivery path, support contact, and refund handling via support@neuralshell.app.</p>
+          <div class="proof-kv"><span>Support Channel</span><strong>LIVE</strong></div>
+          <a class="btn btn-ghost" href="mailto:support@neuralshell.app">Contact Support</a>
+        </article>
+      </div>
+
+      <div class="proof-pack-band">
+        <p>Download the full proof bundle (JSON reports + screenshots) used to back this page.</p>
+        <a class="btn btn-primary" href="./assets/NeuralShell-Proof-Pack-latest.zip" target="_blank" rel="noopener noreferrer">Download Proof Pack (ZIP)</a>
       </div>
     </section>
 
@@ -775,6 +880,8 @@
       const overall = document.getElementById("proof-overall");
       const generatedAt = document.getElementById("proof-generated-at");
       const grid = document.getElementById("proof-status-grid");
+      const checkoutStatus = document.getElementById("proof-checkout-status");
+      const runtimeStatus = document.getElementById("runtime-proof-status");
       const order = [
         ["livePageLoaded", "Live Page Reachable"],
         ["liveHas149", "Price Check: $149 Visible"],
@@ -817,6 +924,7 @@
 
         overall.textContent = allPass ? "Proof Verified" : "Proof Needs Attention";
         overall.classList.add(allPass ? "pass" : "fail");
+        if (checkoutStatus) checkoutStatus.textContent = allPass ? "PASS" : "CHECK";
 
         if (data && data.generatedAt) {
           const d = new Date(data.generatedAt);
@@ -827,6 +935,7 @@
       } catch (_err) {
         overall.textContent = "Proof Report Unavailable";
         overall.classList.add("fail");
+        if (checkoutStatus) checkoutStatus.textContent = "MISSING";
         generatedAt.textContent = "Unable to load launch-readiness report";
         for (const [, label] of order) {
           const row = document.createElement("div");
@@ -841,6 +950,17 @@
           row.appendChild(state);
           grid.appendChild(row);
         }
+      }
+
+      try {
+        const runtimeRes = await fetch("./assets/ui-self-sell-proof-report-packaged-latest.json", { cache: "no-store" });
+        if (!runtimeRes.ok) throw new Error(`fetch failed: ${runtimeRes.status}`);
+        const runtimeData = await runtimeRes.json();
+        const checks = runtimeData && runtimeData.checks ? runtimeData.checks : {};
+        const runtimePass = Boolean(checks.proof && checks.roi && checks.lockFlow);
+        if (runtimeStatus) runtimeStatus.textContent = runtimePass ? "PASS" : "CHECK";
+      } catch (_runtimeErr) {
+        if (runtimeStatus) runtimeStatus.textContent = "MISSING";
       }
     })();
   </script>

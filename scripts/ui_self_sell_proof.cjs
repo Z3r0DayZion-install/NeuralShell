@@ -63,10 +63,54 @@ async function waitForAnyVisible(page, selectors, timeout = 20000) {
   throw new Error(`Timed out waiting for any selector: ${selectors.join(", ")}`);
 }
 
+async function dismissBlockingOverlays(page) {
+  const closeSelectors = [
+    '[data-testid="success-capture-close-btn"]',
+    '[data-testid="modal-close-btn"]',
+    '[data-testid="sheet-close-btn"]',
+    'button[aria-label="Close"]',
+    'button:has-text("Close")',
+    'button:has-text("Done")',
+    'button:has-text("Dismiss")',
+    'button:has-text("Continue")',
+  ];
+
+  const caseStudyModal = page.locator('div:has-text("Case Study Capture")').first();
+  if (await caseStudyModal.isVisible().catch(() => false)) {
+    await caseStudyModal.locator("button").first().click({ timeout: 1500 }).catch(() => {});
+    await page.waitForTimeout(120);
+  }
+
+  for (const selector of closeSelectors) {
+    const button = page.locator(selector).first();
+    if (await button.isVisible().catch(() => false)) {
+      await button.click({ timeout: 1500 }).catch(() => {});
+      await page.waitForTimeout(120);
+    }
+  }
+
+  // ESC closes most blocking drawers/modals in this UI.
+  await page.keyboard.press("Escape").catch(() => {});
+  await page.waitForTimeout(120);
+}
+
+async function clickWithOverlayRecovery(page, selector, timeout = 5000) {
+  const target = page.locator(selector).first();
+  for (let i = 0; i < 4; i += 1) {
+    try {
+      await target.click({ timeout });
+      return;
+    } catch (err) {
+      if (i === 3) throw err;
+      await dismissBlockingOverlays(page);
+    }
+  }
+}
+
 async function triggerAny(page, selectors, fallbackCommand) {
   for (const selector of selectors) {
     if (await isVisible(page, selector)) {
-      await page.locator(selector).first().click();
+      await clickWithOverlayRecovery(page, selector);
       return selector;
     }
   }
@@ -166,6 +210,7 @@ async function run() {
     await page.screenshot({ path: SHOTS.proof, fullPage: true });
 
     // Trigger ROI narrative from whichever CTA is currently exposed.
+    await dismissBlockingOverlays(page);
     const roiTrigger = await triggerAny(page, ROI_TRIGGERS, "/roi");
     await waitForChatContains(page, "ROI Snapshot");
     await page.screenshot({ path: SHOTS.roi, fullPage: true });

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-30T18:31:36.781Z",
+  "generatedAt": "2026-03-30T18:44:00.512Z",
   "checks": {
     "livePageLoaded": true,
     "liveHas149": true,
@@ -11,9 +11,9 @@
     "checkoutPathReachable": true
   },
   "evidence": {
-    "liveScreenshot": "screenshots/launch-ops/live-2026-03-30T18-31-36-780Z.png",
-    "gumroadScreenshot": "screenshots/launch-ops/gumroad-2026-03-30T18-31-36-780Z.png",
-    "checkoutScreenshot": "screenshots/launch-ops/checkout-2026-03-30T18-31-36-780Z.png"
+    "liveScreenshot": "screenshots/launch-ops/live-2026-03-30T18-44-00-511Z.png",
+    "gumroadScreenshot": "screenshots/launch-ops/gumroad-2026-03-30T18-44-00-511Z.png",
+    "checkoutScreenshot": "screenshots/launch-ops/checkout-2026-03-30T18-44-00-511Z.png"
   },
   "notes": [
     "Checkout CTA click was not deterministic in headless mode; used fallback buyer-page probe."
