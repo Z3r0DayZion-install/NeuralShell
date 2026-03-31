@@ -8,10 +8,24 @@ const Module = require("node:module");
 
 const identityKernelPath = path.resolve(__dirname, "../src/core/identityKernel.js");
 
-function hardwareFingerprintFor(cpuId, baseboard) {
+function hardwareFingerprintFor(cpuId, baseboard, biosSerial, systemUUID) {
+  // Match new Windows composite format with all 4 sources
+  const cpu = String(cpuId || '').trim();
+  const board = String(baseboard || '').trim();
+  const bios = String(biosSerial || '').trim();
+  const uuid = String(systemUUID || '').trim();
+  
+  // Build composite with all available identifiers (matching getWindowsHardwareId logic)
+  const parts = [];
+  if (cpu) parts.push(`cpu:${cpu}`);
+  if (board) parts.push(`board:${board}`);
+  if (bios) parts.push(`bios:${bios}`);
+  if (uuid) parts.push(`uuid:${uuid}`);
+  
+  const composite = parts.join('|');
   return crypto
     .createHash("sha256")
-    .update(String(cpuId).trim() + String(baseboard).trim())
+    .update(composite)
     .digest("hex");
 }
 
@@ -27,6 +41,8 @@ function encryptLegacyIdentityPem(pem, hardwareFingerprint) {
 async function withMockedIdentity(userDataPath, fn, options = {}) {
   const cpuId = String(options.cpuId || "CPU-TEST-001");
   const baseboard = String(options.baseboard || "BOARD-TEST-001");
+  const biosSerial = String(options.biosSerial || "BIOS-TEST-001");
+  const systemUUID = String(options.systemUUID || "UUID-TEST-001");
   const originalLoad = Module._load;
 
   Module._load = function patchedLoad(request, parent, isMain) {
@@ -50,15 +66,29 @@ async function withMockedIdentity(userDataPath, fn, options = {}) {
             if (command !== "wmic") {
               throw new Error(`Unexpected command: ${command}`);
             }
-            if (args.join(" ").toLowerCase() === "cpu get processorid") {
-              return cpuId;
+            // Return wmic output format: header line + data line
+            const argsStr = args.join(" ").toLowerCase();
+            if (argsStr === "cpu get processorid") {
+              return `ProcessorId\n${cpuId}\n`;
             }
-            if (args.join(" ").toLowerCase() === "baseboard get serialnumber") {
-              return baseboard;
+            if (argsStr === "baseboard get serialnumber") {
+              return `SerialNumber\n${baseboard}\n`;
+            }
+            if (argsStr === "bios get serialnumber") {
+              return `SerialNumber\n${biosSerial}\n`;
+            }
+            if (argsStr === "csproduct get uuid") {
+              return `UUID\n${systemUUID}\n`;
             }
             throw new Error(`Unexpected args: ${args.join(" ")}`);
           }
         }
+      };
+    }
+    if (request === "./auditChain") {
+      // Mock audit chain for tests
+      return {
+        append: () => {} // No-op for tests
       };
     }
     return originalLoad.call(this, request, parent, isMain);
@@ -69,7 +99,7 @@ async function withMockedIdentity(userDataPath, fn, options = {}) {
     return await fn({
       identityPath: path.join(userDataPath, "identity.omega"),
       peerStorePath: path.join(userDataPath, "trusted-peers.omega"),
-      hardwareFingerprint: hardwareFingerprintFor(cpuId, baseboard)
+      hardwareFingerprint: hardwareFingerprintFor(cpuId, baseboard, biosSerial, systemUUID)
     });
   } finally {
     Module._load = originalLoad;

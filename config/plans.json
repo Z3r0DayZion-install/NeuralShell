@@ -28,7 +28,7 @@
     {
       "id": "pro",
       "label": "Pro",
-      "priceUsd": 99,
+      "priceUsd": 149,
       "billingPeriod": "one_time",
       "seats": 1,
       "graceDays": 7,

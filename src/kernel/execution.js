@@ -202,14 +202,48 @@ class ExecutionBroker {
     };
   }
 
-  // Legacy fallback for internal kernel identity checks (wmic)
+  // Legacy fallback for internal kernel identity checks
   // Only accessible within the kernel
   async execute(payload) {
     const { command, args = [] } = payload;
-    if (command !== 'wmic') throw new Error('OMEGA_BLOCK: Raw execute denied.');
     
-    const output = execSync(`${command} ${args.join(' ')}`, { timeout: 3000 }).toString();
-    return output;
+    // Windows hardware binding - PowerShell Get-CimInstance (primary)
+    if (command === 'powershell' && process.platform === 'win32') {
+      // Surgical allowlist: only specific Get-CimInstance queries
+      const allowedQueries = [
+        'Get-CimInstance Win32_Processor | Select-Object -ExpandProperty ProcessorId',
+        'Get-CimInstance Win32_BaseBoard | Select-Object -ExpandProperty SerialNumber',
+        'Get-CimInstance Win32_BIOS | Select-Object -ExpandProperty SerialNumber',
+        'Get-CimInstance Win32_ComputerSystemProduct | Select-Object -ExpandProperty UUID'
+      ];
+      
+      // args should be ['-Command', '<query>']
+      if (args.length === 2 && args[0] === '-Command' && allowedQueries.includes(args[1])) {
+        const output = execSync(`${command} ${args.join(' ')}`, { timeout: 5000 }).toString();
+        return output;
+      }
+      
+      throw new Error('OMEGA_BLOCK: PowerShell command not in allowlist.');
+    }
+    
+    // Windows hardware binding - wmic (fallback)
+    if (command === 'wmic' && process.platform === 'win32') {
+      const output = execSync(`${command} ${args.join(' ')}`, { timeout: 3000 }).toString();
+      return output;
+    }
+    
+    // macOS hardware binding
+    if (command === 'ioreg' && process.platform === 'darwin') {
+      const output = execSync(`${command} ${args.join(' ')}`, { timeout: 3000 }).toString();
+      return output;
+    }
+    
+    if (command === 'system_profiler' && process.platform === 'darwin') {
+      const output = execSync(`${command} ${args.join(' ')}`, { timeout: 3000 }).toString();
+      return output;
+    }
+    
+    throw new Error('OMEGA_BLOCK: Raw execute denied.');
   }
 }
 
