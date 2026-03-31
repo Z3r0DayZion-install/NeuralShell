@@ -1241,6 +1241,16 @@
         unavailable: "REPORT TEMPORARILY UNAVAILABLE"
       };
 
+      function getAssetPath(filename) {
+        let p = window.location.pathname;
+        if (p.endsWith('.html')) {
+          p = p.substring(0, p.lastIndexOf('/') + 1);
+        } else if (!p.endsWith('/')) {
+          p += '/';
+        }
+        return window.location.origin + p + "assets/" + filename;
+      }
+
       const overall = document.getElementById("proof-overall");
       const generatedAt = document.getElementById("proof-generated-at");
       const grid = document.getElementById("proof-status-grid");
@@ -1325,7 +1335,7 @@
       }
 
       try {
-        const res = await fetch("./assets/launch-readiness-latest.json", { cache: "no-store" });
+        const res = await fetch(getAssetPath("launch-readiness-latest.json"), { cache: "no-store" });
         if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
         const data = await res.json();
         const checks = data && data.checks ? data.checks : {};
@@ -1379,7 +1389,9 @@
           checkoutNote.textContent = `Report note: ${note}`;
         }
       } catch (_err) {
-        setStatusText(overall, STATUS.unavailable, "unavailable");
+        console.error('Commerce report fetch failed:', _err);
+        const errMsg = _err && _err.message ? ` (ERR: ${_err.message})` : "";
+        setStatusText(overall, STATUS.unavailable + errMsg, "unavailable");
         setStatusText(checkoutStatus, STATUS.unavailable, "unavailable");
         setStatusText(heroCommerceStatus, STATUS.unavailable, "unavailable");
         if (generatedAt) generatedAt.textContent = "Last checked: unavailable";
@@ -1396,7 +1408,7 @@
       }
 
       try {
-        const runtimeRes = await fetch("./assets/ui-self-sell-proof-report-packaged-latest.json", { cache: "no-store" });
+        const runtimeRes = await fetch(getAssetPath("ui-self-sell-proof-report-packaged-latest.json"), { cache: "no-store" });
         if (!runtimeRes.ok) throw new Error(`fetch failed: ${runtimeRes.status}`);
         const runtimeData = await runtimeRes.json();
         const checks = runtimeData && runtimeData.checks ? runtimeData.checks : {};
@@ -1419,7 +1431,9 @@
         setChip(runtimeChipRoi, checks.roi ? "ROI output: VERIFIED" : "ROI output: REVIEW REQUIRED", checks.roi ? "verified" : "review");
         setChip(runtimeChipLock, checks.lockFlow ? "Lock flow: VERIFIED" : "Lock flow: REVIEW REQUIRED", checks.lockFlow ? "verified" : "review");
       } catch (_runtimeErr) {
-        setStatusText(runtimeStatus, STATUS.unavailable, "unavailable");
+        console.error('Runtime report fetch failed:', _runtimeErr);
+        const errMsg = _runtimeErr && _runtimeErr.message ? ` (ERR: ${_runtimeErr.message})` : "";
+        setStatusText(runtimeStatus, STATUS.unavailable + errMsg, "unavailable");
         setStatusText(heroRuntimeStatus, STATUS.unavailable, "unavailable");
         if (runtimeTime) runtimeTime.textContent = "Last checked: unavailable";
         setChip(runtimeChipProof, "Proof output: unavailable", "unavailable");
