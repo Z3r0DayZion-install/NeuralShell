@@ -1301,198 +1301,234 @@
     </footer>
   </main>
   <script>
-    (async () => {
-      const STATUS = {
-        verified: "VERIFIED",
-        review: "REVIEW REQUIRED",
-        unavailable: "REPORT TEMPORARILY UNAVAILABLE"
-      };
+    // Global error handler
+    window.addEventListener('error', (e) => {
+      console.error('[Proof Reports] Global error:', e.error, e.message, e.filename, e.lineno);
+    });
+    
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('[Proof Reports] Unhandled promise rejection:', e.reason);
+    });
+    
+    (function() {
+      console.log('[Proof Reports] Script loaded and executing immediately');
+      console.log('[Proof Reports] Current URL:', window.location.href);
+      console.log('[Proof Reports] Document readyState:', document.readyState);
+      
+      // Now run the async logic
+      (async () => {
+        try {
+          console.log('[Proof Reports] Async IIFE starting...');
+      
+          const STATUS = {
+            verified: "VERIFIED",
+            review: "REVIEW REQUIRED",
+            unavailable: "REPORT TEMPORARILY UNAVAILABLE"
+          };
 
-      const overall = document.getElementById("proof-overall");
-      const generatedAt = document.getElementById("proof-generated-at");
-      const grid = document.getElementById("proof-status-grid");
-      const checkoutStatus = document.getElementById("proof-checkout-status");
-      const checkoutTime = document.getElementById("proof-checkout-time");
-      const runtimeStatus = document.getElementById("runtime-proof-status");
-      const runtimeTime = document.getElementById("runtime-proof-time");
-      const heroCommerceStatus = document.getElementById("hero-commerce-status");
-      const heroRuntimeStatus = document.getElementById("hero-runtime-status");
-      const heroLastChecked = document.getElementById("hero-last-checked");
-      const checkoutChipRoute = document.getElementById("checkout-chip-route");
-      const checkoutChipPrice = document.getElementById("checkout-chip-price");
-      const checkoutChipProduct = document.getElementById("checkout-chip-product");
-      const checkoutNote = document.getElementById("checkout-proof-note");
-      const runtimeChipProof = document.getElementById("runtime-chip-proof");
-      const runtimeChipRoi = document.getElementById("runtime-chip-roi");
-      const runtimeChipLock = document.getElementById("runtime-chip-lock");
-      const MAX_REPORT_AGE_HOURS = 168;
-      const order = [
-        ["livePageLoaded", "Live Page Reachable"],
-        ["liveHas149", "Price Check: $149 Visible"],
-        ["liveHasSupport", "Support Path Visible"],
-        ["liveHasGumroadLink", "Checkout Link Present"],
-        ["gumroadProductLoaded", "Gumroad Product Reachable"],
-        ["gumroadHasProductName", "Product Name Match"],
-        ["gumroadHas149", "Gumroad Price Match"],
-        ["checkoutPathReachable", "Checkout Path Reachable"]
-      ];
+          const overall = document.getElementById("proof-overall");
+          const generatedAt = document.getElementById("proof-generated-at");
+          const grid = document.getElementById("proof-status-grid");
+          const checkoutStatus = document.getElementById("proof-checkout-status");
+          const checkoutTime = document.getElementById("proof-checkout-time");
+          const runtimeStatus = document.getElementById("runtime-proof-status");
+          const runtimeTime = document.getElementById("runtime-proof-time");
+          const heroCommerceStatus = document.getElementById("hero-commerce-status");
+          const heroRuntimeStatus = document.getElementById("hero-runtime-status");
+          const heroLastChecked = document.getElementById("hero-last-checked");
+          const checkoutChipRoute = document.getElementById("checkout-chip-route");
+          const checkoutChipPrice = document.getElementById("checkout-chip-price");
+          const checkoutChipProduct = document.getElementById("checkout-chip-product");
+          const checkoutNote = document.getElementById("checkout-proof-note");
+          const runtimeChipProof = document.getElementById("runtime-chip-proof");
+          const runtimeChipRoi = document.getElementById("runtime-chip-roi");
+          const runtimeChipLock = document.getElementById("runtime-chip-lock");
+          
+          console.log('[Proof Reports] Elements detection:', {
+            overall: !!overall,
+            grid: !!grid,
+            heroCommerceStatus: !!heroCommerceStatus,
+            heroRuntimeStatus: !!heroRuntimeStatus
+          });
 
-      function parseDateMaybe(value) {
-        if (!value) return null;
-        const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? null : date;
-      }
+          const MAX_REPORT_AGE_HOURS = 168;
+          const order = [
+            ["livePageLoaded", "Live Page Reachable"],
+            ["liveHas149", "Price Check: $149 Visible"],
+            ["liveHasSupport", "Support Path Visible"],
+            ["liveHasGumroadLink", "Checkout Link Present"],
+            ["gumroadProductLoaded", "Gumroad Product Reachable"],
+            ["gumroadHasProductName", "Product Name Match"],
+            ["gumroadHas149", "Gumroad Price Match"],
+            ["checkoutPathReachable", "Checkout Path Reachable"]
+          ];
 
-      function formatVerifiedAt(value) {
-        const date = parseDateMaybe(value);
-        if (!date) return "Last checked: unavailable";
-        return `Last checked: ${date.toLocaleString()} (${date.toISOString()})`;
-      }
+          function parseDateMaybe(value) {
+            if (!value) return null;
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? null : date;
+          }
 
-      function isCurrent(value) {
-        const date = parseDateMaybe(value);
-        if (!date) return false;
-        const ageHours = (Date.now() - date.getTime()) / (1000 * 60 * 60);
-        return ageHours <= MAX_REPORT_AGE_HOURS;
-      }
+          function formatVerifiedAt(value) {
+            const date = parseDateMaybe(value);
+            if (!date) return "Last checked: unavailable";
+            return `Last checked: ${date.toLocaleString()} (${date.toISOString()})`;
+          }
 
-      function setStatusText(element, text, kind) {
-        if (!element) return;
-        element.textContent = text;
-        element.classList.remove("pass", "fail", "warn", "verified", "review", "unavailable");
-        if (kind) element.classList.add(kind);
-      }
+          function isCurrent(value) {
+            const date = parseDateMaybe(value);
+            if (!date) return false;
+            const ageHours = (Date.now() - date.getTime()) / (1000 * 60 * 60);
+            return ageHours <= MAX_REPORT_AGE_HOURS;
+          }
 
-      function setChip(element, text, kind) {
-        if (!element) return;
-        element.textContent = text;
-        element.classList.remove("pass", "fail", "warn", "verified", "review", "unavailable");
-        if (kind) element.classList.add(kind);
-      }
+          function setStatusText(element, text, kind) {
+            if (!element) return;
+            element.textContent = text;
+            element.classList.remove("pass", "fail", "warn", "verified", "review", "unavailable");
+            if (kind) element.classList.add(kind);
+          }
 
-      function clearRows() {
-        if (grid) grid.innerHTML = "";
-      }
+          function setChip(element, text, kind) {
+            if (!element) return;
+            element.textContent = text;
+            element.classList.remove("pass", "fail", "warn", "verified", "review", "unavailable");
+            if (kind) element.classList.add(kind);
+          }
 
-      function addRow(label, kind, stateText) {
-        if (!grid) return;
-        const row = document.createElement("div");
-        row.className = "proof-status";
+          function clearRows() {
+            if (grid) grid.innerHTML = "";
+          }
 
-        const name = document.createElement("span");
-        name.textContent = label;
+          function addRow(label, kind, stateText) {
+            if (!grid) return;
+            const row = document.createElement("div");
+            row.className = "proof-status";
 
-        const state = document.createElement("span");
-        state.className = `state ${kind}`;
-        state.textContent = stateText;
+            const name = document.createElement("span");
+            name.textContent = label;
 
-        row.appendChild(name);
-        row.appendChild(state);
-        grid.appendChild(row);
-      }
+            const state = document.createElement("span");
+            state.className = `state ${kind}`;
+            state.textContent = stateText;
 
-      try {
-        const res = await fetch("./assets/launch-readiness-latest.json", { cache: "no-store" });
-        if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-        const data = await res.json();
-        const checks = data && data.checks ? data.checks : {};
+            row.appendChild(name);
+            row.appendChild(state);
+            grid.appendChild(row);
+          }
 
-        let allPass = true;
-        clearRows();
-        for (const [key, label] of order) {
-          const pass = Boolean(checks[key]);
-          if (!pass) allPass = false;
-          addRow(label, pass ? "verified" : "review", pass ? STATUS.verified : STATUS.review);
+          // Robust path resolution for GitHub Pages
+          function getAssetPath(filename) {
+            // Using a relative path without leading dot is often more robust
+            return "assets/" + filename;
+          }
+
+          try {
+            const commercePath = getAssetPath("launch-readiness-latest.json");
+            console.log(`[Proof Reports] Fetching commerce report from: ${commercePath}`);
+            const res = await fetch(commercePath, { cache: "no-store" });
+            console.log(`[Proof Reports] Commerce fetch status: ${res.status} ${res.ok}`);
+            if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+            const data = await res.json();
+            console.log('[Proof Reports] Commerce data loaded successfully');
+            
+            const checks = data && data.checks ? data.checks : {};
+            let allPass = true;
+            clearRows();
+            for (const [key, label] of order) {
+              const pass = Boolean(checks[key]);
+              if (!pass) allPass = false;
+              addRow(label, pass ? "verified" : "review", pass ? STATUS.verified : STATUS.review);
+            }
+
+            const current = isCurrent(data.generatedAt);
+            console.log(`[Proof Reports] Commerce checks result: allPass=${allPass}, current=${current}`);
+            
+            if (allPass && current) {
+              setStatusText(overall, STATUS.verified, "verified");
+              setStatusText(checkoutStatus, STATUS.verified, "verified");
+              setStatusText(heroCommerceStatus, STATUS.verified, "verified");
+            } else {
+              setStatusText(overall, STATUS.review, "review");
+              setStatusText(checkoutStatus, STATUS.review, "review");
+              setStatusText(heroCommerceStatus, STATUS.review, "review");
+            }
+
+            const commerceTimeText = formatVerifiedAt(data && data.generatedAt);
+            if (generatedAt) generatedAt.textContent = commerceTimeText;
+            if (checkoutTime) checkoutTime.textContent = commerceTimeText;
+            if (heroLastChecked) heroLastChecked.textContent = commerceTimeText.replace("Last checked: ", "");
+
+            setChip(checkoutChipRoute, checks.checkoutPathReachable ? "Checkout route: VERIFIED" : "Checkout route: REVIEW REQUIRED", checks.checkoutPathReachable ? "verified" : "review");
+            setChip(checkoutChipPrice, checks.gumroadHas149 ? "Price match: VERIFIED" : "Price match: REVIEW REQUIRED", checks.gumroadHas149 ? "verified" : "review");
+            setChip(checkoutChipProduct, checks.gumroadHasProductName ? "Product match: VERIFIED" : "Product match: REVIEW REQUIRED", checks.gumroadHasProductName ? "verified" : "review");
+
+            if (checkoutNote) {
+              const note = data && Array.isArray(data.notes) && data.notes.length ? data.notes[0] : "No report note.";
+              checkoutNote.textContent = `Report note: ${note}`;
+            }
+          } catch (err) {
+            console.error('[Proof Reports] Commerce report failure:', err);
+            setStatusText(overall, STATUS.unavailable, "unavailable");
+            setStatusText(checkoutStatus, STATUS.unavailable, "unavailable");
+            setStatusText(heroCommerceStatus, STATUS.unavailable, "unavailable");
+            if (generatedAt) generatedAt.textContent = "Last checked: unavailable";
+            if (checkoutTime) checkoutTime.textContent = "Last checked: unavailable";
+            if (heroLastChecked) heroLastChecked.textContent = "Unavailable";
+            clearRows();
+            for (const [, label] of order) {
+              addRow(label, "unavailable", "UNAVAILABLE");
+            }
+            setChip(checkoutChipRoute, "Checkout route: unavailable", "unavailable");
+            setChip(checkoutChipPrice, "Price match: unavailable", "unavailable");
+            setChip(checkoutChipProduct, "Product match: unavailable", "unavailable");
+            if (checkoutNote) checkoutNote.textContent = "Report note: unavailable";
+          }
+
+          try {
+            const runtimePath = getAssetPath("ui-self-sell-proof-report-packaged-latest.json");
+            console.log(`[Proof Reports] Fetching runtime report from: ${runtimePath}`);
+            const runtimeRes = await fetch(runtimePath, { cache: "no-store" });
+            console.log(`[Proof Reports] Runtime fetch status: ${runtimeRes.status} ${runtimeRes.ok}`);
+            if (!runtimeRes.ok) throw new Error(`fetch failed: ${runtimeRes.status}`);
+            const runtimeData = await runtimeRes.json();
+            console.log('[Proof Reports] Runtime data loaded successfully');
+            
+            const checks = runtimeData && runtimeData.checks ? runtimeData.checks : {};
+            const runtimePass = Boolean(checks.proof && checks.roi && checks.lockFlow);
+            const runtimeCurrent = isCurrent(runtimeData && runtimeData.generatedAt);
+
+            console.log(`[Proof Reports] Runtime checks result: runtimePass=${runtimePass}, runtimeCurrent=${runtimeCurrent}`);
+            
+            if (runtimePass && runtimeCurrent) {
+              setStatusText(runtimeStatus, STATUS.verified, "verified");
+              setStatusText(heroRuntimeStatus, STATUS.verified, "verified");
+            } else {
+              setStatusText(runtimeStatus, STATUS.review, "review");
+              setStatusText(heroRuntimeStatus, STATUS.review, "review");
+            }
+            if (runtimeTime) runtimeTime.textContent = formatVerifiedAt(runtimeData && runtimeData.generatedAt);
+
+            setChip(runtimeChipProof, checks.proof ? "Proof output: VERIFIED" : "Proof output: REVIEW REQUIRED", checks.proof ? "verified" : "review");
+            setChip(runtimeChipRoi, checks.roi ? "ROI output: VERIFIED" : "ROI output: REVIEW REQUIRED", checks.roi ? "verified" : "review");
+            setChip(runtimeChipLock, checks.lockFlow ? "Lock flow: VERIFIED" : "Lock flow: REVIEW REQUIRED", checks.lockFlow ? "verified" : "review");
+          } catch (runtimeErr) {
+            console.error('[Proof Reports] Runtime report failure:', runtimeErr);
+            setStatusText(runtimeStatus, STATUS.unavailable, "unavailable");
+            setStatusText(heroRuntimeStatus, STATUS.unavailable, "unavailable");
+            if (runtimeTime) runtimeTime.textContent = "Last checked: unavailable";
+            setChip(runtimeChipProof, "Proof output: unavailable", "unavailable");
+            setChip(runtimeChipRoi, "ROI output: unavailable", "unavailable");
+            setChip(runtimeChipLock, "Lock flow: unavailable", "unavailable");
+          }
+      
+          console.log('[Proof Reports] Async IIFE completed successfully');
+        } catch (topLevelError) {
+          console.error('[Proof Reports] Top-level error in proof script:', topLevelError);
         }
-
-        const current = isCurrent(data.generatedAt);
-        if (allPass && current) {
-          setStatusText(overall, STATUS.verified, "verified");
-          setStatusText(checkoutStatus, STATUS.verified, "verified");
-          setStatusText(heroCommerceStatus, STATUS.verified, "verified");
-        } else if (allPass && !current) {
-          setStatusText(overall, STATUS.review, "review");
-          setStatusText(checkoutStatus, STATUS.review, "review");
-          setStatusText(heroCommerceStatus, STATUS.review, "review");
-        } else {
-          setStatusText(overall, STATUS.review, "review");
-          setStatusText(checkoutStatus, STATUS.review, "review");
-          setStatusText(heroCommerceStatus, STATUS.review, "review");
-        }
-
-        const commerceTimeText = formatVerifiedAt(data && data.generatedAt);
-        if (generatedAt) generatedAt.textContent = commerceTimeText;
-        if (checkoutTime) checkoutTime.textContent = commerceTimeText;
-        if (heroLastChecked) heroLastChecked.textContent = commerceTimeText.replace("Last checked: ", "");
-
-        setChip(
-          checkoutChipRoute,
-          checks.checkoutPathReachable ? "Checkout route: VERIFIED" : "Checkout route: REVIEW REQUIRED",
-          checks.checkoutPathReachable ? "verified" : "review"
-        );
-        setChip(
-          checkoutChipPrice,
-          checks.gumroadHas149 ? "Price match: VERIFIED" : "Price match: REVIEW REQUIRED",
-          checks.gumroadHas149 ? "verified" : "review"
-        );
-        setChip(
-          checkoutChipProduct,
-          checks.gumroadHasProductName ? "Product match: VERIFIED" : "Product match: REVIEW REQUIRED",
-          checks.gumroadHasProductName ? "verified" : "review"
-        );
-
-        if (checkoutNote) {
-          const note = data && Array.isArray(data.notes) && data.notes.length ? data.notes[0] : "No report note.";
-          checkoutNote.textContent = `Report note: ${note}`;
-        }
-      } catch (_err) {
-        setStatusText(overall, STATUS.unavailable, "unavailable");
-        setStatusText(checkoutStatus, STATUS.unavailable, "unavailable");
-        setStatusText(heroCommerceStatus, STATUS.unavailable, "unavailable");
-        if (generatedAt) generatedAt.textContent = "Last checked: unavailable";
-        if (checkoutTime) checkoutTime.textContent = "Last checked: unavailable";
-        if (heroLastChecked) heroLastChecked.textContent = "Unavailable";
-        clearRows();
-        for (const [, label] of order) {
-          addRow(label, "unavailable", "UNAVAILABLE");
-        }
-        setChip(checkoutChipRoute, "Checkout route: unavailable", "unavailable");
-        setChip(checkoutChipPrice, "Price match: unavailable", "unavailable");
-        setChip(checkoutChipProduct, "Product match: unavailable", "unavailable");
-        if (checkoutNote) checkoutNote.textContent = "Report note: unavailable";
-      }
-
-      try {
-        const runtimeRes = await fetch("./assets/ui-self-sell-proof-report-packaged-latest.json", { cache: "no-store" });
-        if (!runtimeRes.ok) throw new Error(`fetch failed: ${runtimeRes.status}`);
-        const runtimeData = await runtimeRes.json();
-        const checks = runtimeData && runtimeData.checks ? runtimeData.checks : {};
-        const runtimePass = Boolean(checks.proof && checks.roi && checks.lockFlow);
-        const runtimeCurrent = isCurrent(runtimeData && runtimeData.generatedAt);
-
-        if (runtimePass && runtimeCurrent) {
-          setStatusText(runtimeStatus, STATUS.verified, "verified");
-          setStatusText(heroRuntimeStatus, STATUS.verified, "verified");
-        } else if (runtimePass && !runtimeCurrent) {
-          setStatusText(runtimeStatus, STATUS.review, "review");
-          setStatusText(heroRuntimeStatus, STATUS.review, "review");
-        } else {
-          setStatusText(runtimeStatus, STATUS.review, "review");
-          setStatusText(heroRuntimeStatus, STATUS.review, "review");
-        }
-        if (runtimeTime) runtimeTime.textContent = formatVerifiedAt(runtimeData && runtimeData.generatedAt);
-
-        setChip(runtimeChipProof, checks.proof ? "Proof output: VERIFIED" : "Proof output: REVIEW REQUIRED", checks.proof ? "verified" : "review");
-        setChip(runtimeChipRoi, checks.roi ? "ROI output: VERIFIED" : "ROI output: REVIEW REQUIRED", checks.roi ? "verified" : "review");
-        setChip(runtimeChipLock, checks.lockFlow ? "Lock flow: VERIFIED" : "Lock flow: REVIEW REQUIRED", checks.lockFlow ? "verified" : "review");
-      } catch (_runtimeErr) {
-        setStatusText(runtimeStatus, STATUS.unavailable, "unavailable");
-        setStatusText(heroRuntimeStatus, STATUS.unavailable, "unavailable");
-        if (runtimeTime) runtimeTime.textContent = "Last checked: unavailable";
-        setChip(runtimeChipProof, "Proof output: unavailable", "unavailable");
-        setChip(runtimeChipRoi, "ROI output: unavailable", "unavailable");
-        setChip(runtimeChipLock, "Lock flow: unavailable", "unavailable");
-      }
+      })().catch(err => {
+        console.error('[Proof Reports] Uncaught promise in proof script:', err);
+      });
     })();
   </script>
 </body>
