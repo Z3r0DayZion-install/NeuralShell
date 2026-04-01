@@ -1388,9 +1388,9 @@
           const note = data && Array.isArray(data.notes) && data.notes.length ? data.notes[0] : "No report note.";
           checkoutNote.textContent = `Report note: ${note}`;
         }
-      } catch (_err) {
-        console.error('Commerce report fetch failed:', _err);
-        const errMsg = _err && _err.message ? ` (ERR: ${_err.message})` : "";
+      } catch (err) {
+        console.error('Commerce report fetch failed:', err);
+        const errMsg = err && err.message ? ` (ERR: ${err.message})` : "";
         setStatusText(overall, STATUS.unavailable + errMsg, "unavailable");
         setStatusText(checkoutStatus, STATUS.unavailable, "unavailable");
         setStatusText(heroCommerceStatus, STATUS.unavailable, "unavailable");
@@ -1430,9 +1430,9 @@
         setChip(runtimeChipProof, checks.proof ? "Proof output: VERIFIED" : "Proof output: REVIEW REQUIRED", checks.proof ? "verified" : "review");
         setChip(runtimeChipRoi, checks.roi ? "ROI output: VERIFIED" : "ROI output: REVIEW REQUIRED", checks.roi ? "verified" : "review");
         setChip(runtimeChipLock, checks.lockFlow ? "Lock flow: VERIFIED" : "Lock flow: REVIEW REQUIRED", checks.lockFlow ? "verified" : "review");
-      } catch (_runtimeErr) {
-        console.error('Runtime report fetch failed:', _runtimeErr);
-        const errMsg = _runtimeErr && _runtimeErr.message ? ` (ERR: ${_runtimeErr.message})` : "";
+      } catch (runtimeErr) {
+        console.error('Runtime report fetch failed:', runtimeErr);
+        const errMsg = runtimeErr && runtimeErr.message ? ` (ERR: ${runtimeErr.message})` : "";
         setStatusText(runtimeStatus, STATUS.unavailable + errMsg, "unavailable");
         setStatusText(heroRuntimeStatus, STATUS.unavailable, "unavailable");
         if (runtimeTime) runtimeTime.textContent = "Last checked: unavailable";
