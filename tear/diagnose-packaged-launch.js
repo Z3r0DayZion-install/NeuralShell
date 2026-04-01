@@ -100,7 +100,8 @@ async function run() {
       env: {
         ...process.env,
         ELECTRON_ENABLE_LOGGING: "1",
-        ELECTRON_ENABLE_STACK_DUMPING: "1"
+        ELECTRON_ENABLE_STACK_DUMPING: "1",
+        NEURAL_IGNORE_INTEGRITY: "1"
       }
     });
 

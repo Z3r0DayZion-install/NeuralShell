@@ -61,6 +61,76 @@ test("SessionManager saves and loads payload with object.chat tokens metadata", 
   }
 });
 
+test("SessionManager stores workflow and release metadata in the index", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-session-metadata-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const manager = require("../src/core/sessionManager");
+      manager.saveSession("workflow-metadata", {
+        model: "llama3",
+        chat: [{ role: "user", content: "hello release cockpit" }],
+        workflowId: "release_audit",
+        outputMode: "release_packet",
+        workspaceAttachment: {
+          label: "workspace-a"
+        },
+        promotedPaletteActions: [{ id: "one" }, { id: "two" }],
+        verificationRunPlan: {
+          checks: [{ id: "lint" }, { id: "founder_e2e" }]
+        },
+        releasePacketHistory: [{ title: "Release Packet" }],
+        patchPlan: {
+          files: [{ path: "docs/release-audit.md" }]
+        }
+      }, "secret");
+
+      const meta = manager.index["workflow-metadata"];
+      assert.equal(meta.workflowId, "release_audit");
+      assert.equal(meta.outputMode, "release_packet");
+      assert.equal(meta.workspaceLabel, "workspace-a");
+      assert.equal(meta.paletteShortcuts, 2);
+      assert.equal(meta.verificationChecks, 2);
+      assert.equal(meta.releasePackets, 1);
+      assert.equal(meta.patchPlanFiles, 1);
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("SessionManager stores preview text and searches across preview metadata", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-session-preview-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const manager = require("../src/core/sessionManager");
+      manager.saveSession("preview-search", {
+        model: "llama3",
+        chat: [
+          { role: "user", content: "stage the release lane" },
+          { role: "assistant", content: "Focus on screenshots, verification output, and the final packet handoff." }
+        ],
+        workflowId: "release_audit",
+        workspaceAttachment: {
+          label: "preview-workspace"
+        }
+      }, "secret");
+
+      const meta = manager.index["preview-search"];
+      assert.match(meta.previewText, /final packet handoff/i);
+
+      const previewMatch = manager.search("packet handoff");
+      assert.equal(previewMatch.length, 1);
+      assert.equal(previewMatch[0].name, "preview-search");
+
+      const workspaceMatch = manager.search("preview-workspace");
+      assert.equal(workspaceMatch.length, 1);
+      assert.equal(workspaceMatch[0].name, "preview-search");
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test("SessionManager rejects invalid names and wrong passphrase", () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-session-"));
   try {

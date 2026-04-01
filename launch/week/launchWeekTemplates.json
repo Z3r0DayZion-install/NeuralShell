@@ -1,0 +1,22 @@
+{
+  "dailyChecklist": [
+    "Review critical issue queue and assign owners.",
+    "Validate deployment and demo asset freshness.",
+    "Confirm support readiness and escalation coverage.",
+    "Review partner and buyer follow-up queue.",
+    "Publish command priorities for the day."
+  ],
+  "releaseCommsChecklist": [
+    "Release notes reviewed and approved.",
+    "Support bulletin and known issues published.",
+    "Partner advisory sent.",
+    "Internal launch summary sent to leadership."
+  ],
+  "boards": [
+    "issue_escalation",
+    "support_readiness",
+    "partner_rollout",
+    "buyer_followup"
+  ],
+  "priorityBands": ["critical", "high", "normal"]
+}

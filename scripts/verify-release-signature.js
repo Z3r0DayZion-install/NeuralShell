@@ -32,9 +32,9 @@ function main() {
 
   const report = {
     generatedAt: new Date().toISOString(),
-    manifestPath,
-    signaturePath,
-    publicKeyPath,
+    manifestPath: path.relative(root, manifestPath),
+    signaturePath: path.relative(root, signaturePath),
+    publicKeyPath: path.relative(root, publicKeyPath),
     verified
   };
   fs.writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");

@@ -73,7 +73,7 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4' });
     res.end(metrics);
-    requestsTotal++; 
+    requestsTotal++;
     return;
   }
 
@@ -88,7 +88,7 @@ const server = http.createServer(async (req, res) => {
   // Prompt Endpoint
   if (url.pathname === '/prompt') {
     requestsTotal++;
-    
+
     // Failure Injection
     if (req.headers['x-proof-fail'] === '1' && !dryRun) {
       failuresTotal++;
@@ -114,6 +114,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Ollama Mock Endpoints
+  if (url.pathname === '/api/tags') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ models: [{ name: 'llama3:latest' }] }));
+    return;
+  }
+
+  if (url.pathname === '/api/version') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ version: '0.1.48' }));
+    return;
+  }
+
   // Proof Stub Endpoint (Internal loopback)
   if (url.pathname === '/__proof/ollama') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -125,9 +138,29 @@ const server = http.createServer(async (req, res) => {
   res.end('NOT FOUND');
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Server listening at http://127.0.0.1:${PORT}`);
-});
+const startServer = (port, attempts = 0) => {
+  if (attempts >= 5) {
+    console.error(`[OMEGA] Failed to bind to any port after 5 attempts. Exiting.`);
+    process.exit(1);
+    return;
+  }
+
+  server.listen(port, '127.0.0.1', () => {
+    console.log(`Server listening at http://127.0.0.1:${port}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`[OMEGA] Port ${port} in use, trying ${port + 1}...`);
+      startServer(port + 1, attempts + 1);
+    } else {
+      console.error('[OMEGA] Server error:', err.message);
+      process.exit(1);
+    }
+  });
+};
+
+startServer(PORT);
 
 const shutdown = () => {
   server.close(() => { process.exit(0); });

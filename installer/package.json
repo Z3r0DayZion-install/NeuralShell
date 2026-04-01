@@ -1,0 +1,16 @@
+{
+  "name": "neuralshell-installer",
+  "version": "0.1.0",
+  "description": "One-command installer for NeuralShell founder-beta builds.",
+  "license": "MIT",
+  "bin": {
+    "neuralshell-installer": "index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

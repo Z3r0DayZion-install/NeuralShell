@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Dict, List
 
 
-DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_v1.2.1-OMEGA.csv")
+DEFAULT_TRACKER = Path("docs/pilots/BETA_OUTREACH_TRACKER_V2.0-RC-Final.csv")
 DEFAULT_OUTPUT = Path("release/inbound_replies.csv")
 DEFAULT_STATE = Path("release/gmail-inbound-state.json")
 

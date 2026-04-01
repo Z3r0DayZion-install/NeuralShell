@@ -1,0 +1,60 @@
+{
+  "tracks": [
+    {
+      "trackId": "operator",
+      "title": "Operator Track",
+      "modules": [
+        "Mission Control fundamentals",
+        "Fleet operations and escalation",
+        "Recovery and continuity drills"
+      ],
+      "durationMinutes": 180
+    },
+    {
+      "trackId": "security_compliance",
+      "title": "Security/Compliance Track",
+      "modules": [
+        "Trust fabric lifecycle",
+        "Air-gap evidence movement",
+        "Revocation and policy governance"
+      ],
+      "durationMinutes": 210
+    },
+    {
+      "trackId": "support",
+      "title": "Support Track",
+      "modules": [
+        "Intake and severity triage",
+        "Support bundle diagnostics",
+        "Escalation handoff"
+      ],
+      "durationMinutes": 150
+    },
+    {
+      "trackId": "admin_deployment",
+      "title": "Admin/Deployment Track",
+      "modules": [
+        "Preflight and post-install checks",
+        "Appliance provisioning",
+        "Rollback and decommission"
+      ],
+      "durationMinutes": 200
+    },
+    {
+      "trackId": "success_sales",
+      "title": "Success/Sales Overview",
+      "modules": [
+        "Buyer evaluation path",
+        "Proof-of-value narrative",
+        "Pilot conversion"
+      ],
+      "durationMinutes": 120
+    }
+  ],
+  "labs": [
+    "fleet_restore_drill",
+    "revoked_cert_response",
+    "courier_quarantine_release",
+    "procurement_pack_walkthrough"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "certificationPaths": [
+    {
+      "role": "sales",
+      "track": "Partner Co-Sell Specialist",
+      "requiredModules": ["buyer_journey", "demo_flow", "followup_generator"]
+    },
+    {
+      "role": "support",
+      "track": "Partner Support Operator",
+      "requiredModules": ["support_ops", "managed_services", "renewal_risk"]
+    },
+    {
+      "role": "operator",
+      "track": "Partner Deployment Operator",
+      "requiredModules": ["deployment_program", "airgap_operations", "trust_fabric"]
+    }
+  ],
+  "enablementPacks": [
+    "Institutional demo profile pack",
+    "Deployment runbook pack",
+    "Procurement security review pack",
+    "Proof-backed follow-up pack"
+  ],
+  "coSellDimensions": [
+    { "id": "training_completion", "label": "Training Completion", "weight": 25 },
+    { "id": "delivery_readiness", "label": "Delivery Readiness", "weight": 25 },
+    { "id": "support_coverage", "label": "Support Coverage", "weight": 20 },
+    { "id": "security_alignment", "label": "Security Alignment", "weight": 15 },
+    { "id": "activity_momentum", "label": "Activity Momentum", "weight": 15 }
+  ],
+  "expiryWarningDays": [30, 14, 7]
+}

@@ -1,14 +1,17 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const Module = require("node:module");
 
 const stateManagerPath = path.resolve(__dirname, "../src/core/stateManager.js");
+const identityKernelPath = path.resolve(__dirname, "../src/core/identityKernel.js");
 
 function withMockedElectron(userDataPath, fn, options = {}) {
   const fingerprint = String(options.fingerprint || "test-fingerprint-123");
+  const hardwareFingerprint = String(options.hardwareFingerprint || "test-hardware-binding-123");
   const originalLoad = Module._load;
   Module._load = function patchedLoad(request, parent, isMain) {
     if (request === "electron") {
@@ -29,22 +32,50 @@ function withMockedElectron(userDataPath, fn, options = {}) {
       };
     }
     // Mock identityKernel to return a stable fingerprint for tests
-    if (request.endsWith("identityKernel") || request === "./identityKernel") {
+    if (request.endsWith("identityKernel") || request.endsWith("identityKernel.js") || request === "./identityKernel") {
       return {
         getFingerprint: () => fingerprint,
+        getHardwareFingerprint: () => hardwareFingerprint,
         init: async () => true
       };
     }
     return originalLoad.call(this, request, parent, isMain);
   };
 
+  // Flush both caches to prevent stale mocks leaking between tests
   delete require.cache[stateManagerPath];
+  delete require.cache[identityKernelPath];
   try {
     return fn();
   } finally {
     Module._load = originalLoad;
     delete require.cache[stateManagerPath];
+    delete require.cache[identityKernelPath];
   }
+}
+
+function encryptLegacyStatePayload(payload, fingerprint = "test-fingerprint-123") {
+  const key = crypto.createHash("sha256").update(String(fingerprint)).digest();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+  let encrypted = cipher.update(JSON.stringify(payload, null, 2), "utf8", "hex");
+  encrypted += cipher.final("hex");
+  return `${iv.toString("hex")}:${encrypted}`;
+}
+
+function encryptLegacyAuthenticatedStatePayload(
+  payload,
+  fingerprint = "test-fingerprint-123"
+) {
+  const key = crypto.createHash("sha256").update(String(fingerprint)).digest();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  cipher.setAAD(Buffer.from("NeuralShell.state.v4", "utf8"));
+  const encrypted = Buffer.concat([
+    cipher.update(JSON.stringify(payload, null, 2), "utf8"),
+    cipher.final()
+  ]);
+  return `omega-v4:${iv.toString("hex")}:${cipher.getAuthTag().toString("hex")}:${encrypted.toString("hex")}`;
 }
 
 test("StateManager setState merges nested settings instead of replacing", () => {
@@ -66,7 +97,30 @@ test("StateManager setState merges nested settings instead of replacing", () => 
   }
 });
 
-test("StateManager migrates v1 state to v2 bridge profile settings", () => {
+test("StateManager load seeds workflow and release defaults on a fresh profile", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-defaults-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      const loaded = stateManager.load();
+
+      assert.equal(loaded.workflowId, "bridge_diagnostics");
+      assert.equal(loaded.outputMode, "checklist");
+      assert.equal(loaded.workspaceAttachment, null);
+      assert.deepEqual(loaded.releasePacketHistory, []);
+      assert.deepEqual(loaded.promotedPaletteActions, []);
+      assert.equal(loaded.commandPaletteShortcutScope, "workflow");
+      assert.equal(loaded.verificationRunPlan, null);
+      assert.ok(Array.isArray(loaded.settings.connectionProfiles));
+      assert.equal(loaded.settings.connectionProfiles.length, 1);
+      assert.equal(loaded.settings.activeProfileId, "local-default");
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("StateManager migrates v1 state to v5 bridge profile settings", () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-migrate-"));
   try {
     withMockedElectron(tempRoot, () => {
@@ -82,12 +136,12 @@ test("StateManager migrates v1 state to v2 bridge profile settings", () => {
       fs.writeFileSync(stateManager.stateFile, JSON.stringify(legacy, null, 2), "utf8");
       stateManager.load();
       const settings = stateManager.get("settings");
-      assert.equal(stateManager.get("stateVersion"), 3);
+      assert.equal(stateManager.get("stateVersion"), 9);
       assert.ok(Array.isArray(settings.connectionProfiles));
       assert.equal(settings.connectionProfiles.length, 1);
       assert.equal(settings.connectionProfiles[0].baseUrl, "http://localhost:11434");
       assert.equal(settings.activeProfileId, settings.connectionProfiles[0].id);
-      assert.equal(settings.connectOnStartup, true);
+      assert.equal(settings.connectOnStartup, false);
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -108,8 +162,32 @@ test("StateManager set updates keys and writes encrypted state", () => {
       assert.equal(state.settings.theme, "light");
 
       const raw = fs.readFileSync(stateManager.stateFile, "utf8");
-      assert.ok(raw.includes(":"), "Encrypted state file should include iv:ciphertext format.");
+      assert.ok(raw.startsWith("omega-v5:"), "Encrypted state file should use the authenticated omega-v5 format.");
       assert.ok(!raw.trim().startsWith("{"), "Encrypted state file should not be plain JSON.");
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("StateManager setState ignores non-object updates and recovers null settings", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-setstate-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      stateManager.load();
+      stateManager.set("settings", null);
+      stateManager.set("settings", { retryCount: 7 });
+      const repairedSettings = stateManager.get("settings");
+      assert.equal(repairedSettings.retryCount, 7);
+      assert.equal(repairedSettings.timeoutMs, 15000);
+
+      const before = stateManager.getState();
+      stateManager.setState(null);
+      const after = stateManager.getState();
+      assert.equal(after.workflowId, before.workflowId);
+      assert.equal(after.outputMode, before.outputMode);
+      assert.deepEqual(after.settings, before.settings);
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -125,8 +203,8 @@ test("StateManager quarantines corrupted state and regenerates defaults", () => 
       fs.writeFileSync(stateManager.stateFile, "not-valid-state", "utf8");
 
       const loaded = stateManager.load();
-      assert.equal(loaded.stateVersion, 3);
-      assert.equal(loaded.model, "llama3");
+      assert.equal(loaded.stateVersion, 9);
+      assert.equal(loaded.model, null);
       assert.ok(Array.isArray(loaded.chat));
 
       const files = fs.readdirSync(path.dirname(stateManager.stateFile));
@@ -140,7 +218,7 @@ test("StateManager quarantines corrupted state and regenerates defaults", () => 
   }
 });
 
-test("StateManager upgrades v2 state with existing connectionProfiles to v3", () => {
+test("StateManager upgrades v2 state with existing connectionProfiles to v5", () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-v2-"));
   try {
     withMockedElectron(tempRoot, () => {
@@ -163,11 +241,179 @@ test("StateManager upgrades v2 state with existing connectionProfiles to v3", ()
       fs.writeFileSync(stateManager.stateFile, JSON.stringify(legacyV2, null, 2), "utf8");
       const loaded = stateManager.load();
       const settings = loaded.settings;
-      assert.equal(loaded.stateVersion, 3);
+      assert.equal(loaded.stateVersion, 9);
       assert.equal(settings.activeProfileId, "profile-a");
       assert.equal(settings.connectionProfiles.length, 1);
       assert.equal(settings.connectionProfiles[0].id, "profile-a");
       assert.equal(settings.retryCount, 4);
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("StateManager migrates legacy encrypted v3 state into the authenticated v5 format", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-v3-"));
+  const fingerprint = "legacy-state-fingerprint";
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      const legacyV3 = {
+        stateVersion: 3,
+        nodeId: fingerprint,
+        model: "phi4",
+        tokens: 42,
+        settings: {
+          theme: "light",
+          ollamaBaseUrl: "http://127.0.0.1:11434",
+          retryCount: 5
+        }
+      };
+      fs.writeFileSync(
+        stateManager.stateFile,
+        encryptLegacyStatePayload(legacyV3, fingerprint),
+        "utf8"
+      );
+
+      const loaded = stateManager.load();
+      const rewritten = fs.readFileSync(stateManager.stateFile, "utf8");
+
+      assert.equal(loaded.stateVersion, 9);
+      assert.equal(loaded.model, "phi4");
+      assert.equal(loaded.tokens, 42);
+      assert.equal(loaded.settings.theme, "light");
+      assert.ok(rewritten.startsWith("omega-v5:"));
+    }, { fingerprint });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("StateManager quarantines tampered authenticated state and regenerates defaults", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-tamper-"));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      stateManager.load();
+      stateManager.set("model", "tamper-model");
+
+      const raw = fs.readFileSync(stateManager.stateFile, "utf8");
+      const tampered = raw.replace(/([0-9a-f])(?=[0-9a-f]*$)/i, (char) =>
+        char.toLowerCase() === "a" ? "b" : "a"
+      );
+      fs.writeFileSync(stateManager.stateFile, tampered, "utf8");
+
+      const loaded = stateManager.load();
+      assert.equal(loaded.stateVersion, 9);
+      assert.equal(loaded.model, null);
+
+      const files = fs.readdirSync(path.dirname(stateManager.stateFile));
+      assert.ok(
+        files.some((name) => name.includes("hardware-lock-failure") && name.endsWith(".bak")),
+        "Expected hardware-lock-failure quarantine backup after tamper detection."
+      );
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("StateManager migrates legacy authenticated v4 state to the stable hardware-bound v5 format", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-v4-"));
+  const hardwareFingerprint = "stable-hardware-binding-001";
+  const fingerprint = "legacy-identity-fingerprint-001";
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      const legacyV4 = {
+        stateVersion: 4,
+        nodeId: fingerprint,
+        model: "llama3.2",
+        tokens: 77,
+        settings: {
+          theme: "light",
+          retryCount: 6
+        }
+      };
+
+      fs.writeFileSync(
+        stateManager.stateFile,
+        encryptLegacyAuthenticatedStatePayload(legacyV4, fingerprint),
+        "utf8"
+      );
+
+      const loaded = stateManager.load();
+      const rewritten = fs.readFileSync(stateManager.stateFile, "utf8");
+
+      assert.equal(loaded.stateVersion, 9);
+      assert.equal(loaded.model, "llama3.2");
+      assert.equal(loaded.tokens, 77);
+      assert.equal(loaded.nodeId, hardwareFingerprint);
+      assert.ok(rewritten.startsWith("omega-v5:"));
+    }, { fingerprint, hardwareFingerprint });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("StateManager preserves state across identity rotation when hardware binding is stable", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ns5-state-rotate-"));
+  const hardwareFingerprint = "stable-hardware-binding-rotate";
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      stateManager.load();
+      stateManager.set("tokens", 321);
+      stateManager.set("model", "persisted-model");
+    }, {
+      fingerprint: "identity-before-rotate",
+      hardwareFingerprint
+    });
+
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require("../src/core/stateManager");
+      const loaded = stateManager.load();
+
+      assert.equal(loaded.stateVersion, 9);
+      assert.equal(loaded.tokens, 321);
+      assert.equal(loaded.model, "persisted-model");
+      assert.equal(loaded.nodeId, hardwareFingerprint);
+
+      const raw = fs.readFileSync(stateManager.stateFile, "utf8");
+      assert.ok(raw.startsWith("omega-v5:"));
+    }, {
+      fingerprint: "identity-after-rotate",
+      hardwareFingerprint
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('StateManager handles deeply nested status updates and edge cases', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ns5-state-coverage-'));
+  try {
+    withMockedElectron(tempRoot, () => {
+      const stateManager = require('../src/core/stateManager');
+      stateManager.load();
+
+      const complexObj = { a: 1, b: { c: 2 } };
+      stateManager.set('complexRecord', complexObj);
+      assert.deepEqual(stateManager.get('complexRecord'), complexObj);
+
+      const newComplexObj = { a: 1, b: { c: 2, d: 3 } };
+      stateManager.set('complexRecord', newComplexObj);
+      const updated = stateManager.get('complexRecord');
+      assert.equal(updated.a, 1);
+      assert.equal(updated.b.c, 2);
+      assert.equal(updated.b.d, 3);
+
+      stateManager.set('complexRecord', null);
+      assert.equal(stateManager.get('complexRecord'), null);
+
+      const exported = stateManager.getState();
+      assert.ok(exported !== null);
+      assert.equal(typeof exported, 'object');
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });

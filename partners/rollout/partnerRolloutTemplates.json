@@ -1,0 +1,29 @@
+{
+  "activationChecklist": [
+    "Partner agreement executed with support and escalation addendum.",
+    "Partner sandbox and demo profile seeded in local environment.",
+    "Co-branded deployment and procurement assets delivered.",
+    "Partner training completion verified for sales and support leads.",
+    "Named partner owner assigned for first 3 live opportunities."
+  ],
+  "readinessDimensions": [
+    { "id": "assets", "label": "Asset Delivery", "weight": 25 },
+    { "id": "training", "label": "Training Completion", "weight": 20 },
+    { "id": "process", "label": "Process Readiness", "weight": 20 },
+    { "id": "security", "label": "Security Alignment", "weight": 20 },
+    { "id": "activity", "label": "Deal Activity", "weight": 15 }
+  ],
+  "coBrandedAssets": [
+    "Institutional demo flow profile",
+    "Deployment program runbooks",
+    "Security review pack template",
+    "Proof-backed follow-up template"
+  ],
+  "blockerCategories": [
+    "training_gap",
+    "asset_gap",
+    "security_review_pending",
+    "support_path_not_set",
+    "joint_demo_failed"
+  ]
+}

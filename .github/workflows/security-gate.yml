@@ -130,6 +130,26 @@ jobs:
           NEURALSHELL_SKIP_SOURCE_INTEGRITY: "1"
         run: npm run security:pass:local
 
+  omega_verification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --ignore-scripts
+
+      - name: Run OMEGA Verification
+        run: node scripts/omega_verify.js
+
   security_pass:
     if: always()
     needs:
@@ -139,6 +159,7 @@ jobs:
       - secret_scan
       - codeql
       - security_local
+      - omega_verification
     runs-on: ubuntu-latest
     steps:
       - name: Consolidate security gate results
@@ -150,6 +171,7 @@ jobs:
           secret_scan="${{ needs.secret_scan.result }}"
           codeql="${{ needs.codeql.result }}"
           security_local="${{ needs.security_local.result }}"
+          omega_verification="${{ needs.omega_verification.result }}"
 
           echo "dependency_review_support=$dep_review_support"
           echo "dependency_review=$dep_review"
@@ -157,6 +179,7 @@ jobs:
           echo "secret_scan=$secret_scan"
           echo "codeql=$codeql"
           echo "security_local=$security_local"
+          echo "omega_verification=$omega_verification"
 
           failed=0
           if [[ "$dep_review_support" != "success" && "$dep_review_support" != "skipped" ]]; then
@@ -167,7 +190,7 @@ jobs:
             echo "dependency_review must be success|skipped."
             failed=1
           fi
-          for job in npm_audit secret_scan codeql security_local; do
+          for job in npm_audit secret_scan codeql security_local omega_verification; do
             result="${!job}"
             if [[ "$result" != "success" ]]; then
               echo "$job must be success."

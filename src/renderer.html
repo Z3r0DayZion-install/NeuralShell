@@ -1,323 +1,1499 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>NeuralShell</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <main class="app">
-      <header class="hero">
-        <div class="hero-copy">
-          <p class="kicker">Operator Console</p>
-          <h1>NeuralShell</h1>
-          <p class="subtitle">Model orchestration, session control, and runtime observability.</p>
-        </div>
-        <div class="hero-status">
-          <div id="statusLabel"></div>
-          <div id="statusMeta"></div>
-          <div id="typingIndicator"></div>
-        </div>
-      </header>
 
-      <section class="layout">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NeuralShell | Performance \u0026 Shipping</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <main class="app">
+    <header id="appHeader" class="app-header">
+      <div class="header-main">
+        <div class="header-brand">
+          <img src="../assets/logo-primary.svg" class="brand-logo" alt="NeuralShell" />
+          <div class="brand-copy">
+            <h1 class="visually-hidden">NeuralShell</h1>
+            <span id="heroWorkflowBadge" class="header-badge">SYSTEM VERIFIED</span>
+            <span id="tierBadge" class="header-badge"
+              style="cursor: pointer; background: var(--ns-panel-1); color: var(--muted); border-color: var(--ns-panel-1);"
+              title="Click to enter Operator License">PREVIEW NODE</span>
+            <span id="heroProviderBadge" class="header-badge"></span>
+            <div id="heroWorkflowSummaryText" class="header-status-value"></div>
+            <div id="heroFocusSummaryText" class="header-status-value"></div>
+          </div>
+        </div>
+
+        <div class="header-status-group">
+          <div class="status-group">
+            <span class="stat-label">Model</span>
+            <div class="row row-tight">
+              <select id="modelSelect" class="header-select"></select>
+              <button id="refreshModelsBtn" class="btn-icon" title="Refresh Models">⟳</button>
+            </div>
+          </div>
+
+          <div class="status-group">
+            <span class="stat-label">Workspace</span>
+            <div id="globalWorkspaceStatusText" class="header-status-value">Idle Workspace</div>
+          </div>
+
+          <div class="status-group">
+            <span class="stat-label">Session</span>
+            <div id="activeSessionNameHeader" class="header-status-value">Draft</div>
+          </div>
+
+          <div class="status-group">
+            <span class="stat-label">Model Bridge</span>
+            <div class="row row-tight">
+              <div id="globalBridgeStatusText" class="header-status-value">Local Connection</div>
+              <label class="mode-switch-compact" for="offlineModeInput">
+                <input id="offlineModeInput" type="checkbox" role="switch" />
+                <span class="mode-switch-track"></span>
+                <span class="mode-switch-label">Offline</span>
+              </label>
+            </div>
+            <div id="offlineModeSummaryText" class="header-status-value">Offline Security Active</div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="criticalStopBtn" class="btn-icon hidden" title="FORCE STOP EXECUTION (ALT+C)"
+            style="background: var(--ns-bad); color: white; border-color: var(--ns-bad);">STOP</button>
+          <button id="toggleRightPaneBtn" class="btn-icon" title="Toggle Right Pane">⇔</button>
+          <button id="resetPaneLayoutBtn" class="btn-icon" title="Reset Pane Layout">⊞</button>
+          <button id="commandPaletteOpenBtn" class="btn-header" title="Command Palette (Ctrl+K)">Palette</button>
+          <button id="discordSupportBtn" class="btn-header" title="Get Discord Support">Support</button>
+          <button id="settingsMenuOpenBtn" class="btn-header" aria-controls="settingsMenuPanel"
+            aria-expanded="false">Settings</button>
+          <button id="headerDetailsToggle" class="btn-header" title="Toggle System Health">Health</button>
+        </div>
+      </div>
+
+      <div id="headerDetailsPanel" class="header-details hidden">
+        <div class="header-details-grid">
+          <div class="detail-card">
+            <span class="stat-label">CPU</span>
+            <div id="cpuUsageHeader">--%</div>
+          </div>
+          <div class="detail-card">
+            <span class="stat-label">Memory</span>
+            <div id="memoryUsageHeader">-- MB</div>
+          </div>
+          <div class="detail-card">
+            <span class="stat-label">Tokens</span>
+            <div id="tokenSummaryHeader">0</div>
+          </div>
+          <div class="detail-card">
+            <span class="stat-label">Provider</span>
+            <div id="globalProviderStatusText">Ollama</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div id="activeProfileBar" class="active-profile-bar hidden" hidden>
+      <span id="apbProfileName"></span>
+      <span id="apbProvider"></span>
+      <span id="apbModel"></span>
+      <span id="apbTrustBadge"></span>
+      <span id="apbReconnectPolicy"></span>
+      <span id="apbLastVerified"></span>
+      <button id="apbVerifyBtn" class="btn-secondary">Verify</button>
+      <button id="apbRepairBtn" class="btn-secondary">Repair</button>
+      <button id="apbSwitchBtn" class="btn-secondary">Switch</button>
+      <button id="apbOfflineBtn" class="btn-secondary">Offline</button>
+      <button id="apbDisconnectBtn" class="btn-secondary">Disconnect</button>
+    </div>
+
+    <div id="recoveryBanner" class="recovery-banner hidden">
+      <span class="banner-icon">⚠️</span>
+      <span class="banner-text">SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED</span>
+    </div>
+
+    <div id="globalNextActionText" class="header-status-value"></div>
+    <button id="bridgeAutoDetectBtn" class="btn-secondary hidden" hidden>Auto-Detect</button>
+    <div id="modelSummary" class="hidden" hidden></div>
+    <div id="sessionSummary" class="hidden" hidden></div>
+    <div id="commandSummary" class="hidden" hidden></div>
+    <div id="tokenSummary" class="hidden" hidden></div>
+    <div id="operatorRail"></div>
+
+
+    <section id="workspaceTopology" class="layout workspace-topology">
+      <section class="workspace-column workspace-center-column">
         <section class="panel panel-chat">
           <div class="panel-head">
-            <h2>Chat Ops</h2>
+            <div class="panel-head-copy">
+              <h2>Command Panel</h2>
+              <p class="panel-note">Real-time execution thread. Monitor every step of the local inference.</p>
+            </div>
             <div class="row row-tight">
-              <label class="field-inline" for="modelSelect">
-                <span>Model</span>
-                <select id="modelSelect"></select>
-              </label>
-              <button id="refreshModelsBtn">Refresh Models</button>
+              <button id="focusInboxBtn" class="btn-secondary" type="button">Focus Inbox</button>
+              <button id="focusSystemBtn" class="btn-secondary" type="button">Focus System</button>
+            </div>
+          </div>
+
+
+
+          <div id="starterActionsSpotlight" class="starter-actions-grid hidden">
+            <div class="starter-action-card" data-action="audit">
+              <div class="starter-action-visual">
+                <span class="starter-action-icon">MODEL</span>
+                <div class="visual-pulse"></div>
+              </div>
+              <div class="starter-action-info">
+                <span class="starter-action-label">CONNECT AI ENGINE</span>
+                <span class="starter-action-note">Select an offline provider to begin local intelligence routing.</span>
+              </div>
+            </div>
+            <div class="starter-action-card" data-action="scan">
+              <div class="starter-action-visual">
+                <span class="starter-action-icon">WORKBENCH</span>
+                <div class="visual-pulse"></div>
+              </div>
+              <div class="starter-action-info">
+                <span class="starter-action-label">ANALYZE LOCAL FILES</span>
+                <span class="starter-action-note">Drop sensitive context into the workbench for private extraction.</span>
+              </div>
+            </div>
+            <div class="starter-action-card" data-action="tunnel">
+              <div class="starter-action-visual">
+                <span class="starter-action-icon">MONITOR</span>
+                <div class="visual-pulse"></div>
+              </div>
+              <div class="starter-action-info">
+                <span class="starter-action-label">OBSERVABILITY</span>
+                <span class="starter-action-note">Review active connections, memory layers, and active nodes.</span>
+              </div>
             </div>
           </div>
 
           <div id="chatHistory"></div>
 
-          <div class="row row-wrap">
-            <label class="field-inline checkbox-field" for="autoScrollInput">
-              <input id="autoScrollInput" type="checkbox" checked />
-              <span>Auto Scroll</span>
+          <div class="control-band">
+            <div class="row row-wrap metrics-row">
+              <label class="field-inline checkbox-field" for="autoScrollInput">
+                <input id="autoScrollInput" type="checkbox" checked />
+                <span>Auto Scroll</span>
+              </label>
+              <div id="promptMetrics"></div>
+              <div id="tokensUsed"></div>
+              <div id="typingIndicator" class="typing-indicator"></div>
+            </div>
+
+            <div class="composer-shell">
+              <div class="composer-head">
+                <div class="composer-head-copy">
+                  <span class="cluster-title">Modular Injector</span>
+                  <span id="composerSummaryText" class="cluster-note">Awaiting prompt input for local execution.</span>
+                </div>
+                <span id="composerMetaText" class="composer-meta-pill">Idle draft</span>
+              </div>
+            </div>
+
+            <!-- Thread task / workflow / mission control -->
+            <div class="thread-task-shell">
+              <div id="threadTaskFocusText"></div>
+              <div id="threadTaskCapabilityText"></div>
+              <div id="threadTaskActionText"></div>
+              <div id="workflowTitleText"></div>
+              <div id="workflowDescriptionText"></div>
+              <div id="workflowQuickActions" class="action-grid"></div>
+              <div id="workflowFollowupActions"></div>
+              <button id="workflowSeedPromptBtn" class="btn-secondary">Seed Prompt</button>
+              <select id="outputModeSelect"></select>
+              <div id="missionControlGrid" class="mission-control-grid"></div>
+            </div>
+
+            <label class="field-block" for="promptInput">
+              <span>Prompt <small style="color: var(--muted); font-weight: 400; margin-left: 8px;">(Ctrl+Enter to send,
+                  / for commands)</small></span>
+              <textarea id="promptInput" placeholder="Type a prompt, or use slash commands like /help"
+                autofocus></textarea>
             </label>
-            <div id="promptMetrics"></div>
-            <div id="tokensUsed"></div>
-          </div>
 
-          <label class="field-block" for="promptInput">
-            <span>Prompt</span>
-            <textarea id="promptInput" placeholder="Type a prompt, or use slash commands like /help"></textarea>
-          </label>
-
-          <div class="row row-wrap">
-            <button id="sendBtn">Send</button>
-            <button id="stopBtn">Stop</button>
-            <button id="retryBtn">Retry</button>
-            <button id="editLastBtn">Edit Last</button>
-            <button id="regenerateBtn">Regenerate</button>
-            <button id="newChatBtn">New Chat</button>
-            <button id="deleteLastExchangeBtn">Delete Last</button>
-            <button id="undoBtn">Undo</button>
-          </div>
-
-          <div class="row row-wrap">
-            <label class="field-inline" for="snippetSelect">
-              <span>Snippet</span>
-              <select id="snippetSelect"></select>
-            </label>
-            <button id="insertSnippetBtn">Insert Snippet</button>
-            <button id="commandHelpBtn">Command Help</button>
-            <button id="commandPaletteOpenBtn">Command Palette</button>
-            <button id="shortcutHelpBtn">Shortcuts</button>
-            <button id="shortcutCloseBtn">Close Shortcuts</button>
-          </div>
-
-          <div class="row row-wrap">
-            <label class="field-inline grow" for="chatSearchInput">
-              <span>Chat Search</span>
-              <input id="chatSearchInput" placeholder="Search messages" />
-            </label>
-            <button id="chatSearchBtn">Search Chat</button>
-            <button id="chatSearchClearBtn">Clear Search</button>
-          </div>
-
-          <div class="row row-wrap">
-            <button id="exportChatBtn">Export Chat</button>
-            <button id="exportMarkdownBtn">Export Markdown</button>
-            <button id="copyMarkdownBtn">Copy Markdown</button>
-            <button id="copyLastAssistantBtn">Copy Last Assistant</button>
-          </div>
-
-          <div class="row row-wrap">
-            <input id="importChatFile" type="file" />
-            <button id="importChatBtn">Import Chat</button>
+            <div class="command-deck-shell">
+              <div class="action-cluster-head">
+                <div class="action-cluster-copy">
+                  <span class="cluster-title">Action Bar</span>
+                  <span class="cluster-note">Keep only the highest-value actions visible. Move recovery, search, and
+                    archive work into trays.</span>
+                </div>
+                <span id="actionBarStatusText" class="action-bar-status">Ready. Select an action or execute
+                  draft.</span>
+              </div>
+              <div class="command-action-bar">
+                <div class="command-action-core row row-wrap action-grid">
+                  <button id="sendBtn" class="btn-primary">Send</button>
+                  <button id="stopBtn" class="btn-danger">Stop</button>
+                  <button id="retryBtn" class="btn-secondary">Retry</button>
+                </div>
+              </div>
+              <div class="chat-ops-tray-nav" role="tablist" aria-label="Chat ops tools">
+                <button id="threadToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="threadToolsTray" aria-expanded="true">Thread Tools</button>
+                <button id="assistToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="assistToolsTray" aria-expanded="false">Prompt Tools</button>
+                <button id="archiveToolsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="archiveToolsTray" aria-expanded="false">Archive Tools</button>
+              </div>
+              <div id="threadToolsTray" class="chat-ops-tray-panel">
+                <div class="surface-head">
+                  <span class="cluster-title">Thread Recovery</span>
+                  <span class="cluster-note">Reset or recover the active operator thread without leaving Chat
+                    Ops.</span>
+                </div>
+                <div class="row row-wrap action-grid">
+                  <button id="regenerateBtn" class="btn-secondary">Regenerate</button>
+                  <button id="editLastBtn" class="btn-secondary">Edit Last</button>
+                  <button id="deleteLastExchangeBtn" class="btn-danger">Delete Last</button>
+                  <button id="undoBtn" class="btn-secondary">Undo</button>
+                </div>
+              </div>
+              <div id="assistToolsTray" class="chat-ops-tray-panel hidden" hidden>
+                <div class="surface-head">
+                  <span class="cluster-title">Prompt Helpers</span>
+                  <span class="cluster-note">Reusable snippets, command help, and shortcut overlays for faster prompt
+                    routing.</span>
+                </div>
+                <div class="row row-wrap action-grid">
+                  <label class="field-inline" for="snippetSelect">
+                    <span>Snippet</span>
+                    <select id="snippetSelect"></select>
+                  </label>
+                  <button id="insertSnippetBtn" class="btn-secondary">Insert Snippet</button>
+                  <button id="commandHelpBtn" class="btn-secondary">Command Help</button>
+                  <button id="shortcutHelpBtn" class="btn-secondary">Shortcuts</button>
+                  <button id="shortcutCloseBtn" class="btn-secondary">Close Shortcuts</button>
+                </div>
+              </div>
+              <div id="archiveToolsTray" class="chat-ops-tray-panel hidden" hidden>
+                <div class="surface-head">
+                  <span class="cluster-title">Archive + Search</span>
+                  <span class="cluster-note">Search, export, and import the active thread only when you need the
+                    archival surface.</span>
+                </div>
+                <div class="row row-wrap action-grid">
+                  <label class="field-inline grow" for="chatSearchInput">
+                    <span>Chat Search</span>
+                    <input id="chatSearchInput" placeholder="Search messages" />
+                  </label>
+                  <button id="chatSearchBtn" class="btn-secondary">Search Chat</button>
+                  <button id="chatSearchClearBtn" class="btn-secondary">Clear Search</button>
+                </div>
+                <div class="row row-wrap action-grid">
+                  <button id="exportChatBtn" class="btn-secondary">Export Chat</button>
+                  <button id="exportMarkdownBtn" class="btn-secondary">Export Markdown</button>
+                  <button id="copyMarkdownBtn" class="btn-secondary">Copy Markdown</button>
+                  <button id="copyLastAssistantBtn" class="btn-secondary">Copy Last Assistant</button>
+                </div>
+                <div class="row row-wrap action-grid">
+                  <input id="importChatFile" type="file" />
+                  <button id="importChatBtn" class="btn-secondary">Import Chat</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div id="shortcutOverlay"></div>
         </section>
+      </section>
 
+      <button id="leftPaneResizeHandle" class="pane-splitter pane-splitter-left" type="button"
+        aria-label="Resize inbox and thread groups"></button>
+
+      <aside class="workspace-column workspace-left-column">
         <section class="panel panel-sessions">
           <div class="panel-head">
-            <h2>Sessions</h2>
+            <div class="panel-head-copy">
+              <h2>Inbox</h2>
+              <p class="panel-note">Encrypted threads and recall controls for saved work.</p>
+            </div>
           </div>
-          <div class="row row-wrap">
-            <label class="field-inline" for="sessionName">
-              <span>Session Name</span>
-              <input id="sessionName" placeholder="main-session" />
+          <section class="surface-shell inbox-brief-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Inbox Signal</span>
+              <span class="cluster-note">Thread volume, lock state, and which conversation is staged right now.</span>
+            </div>
+            <div class="inbox-brief-grid">
+              <div class="inbox-brief-card">
+                <span class="stat-label">Thread Group</span>
+                <div id="inboxGroupStatusText"></div>
+              </div>
+              <div class="inbox-brief-card">
+                <span class="stat-label">Current Focus</span>
+                <div id="inboxFocusText"></div>
+              </div>
+            </div>
+          </section>
+          <section class="surface-shell inbox-filter-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Inbox Filters</span>
+              <span id="inboxFilterSummaryText" class="cluster-note">Search saved threads, pin the keepers, or isolate
+                unread work.</span>
+            </div>
+            <div class="row row-wrap action-grid inbox-filter-pills" role="tablist" aria-label="Inbox filters">
+              <button id="inboxFilterAllBtn" class="btn-secondary tray-toggle-btn" type="button" aria-pressed="true">All
+                Threads</button>
+              <button id="inboxFilterPinnedBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-pressed="false">Pinned</button>
+              <button id="inboxFilterUnreadBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-pressed="false">Unread</button>
+              <button id="newChatBtn" class="btn-primary" type="button">New Chat</button>
+            </div>
+            <label class="field-block" for="inboxSearchInput">
+              <span>Search Inbox</span>
+              <input id="inboxSearchInput"
+                placeholder="Filter thread names, workflow labels, workspace names, or previews" />
             </label>
-            <label class="field-inline" for="sessionPass">
-              <span>Passphrase</span>
-              <input id="sessionPass" type="password" placeholder="Required for save/load" />
-            </label>
+          </section>
+          <div class="surface-shell thread-rail-shell inbox-thread-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Conversation Heads</span>
+              <span id="threadRailSummaryText" class="cluster-note">Current draft and recent encrypted
+                conversations.</span>
+            </div>
+            <div id="sessionChatHeadRail" class="thread-head-rail"></div>
           </div>
+          <section class="surface-shell session-command-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Session Deck</span>
+              <span id="sessionOpsSummary" class="cluster-note">Keep save and load visible. Open trays only for
+                maintenance or metadata.</span>
+            </div>
+            <div class="row row-wrap">
+              <label class="field-inline" for="sessionName">
+                <span>Session Name</span>
+                <input id="sessionName" placeholder="main-session" />
+              </label>
+              <label class="field-inline" for="sessionPass">
+                <span>Passphrase</span>
+                <input id="sessionPass" type="password" placeholder="Required for save/load" />
+              </label>
+            </div>
+            <div class="row row-wrap action-grid session-primary-actions">
+              <button id="saveSessionBtn" class="btn-primary">Save Session</button>
+              <button id="loadSessionBtn" class="btn-secondary">Load Session</button>
+            </div>
+            <div class="session-tray-nav" role="tablist" aria-label="Session tools">
+              <button id="sessionManageTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="sessionManageTray" aria-expanded="true">Manage Sessions</button>
+              <button id="sessionInspectTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="sessionInspectTray" aria-expanded="false">Inspect Metadata</button>
+            </div>
+            <div id="sessionManageTray" class="session-tray-panel">
+              <div class="surface-head">
+                <span class="cluster-title">Session Maintenance</span>
+                <span class="cluster-note">Search, sort, rename, duplicate, delete, and repair the encrypted session
+                  index.</span>
+              </div>
+              <div class="row row-wrap">
+                <label class="field-inline grow" for="sessionSearchInput">
+                  <span>Search</span>
+                  <input id="sessionSearchInput" placeholder="Filter sessions" />
+                </label>
+                <label class="field-inline" for="sessionSortSelect">
+                  <span>Sort</span>
+                  <select id="sessionSortSelect"></select>
+                </label>
+              </div>
+              <div class="row row-wrap action-grid">
+                <button id="renameSessionBtn" class="btn-secondary">Rename Session</button>
+                <button id="deleteSessionBtn" class="btn-danger">Delete Session</button>
+                <button id="duplicateSessionBtn" class="btn-secondary">Duplicate Session</button>
+                <button id="repairIndexBtn" class="btn-secondary">Repair Index</button>
+              </div>
+            </div>
+            <div id="sessionInspectTray" class="session-tray-panel hidden" hidden>
+              <div class="surface-head">
+                <span class="cluster-title">Metadata Snapshot</span>
+                <span class="cluster-note">Update stamps, token load, workflow state, and verification counts.</span>
+              </div>
+              <pre id="sessionMetadataOutput"></pre>
+            </div>
+          </section>
 
-          <div class="row row-wrap">
-            <label class="field-inline grow" for="sessionSearchInput">
-              <span>Search</span>
-              <input id="sessionSearchInput" placeholder="Filter sessions" />
-            </label>
-            <label class="field-inline" for="sessionSortSelect">
-              <span>Sort</span>
-              <select id="sessionSortSelect"></select>
-            </label>
+          <div class="surface-shell session-index-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Session Index</span>
+              <span class="cluster-note">Encrypted slots, quick-recall targets, and workflow context.</span>
+            </div>
+            <ul id="sessionList"></ul>
           </div>
-
-          <div class="row row-wrap">
-            <button id="saveSessionBtn">Save Session</button>
-            <button id="loadSessionBtn">Load Session</button>
-            <button id="renameSessionBtn">Rename Session</button>
-            <button id="deleteSessionBtn">Delete Session</button>
-            <button id="duplicateSessionBtn">Duplicate Session</button>
-            <button id="repairIndexBtn">Repair Index</button>
-          </div>
-
-          <ul id="sessionList"></ul>
-          <pre id="sessionMetadataOutput"></pre>
         </section>
 
         <section class="panel panel-commands">
           <div class="panel-head">
-            <h2>Command Bus</h2>
+            <div class="panel-head-copy">
+              <h2>Command Rail</h2>
+              <p class="panel-note">Palette-first routing, quick slash recall, and local action indexing.</p>
+            </div>
           </div>
-          <div class="row row-wrap">
-            <button id="refreshCommandsBtn">Refresh Commands</button>
+          <section class="surface-shell command-bus-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Command Deck</span>
+              <span id="commandBusSummary" class="cluster-note">Route commands through the palette first. Open the raw
+                slash index only when you need the catalog.</span>
+            </div>
+            <div class="row row-wrap action-grid command-bus-primary">
+              <button id="refreshCommandsBtn" class="btn-secondary">Refresh Commands</button>
+              <button id="commandBusPaletteBtn" class="btn-secondary">Open Command Palette</button>
+              <button id="commandBusHelpBtn" class="btn-secondary">Command Help</button>
+            </div>
+            <div class="command-tray-nav" role="tablist" aria-label="Command bus tools">
+              <button id="commandIndexTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="commandIndexTray" aria-expanded="true">Command Index</button>
+              <button id="commandRoutingTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="commandRoutingTray" aria-expanded="false">Routing Notes</button>
+            </div>
+            <div id="commandIndexTray" class="command-tray-panel">
+              <div class="surface-head">
+                <span class="cluster-title">Available Commands</span>
+                <span class="cluster-note">Local actions and slash routes currently indexed.</span>
+              </div>
+              <ul id="commandList"></ul>
+            </div>
+            <div id="commandRoutingTray" class="command-tray-panel hidden" hidden>
+              <div class="surface-head">
+                <span class="cluster-title">Routing Notes</span>
+                <span class="cluster-note">Prefer the palette for discovery, keep slash commands concise, and reserve
+                  the raw index for low-level recall.</span>
+              </div>
+              <div class="workspace-action-hint-list">
+                <div class="workspace-action-hint">Use <code>Ctrl/Cmd + K</code> to route workflow actions and promoted
+                  verification shortcuts.</div>
+                <div class="workspace-action-hint">Use <code>/help</code> to inspect the active slash catalog from the
+                  prompt surface.</div>
+                <div class="workspace-action-hint">Keep raw command refresh explicit so the index stays local,
+                  deterministic, and audit-friendly.</div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </aside>
+
+      <section id="settingsMenuPanel" class="panel panel-settings settings-drawer hidden" aria-hidden="true">
+        <div class="panel-head">
+          <div class="panel-head-copy">
+            <h2>Settings Menu</h2>
+            <p class="panel-note">Profiles, safety defaults, and workspace behavior.</p>
           </div>
-          <ul id="commandList"></ul>
+          <button id="settingsMenuCloseBtn" class="btn-secondary" aria-controls="settingsMenuPanel">Close</button>
+        </div>
+        <p class="settings-menu-note">Set up the bridge, choose a model, then tune local defaults and guarded state
+          transfer.</p>
+
+        <div class="surface-shell settings-shell">
+          <div class="surface-head">
+            <span class="cluster-title">Drawer Status</span>
+            <span class="cluster-note">Current bridge health and workspace safety state.</span>
+          </div>
+          <div class="settings-status-grid">
+            <div class="settings-status-card">
+              <span class="stat-label">Bridge Status</span>
+              <div id="bridgeStatusText"></div>
+            </div>
+            <div class="settings-status-card">
+              <span class="stat-label">Workspace Mode</span>
+              <div id="workspaceModeText"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">LLM Setup</span>
+              <span class="cluster-note">Bring the local bridge online, pick the active model, and decide whether remote
+                gateways are allowed.</span>
+            </div>
+            <div class="form-grid">
+              <label class="field-block" for="settingsModelSelect">
+                <span>Active Model</span>
+                <select id="settingsModelSelect"></select>
+              </label>
+              <div class="field-block">
+                <span>Active Provider</span>
+                <div id="settingsProviderSummaryText" class="panel-note">Local Ollama profile is active.</div>
+              </div>
+              <div class="field-block">
+                <span>Bridge Actions</span>
+                <div class="row row-wrap action-grid settings-inline-actions settings-action-grid">
+                  <button id="settingsDetectBridgeBtn" class="btn-primary">Detect Local Bridge</button>
+                  <button id="refreshSettingsModelsBtn" class="btn-secondary">Refresh Models</button>
+                  <button id="bridgeHealthBtn" class="btn-secondary">Bridge Health</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-connection-grid">
+              <div class="surface-shell settings-mode-shell">
+                <div class="surface-head">
+                  <span class="cluster-title">Connection Group</span>
+                  <span id="settingsConnectionModeText" class="cluster-note">Offline Mode is on. Hosted providers stay
+                    blocked.</span>
+                </div>
+                <label class="mode-switch settings-mode-switch" for="allowRemoteBridgeInput">
+                  <span class="mode-switch-copy">
+                    <span class="mode-switch-label">Hosted Access</span>
+                    <span class="mode-switch-note">Turn this on only when you want a hosted or OpenAI-compatible
+                      provider to take live traffic. Apply Settings to save the draft.</span>
+                  </span>
+                  <input id="allowRemoteBridgeInput" type="checkbox" role="switch" />
+                  <span class="mode-switch-track" aria-hidden="true">
+                    <span class="mode-switch-thumb"></span>
+                  </span>
+                </label>
+              </div>
+              <div class="settings-preference-stack">
+                <label class="settings-toggle-card" for="connectOnStartupInput">
+                  <input id="connectOnStartupInput" type="checkbox" />
+                  <span class="settings-toggle-body">
+                    <span class="settings-toggle-title">Reconnect On Startup</span>
+                    <span class="settings-toggle-note">Probe the live bridge as soon as NeuralShell opens.</span>
+                  </span>
+                </label>
+                <label class="settings-toggle-card" for="autoLoadRecommendedContextProfileInput">
+                  <input id="autoLoadRecommendedContextProfileInput" type="checkbox" />
+                  <span class="settings-toggle-body">
+                    <span class="settings-toggle-title">Auto-Load Context Hints</span>
+                    <span class="settings-toggle-note">Pull in the recommended context profile when workflows
+                      change.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-quickstart-shell">
+              <div class="surface-head">
+                <span class="cluster-title">Provider Presets</span>
+                <span class="cluster-note">Jump into a saved provider profile, load a draft into the editor, or import
+                  hosted profiles from environment keys.</span>
+              </div>
+              <div id="providerPresetList" class="provider-preset-list"></div>
+              <div class="row row-wrap action-grid settings-inline-actions">
+                <button id="importEnvProfilesBtn" class="btn-secondary">Import Env Profiles</button>
+                <button id="runProviderSweepBtn" class="btn-secondary">Run Provider Sweep</button>
+              </div>
+              <div id="envProfileSummaryText" class="panel-note">No env-backed hosted providers detected yet.</div>
+              <div id="providerSweepSummaryText" class="panel-note">Run Provider Sweep to verify each provider profile from inside NeuralShell.</div>
+              <div id="providerSweepList" class="provider-sweep-list"></div>
+            </div>
+
+            <div class="settings-quickstart-shell">
+              <div class="surface-head">
+                <span class="cluster-note">Direct actions to restore operation if the bridge is not ready.</span>
+              </div>
+              <div id="settingsQuickstartList" class="settings-quickstart-list"></div>
+            </div>
+          </div>
+
+          <div class="panel-head">
+            <div class="panel-head-copy">
+              <h2>Bridge Profiles</h2>
+              <p class="panel-note">Save repeatable bridge and model presets for local and guarded remote groups.</p>
+            </div>
+            <button id="onboardingResetBtn" class="btn-secondary">Re-run Onboarding</button>
+          </div>
+
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Profile Editor</span>
+              <span class="cluster-note">Define a bridge target, default model, timeout, and retry connectivity you can
+                re-apply in one click.</span>
+            </div>
+            <div class="form-grid">
+              <label class="field-block" for="profileSelect">
+                <span>Profile</span>
+                <select id="profileSelect"></select>
+              </label>
+              <label class="field-block" for="profileNameInput">
+                <span>Profile Name</span>
+                <input id="profileNameInput" placeholder="Local Ollama" />
+              </label>
+              <label class="field-block" for="profileBaseUrlInput">
+                <span>Profile Base URL</span>
+                <input id="profileBaseUrlInput" placeholder="http://127.0.0.1:11434" />
+              </label>
+              <label class="field-block" for="profileProviderSelect">
+                <span>Provider</span>
+                <select id="profileProviderSelect"></select>
+              </label>
+              <label class="field-block" for="profileTimeoutInput">
+                <span>Profile Timeout (ms)</span>
+                <input id="profileTimeoutInput" type="number" min="1000" />
+              </label>
+              <label class="field-block" for="profileRetryInput">
+                <span>Profile Retry Count</span>
+                <input id="profileRetryInput" type="number" min="0" />
+              </label>
+              <label class="field-block" for="profileDefaultModelSelect">
+                <span>Profile Default Model</span>
+                <select id="profileDefaultModelSelect"></select>
+              </label>
+              <label class="field-block" for="profileApiKeyInput">
+                <span>API Key</span>
+                <input id="profileApiKeyInput" type="password" placeholder="Only needed for hosted providers" />
+              </label>
+            </div>
+            <p id="profileProviderHintText" class="panel-note">Local Ollama profiles do not need an API key.</p>
+            <div id="profileTestResultText" class="panel-note profile-test-result">Test the current draft before saving
+              or using it.</div>
+            <div id="profileTestHintText" class="panel-note profile-test-hint">The test result will explain the next fix
+              for this provider.</div>
+
+            <div class="row row-wrap action-grid profile-action-grid">
+              <button id="profileNewBtn" class="btn-secondary">New Profile</button>
+              <button id="profileTestBtn" class="btn-secondary">Test Profile</button>
+              <button id="profileSaveBtn" class="btn-primary">Save Profile</button>
+              <button id="profileDeleteBtn" class="btn-danger">Delete Profile</button>
+              <button id="profileUseBtn" class="btn-secondary">Use Profile</button>
+            </div>
+          </div>
+
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Workspace Defaults</span>
+              <span class="cluster-note">Shape theme, token budget, and autosave without changing the bridge or model
+                setup.</span>
+            </div>
+            <div class="form-grid">
+              <label class="field-block" for="baseUrlInput">
+                <span>Base URL</span>
+                <input id="baseUrlInput" placeholder="http://127.0.0.1:11434" />
+              </label>
+              <label class="field-block" for="timeoutInput">
+                <span>Timeout (ms)</span>
+                <input id="timeoutInput" type="number" min="1" />
+              </label>
+              <label class="field-block" for="retryInput">
+                <span>Retry Count</span>
+                <input id="retryInput" type="number" min="0" />
+              </label>
+              <label class="field-block" for="themeSelect">
+                <span>Theme</span>
+                <select id="themeSelect"></select>
+              </label>
+              <label class="field-block" for="tokenBudgetInput">
+                <span>Token Budget</span>
+                <input id="tokenBudgetInput" type="number" min="1" />
+              </label>
+              <label class="field-block" for="autosaveNameInput">
+                <span>Autosave Name</span>
+                <input id="autosaveNameInput" />
+              </label>
+              <label class="field-block" for="autosaveIntervalInput">
+                <span>Autosave Interval (min)</span>
+                <input id="autosaveIntervalInput" type="number" min="1" />
+              </label>
+            </div>
+
+            <div class="toggle-stack">
+              <label class="field-inline checkbox-field" for="autosaveEnabledInput">
+                <input id="autosaveEnabledInput" type="checkbox" />
+                <span>Autosave Enabled</span>
+              </label>
+            </div>
+
+            <div class="row row-wrap action-grid">
+              <button id="applySettingsBtn" class="btn-primary">Apply Settings</button>
+            </div>
+          </div>
+
+          <div class="surface-shell settings-form-shell">
+            <div class="surface-head">
+              <span class="cluster-title">State Transfer</span>
+              <span class="cluster-note">Export or import console state inside the guarded workspace.</span>
+            </div>
+            <div class="row row-wrap action-grid">
+              <button id="exportStateBtn" class="btn-secondary">Export State</button>
+              <input id="importStateFile" type="file" />
+              <button id="importStateBtn" class="btn-secondary">Import State</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <button id="rightPaneResizeHandle" class="pane-splitter pane-splitter-right" type="button"
+        aria-label="Resize thread and system groups"></button>
+
+      <aside class="workspace-column workspace-right-column">
+        <section class="surface-shell system-shell">
+          <div class="surface-head">
+            <span class="cluster-title">System Panel</span>
+            <span id="systemSummaryText" class="cluster-note">Switch between workbench, performance, shipping, and
+              context
+              surfaces without crowding the center thread.</span>
+          </div>
+          <div class="system-nav" role="tablist" aria-label="System sections">
+            <button id="systemWorkbenchBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemWorkbenchSection" aria-expanded="true">
+              <span class="system-nav-label">Workbench</span>
+              <span id="systemWorkbenchStateText" class="system-nav-state">Artifact dock ready</span>
+              <span id="systemWorkbenchSummaryText" class="system-nav-summary">Artifacts, patch review, and
+                guarded apply stay here so the center thread can stay clean.</span>
+            </button>
+            <button id="systemPerformanceBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemPerformanceSection" aria-expanded="false">
+              <span class="system-nav-label">Performance</span>
+              <span id="systemPerformanceStateText" class="system-nav-state">Bridge status</span>
+              <span id="systemPerformanceSummaryText" class="system-nav-summary">Health, trace control, and raw
+                logs.</span>
+            </button>
+            <button id="systemShippingBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemShippingSection" aria-expanded="false">
+              <span class="system-nav-label">Shipping</span>
+              <span id="systemShippingStateText" class="system-nav-state">Shipping group idle</span>
+              <span id="systemShippingSummaryText" class="system-nav-summary">Gating, verification, and packet
+                export.</span>
+            </button>
+            <button id="systemContextBtn" class="btn-secondary tray-toggle-btn system-nav-card" type="button"
+              aria-controls="systemContextSection" aria-expanded="false">
+              <span class="system-nav-label">Context</span>
+              <span id="systemContextStateText" class="system-nav-state">Workspace memory</span>
+              <span id="systemContextSummaryText" class="system-nav-summary">Project memory and connectivity
+                snapshots.</span>
+            </button>
+          </div>
         </section>
 
-        <section class="panel panel-settings">
+        <section id="systemPerformanceSection" class="panel panel-performance system-panel">
           <div class="panel-head">
-            <h2>Settings</h2>
-          </div>
-
-          <div class="panel-head">
-            <h2>Connection Profiles</h2>
-            <button id="onboardingResetBtn">Re-run Onboarding</button>
-          </div>
-
-          <div class="form-grid">
-            <label class="field-block" for="profileSelect">
-              <span>Profile</span>
-              <select id="profileSelect"></select>
-            </label>
-            <label class="field-block" for="profileNameInput">
-              <span>Profile Name</span>
-              <input id="profileNameInput" placeholder="Local Ollama" />
-            </label>
-            <label class="field-block" for="profileBaseUrlInput">
-              <span>Profile Base URL</span>
-              <input id="profileBaseUrlInput" placeholder="http://127.0.0.1:11434" />
-            </label>
-            <label class="field-block" for="profileTimeoutInput">
-              <span>Profile Timeout (ms)</span>
-              <input id="profileTimeoutInput" type="number" min="1000" />
-            </label>
-            <label class="field-block" for="profileRetryInput">
-              <span>Profile Retry Count</span>
-              <input id="profileRetryInput" type="number" min="0" />
-            </label>
-          </div>
-
-          <div class="row row-wrap">
-            <button id="profileNewBtn">New Profile</button>
-            <button id="profileSaveBtn">Save Profile</button>
-            <button id="profileDeleteBtn">Delete Profile</button>
-            <button id="profileUseBtn">Use Profile</button>
-          </div>
-
-          <div class="form-grid">
-            <label class="field-block" for="baseUrlInput">
-              <span>Base URL</span>
-              <input id="baseUrlInput" placeholder="http://127.0.0.1:11434" />
-            </label>
-            <label class="field-block" for="timeoutInput">
-              <span>Timeout (ms)</span>
-              <input id="timeoutInput" type="number" min="1" />
-            </label>
-            <label class="field-block" for="retryInput">
-              <span>Retry Count</span>
-              <input id="retryInput" type="number" min="0" />
-            </label>
-            <label class="field-block" for="themeSelect">
-              <span>Theme</span>
-              <select id="themeSelect"></select>
-            </label>
-            <label class="field-block" for="tokenBudgetInput">
-              <span>Token Budget</span>
-              <input id="tokenBudgetInput" type="number" min="1" />
-            </label>
-            <label class="field-block" for="autosaveNameInput">
-              <span>Autosave Name</span>
-              <input id="autosaveNameInput" />
-            </label>
-            <label class="field-block" for="autosaveIntervalInput">
-              <span>Autosave Interval (min)</span>
-              <input id="autosaveIntervalInput" type="number" min="1" />
-            </label>
-            <label class="field-inline checkbox-field" for="autosaveEnabledInput">
-              <input id="autosaveEnabledInput" type="checkbox" />
-              <span>Autosave Enabled</span>
-            </label>
-          </div>
-
-          <div class="row row-wrap">
-            <button id="applySettingsBtn">Apply Settings</button>
-            <button id="exportStateBtn">Export State</button>
-            <input id="importStateFile" type="file" />
-            <button id="importStateBtn">Import State</button>
-          </div>
-        </section>
-
-        <section class="panel panel-runtime">
-          <div class="panel-head">
-            <h2>Runtime</h2>
+            <div class="panel-head-copy">
+              <h2>Performance</h2>
+              <p class="panel-note">Diagnostics, trace control, and raw performance surfaces for the active operator
+                group.
+              </p>
+            </div>
           </div>
 
           <div class="stats-grid">
-            <div>
+            <div class="stats-card">
               <span class="stat-label">CPU</span>
               <div id="cpuUsage"></div>
             </div>
-            <div>
+            <div class="stats-card">
               <span class="stat-label">Memory</span>
               <div id="memoryUsage"></div>
             </div>
-            <div>
+            <div class="stats-card">
               <span class="stat-label">Platform</span>
               <div id="platformInfo"></div>
             </div>
-            <div>
+            <div class="stats-card">
               <span class="stat-label">Clock</span>
               <div id="clockTime"></div>
             </div>
           </div>
 
-          <div class="row row-wrap">
-            <button id="runSelfTestBtn">Self Test</button>
-            <button id="runButtonAuditBtn">Button Audit</button>
-            <button id="loadLogsBtn">Load Logs</button>
-            <button id="clearLogsBtn">Clear Logs</button>
-            <button id="exportLogsBtn">Export Logs</button>
-            <button id="loadChatLogsBtn">Load Chat Logs</button>
-            <button id="clearChatLogsBtn">Clear Chat Logs</button>
-            <button id="exportChatLogsBtn">Export Chat Logs</button>
-          </div>
+          <section class="surface-shell performance-command-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Performance Command Deck</span>
+              <span class="cluster-note">Keep shipping controls visible. Stage diagnostics, trace control, and raw
+                outputs only when needed.</span>
+            </div>
+            <div class="performance-tray-nav" role="tablist" aria-label="Performance tools">
+              <button id="performanceDiagnosticsTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="performanceDiagnosticsTray" aria-expanded="true">Diagnostics</button>
+              <button id="performanceTraceTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="performanceTraceTray" aria-expanded="false">Trace Control</button>
+              <button id="performanceOutputTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="performanceOutputTray" aria-expanded="false">Output Surfaces</button>
+            </div>
+            <div id="performanceDiagnosticsTray" class="performance-tray-panel">
+              <div class="surface-head">
+                <span class="cluster-title">Diagnostics</span>
+                <span class="cluster-note">Run integrity checks and pull the latest performance traces without keeping
+                  every
+                  tool expanded.</span>
+              </div>
+              <div class="row row-wrap action-grid">
+                <button id="runSelfTestBtn" class="btn-secondary">Self Test</button>
+                <button id="runButtonAuditBtn" class="btn-secondary">Button Audit</button>
+                <button id="loadLogsBtn" class="btn-secondary">Load Logs</button>
+                <button id="loadChatLogsBtn" class="btn-secondary">Load Chat Logs</button>
+              </div>
+            </div>
+            <div id="performanceTraceTray" class="performance-tray-panel hidden" hidden>
+              <div class="surface-head">
+                <span class="cluster-title">Trace Control</span>
+                <span class="cluster-note">Purge or export performance and chat trails only when you are managing the
+                  trace
+                  surface.</span>
+              </div>
+              <div class="row row-wrap action-grid">
+                <button id="clearLogsBtn" class="btn-danger">Clear Logs</button>
+                <button id="exportLogsBtn" class="btn-secondary">Export Logs</button>
+                <button id="clearChatLogsBtn" class="btn-danger">Clear Chat Logs</button>
+                <button id="exportChatLogsBtn" class="btn-secondary">Export Chat Logs</button>
+              </div>
+            </div>
+            <div id="performanceOutputTray" class="performance-tray-panel hidden" hidden>
+              <div class="surface-head">
+                <span class="cluster-title">Output Surfaces</span>
+                <span class="cluster-note">Inspect one raw output surface at a time instead of keeping all logs fully
+                  expanded.</span>
+              </div>
+              <div class="performance-output-nav" role="tablist" aria-label="Performance outputs">
+                <button id="performanceAuditOutputBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="performanceAuditOutputPanel" aria-expanded="true">Button Audit</button>
+                <button id="performanceLogsOutputBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="performanceLogsOutputPanel" aria-expanded="false">Performance Logs</button>
+                <button id="performanceChatLogsOutputBtn" class="btn-secondary tray-toggle-btn" type="button"
+                  aria-controls="performanceChatLogsOutputPanel" aria-expanded="false">Chat Logs</button>
+              </div>
+              <div id="performanceAuditOutputPanel" class="performance-output-panel">
+                <div class="output-head">
+                  <span class="cluster-title">Button Audit</span>
+                  <span class="cluster-note">Surface integrity and binding coverage.</span>
+                </div>
+                <pre id="buttonAuditOutput"></pre>
+              </div>
+              <div id="performanceLogsOutputPanel" class="performance-output-panel hidden" hidden>
+                <div class="output-head">
+                  <span class="cluster-title">Performance Logs</span>
+                  <span class="cluster-note">System diagnostics and shipping-state events.</span>
+                </div>
+                <pre id="logsOutput"></pre>
+              </div>
+              <div id="performanceChatLogsOutputPanel" class="performance-output-panel hidden" hidden>
+                <div class="output-head">
+                  <span class="cluster-title">Chat Logs</span>
+                  <span class="cluster-note">Conversation event stream and assistant payloads.</span>
+                </div>
+                <pre id="chatLogsOutput"></pre>
+                <div id="statusLabel" class="hidden" aria-hidden="true"></div>
+                <div id="statusMeta" class="hidden" aria-hidden="true"></div>
+              </div>
+            </div>
+          </section>
 
-          <pre id="buttonAuditOutput"></pre>
-          <pre id="logsOutput"></pre>
-          <pre id="chatLogsOutput"></pre>
+
         </section>
 
-        <section class="panel panel-intel">
+        <section id="systemShippingSection" class="panel panel-shipping system-panel">
           <div class="panel-head">
-            <h2>Intel</h2>
+            <div class="panel-head-copy">
+              <h2>Shipping</h2>
+              <p class="panel-note">Stage shipping checks, build the packet, and export evidence from one guarded group.
+              </p>
+            </div>
           </div>
-          <div id="knowledgeFeed"></div>
-          <div id="capabilityGraph"></div>
+          <section class="surface-shell shipping-cockpit-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Shipping Cockpit</span>
+              <span class="cluster-note">Keep shipping state isolated so the center thread stays focused on the actual
+                work.</span>
+            </div>
+            <div class="shipping-cockpit-grid">
+              <div class="shipping-cockpit-summary">
+                <div id="shippingCockpitTitleText" class="workflow-title-text"></div>
+                <p id="shippingCockpitSummaryText" class="workflow-description-text"></p>
+                <div id="shippingCockpitMetaRow" class="trust-scope-row"></div>
+              </div>
+              <div class="shipping-cockpit-actions">
+                <button id="stageShippingCockpitBtn" class="btn-primary btn-action-primary">Stage Shipping
+                  Checks</button>
+                <button id="runShippingCockpitBtn" class="btn-secondary">Run Shipping Checks</button>
+                <button id="buildShippingPacketBtn" class="btn-secondary">Build Shipping Packet</button>
+                <button id="exportShippingEvidenceBtn" class="btn-secondary">Export Shipping Evidence</button>
+                <button id="openShippingPaletteBtn" class="btn-secondary">Open Shipping Palette</button>
+              </div>
+            </div>
+            <div id="shippingCockpitChecklist" class="workspace-action-hint-list"></div>
+            <div id="shippingCockpitBlockerList" class="shipping-cockpit-blocker-list"></div>
+            <div id="shippingCockpitStatusList" class="shipping-cockpit-status-list"></div>
+          </section>
         </section>
-      </section>
 
-      <section id="onboardingOverlay" class="overlay hidden" aria-hidden="true">
-        <div class="overlay-card">
-          <p class="kicker">v1.2.0 Foundation</p>
-          <h2>Welcome to NeuralShell</h2>
-          <p class="subtitle">Quick setup to get your first reliable session running.</p>
-          <div class="form-grid">
-            <label class="field-block" for="onboardingModelSelect">
-              <span>Default Model</span>
-              <select id="onboardingModelSelect"></select>
-            </label>
-            <label class="field-inline checkbox-field" for="onboardingAutoScrollInput">
-              <input id="onboardingAutoScrollInput" type="checkbox" checked />
-              <span>Enable Auto Scroll</span>
-            </label>
-            <label class="field-inline checkbox-field" for="onboardingRememberInput">
-              <input id="onboardingRememberInput" type="checkbox" checked />
-              <span>Remember completion</span>
-            </label>
+        <section id="systemWorkbenchSection" class="panel panel-intel system-panel">
+          <div class="panel-head">
+            <div class="panel-head-copy">
+              <h2>Workbench</h2>
+              <p class="panel-note">Artifacts, patch review, guarded apply, and workspace context around the active
+                thread.</p>
+            </div>
           </div>
-          <div class="row row-wrap">
-            <button id="onboardingStartBtn">Start Console</button>
-            <button id="onboardingSkipBtn">Skip Setup</button>
+          <section class="workbench-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Execution Workbench</span>
+              <span class="cluster-note">Keep heavy review and apply work in the right group so the active thread stays
+                calm.</span>
+            </div>
+            <div class="workbench-nav" aria-label="Workbench sections">
+              <button id="workbenchArtifactBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="workbenchArtifactSection" aria-expanded="true">
+                <span class="workbench-nav-card">
+                  <span class="workbench-nav-label">Outputs</span>
+                  <span id="workbenchArtifactStateText" class="workbench-nav-state">No artifact yet</span>
+                  <span id="workbenchArtifactSummaryText" class="workbench-nav-summary">Latest structured output,
+                    evidence export, and shipping packet compare.</span>
+                </span>
+              </button>
+              <button id="workbenchPatchBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="workbenchPatchSection" aria-expanded="false">
+                <span class="workbench-nav-card">
+                  <span class="workbench-nav-label">Review Changes</span>
+                  <span id="workbenchPatchStateText" class="workbench-nav-state">No patch plan</span>
+                  <span id="workbenchPatchSummaryText" class="workbench-nav-summary">Preview grouped diffs, verification
+                    runs, and guarded patch apply.</span>
+                </span>
+              </button>
+              <button id="workbenchApplyBtn" class="btn-secondary tray-toggle-btn btn-action-primary" type="button"
+                aria-controls="workbenchApplySection" aria-expanded="false">
+                <span class="workbench-nav-card">
+                  <span class="workbench-nav-label">Apply Changes</span>
+                  <span id="workbenchApplyStateText" class="workbench-nav-state">No apply draft</span>
+                  <span id="workbenchApplySummaryText" class="workbench-nav-summary">Target one file, preview the diff,
+                    then write locally with intent.</span>
+                </span>
+              </button>
+            </div>
+
+            <section id="workbenchArtifactSection" class="surface-shell artifact-shell workbench-surface">
+              <div class="surface-head">
+                <span class="cluster-title">Artifact Dock</span>
+                <span class="cluster-note">Preview the latest structured output, then export, copy, or package the
+                  evidence bundle.</span>
+              </div>
+              <div class="artifact-headline">
+                <div id="artifactTitleText" class="workflow-title-text"></div>
+                <div id="artifactMetaText" class="cluster-note"></div>
+              </div>
+              <pre id="artifactPreview"></pre>
+              <div class="row row-wrap action-grid">
+                <button id="copyArtifactBtn" class="btn-secondary">Copy Artifact</button>
+                <button id="exportArtifactMarkdownBtn" class="btn-secondary">Export Artifact Markdown</button>
+                <button id="exportArtifactJsonBtn" class="btn-secondary">Export Artifact JSON</button>
+                <button id="saveArtifactSessionBtn" class="btn-primary">Save Session Snapshot</button>
+                <button id="exportEvidenceBundleBtn" class="btn-secondary">Export Evidence Bundle</button>
+              </div>
+              <div class="artifact-history-shell">
+                <div class="surface-head">
+                  <span class="cluster-title">Shipping History</span>
+                  <span class="cluster-note">Bounded local ledger of generated shipping packets. Reload one into the
+                    dock
+                    or clear old packet history.</span>
+                </div>
+                <div id="artifactHistoryList" class="artifact-history-list"></div>
+                <div class="row row-wrap action-grid">
+                  <button id="clearArtifactHistoryBtn" class="btn-secondary">Clear Packet History</button>
+                </div>
+              </div>
+              <div class="artifact-history-shell">
+                <div class="surface-head">
+                  <span class="cluster-title">Packet Compare</span>
+                  <span id="artifactCompareMetaText" class="cluster-note">Build at least two shipping packets to compare
+                    revisions side by side.</span>
+                </div>
+                <div id="artifactCompareDiffList" class="artifact-history-list"></div>
+                <div class="artifact-compare-grid">
+                  <div class="workspace-action-card artifact-compare-card">
+                    <div id="artifactCompareLeftTitle" class="workflow-title-text">Compare A</div>
+                    <div id="artifactCompareLeftMeta" class="cluster-note">Select a shipping packet from history.</div>
+                    <pre id="artifactCompareLeftPreview"></pre>
+                  </div>
+                  <div class="workspace-action-card artifact-compare-card">
+                    <div id="artifactCompareRightTitle" class="workflow-title-text">Compare B</div>
+                    <div id="artifactCompareRightMeta" class="cluster-note">Select a second shipping packet from
+                      history.
+                    </div>
+                    <pre id="artifactCompareRightPreview"></pre>
+                  </div>
+                </div>
+                <div class="row row-wrap action-grid">
+                  <button id="clearArtifactCompareBtn" class="btn-secondary">Reset Compare</button>
+                </div>
+              </div>
+            </section>
+
+            <section id="workbenchPatchSection" class="surface-shell patch-plan-shell workbench-surface hidden" hidden
+              aria-hidden="true">
+              <div class="surface-head">
+                <span class="cluster-title">Review Changes</span>
+                <span class="cluster-note">Preview a multi-file plan, inspect per-file diffs, then apply selected
+                  changes inside the attached workspace.</span>
+              </div>
+              <div class="patch-plan-summary">
+                <div class="artifact-headline">
+                  <div id="patchPlanTitleText" class="workflow-title-text"></div>
+                  <div id="patchPlanMetaText" class="cluster-note"></div>
+                </div>
+                <p id="patchPlanSummaryText" class="workflow-description-text"></p>
+                <div id="patchPlanProvenanceText" class="cluster-note"></div>
+                <pre id="patchPlanVerification"></pre>
+              </div>
+              <div class="row row-wrap action-grid">
+                <button id="loadArtifactPatchPlanBtn" class="btn-secondary">Load Artifact as Patch Plan</button>
+                <button id="previewPatchPlanBtn" class="btn-secondary">Preview Patch Plan</button>
+                <button id="applySelectedPatchPlanBtn" class="btn-primary">Apply Selected</button>
+                <button id="applyAllPatchPlanBtn" class="btn-secondary">Apply All</button>
+                <button id="exportPatchPlanJsonBtn" class="btn-secondary">Export Plan JSON</button>
+                <button id="exportPatchPlanMarkdownBtn" class="btn-secondary">Export Plan Markdown</button>
+                <button id="savePatchPlanSessionBtn" class="btn-secondary">Save Plan Session</button>
+              </div>
+              <div class="patch-plan-shortcut-shell">
+                <div class="surface-head">
+                  <span class="cluster-title">Verification Shortcuts</span>
+                  <span class="cluster-note">Reusable palette actions promoted from patch groups. Load, reorder, or
+                    remove them here.</span>
+                </div>
+                <div id="patchPlanShortcutList" class="patch-plan-shortcut-list"></div>
+              </div>
+              <div class="verification-run-shell">
+                <div class="surface-head">
+                  <span class="cluster-title">Verification Run Plan</span>
+                  <span class="cluster-note">Stage an explicit local run plan from a patch group, preview the exact npm
+                    scripts, then run the selected checks.</span>
+                </div>
+                <div class="artifact-headline">
+                  <div id="verificationRunTitleText" class="workflow-title-text"></div>
+                  <div id="verificationRunMetaText" class="cluster-note"></div>
+                </div>
+                <div class="row row-wrap action-grid">
+                  <button id="runVerificationPlanBtn" class="btn-primary">Run Selected Checks</button>
+                  <button id="copyVerificationCommandsBtn" class="btn-secondary">Copy Commands</button>
+                  <button id="clearVerificationPlanBtn" class="btn-secondary">Clear Plan</button>
+                </div>
+                <div id="verificationRunList" class="verification-run-list"></div>
+                <pre id="verificationRunOutput"></pre>
+                <div class="artifact-history-shell">
+                  <div class="surface-head">
+                    <span class="cluster-title">Run History</span>
+                    <span id="verificationRunHistoryMetaText" class="cluster-note">Recent local verification snapshots
+                      will appear here after you run a staged plan.</span>
+                  </div>
+                  <div class="artifact-history-filter-row">
+                    <label class="field-block" for="verificationRunHistoryWorkflowFilter">
+                      <span>Workflow</span>
+                      <select id="verificationRunHistoryWorkflowFilter"></select>
+                    </label>
+                    <label class="field-block" for="verificationRunHistoryGroupFilter">
+                      <span>Group</span>
+                      <select id="verificationRunHistoryGroupFilter"></select>
+                    </label>
+                    <label class="field-block" for="verificationRunHistoryWorkspaceFilter">
+                      <span>Workspace</span>
+                      <select id="verificationRunHistoryWorkspaceFilter"></select>
+                    </label>
+                    <div class="field-block">
+                      <span>Filters</span>
+                      <button id="resetVerificationRunHistoryFiltersBtn" class="btn-secondary">Reset Filters</button>
+                    </div>
+                  </div>
+                  <div id="verificationRunHistoryList" class="artifact-history-list"></div>
+                  <div class="row row-wrap action-grid">
+                    <button id="clearVerificationRunHistoryBtn" class="btn-secondary">Clear Run History</button>
+                  </div>
+                </div>
+              </div>
+              <div id="patchPlanFileList" class="patch-plan-file-list"></div>
+              <pre id="patchPlanPreview"></pre>
+            </section>
+
+            <section id="workbenchApplySection" class="surface-shell workspace-action-shell workbench-surface hidden"
+              hidden aria-hidden="true">
+              <div class="surface-head">
+                <span class="cluster-title">Apply Changes</span>
+                <span class="cluster-note">Propose a guarded local write, inspect the exact file preview, then apply it
+                  inside the attached workspace.</span>
+              </div>
+              <div class="workspace-edit-draft">
+                <div class="surface-head">
+                  <span class="cluster-title">Diff Edit Draft</span>
+                  <span class="cluster-note">Target a file inside the attached workspace, load draft content, preview
+                    the diff, then apply the replacement explicitly.</span>
+                </div>
+                <label class="field-block" for="workspaceEditPathInput">
+                  <span>Target Path</span>
+                  <input id="workspaceEditPathInput" placeholder="docs/bridge-diagnostics-draft.md" />
+                </label>
+                <label class="field-block" for="workspaceEditContentInput">
+                  <span>Draft Content</span>
+                  <textarea id="workspaceEditContentInput"
+                    placeholder="Paste or load the replacement content for the file edit preview."></textarea>
+                </label>
+                <div class="row row-wrap action-grid">
+                  <button id="loadArtifactIntoEditBtn" class="btn-secondary">Load Artifact Into Draft</button>
+                  <button id="previewWorkspaceEditBtn" class="btn-primary">Preview Diff Edit</button>
+                </div>
+              </div>
+              <div id="workspaceActionList" class="workspace-action-list"></div>
+              <div class="workspace-action-preview-shell">
+                <div class="artifact-headline">
+                  <div id="workspaceActionPreviewTitle" class="workflow-title-text"></div>
+                  <div id="workspaceActionPreviewMeta" class="cluster-note"></div>
+                </div>
+                <pre id="workspaceActionPreview"></pre>
+                <div class="row row-wrap action-grid">
+                  <button id="applyWorkspaceActionBtn" class="btn-primary">Apply Previewed Action</button>
+                  <button id="clearWorkspaceActionPreviewBtn" class="btn-secondary">Clear Preview</button>
+                </div>
+              </div>
+            </section>
+          </section>
+        </section>
+        <section id="systemContextSection" class="panel panel-context system-panel">
+          <div class="panel-head">
+            <div class="panel-head-copy">
+              <h2>Context</h2>
+              <p class="panel-note">Workspace memory, repo context, and live connectivity for the current root.</p>
+            </div>
           </div>
+          <div class="surface-shell operator-memory-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Recall & Recents</span>
+              <span class="cluster-note">Recover unsent drafts, reopen recent work, and keep your layout warm.</span>
+            </div>
+            <div class="operator-memory-grid">
+              <article class="operator-memory-card operator-memory-copy">
+                <span class="stat-label">Draft Recall</span>
+                <div id="operatorMemorySummaryText" class="operator-memory-item-title">No saved draft yet.</div>
+                <p id="operatorMemoryDraftText" class="cluster-note">Start typing in the prompt editor and NeuralShell
+                  will keep the draft local to this device.</p>
+                <div class="operator-memory-actions">
+                  <button id="restoreDraftBtn" class="btn-secondary">Restore Draft</button>
+                  <button id="clearDraftBtn" class="btn-secondary">Clear Draft</button>
+                </div>
+              </article>
+              <article class="operator-memory-card">
+                <div class="surface-head">
+                  <span class="cluster-title">Recent Prompts</span>
+                  <span class="cluster-note">Reuse high-value prompts without digging through the full chat
+                    history.</span>
+                </div>
+                <div id="recentPromptList" class="operator-memory-list"></div>
+              </article>
+              <article class="operator-memory-card">
+                <div class="surface-head">
+                  <span class="cluster-title">Recent Workspaces</span>
+                  <span class="cluster-note">Reattach the last trusted roots and keep repo context hot.</span>
+                </div>
+                <div id="recentWorkspaceList" class="operator-memory-list"></div>
+              </article>
+            </div>
+          </div>
+          <div class="surface-shell workspace-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Workspace</span>
+              <span class="cluster-note">Attach one local project root for context packs, artifact exports, and evidence
+                bundles.</span>
+            </div>
+            <div class="row row-wrap action-grid">
+              <button id="attachWorkspaceBtn" class="btn-primary btn-action-primary">Attach Workspace</button>
+              <button id="clearWorkspaceBtn" class="btn-secondary">Clear Workspace</button>
+            </div>
+            <div id="workspaceSummaryText" class="workspace-summary-text"></div>
+          </div>
+          <div class="surface-shell context-pack-shell">
+            <div class="surface-head">
+              <span class="cluster-title">Project Context</span>
+              <span class="cluster-note">Select trusted local files, build reusable repo memory, and feed that context
+                into workflows and exports.</span>
+            </div>
+            <div class="row row-wrap action-grid context-pack-profile-row">
+              <label class="field-block" for="contextPackProfileSelect">
+                <span>Saved Profiles</span>
+                <select id="contextPackProfileSelect"></select>
+              </label>
+              <button id="saveContextPackProfileBtn" class="btn-secondary">Save Profile</button>
+              <button id="loadContextPackProfileBtn" class="btn-secondary">Load Profile</button>
+              <button id="refreshContextPackProfileBtn" class="btn-secondary">Refresh Profile</button>
+              <button id="deleteContextPackProfileBtn" class="btn-secondary">Delete Profile</button>
+            </div>
+            <div class="row row-wrap context-pack-link-row">
+              <div id="contextPackWorkflowLinkText" class="cluster-note"></div>
+              <button id="loadRecommendedContextPackProfileBtn" class="btn-secondary">Load Recommended</button>
+            </div>
+            <div class="workflow-console-grid">
+              <label class="field-block" for="contextPackNameInput">
+                <span>Pack Name</span>
+                <input id="contextPackNameInput" placeholder="Performance Audit Context" />
+              </label>
+              <label class="field-block" for="contextPackPathsInput">
+                <span>Relative Paths</span>
+                <textarea id="contextPackPathsInput" rows="4" placeholder="README.md&#10;package.json"></textarea>
+              </label>
+            </div>
+            <div class="row row-wrap action-grid">
+              <button id="suggestContextPackFilesBtn" class="btn-secondary">Suggest Files</button>
+              <button id="buildContextPackBtn" class="btn-primary">Build Context Pack</button>
+              <button id="clearContextPackBtn" class="btn-secondary">Clear Context Pack</button>
+            </div>
+            <div id="contextPackProfileStatusText" class="cluster-note"></div>
+            <div id="contextPackSummaryText" class="workspace-summary-text"></div>
+            <pre id="contextPackPreview" class="context-pack-preview"></pre>
+          </div>
+          <section id="intelligencePanel" class="surface-shell intelligence-panel">
+            <div class="surface-head">
+              <span class="cluster-title">Intelligence Flow</span>
+              <span class="cluster-note">Workflow insights, knowledge feed, and the safest next move for the current
+                context.</span>
+            </div>
+            <div id="intelCapabilityText"></div>
+            <div id="intelModeText"></div>
+            <div id="intelBridgeText"></div>
+            <div id="intelSessionText"></div>
+          </section>
+          <section class="surface-shell intel-command-shell">
+            <div class="surface-head">
+              <span class="cluster-title">What's Next</span>
+              <span class="cluster-note">Keep the operator brief visible, then open raw knowledge and capability detail
+                only when you need it.</span>
+            </div>
+            <div class="intel-summary-grid">
+              <div class="intel-summary-card">
+                <span class="stat-label">Current Focus</span>
+                <div id="intelFocusText"></div>
+              </div>
+              <div class="intel-summary-card">
+                <span class="stat-label">Next Action</span>
+                <div id="intelNextActionText"></div>
+              </div>
+            </div>
+            <div class="intel-tray-nav" role="tablist" aria-label="Intelligence tools">
+              <button id="intelBriefTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="intelBriefTray" aria-expanded="true">What's Next</button>
+              <button id="intelKnowledgeTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="intelKnowledgeTray" aria-expanded="false">Knowledge Feed</button>
+              <button id="intelCapabilityTrayBtn" class="btn-secondary tray-toggle-btn" type="button"
+                aria-controls="intelCapabilityTray" aria-expanded="false">Capability Map</button>
+            </div>
+            <div id="intelBriefTray" class="intel-tray-panel">
+              <div class="surface-head">
+                <span class="cluster-title">Operator Brief</span>
+                <span class="cluster-note">Curated context for the active workflow, shipping state, and the safest next
+                  move.</span>
+              </div>
+              <div id="intelActionHints" class="workspace-action-hint-list"></div>
+            </div>
+            <div id="intelKnowledgeTray" class="intel-tray-panel hidden" hidden>
+              <div class="surface-head">
+                <span class="cluster-title">Knowledge Feed</span>
+                <span class="cluster-note">Live context, shipping state, and operator notes.</span>
+              </div>
+              <div id="knowledgeFeed"></div>
+            </div>
+            <div id="intelCapabilityTray" class="intel-tray-panel hidden" hidden>
+              <div class="surface-head">
+                <span class="cluster-title">Capability Map</span>
+                <span class="cluster-note">Runtime capability graph and system surface overview.</span>
+              </div>
+              <div id="capabilityGraph"></div>
+            </div>
+          </section>
+        </section>
+    </section>
+    </aside>
+    </section>
+
+    <section id="settingsMenuBackdrop" class="overlay hidden" aria-hidden="true" role="presentation"></section>
+
+    <section id="onboardingOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="onboarding-layout">
+          <section class="onboarding-copy">
+            <p class="kicker">v2.1.29 Founder Beta</p>
+            <h2>Welcome, Operator</h2>
+            <p class="subtitle">Secure, local-first AI control surface for technical professionals.</p>
+            <div class="hero-tags">
+              <span class="hero-tag">Local-First</span>
+              <span class="hero-tag">Hardened Security</span>
+              <span class="hero-tag">Deterministic Workflows</span>
+            </div>            <div class="onboarding-points">
+              <div class="onboarding-point">
+                <span class="cluster-title">1. Connect Your AI Engine</span>
+                <span class="cluster-note">Choose a local provider (Ollama, LM Studio) to begin private inference.</span>
+              </div>
+              <div class="onboarding-point">
+                <span class="cluster-title">2. Attach a Workspace</span>
+                <span class="cluster-note">Select a local directory to provide context for your private workflows.</span>
+              </div>
+              <div class="onboarding-point">
+                <span class="cluster-title">3. Start Operating</span>
+                <span class="cluster-note">Use the Command Palette (Ctrl+K) to route actions and run local rituals.</span>
+              </div>
+            </div>
+          </section>
+          <section class="onboarding-config">
+            <div id="onboardingStepHome" class="onboarding-step-content">
+              <div class="onboarding-saved-profiles">
+                <p class="field-label">Previous Profiles</p>
+                <div id="onboardingSavedProfilesList" class="stack-sm"></div>
+              </div>
+              <div class="onboarding-actions row row-wrap">
+                <button id="onboardingConfigLocalBtn" class="btn-primary">Fast Local Setup</button>
+                <button id="onboardingConfigRemoteBtn" class="btn-secondary">Advanced / Remote</button>
+              </div>
+            </div>
+
+            <div id="onboardingStepProvider" class="onboarding-step-content hidden">
+              <label class="field-block" for="onboardingProviderSelect">
+                <span>Select Provider</span>
+                <select id="onboardingProviderSelect" class="header-select" style="width: 100%; height: 40px;"></select>
+              </label>
+            </div>
+
+            <div id="onboardingStepEndpoint" class="onboarding-step-content hidden">
+              <label class="field-block" for="onboardingBaseUrlInput">
+                <span>Base URL</span>
+                <input id="onboardingBaseUrlInput" type="text" placeholder="http://127.0.0.1:11434" />
+              </label>
+              <div id="onboardingApiKeyField" class="hidden">
+                <label class="field-block" for="onboardingApiKeyInput">
+                  <span>API Key</span>
+                  <input id="onboardingApiKeyInput" type="password" />
+                </label>
+              </div>
+              <div id="onboardingTestResult" class="status-note"></div>
+            </div>
+
+            <div id="onboardingStepModel" class="onboarding-step-content hidden">
+              <label class="field-block" for="onboardingModelSelect">
+                <span>Select Model</span>
+                <select id="onboardingModelSelect" class="header-select" style="width: 100%; height: 40px;"></select>
+              </label>
+              <div id="onboardingModelStatus" class="status-note"></div>
+            </div>
+
+            <div id="onboardingStepVerify" class="onboarding-step-content hidden">
+              <p class="field-label">Verifying Integrity...</p>
+              <div class="verification-checklist">
+                <div class="verification-row">
+                  <span class="verify-label">Provider</span>
+                  <span id="verifyValProvider" class="verify-val">--</span>
+                </div>
+                <div class="verification-row">
+                  <span class="verify-label">Endpoint</span>
+                  <span id="verifyValEndpoint" class="verify-val">--</span>
+                </div>
+                <div class="verification-row">
+                  <span class="verify-label">Identity</span>
+                  <span id="verifyValSecret" class="verify-val">--</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="onboardingStepSummary" class="onboarding-step-content hidden">
+              <div class="governance-summary">
+                <div class="summary-line">
+                  <strong>Profile</strong>
+                  <span id="summaryProvider">--</span>
+                </div>
+                <div class="summary-line">
+                  <strong>Model</strong>
+                  <span id="summaryModel">--</span>
+                </div>
+                <div class="summary-line">
+                  <strong>Trust</strong>
+                  <span id="summaryTrust" class="tone-good">VERIFIED</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="onboardingStepOffline" class="onboarding-step-content hidden">
+              <div id="onboardingOfflineBanner" class="status-note tone-warn">Network connectivity is restricted.</div>
+              <p class="panel-note">You are entering an Airgapped session. Local actions only.</p>
+            </div>
+
+            <div class="onboarding-footer row row-wrap action-grid">
+              <button id="onboardingBackBtn" class="btn-secondary hidden">Back</button>
+              <button id="onboardingNextBtn" class="btn-primary">Next</button>
+              <button id="onboardingSkipBtn" class="btn-secondary">Skip Setup</button>
+              <button id="onboardingStartBtn" class="btn-primary hidden">Finish & Seal</button>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section id="commandPaletteOverlay" class="overlay hidden" aria-hidden="true">
-        <div class="overlay-card">
-          <div class="panel-head">
+    <section id="commandPaletteOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="panel-head">
+          <div class="panel-head-copy">
             <h2>Command Palette</h2>
-            <button id="commandPaletteCloseBtn">Close</button>
+            <p class="panel-note">Search command routes, local actions, and quick controls.</p>
           </div>
-          <label class="field-block" for="commandPaletteInput">
-            <span>Search</span>
-            <input id="commandPaletteInput" placeholder="Type a command or action" />
-          </label>
-          <ul id="commandPaletteList"></ul>
+          <button id="commandPaletteCloseBtn" class="btn-secondary">Close</button>
         </div>
-      </section>
-    </main>
-    <script src="renderer.js"></script>
-  </body>
+        <div class="palette-bar">
+          <span class="palette-hint">Fast route for repo context, draft recall, shipping checks, sessions, slash
+            commands, and workflow shortcuts. Prefixes: <code>profile:</code>, <code>context:</code>,
+            <code>memory:</code>, <code>workflow:</code>, <code>shipping:</code>, <code>shortcut:</code>,
+            <code>slash:</code>.</span>
+          <label class="field-inline palette-scope-field" for="commandPaletteShortcutScope">
+            <span>Shortcuts</span>
+            <select id="commandPaletteShortcutScope">
+              <option value="workflow">Current workflow</option>
+              <option value="all">All shortcuts</option>
+            </select>
+          </label>
+          <div class="palette-shortcuts" aria-hidden="true">
+            <span class="hero-tag">Enter executes</span>
+            <span class="hero-tag">Esc closes</span>
+            <span class="hero-tag">Up/down moves</span>
+          </div>
+        </div>
+        <label class="field-block" for="commandPaletteInput">
+          <span>Search</span>
+          <input id="commandPaletteInput" placeholder="Type a command or action" />
+        </label>
+        <ul id="commandPaletteList"></ul>
+      </div>
+    </section>
+
+
+    <div id="onboardingReconnectStartup" class="hidden" hidden></div>
+
+    <!-- Secret Recovery stubs -->
+    <div id="onboardingRecoveryGroup" class="hidden" hidden>
+      <input id="onboardingRecoverySecretInput" type="password" />
+      <button id="onboardingRecoverySubmitBtn" class="btn-primary">Submit</button>
+      <button id="onboardingRecoveryCancelBtn" class="btn-secondary">Cancel</button>
+      <button id="onboardingRecoveryClearBtn" class="btn-secondary">Clear</button>
+    </div>
+
+    <!-- Trust Report overlay -->
+    <section id="trustReportOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="panel-head">
+          <h2>Trust Verification Report</h2>
+          <button id="trustReportCloseBtn" class="btn-secondary">Close</button>
+        </div>
+        <div id="trustReportContent"></div>
+        <div class="row row-wrap action-grid">
+          <button id="trustReportExportJsonBtn" class="btn-secondary">Export JSON</button>
+          <button id="trustReportExportMdBtn" class="btn-secondary">Export Markdown</button>
+        </div>
+      </div>
+    </section>
+    <!-- Profile Switch Overlay (Phase 21) -->
+    <section id="profileSwitchOverlay" class="overlay hidden" aria-hidden="true">
+      <div class="overlay-card">
+        <div class="panel-head">
+          <h2>Switch Profile</h2>
+          <button id="profileSwitchCloseBtn" class="btn-secondary">Close</button>
+        </div>
+        <ul id="profileSwitchList"></ul>
+      </div>
+    </section>
+
+
+  </main>
+  <script src="core/config.js"></script>
+  <script src="uiCommandDeckConfig.js"></script>
+  <script src="airgapPolicy.js"></script>
+  <script src="bridgeProfileModel.js"></script>
+  <script src="bridgeSettingsModel.js"></script>
+  <script src="bridgeSettingsFeature.js"></script>
+  <script src="workflowCatalog.js"></script>
+  <script src="verificationCatalog.js"></script>
+  <script src="bridgeProviderCatalog.js"></script>
+  <script src="operatorMemoryStore.js"></script>
+  <script src="renderer.js"></script>
+</body>
+
 </html>

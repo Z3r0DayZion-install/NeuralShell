@@ -1,0 +1,18 @@
+{
+  "kickoffChecklist": [
+    "Confirm pilot scope and approved deployment profile.",
+    "Define success metrics and baseline measurement.",
+    "Assign stakeholder owners and review cadence.",
+    "Enable evidence export collection path."
+  ],
+  "reviewCadence": [
+    "2-week checkpoint",
+    "4-week checkpoint"
+  ],
+  "expansionMilestones": [
+    "single-site stabilization",
+    "multi-site pilot",
+    "regional rollout",
+    "federated expansion"
+  ]
+}

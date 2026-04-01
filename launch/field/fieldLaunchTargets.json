@@ -1,0 +1,12 @@
+{
+  "launchAssets": [
+    "demo_bundle",
+    "deployment_pack",
+    "training_bundle",
+    "support_pack",
+    "buyer_docs",
+    "pilot_conversion_pack",
+    "commercial_sku_matrix"
+  ],
+  "freshnessDays": 14
+}

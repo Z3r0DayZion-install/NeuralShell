@@ -1,6 +1,24 @@
 # NeuralShell
 
-NeuralShell is an Electron workstation with strict IPC validation, offline-first defaults, and release provenance gates.
+<!-- neuralshell-proof-badge:start -->
+[![Proof Locked](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/proof_badge.svg)](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/proof_badge.svg)
+<!-- neuralshell-proof-badge:end -->
+[![SOC2 Prep](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/soc2_prep.svg)](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/soc2_prep.svg)
+
+NeuralShell is a **local-first operator shell** designed for autonomous execution and workflow coordination. Built on a hardened **React/Electron desktop workflow**, it combines an intuitive **command palette as the control plane** with a robust **workbench and trust lane model**. Under the hood, it enforces strict **hardened state and contract discipline**, ensuring stability and security before speed.
+
+> [!TIP]
+> **Source of Truth**: See the [GA Knowledge Index](./GA_KNOWLEDGE_INDEX.md) for the authoritative release documentation and audit dossier.
+
+
+## Demo Walkthrough
+[Watch Founder Walkthrough (120s)](docs/static/video/proof_walkthrough.webm)
+
+## One-Command Install
+
+```bash
+npx neuralshell-installer
+```
 
 ## Beta Program (Live)
 
@@ -8,6 +26,35 @@ NeuralShell is an Electron workstation with strict IPC validation, offline-first
 - Join via forms: [Issue Intake](https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose)
 - Tester checklist: [BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md](docs/pilots/BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md)
 - Control tower: [Beta Control Tower](https://github.com/Z3r0DayZion-install/NeuralShell/issues/32)
+
+## Launch Surface
+
+- Public launch page source: [docs/index.html](docs/index.html)
+- Public site asset bundle: [docs/site-assets/asset-manifest.json](docs/site-assets/asset-manifest.json)
+- Pricing page: [landing/pricing.html](landing/pricing.html)
+- Partners page: [landing/partners.html](landing/partners.html)
+- Press kit: [PRESS_KIT_v1.2.1-OMEGA.md](docs/pilots/PRESS_KIT_v1.2.1-OMEGA.md)
+- Channel submission playbook: [CHANNEL_SUBMISSION_PLAYBOOK_v1.2.1-OMEGA.md](docs/pilots/CHANNEL_SUBMISSION_PLAYBOOK_v1.2.1-OMEGA.md)
+
+## Revenue Operations
+
+- Billing and activation: [docs/billing/README.md](docs/billing/README.md)
+- Referral ops: [docs/growth/referrals.md](docs/growth/referrals.md)
+- Partner kit: [docs/partners/README.md](docs/partners/README.md)
+- Generate checkout link docs: `node scripts/checkout_links.cjs`
+- Generate referral link payload: `node scripts/referral_links.cjs`
+- Generate launch campaign pack: `node scripts/generate_launch_pack.cjs`
+
+## Enterprise Compliance
+
+- SOC2 prep report output: `SOC2_PREP_REPORT.md`
+- SOC2 collector: `node compliance/soc2_collector.cjs`
+- Third-party attribution page: `public/about.html` (generate with `node scripts/genAttribution.cjs`)
+
+## Agent Marketplace
+
+- Core agent manifests live in `agents/core/*/agent.json`.
+- Install/verify agents from the in-app **Settings -> Agent Marketplace** gallery.
 
 ## Quick Start
 
@@ -36,6 +83,23 @@ npm test
 npm start
 ```
 
+## Self-Sell Proof
+
+Run a full product-led demo flow (proof + ROI + save/lock/unlock persistence) and generate screenshots + evidence report:
+
+```powershell
+npm run proof:self-sell
+```
+
+Artifacts generated:
+
+- `screenshots/ui_sales_quickstart.png`
+- `screenshots/ui_sales_proof_output.png`
+- `screenshots/ui_sales_roi_output.png`
+- `screenshots/ui_sales_lock_flow.png`
+- `screenshots/ui_sales_unlock_restored.png`
+- `release/ui-self-sell-proof-report.json`
+
 ## Build
 
 Generate icons first, then package:
@@ -43,6 +107,12 @@ Generate icons first, then package:
 ```powershell
 npm run icons:generate
 npm run build
+```
+
+Prepare public site assets and social card:
+
+```powershell
+npm run channel:site:prepare
 ```
 
 ## Release Flow
@@ -111,12 +181,20 @@ $env:NEURAL_SKIP_PREPUSH="1"
 git push
 ```
 
+## Portable Mode
+
+- Portable mode guide (Windows): [PORTABLE_MODE.md](docs/PORTABLE_MODE.md)
+
 ## Security Gates
 
 - Dependency review on PRs (`high` severity fails).
 - `npm audit --audit-level=high` in CI.
 - Secret scan via Gitleaks.
 - CodeQL analysis on `master` and PRs.
+
+## Privacy
+
+- Privacy policy: [PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md)
 
 ## License
 

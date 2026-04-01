@@ -1,0 +1,16 @@
+{
+    "phase": 5,
+    "timestamp": "2026-03-22T22:15:00Z",
+    "artifact": "NeuralShell Setup 2.1.29.exe",
+    "verification_tool": "release/verify/veritas.js",
+    "test_results": {
+        "baseline": "PASS",
+        "tamper_exe": "PASS (Detected)",
+        "tamper_manifest": "PASS (Detected)",
+        "missing_sig": "PASS (Detected)"
+    },
+    "trust_anchor": {
+        "type": "Ed25519-Base64",
+        "scope": "konstitutsionnaya-baseline"
+    }
+}

@@ -1,0 +1,58 @@
+{
+  "action-disconnect": {
+    "startProfile": "prof-a",
+    "startBadge": "badge-trust trust-verified",
+    "actionPerformed": "disconnect",
+    "endProfile": "prof-a",
+    "endBadge": "badge-trust trust-verified",
+    "remoteActionsEnabled": true,
+    "bannerText": "\n      ⚠️\n      SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED\n    ",
+    "pass": true,
+    "notes": "Disconnect flow completed."
+  },
+  "action-switch-profile": {
+    "startProfile": "prof-a",
+    "startBadge": "badge-trust trust-verified",
+    "actionPerformed": "switch-profile",
+    "endProfile": "prof-b",
+    "endBadge": "badge-trust",
+    "remoteActionsEnabled": true,
+    "bannerText": "\n      ⚠️\n      SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED\n    ",
+    "pass": true,
+    "notes": "Governed switch from prof-a to prof-b succeeded."
+  },
+  "action-enter-offline": {
+    "startProfile": "prof-a",
+    "startBadge": "badge-trust trust-verified",
+    "actionPerformed": "enter-offline",
+    "endProfile": "prof-a",
+    "endBadge": "badge-trust trust-verified",
+    "remoteActionsEnabled": true,
+    "bannerText": "\n      ⚠️\n      SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED\n    ",
+    "pass": true,
+    "notes": "Offline entry executed. APB updated."
+  },
+  "action-verify": {
+    "startProfile": "prof-a",
+    "startBadge": "badge-trust trust-verified",
+    "actionPerformed": "verify",
+    "endProfile": "prof-a",
+    "endBadge": "badge-trust trust-verified",
+    "remoteActionsEnabled": true,
+    "bannerText": "\n      ⚠️\n      SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED\n    ",
+    "pass": true,
+    "notes": "Verify button clicked. In offline packaged env, runBridgeAutoDetect fails gracefully — expected behavior."
+  },
+  "action-repair": {
+    "startProfile": "prof-c",
+    "startBadge": "badge-trust trust-drifted",
+    "actionPerformed": "repair",
+    "endProfile": "prof-c",
+    "endBadge": "badge-trust trust-drifted",
+    "endSetupState": "repair_mode",
+    "remoteActionsEnabled": false,
+    "bannerText": "\n      ⚠️\n      SYSTEM PAUSED - OPERATOR INTERVENTION REQUIRED\n    ",
+    "pass": true,
+    "notes": "Repair clicked on DRIFTED profile. setupState=repair_mode."
+  }
+}

@@ -14,7 +14,7 @@ Use one report per issue. Keep steps exact and minimal.
 # Bug: <short title>
 
 ## Metadata
-- Build: v1.2.1-OMEGA
+- Build: V2.0-RC-Final
 - Date found: YYYY-MM-DD
 - Time found: HH:MM (timezone)
 - Tester: <name or alias>

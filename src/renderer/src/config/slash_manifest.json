@@ -1,0 +1,34 @@
+[
+  {
+    "id": "slash-explain",
+    "command": "/explain",
+    "label": "Explain",
+    "description": "Explain selected code, behavior, and reasoning in concise terms.",
+    "template": "/explain Review this code path and explain what it does, risks, and edge cases.",
+    "tags": ["reason", "analysis", "docs"]
+  },
+  {
+    "id": "slash-unit-test",
+    "command": "/unit-test",
+    "label": "Unit Test",
+    "description": "Generate focused tests for the active function/module.",
+    "template": "/unit-test Create unit tests for the changed logic and include edge cases.",
+    "tags": ["test", "coverage", "qa"]
+  },
+  {
+    "id": "slash-summarize",
+    "command": "/summarize",
+    "label": "Summarize",
+    "description": "Summarize a thread, change set, or long output.",
+    "template": "/summarize Summarize the current thread into decisions, risks, and next actions.",
+    "tags": ["summary", "brief", "handoff"]
+  },
+  {
+    "id": "slash-refactor",
+    "command": "/refactor",
+    "label": "Refactor",
+    "description": "Request a scoped refactor plan and implementation steps.",
+    "template": "/refactor Refactor this module for readability and maintainability without behavior changes.",
+    "tags": ["cleanup", "maintainability", "architecture"]
+  }
+]

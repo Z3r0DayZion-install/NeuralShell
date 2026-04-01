@@ -1,0 +1,3 @@
+id,partnerId,partnerName,accountName,leadOwner,stage,dealValueUsd,marginPercent,coBrandSlug,notes
+partner-deal-001,P-001,NorthBridge Advisory,Atlas Rail Group,sales,registered,85000,20,northbridge,Initial registration from security workshop
+partner-deal-002,P-002,BluePeak Systems,Blue Harbor Bank,sales,pilot,140000,25,bluepeak,Co-selling deployment review package

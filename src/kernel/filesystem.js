@@ -53,6 +53,16 @@ class FileSystemBroker {
   async getAppPath() {
     return app.getAppPath();
   }
+
+  async readdir(payload) {
+    const { dirPath } = payload;
+    const isAllowed =
+      this._isWithin(dirPath, this.readOnlyRoot) ||
+      this._isWithin(dirPath, this.writeRoot);
+    if (!isAllowed)
+      throw new Error("Directory access outside permitted roots denied.");
+    return fs.readdirSync(dirPath);
+  }
 }
 
 module.exports = new FileSystemBroker();

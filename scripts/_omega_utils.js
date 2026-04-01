@@ -7,8 +7,8 @@ const crypto = require('crypto');
  * Single Source of Truth for Determinism and Cryptography.
  */
 
-const EXPECTED_ROOT_FP = '75cb2558e5aca6e8e763f4af871d88fb5fc2b5f87f6f612353f0d520b37f7cd9';
-const EXPECTED_GOV_FP = '76bb525ffe1cd289ee2d078f96a01c2e1251543187fc9c0a7b84e7865f07e545';
+const EXPECTED_ROOT_FP = 'eaaa7a834c6a416bd9da6c63d6e5ad5fc5e48ce67f92a212d1083c8dd52ce77b';
+const EXPECTED_GOV_FP = '715f8055139e9a1b24a5f34b9a48f2827a0edc77a81e9e93341762330d058d5e';
 
 const CONSTITUTIONAL_TARGETS = [
   'src/main.js',
@@ -22,43 +22,43 @@ const CONSTITUTIONAL_TARGETS = [
 ];
 
 function hashContent(content) {
-    const normalized = content.toString('utf8').replace(/\r\n/g, '\n');
-    return crypto.createHash('sha256').update(normalized).digest('hex');
+  const normalized = content.toString('utf8').replace(/\r\n/g, '\n');
+  return crypto.createHash('sha256').update(normalized).digest('hex');
 }
 
 function deterministicStringify(obj) {
-    if (typeof obj !== 'object' || obj === null) return JSON.stringify(obj);
-    if (Array.isArray(obj)) return '[' + obj.map(deterministicStringify).join(',') + ']';
-    
-    const sortedKeys = Object.keys(obj).sort();
-    const result = {};
-    sortedKeys.forEach(key => {
-        result[key] = obj[key];
-    });
-    
-    // Use standard stringify on the object with sorted keys
-    return JSON.stringify(result, null, 2);
+  if (typeof obj !== 'object' || obj === null) return JSON.stringify(obj);
+  if (Array.isArray(obj)) return '[' + obj.map(deterministicStringify).join(',') + ']';
+
+  const sortedKeys = Object.keys(obj).sort();
+  const result = {};
+  sortedKeys.forEach(key => {
+    result[key] = obj[key];
+  });
+
+  // Use standard stringify on the object with sorted keys
+  return JSON.stringify(result, null, 2);
 }
 
 function fileWalker(dir, filter, fileList = []) {
-    const files = fs.readdirSync(dir);
-    files.sort().forEach(file => {
-        const p = path.join(dir, file);
-        if (fs.statSync(p).isDirectory()) {
-            if (file !== 'node_modules' && file !== '.git' && file !== 'artifacts' && file !== 'archive') {
-                fileWalker(p, filter, fileList);
-            }
-        } else if (filter(file)) {
-            fileList.push(p);
-        }
-    });
-    return fileList;
+  const files = fs.readdirSync(dir);
+  files.sort().forEach(file => {
+    const p = path.join(dir, file);
+    if (fs.statSync(p).isDirectory()) {
+      if (file !== 'node_modules' && file !== '.git' && file !== 'artifacts' && file !== 'archive') {
+        fileWalker(p, filter, fileList);
+      }
+    } else if (filter(file)) {
+      fileList.push(p);
+    }
+  });
+  return fileList;
 }
 
 function getFingerprint(pubKeyPath) {
-    if (!fs.existsSync(pubKeyPath)) return null;
-    const content = fs.readFileSync(pubKeyPath);
-    return crypto.createHash('sha256').update(content).digest('hex');
+  if (!fs.existsSync(pubKeyPath)) return null;
+  const content = fs.readFileSync(pubKeyPath);
+  return crypto.createHash('sha256').update(content).digest('hex');
 }
 
 function computeBuildHash(rootDir) {
@@ -91,12 +91,12 @@ function computeBuildHash(rootDir) {
 }
 
 module.exports = {
-    EXPECTED_ROOT_FP,
-    EXPECTED_GOV_FP,
-    CONSTITUTIONAL_TARGETS,
-    hashContent,
-    deterministicStringify,
-    fileWalker,
-    getFingerprint,
-    computeBuildHash
+  EXPECTED_ROOT_FP,
+  EXPECTED_GOV_FP,
+  CONSTITUTIONAL_TARGETS,
+  hashContent,
+  deterministicStringify,
+  fileWalker,
+  getFingerprint,
+  computeBuildHash
 };

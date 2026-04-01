@@ -1,0 +1,18 @@
+{
+  "healthDimensions": [
+    { "id": "support_backlog", "label": "Support Backlog", "weight": 25, "higherIsRiskier": true },
+    { "id": "deployment_drift", "label": "Deployment Drift", "weight": 25, "higherIsRiskier": true },
+    { "id": "trust_posture", "label": "Trust Posture", "weight": 20, "higherIsRiskier": false },
+    { "id": "operator_coverage", "label": "Operator Coverage", "weight": 15, "higherIsRiskier": false },
+    { "id": "renewal_pressure", "label": "Renewal Pressure", "weight": 15, "higherIsRiskier": true }
+  ],
+  "rolloutStages": ["discovery", "security_review", "pilot", "deployment", "expansion"],
+  "supportQueueSeverities": ["critical", "high", "medium", "low"],
+  "weeklySummarySections": [
+    "high_risk_accounts",
+    "drift_hotspots",
+    "operator_assignments",
+    "support_backlog",
+    "required_actions"
+  ]
+}

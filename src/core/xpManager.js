@@ -5,16 +5,24 @@
 const stateManager = require("./stateManager");
 const identityKernel = require("./identityKernel");
 
+function getHardwareBindingId() {
+  if (typeof identityKernel.getHardwareFingerprint === "function") {
+    return String(identityKernel.getHardwareFingerprint() || "");
+  }
+  return String(identityKernel.getFingerprint() || "");
+}
+
 function getStatus() {
   const state = stateManager.getState();
   const xp = state.xp || 0;
   const tier = Math.max(1, Math.floor(xp / 100) + 1);
+  const hardwareBindingId = getHardwareBindingId();
   
   return {
     xp,
     tier,
     nextTierAt: tier * 100,
-    nodeId: identityKernel.getFingerprint().substring(0, 12)
+    nodeId: hardwareBindingId.substring(0, 12)
   };
 }
 
@@ -25,7 +33,7 @@ function addXP(amount) {
   }
 
   // Hardware Verification
-  const currentFingerprint = identityKernel.getFingerprint();
+  const currentFingerprint = getHardwareBindingId();
   const stateNodeId = stateManager.get("nodeId");
   
   if (stateNodeId && stateNodeId !== currentFingerprint) {

@@ -1,0 +1,12 @@
+{
+    "defaultAutoRun": {
+        "safe": true,
+        "medium": false,
+        "high": false
+    },
+    "constraints": {
+        "dirtyTreeScaleDown": true,
+        "lowConfidenceScaleDown": true,
+        "maxAnomalyRisk": 35
+    }
+}

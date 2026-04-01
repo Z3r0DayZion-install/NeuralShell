@@ -1,0 +1,52 @@
+name: GPU Bench
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - "expansion-delta6*"
+      - "expansion-delta6-hardening"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bench_gpu:
+    name: GPU bench (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run GPU benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          node scripts/bench_gpu.cjs | tee "release/gpu-bench-${{ matrix.os }}.log"
+
+      - name: Upload GPU benchmark log
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: gpu-bench-${{ matrix.os }}
+          path: release/gpu-bench-${{ matrix.os }}.log
+          if-no-files-found: error

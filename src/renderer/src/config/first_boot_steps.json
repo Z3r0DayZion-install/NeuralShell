@@ -1,0 +1,57 @@
+[
+  {
+    "id": "welcome_intro",
+    "title": "Welcome / Mode Intro",
+    "description": "Establish local-first runtime authority and operating mode.",
+    "critical": false
+  },
+  {
+    "id": "provider_sweep",
+    "title": "Provider Sweep",
+    "description": "Probe provider bridge health and establish baseline.",
+    "critical": true
+  },
+  {
+    "id": "vault_setup",
+    "title": "Vault Setup",
+    "description": "Create and verify a local vault secret.",
+    "critical": true
+  },
+  {
+    "id": "policy_profile_selection",
+    "title": "Policy Profile Selection",
+    "description": "Select enforcement profile and allowed providers.",
+    "critical": true
+  },
+  {
+    "id": "update_ring_selection",
+    "title": "Update Ring Selection",
+    "description": "Select stable/beta/canary/frozen update lane.",
+    "critical": true
+  },
+  {
+    "id": "run_proof",
+    "title": "Run 90-second Proof",
+    "description": "Run proof command and capture runtime evidence.",
+    "critical": true
+  },
+  {
+    "id": "license_import",
+    "title": "Import Tier/License",
+    "description": "Optional: import enterprise/pro license payload.",
+    "critical": false
+  },
+  {
+    "id": "share_badge",
+    "title": "Share Badge / Skip",
+    "description": "Open badge share path or skip.",
+    "critical": false
+  },
+  {
+    "id": "open_mission_control",
+    "title": "Open Mission Control",
+    "description": "Land in runtime cockpit and review system posture.",
+    "critical": true
+  }
+]
+

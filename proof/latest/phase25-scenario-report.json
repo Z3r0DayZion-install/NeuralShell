@@ -1,0 +1,291 @@
+{
+  "phase25-scenario-a-verified-on": {
+    "apbState": {
+      "name": "Scenario A",
+      "badgeRaw": "badge-trust trust-verified",
+      "isBlocked": false,
+      "debugActiveId": "prof-a",
+      "debugProfileCount": 7,
+      "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+      "debugOnboardingDone": true,
+      "debugLastVerifiedFingerprint": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+      "debugLiveFingerprint": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+      "debugAuthenticity": "UNSIGNED",
+      "debugTrustState": null,
+      "debugProvider": "ollama",
+      "debugBaseUrl": "http://scenario-a:11434",
+      "debugApiKeyLength": 0,
+      "debugTrustTrace": {
+        "profileId": "prof-a",
+        "stored": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+        "live": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+        "match": true
+      }
+    }
+  },
+  "scenario-a-verified-on": {
+    "name": "Scenario A",
+    "badgeRaw": "badge-trust trust-verified",
+    "isBlocked": false,
+    "debugActiveId": "prof-a",
+    "debugProfileCount": 7,
+    "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+    "debugOnboardingDone": true,
+    "debugLastVerifiedFingerprint": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+    "debugLiveFingerprint": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+    "debugAuthenticity": "UNSIGNED",
+    "debugTrustState": null,
+    "debugProvider": "ollama",
+    "debugBaseUrl": "http://scenario-a:11434",
+    "debugApiKeyLength": 0,
+    "debugTrustTrace": {
+      "profileId": "prof-a",
+      "stored": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+      "live": "7cebc6829cf41469fad2eaac83282a2c1151a3d781a502226faaacfabf48832e",
+      "match": true
+    }
+  },
+  "phase25-scenario-b-verified-off": {
+    "apbState": {
+      "name": "Scenario B",
+      "badgeRaw": "badge-trust trust-verified",
+      "isBlocked": false,
+      "debugActiveId": "prof-b",
+      "debugProfileCount": 7,
+      "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+      "debugOnboardingDone": true,
+      "debugLastVerifiedFingerprint": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+      "debugLiveFingerprint": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+      "debugAuthenticity": "UNSIGNED",
+      "debugTrustState": null,
+      "debugProvider": "ollama",
+      "debugBaseUrl": "http://scenario-b:11434",
+      "debugApiKeyLength": 0,
+      "debugTrustTrace": {
+        "profileId": "prof-b",
+        "stored": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+        "live": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+        "match": true
+      }
+    }
+  },
+  "scenario-b-verified-off": {
+    "name": "Scenario B",
+    "badgeRaw": "badge-trust trust-verified",
+    "isBlocked": false,
+    "debugActiveId": "prof-b",
+    "debugProfileCount": 7,
+    "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+    "debugOnboardingDone": true,
+    "debugLastVerifiedFingerprint": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+    "debugLiveFingerprint": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+    "debugAuthenticity": "UNSIGNED",
+    "debugTrustState": null,
+    "debugProvider": "ollama",
+    "debugBaseUrl": "http://scenario-b:11434",
+    "debugApiKeyLength": 0,
+    "debugTrustTrace": {
+      "profileId": "prof-b",
+      "stored": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+      "live": "ff4c229409006447a3a89a207284f0620a94c5b7391755c4d9378701efc4b5f5",
+      "match": true
+    }
+  },
+  "phase25-scenario-c-drifted": {
+    "apbState": {
+      "name": "Scenario C",
+      "badgeRaw": "badge-trust trust-drifted",
+      "isBlocked": true,
+      "debugActiveId": "prof-c",
+      "debugProfileCount": 7,
+      "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+      "debugOnboardingDone": true,
+      "debugLastVerifiedFingerprint": "deliberately-bad-hash-to-trigger-drifted",
+      "debugLiveFingerprint": "bbaa93165a2ffb7d2804c536cdbfc0a550966643574b25616d46ae2e00e63c4f",
+      "debugAuthenticity": "UNSIGNED",
+      "debugTrustState": null,
+      "debugProvider": "ollama",
+      "debugBaseUrl": "http://scenario-c:11434",
+      "debugApiKeyLength": 0,
+      "debugTrustTrace": {
+        "profileId": "prof-c",
+        "stored": "deliberately-bad-hash-to-trigger-drifted",
+        "live": "bbaa93165a2ffb7d2804c536cdbfc0a550966643574b25616d46ae2e00e63c4f",
+        "match": false
+      }
+    }
+  },
+  "scenario-c-drifted": {
+    "name": "Scenario C",
+    "badgeRaw": "badge-trust trust-drifted",
+    "isBlocked": true,
+    "debugActiveId": "prof-c",
+    "debugProfileCount": 7,
+    "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+    "debugOnboardingDone": true,
+    "debugLastVerifiedFingerprint": "deliberately-bad-hash-to-trigger-drifted",
+    "debugLiveFingerprint": "bbaa93165a2ffb7d2804c536cdbfc0a550966643574b25616d46ae2e00e63c4f",
+    "debugAuthenticity": "UNSIGNED",
+    "debugTrustState": null,
+    "debugProvider": "ollama",
+    "debugBaseUrl": "http://scenario-c:11434",
+    "debugApiKeyLength": 0,
+    "debugTrustTrace": {
+      "profileId": "prof-c",
+      "stored": "deliberately-bad-hash-to-trigger-drifted",
+      "live": "bbaa93165a2ffb7d2804c536cdbfc0a550966643574b25616d46ae2e00e63c4f",
+      "match": false
+    }
+  },
+  "phase25-scenario-d-missing-secret": {
+    "apbState": {
+      "name": "Scenario D",
+      "badgeRaw": "badge-trust trust-missing-secret",
+      "isBlocked": true,
+      "debugActiveId": "prof-d",
+      "debugProfileCount": 7,
+      "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+      "debugOnboardingDone": true,
+      "debugLastVerifiedFingerprint": null,
+      "debugLiveFingerprint": "780dfcdec5256d561d9cfad196a69dfae821dc273bdd2e49caf26c06c427067a",
+      "debugAuthenticity": "UNSIGNED",
+      "debugTrustState": null,
+      "debugProvider": "openai",
+      "debugBaseUrl": "https://api.openai.com",
+      "debugApiKeyLength": 0,
+      "debugTrustTrace": null
+    }
+  },
+  "scenario-d-missing-secret": {
+    "name": "Scenario D",
+    "badgeRaw": "badge-trust trust-missing-secret",
+    "isBlocked": true,
+    "debugActiveId": "prof-d",
+    "debugProfileCount": 7,
+    "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+    "debugOnboardingDone": true,
+    "debugLastVerifiedFingerprint": null,
+    "debugLiveFingerprint": "780dfcdec5256d561d9cfad196a69dfae821dc273bdd2e49caf26c06c427067a",
+    "debugAuthenticity": "UNSIGNED",
+    "debugTrustState": null,
+    "debugProvider": "openai",
+    "debugBaseUrl": "https://api.openai.com",
+    "debugApiKeyLength": 0,
+    "debugTrustTrace": null
+  },
+  "phase25-scenario-e-signature-tampered": {
+    "apbState": {
+      "name": "Scenario E",
+      "badgeRaw": "badge-trust trust-tampered",
+      "isBlocked": true,
+      "debugActiveId": "prof-e",
+      "debugProfileCount": 7,
+      "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+      "debugOnboardingDone": true,
+      "debugLastVerifiedFingerprint": null,
+      "debugLiveFingerprint": "5ed5c15bfc2f710d0005c5e71630db0cdd2fbe2f4ed17f2061145c30cecb32fd",
+      "debugAuthenticity": "SIGNATURE_TAMPERED",
+      "debugTrustState": null,
+      "debugProvider": "ollama",
+      "debugBaseUrl": "http://scenario-e:11434",
+      "debugApiKeyLength": 0,
+      "debugTrustTrace": null
+    }
+  },
+  "scenario-e-signature-tampered": {
+    "name": "Scenario E",
+    "badgeRaw": "badge-trust trust-tampered",
+    "isBlocked": true,
+    "debugActiveId": "prof-e",
+    "debugProfileCount": 7,
+    "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+    "debugOnboardingDone": true,
+    "debugLastVerifiedFingerprint": null,
+    "debugLiveFingerprint": "5ed5c15bfc2f710d0005c5e71630db0cdd2fbe2f4ed17f2061145c30cecb32fd",
+    "debugAuthenticity": "SIGNATURE_TAMPERED",
+    "debugTrustState": null,
+    "debugProvider": "ollama",
+    "debugBaseUrl": "http://scenario-e:11434",
+    "debugApiKeyLength": 0,
+    "debugTrustTrace": null
+  },
+  "phase25-scenario-f-offline-locked": {
+    "apbState": {
+      "name": "Scenario F",
+      "badgeRaw": "badge-trust trust-offline",
+      "isBlocked": true,
+      "debugActiveId": "prof-f",
+      "debugProfileCount": 7,
+      "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+      "debugOnboardingDone": true,
+      "debugLastVerifiedFingerprint": null,
+      "debugLiveFingerprint": "3fc846d75e9c8a47bca7b1b9ba2bc18a99c82129f9ef0e847879e8367988de89",
+      "debugAuthenticity": "UNSIGNED",
+      "debugTrustState": "OFFLINE_LOCKED",
+      "debugProvider": "ollama",
+      "debugBaseUrl": "http://scenario-f:11434",
+      "debugApiKeyLength": 0,
+      "debugTrustTrace": null
+    }
+  },
+  "scenario-f-offline-locked": {
+    "name": "Scenario F",
+    "badgeRaw": "badge-trust trust-offline",
+    "isBlocked": true,
+    "debugActiveId": "prof-f",
+    "debugProfileCount": 7,
+    "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+    "debugOnboardingDone": true,
+    "debugLastVerifiedFingerprint": null,
+    "debugLiveFingerprint": "3fc846d75e9c8a47bca7b1b9ba2bc18a99c82129f9ef0e847879e8367988de89",
+    "debugAuthenticity": "UNSIGNED",
+    "debugTrustState": "OFFLINE_LOCKED",
+    "debugProvider": "ollama",
+    "debugBaseUrl": "http://scenario-f:11434",
+    "debugApiKeyLength": 0,
+    "debugTrustTrace": null
+  },
+  "phase25-scenario-g-invalid": {
+    "apbState": {
+      "name": "Scenario G",
+      "badgeRaw": "badge-trust trust-invalid",
+      "isBlocked": false,
+      "debugActiveId": "prof-g",
+      "debugProfileCount": 7,
+      "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+      "debugOnboardingDone": true,
+      "debugLastVerifiedFingerprint": null,
+      "debugLiveFingerprint": "8eef2c1b42573ae1aa94c4ee1063dd3f8ca30efd84c4c3607e25bd5a2ae53d01",
+      "debugAuthenticity": "UNSIGNED",
+      "debugTrustState": null,
+      "debugProvider": "ollama",
+      "debugBaseUrl": "http://scenario-g:11434",
+      "debugApiKeyLength": 0,
+      "debugTrustTrace": {
+        "result": "unknown",
+        "reason": "no_lastVerifiedFingerprint"
+      }
+    }
+  },
+  "scenario-g-invalid": {
+    "name": "Scenario G",
+    "badgeRaw": "badge-trust trust-invalid",
+    "isBlocked": false,
+    "debugActiveId": "prof-g",
+    "debugProfileCount": 7,
+    "debugProfileNames": "Scenario A,Scenario B,Scenario C,Scenario D,Scenario E,Scenario F,Scenario G",
+    "debugOnboardingDone": true,
+    "debugLastVerifiedFingerprint": null,
+    "debugLiveFingerprint": "8eef2c1b42573ae1aa94c4ee1063dd3f8ca30efd84c4c3607e25bd5a2ae53d01",
+    "debugAuthenticity": "UNSIGNED",
+    "debugTrustState": null,
+    "debugProvider": "ollama",
+    "debugBaseUrl": "http://scenario-g:11434",
+    "debugApiKeyLength": 0,
+    "debugTrustTrace": {
+      "result": "unknown",
+      "reason": "no_lastVerifiedFingerprint"
+    }
+  },
+  "action-disconnect": true
+}

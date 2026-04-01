@@ -1,0 +1,11 @@
+{
+  "regions": ["us-west", "us-central", "us-east", "eu-west", "apac"],
+  "planningDimensions": [
+    "deployment_fit",
+    "compliance_fit",
+    "channel_fit",
+    "support_coverage",
+    "operator_capacity"
+  ],
+  "phases": ["initial_focus", "pilot_clusters", "regional_scale", "federation_expansion"]
+}

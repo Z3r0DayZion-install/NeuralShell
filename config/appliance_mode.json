@@ -1,0 +1,25 @@
+{
+  "schema": "neuralshell_appliance_mode_v1",
+  "profileId": "secure-relay-appliance",
+  "displayName": "Secure Relay Appliance",
+  "generatedDefaults": {
+    "offlineOnlyEnforced": true,
+    "allowRemoteBridge": false,
+    "proofRelayEnabled": true,
+    "autoUpdateChannel": "locked",
+    "allowedProviders": ["ollama"],
+    "operatorOnly": true
+  },
+  "allowedModules": [
+    "mission_control",
+    "fleet_control",
+    "recovery_center",
+    "enterprise_policy",
+    "board_console"
+  ],
+  "notes": [
+    "Appliance mode is local-first and operator-scoped.",
+    "Non-operational modules should be hidden to reduce clutter.",
+    "Critical actions are logged with appliance context."
+  ]
+}

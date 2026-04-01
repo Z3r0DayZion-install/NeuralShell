@@ -2,3 +2,13 @@
 artifacts/sbom/latest.json
 artifacts/var_proof/**
 governance/OMEGA_COMPLIANCE_REGISTRY.json
+NeuralShell_*_GoldMaster_Release/**
+NeuralShell_Distribution_Ready/**
+FINAL_HANDOFF_STATUS.md
+MANUAL_VALIDATION_CHECKLIST.md
+RELEASE_MANIFEST.md
+SHA256SUMS.txt
+MASTER_PROOF.md
+SYSTEM_MAP.md
+check_zip/**
+walkthrough.md

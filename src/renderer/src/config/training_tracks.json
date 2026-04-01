@@ -1,0 +1,106 @@
+[
+  {
+    "id": "audit_operator",
+    "title": "Audit Operator",
+    "description": "Run proof-first workflows, capture evidence, and maintain local audit posture.",
+    "passScore": 80,
+    "questions": [
+      {
+        "id": "ao_q1",
+        "prompt": "What command is used for a live trust/value proof run?",
+        "options": ["/proof", "/reset", "/daemon"],
+        "answerIndex": 0
+      },
+      {
+        "id": "ao_q2",
+        "prompt": "Which mode blocks most write actions by default?",
+        "options": ["Operator", "Auditor", "Enterprise"],
+        "answerIndex": 1
+      },
+      {
+        "id": "ao_q3",
+        "prompt": "Which export is used for support diagnostics?",
+        "options": ["Support Bundle", "Theme Snapshot", "Model Cache"],
+        "answerIndex": 0
+      }
+    ]
+  },
+  {
+    "id": "deployment_admin",
+    "title": "Deployment Admin",
+    "description": "Enforce approved providers, update lanes, and relay restrictions.",
+    "passScore": 80,
+    "questions": [
+      {
+        "id": "da_q1",
+        "prompt": "What should be restricted for offline-first enterprise policy?",
+        "options": ["Remote bridge", "Scratchpad", "Theme"],
+        "answerIndex": 0
+      },
+      {
+        "id": "da_q2",
+        "prompt": "What gate protects production packaging quality?",
+        "options": ["Release gate", "Theme toggle", "Quickstart cards"],
+        "answerIndex": 0
+      },
+      {
+        "id": "da_q3",
+        "prompt": "What should every applied policy include?",
+        "options": ["Signature metadata", "Emoji badges", "Music playlist"],
+        "answerIndex": 0
+      }
+    ]
+  },
+  {
+    "id": "compliance_lead",
+    "title": "Compliance Lead",
+    "description": "Verify artifact integrity, support audit requests, and preserve traceability.",
+    "passScore": 80,
+    "questions": [
+      {
+        "id": "cl_q1",
+        "prompt": "What verifies packaged artifacts have not been tampered?",
+        "options": ["Signature verification", "Screen brightness", "CPU fan speed"],
+        "answerIndex": 0
+      },
+      {
+        "id": "cl_q2",
+        "prompt": "What is required for external compliance review handoff?",
+        "options": ["Reproducible evidence bundle", "Desktop wallpaper", "Audio recording"],
+        "answerIndex": 0
+      },
+      {
+        "id": "cl_q3",
+        "prompt": "Where should policy and proof changes be recorded?",
+        "options": ["Audit chain/log", "Clipboard history", "Chat emoji reactions"],
+        "answerIndex": 0
+      }
+    ]
+  },
+  {
+    "id": "marketplace_builder",
+    "title": "Marketplace Builder",
+    "description": "Package, price, and validate marketplace-facing modules with policy-safe defaults.",
+    "passScore": 80,
+    "questions": [
+      {
+        "id": "mb_q1",
+        "prompt": "What must not be bypassed by marketplace modules?",
+        "options": ["Security and policy guardrails", "Component naming conventions", "Theme palette"],
+        "answerIndex": 0
+      },
+      {
+        "id": "mb_q2",
+        "prompt": "What should partner-facing modules include for trust?",
+        "options": ["Verification receipts", "Animated stickers", "Random IDs"],
+        "answerIndex": 0
+      },
+      {
+        "id": "mb_q3",
+        "prompt": "Which signal is important before shipping new paid module updates?",
+        "options": ["Release validation status", "Mouse DPI", "Window opacity"],
+        "answerIndex": 0
+      }
+    ]
+  }
+]

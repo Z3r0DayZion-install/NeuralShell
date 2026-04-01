@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "defaultRevenueSplit": {
+    "creatorPercent": 70,
+    "platformPercent": 30
+  },
+  "paidInstall": {
+    "requiredReceiptPattern": "^rcpt_[A-Za-z0-9_-]{8,}$",
+    "receiptStoreFile": "marketplace/install_receipts.json"
+  },
+  "trustBadges": [
+    "verified-core",
+    "verified-partner",
+    "community"
+  ],
+  "compatibility": {
+    "minAppVersion": "2.1.29"
+  }
+}

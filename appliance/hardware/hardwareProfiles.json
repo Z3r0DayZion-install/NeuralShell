@@ -1,0 +1,62 @@
+[
+  {
+    "profileId": "desktop_appliance",
+    "title": "Desktop Appliance",
+    "roleClass": "operator",
+    "cpu": "x64_4c",
+    "memoryGb": 16,
+    "storageGb": 512,
+    "networkMode": "sealed_lan",
+    "supportDiagnostics": [
+      "runtime_state",
+      "watchdog_logs",
+      "policy_state",
+      "update_lane"
+    ]
+  },
+  {
+    "profileId": "mini_node_appliance",
+    "title": "Mini-Node Appliance",
+    "roleClass": "node",
+    "cpu": "x64_2c",
+    "memoryGb": 8,
+    "storageGb": 256,
+    "networkMode": "airgap_edge",
+    "supportDiagnostics": [
+      "node_health",
+      "mission_history",
+      "trust_chain",
+      "update_pack_state"
+    ]
+  },
+  {
+    "profileId": "relay_appliance",
+    "title": "Relay Appliance",
+    "roleClass": "relay",
+    "cpu": "x64_4c",
+    "memoryGb": 12,
+    "storageGb": 256,
+    "networkMode": "bounded_relay",
+    "supportDiagnostics": [
+      "relay_path",
+      "proof_relay",
+      "policy_gates",
+      "incident_feed"
+    ]
+  },
+  {
+    "profileId": "oversight_appliance",
+    "title": "Oversight Appliance",
+    "roleClass": "oversight",
+    "cpu": "x64_8c",
+    "memoryGb": 32,
+    "storageGb": 1024,
+    "networkMode": "sealed_command",
+    "supportDiagnostics": [
+      "fleet_summary",
+      "trust_fabric",
+      "drill_scorecard",
+      "audit_retention"
+    ]
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "name": "neuralshell-badge",
+  "version": "0.1.0",
+  "description": "Generate and embed the NeuralShell proof badge from SHA-256 manifests.",
+  "license": "MIT",
+  "bin": {
+    "neuralshell-badge": "bin/neuralshell-badge.js"
+  },
+  "files": [
+    "bin/neuralshell-badge.js"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "stages": [
+    {
+      "id": "discovery",
+      "title": "Discovery",
+      "nextActions": [
+        "Share evaluator quickstart and what-this-is page.",
+        "Schedule 30-minute institutional walkthrough.",
+        "Confirm deployment profile and security reviewer."
+      ]
+    },
+    {
+      "id": "security_review",
+      "title": "Security Review",
+      "nextActions": [
+        "Generate security review packet from current runtime truth.",
+        "Attach trust fabric and air-gap evidence references.",
+        "Capture open security questions and owners."
+      ]
+    },
+    {
+      "id": "procurement",
+      "title": "Procurement",
+      "nextActions": [
+        "Generate procurement FAQ and topology sheets.",
+        "Provide artifact inventory and support entitlement mapping.",
+        "Confirm buyer approval workflow and target sign-off date."
+      ]
+    },
+    {
+      "id": "pilot_planning",
+      "title": "Pilot Planning",
+      "nextActions": [
+        "Run demo-to-pilot fit scorecard.",
+        "Collect required pilot launch artifacts.",
+        "Finalize pilot success criteria and cadence."
+      ]
+    }
+  ],
+  "timelineMilestones": [
+    "first_touch",
+    "demo_complete",
+    "security_packet_sent",
+    "procurement_packet_sent",
+    "pilot_fit_review"
+  ],
+  "nudgeThresholdDays": 7
+}

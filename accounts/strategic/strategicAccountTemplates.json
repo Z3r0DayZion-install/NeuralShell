@@ -1,0 +1,31 @@
+{
+  "stakeholderRoles": [
+    "Executive Sponsor",
+    "Security Lead",
+    "Platform Operator",
+    "Procurement Owner",
+    "Support Director"
+  ],
+  "blockerCategories": [
+    "security_review",
+    "deployment_dependency",
+    "procurement_delay",
+    "partner_readiness",
+    "support_coverage"
+  ],
+  "expansionHypothesisTypes": [
+    "seat_expansion",
+    "appliance_rollout",
+    "oversight_node",
+    "training_scale",
+    "support_tier_upgrade",
+    "federation_path"
+  ],
+  "briefSections": [
+    "account_map",
+    "stakeholder_status",
+    "proof_summary",
+    "active_risks",
+    "next_step_plan"
+  ]
+}

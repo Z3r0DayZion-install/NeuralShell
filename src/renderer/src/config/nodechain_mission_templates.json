@@ -1,0 +1,80 @@
+[
+  {
+    "missionId": "nightly_fleet_health_sweep",
+    "label": "Nightly Fleet Health Sweep",
+    "description": "Run nightly health sweep and summarize degraded nodes.",
+    "target": "fleet",
+    "defaultScheduleMinutes": 1440,
+    "defaultDryRun": false,
+    "steps": [
+      "collect_fleet_snapshot",
+      "score_runtime_health",
+      "emit_summary"
+    ]
+  },
+  {
+    "missionId": "post_policy_recovery_export",
+    "label": "Post-Policy Recovery Export",
+    "description": "After policy rollout, export recovery bundle evidence.",
+    "target": "fleet",
+    "defaultScheduleMinutes": 60,
+    "defaultDryRun": true,
+    "steps": [
+      "verify_policy_rollout",
+      "export_recovery_bundle",
+      "attach_audit_record"
+    ]
+  },
+  {
+    "missionId": "weekly_release_truth_audit",
+    "label": "Weekly Release Truth Audit",
+    "description": "Run weekly release truth checks and report drift.",
+    "target": "fleet",
+    "defaultScheduleMinutes": 10080,
+    "defaultDryRun": true,
+    "steps": [
+      "run_release_truth_verify",
+      "compare_last_report",
+      "raise_alert_if_drift"
+    ]
+  },
+  {
+    "missionId": "degraded_node_incident_trigger",
+    "label": "Degraded Node Incident Trigger",
+    "description": "Open incident mode when degraded fleet threshold is exceeded.",
+    "target": "fleet",
+    "defaultScheduleMinutes": 15,
+    "defaultDryRun": true,
+    "steps": [
+      "detect_degraded_nodes",
+      "open_incident_mode",
+      "assign_operator"
+    ]
+  },
+  {
+    "missionId": "proof_pass_relay_summary",
+    "label": "Proof-Pass Relay Summary",
+    "description": "After proof pass, relay summary to approved appliance queue.",
+    "target": "node",
+    "defaultScheduleMinutes": 30,
+    "defaultDryRun": true,
+    "steps": [
+      "detect_proof_pass",
+      "compose_summary",
+      "relay_to_approved_queue"
+    ]
+  },
+  {
+    "missionId": "update_fail_freeze_notify",
+    "label": "Update Fail Freeze + Notify",
+    "description": "Freeze node updates and alert operator on update verification failure.",
+    "target": "node",
+    "defaultScheduleMinutes": 10,
+    "defaultDryRun": false,
+    "steps": [
+      "detect_update_verification_failure",
+      "freeze_update_lane",
+      "notify_operator"
+    ]
+  }
+]

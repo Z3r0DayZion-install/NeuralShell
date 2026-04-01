@@ -1,0 +1,4 @@
+id,accountName,owner,stage,dealSizeUsd,nextAction,nextActionDate,demoStatus,proofStatus,pilotStatus,securityReview,procurementStatus,renewalState,notes
+deal-001,Atlas Rail Group,founder,Discovery,85000,Schedule security demo,2026-04-02,scheduled,pending,not_started,not_started,not_started,n/a,Initial inbound from partner
+deal-002,Blue Harbor Bank,sales,Pilot Active,140000,Collect week-2 pilot outcomes,2026-04-05,completed,in_progress,active,in_progress,not_started,n/a,Compliance lead requested policy evidence
+deal-003,Metro Utilities,sales,Security Review,220000,Submit architecture questionnaire,2026-04-08,completed,completed,active,blocked,not_started,n/a,Waiting for network segmentation review

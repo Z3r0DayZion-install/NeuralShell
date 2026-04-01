@@ -1,0 +1,21 @@
+{
+  "summaryCards": [
+    "ecosystem_portfolio_health",
+    "partner_network_health",
+    "service_line_health",
+    "global_accounts_regions",
+    "ecosystem_revenue_mix",
+    "board_pack_freshness",
+    "operator_framework_readiness",
+    "critical_blockers"
+  ],
+  "drilldowns": [
+    "ecosystem_portfolio",
+    "service_line",
+    "partner_network_governance",
+    "global_planning",
+    "ecosystem_revenue",
+    "board_operating_pack",
+    "licensed_operator"
+  ]
+}

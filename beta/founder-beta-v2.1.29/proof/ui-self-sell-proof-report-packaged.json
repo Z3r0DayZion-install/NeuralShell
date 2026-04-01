@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "generatedAt": "2026-03-25T22:22:50.857Z",
+  "mode": "packaged",
+  "launchTarget": "dist/win-unpacked/NeuralShell.exe",
+  "shots": {
+    "quickstart": "screenshots/ui_sales_quickstart_packaged.png",
+    "proof": "screenshots/ui_sales_proof_output_packaged.png",
+    "roi": "screenshots/ui_sales_roi_output_packaged.png",
+    "locked": "screenshots/ui_sales_lock_flow_packaged.png",
+    "unlocked": "screenshots/ui_sales_unlock_restored_packaged.png"
+  },
+  "checks": {
+    "proof": true,
+    "roi": true,
+    "lockFlow": true
+  },
+  "triggerPath": {
+    "proof": "[data-testid=\"quickstart-proof-btn\"]",
+    "roi": "[data-testid=\"run-roi-btn\"]"
+  },
+  "reportPath": "release/ui-self-sell-proof-report-packaged.json"
+}

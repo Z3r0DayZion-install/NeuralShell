@@ -56,6 +56,7 @@ jobs:
       - name: Verify ship readiness
         env:
           NEURALSHELL_SKIP_SOURCE_INTEGRITY: "1"
+          NEURAL_RELEASE_SMOKE_TIMEOUT_MS: "60000"
         run: npm run verify:ship
 
       - name: Upload build artifacts

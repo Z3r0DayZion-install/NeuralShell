@@ -14,6 +14,14 @@ function safeUserDataPath() {
   return path.join(process.cwd(), "state");
 }
 
+const HONEYPOT_SESSIONS = new Set(["admin_vault", "root_secret", "master_key"]);
+
+function _checkHoneypot(name) {
+  if (HONEYPOT_SESSIONS.has(name)) {
+    throw new Error(`[SECURITY BREACH] Attempted unauthorized access to sequestered honeypot: ${name}`);
+  }
+}
+
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
@@ -32,6 +40,8 @@ function validateName(name) {
     /^[a-zA-Z0-9._-]+$/.test(normalized),
     "Session name contains invalid characters."
   );
+  const reserved = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+  assert(!reserved.test(normalized), "Invalid session name (Reserved).");
   return normalized;
 }
 
@@ -113,6 +123,64 @@ function countTokensFromChat(chat) {
   return count;
 }
 
+function previewTextFromChat(chat) {
+  if (!Array.isArray(chat)) {
+    return "";
+  }
+  for (let index = chat.length - 1; index >= 0; index -= 1) {
+    const message = chat[index];
+    const content = message && typeof message.content === "string"
+      ? message.content.replace(/\s+/g, " ").trim()
+      : "";
+    if (content) {
+      return content.slice(0, 220);
+    }
+  }
+  return "";
+}
+
+function buildSessionIndexEntry(payload, options = {}) {
+  const safePayload = payload && typeof payload === "object" ? payload : { chat: [] };
+  const updatedAt = String(options.updatedAt || new Date().toISOString());
+  return {
+    updatedAt,
+    model: String(safePayload.model || "unknown"),
+    tokens: countTokensFromChat(safePayload.chat),
+    previewText: previewTextFromChat(safePayload.chat),
+    workflowId: String(safePayload.workflowId || ""),
+    outputMode: String(safePayload.outputMode || ""),
+    workspaceLabel:
+      safePayload.workspaceAttachment && typeof safePayload.workspaceAttachment === "object"
+        ? String(safePayload.workspaceAttachment.label || "")
+        : "",
+    contextPackFiles:
+      safePayload.contextPack && typeof safePayload.contextPack === "object" && Array.isArray(safePayload.contextPack.entries)
+        ? safePayload.contextPack.entries.length
+        : 0,
+    contextPackProfiles: Array.isArray(safePayload.contextPackProfiles)
+      ? safePayload.contextPackProfiles.length
+      : 0,
+    paletteShortcuts: Array.isArray(safePayload.promotedPaletteActions)
+      ? safePayload.promotedPaletteActions.length
+      : 0,
+    verificationChecks:
+      safePayload.verificationRunPlan && typeof safePayload.verificationRunPlan === "object" && Array.isArray(safePayload.verificationRunPlan.checks)
+        ? safePayload.verificationRunPlan.checks.length
+        : 0,
+    verificationRuns: Array.isArray(safePayload.verificationRunHistory)
+      ? safePayload.verificationRunHistory.length
+      : 0,
+    releasePackets: Array.isArray(safePayload.releasePacketHistory)
+      ? safePayload.releasePacketHistory.length
+      : 0,
+    patchPlanFiles:
+      safePayload.patchPlan && typeof safePayload.patchPlan === "object" && Array.isArray(safePayload.patchPlan.files)
+        ? safePayload.patchPlan.files.length
+        : 0,
+    version: 2
+  };
+}
+
 const userDataDir = safeUserDataPath();
 const sessionsDir = path.join(userDataDir, "sessions");
 const indexFile = path.join(sessionsDir, "index.json");
@@ -159,18 +227,16 @@ function saveSession(name, payload, passphrase) {
   const filePath = sessionPath(safeName);
   fs.writeFileSync(filePath, `${JSON.stringify(envelope, null, 2)}\n`, "utf8");
 
-  index[safeName] = {
-    updatedAt: new Date().toISOString(),
-    model: String(safePayload.model || "unknown"),
-    tokens: countTokensFromChat(safePayload.chat),
-    version: 2
-  };
+  index[safeName] = buildSessionIndexEntry(safePayload, {
+    updatedAt: new Date().toISOString()
+  });
   writeIndex(index);
   return filePath;
 }
 
 function loadSession(name, passphrase) {
   const safeName = validateName(name);
+  _checkHoneypot(safeName);
   const safePassphrase = validatePassphrase(passphrase);
   const filePath = sessionPath(safeName);
   assert(fs.existsSync(filePath), `Session not found: ${safeName}`);
@@ -226,7 +292,20 @@ function search(query) {
   const names = listSessions();
   if (!q) return names.map((name) => ({ name, ...(index[name] || {}) }));
   return names
-    .filter((name) => name.toLowerCase().includes(q))
+    .filter((name) => {
+      const entry = index[name] || {};
+      const haystack = [
+        name,
+        entry.model,
+        entry.workflowId,
+        entry.outputMode,
+        entry.workspaceLabel,
+        entry.previewText
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return haystack.includes(q);
+    })
     .map((name) => ({ name, ...(index[name] || {}) }));
 }
 
@@ -275,3 +354,4 @@ module.exports = {
   saveSession,
   search
 };
+

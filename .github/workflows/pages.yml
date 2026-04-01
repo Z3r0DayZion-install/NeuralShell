@@ -1,0 +1,47 @@
+name: Pages
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "neuralshell-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_PAGES || github.token }}
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Sync web sandbox into docs
+        run: |
+          mkdir -p docs/web-sandbox
+          cp web-sandbox/index.html docs/web-sandbox/index.html
+
+      - name: Upload docs artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

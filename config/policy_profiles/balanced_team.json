@@ -1,0 +1,12 @@
+{
+  "id": "balanced_team",
+  "label": "Balanced Team",
+  "description": "Allows approved remote lanes while keeping relay and telemetry opt-in.",
+  "settings": {
+    "allowRemoteBridge": true,
+    "proofRelayEnabled": false,
+    "hostedProxyEnabled": false,
+    "connectOnStartup": true,
+    "otelExportEnabled": false
+  }
+}

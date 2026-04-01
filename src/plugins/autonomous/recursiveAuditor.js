@@ -9,7 +9,7 @@ module.exports = {
   name: "recursive-auditor",
   description: "Audits autonomous plugins for integrity and trust against the governance ledger",
   register({ registerCommand, kernel }) {
-    
+
     async function calculateHash(filePath) {
       const data = await kernel.request(kernel.CAP_FS, "readFile", { filePath });
       return (await kernel.request(kernel.CAP_CRYPTO, "hash", { data, algorithm: "sha256" })).toUpperCase();
@@ -17,13 +17,17 @@ module.exports = {
 
     async function loadTrustIndex() {
       // Use relative path from AppPath to get to governance directory
-      const ledgerPath = "C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\governance\\THREAT_LEDGER.jsonl"; 
-      
-      if (!(await kernel.request(kernel.CAP_FS, "exists", { filePath: ledgerPath }))) return new Map();
-      const content = await kernel.request(kernel.CAP_FS, "readFile", { filePath: ledgerPath });
+      const ledgerPath = "governance/THREAT_LEDGER.jsonl";
+
+      let content;
+      try {
+        content = await kernel.request(kernel.CAP_FS, "readFile", { filePath: ledgerPath });
+      } catch {
+        return new Map();
+      }
       const lines = content.split("\n").filter(Boolean);
       const trustMap = new Map();
-      
+
       for (const line of lines) {
         try {
           const entry = JSON.parse(line);
@@ -39,13 +43,21 @@ module.exports = {
 
     async function verifyAllPlugins() {
       const trustMap = await loadTrustIndex();
-      // Since readdir is not in CAP_FS, we'll hardcode the target files for this prototype
-      const files = ["echo.js", "recursiveAuditor.js", "sovereign-proxy.js", "swarm-consensus.js"];
+      const pluginDir = "src/plugins/autonomous";
+
+      let files;
+      try {
+        files = await kernel.request(kernel.CAP_FS, "readdir", { dirPath: pluginDir });
+        files = files.filter(f => f.endsWith(".js"));
+      } catch (err) {
+        return { ok: false, error: `Failed to read plugin directory: ${err.message}` };
+      }
+
       const results = [];
       let violations = 0;
 
       for (const file of files) {
-        const fullPath = `C:\\Users\\KickA\\Documents\\GitHub\\NeuralShell\\src\\plugins\\autonomous\\${file}`;
+        const fullPath = `${pluginDir}/${file}`;
         const hash = await calculateHash(fullPath);
         const trustedHash = trustMap.get(file);
 
@@ -53,7 +65,7 @@ module.exports = {
           results.push({ file, status: "UNTRUSTED", currentHash: hash });
           violations++;
         } else if (hash !== trustedHash.toUpperCase()) {
-          results.push({ file, status: "TAMPERED", expected: trustedHash, actual: hash });
+          results.push({ file, status: "SIGNATURE_TAMPERED", expected: trustedHash, actual: hash });
           violations++;
         } else {
           results.push({ file, status: "VERIFIED", hash });

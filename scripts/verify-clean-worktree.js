@@ -139,7 +139,8 @@ function main() {
   }
 
   if (ignored.length > 0) {
-    console.log(`[worktree] Ignoring ${ignored.length} local artifact drift entries from ${path.basename(allowlistFile)}.`);
+    console.log(`\n[worktree] Environment Isolation: Ignoring ${ignored.length} release-staged/drift entries:`);
+    ignored.forEach(entry => console.log(`  (ignored) ${entry.code} ${entry.path}`));
   }
 
   if (blocking.length > 0) {

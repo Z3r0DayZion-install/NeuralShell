@@ -1,0 +1,12 @@
+{
+  "revenueLines": [
+    "product_core",
+    "appliance",
+    "support",
+    "training",
+    "managed_services",
+    "partner_program"
+  ],
+  "mixDimensions": ["revenue_share", "margin_proxy", "support_load_overlay", "partner_sourced_split", "expansion_mix"],
+  "summarySections": ["mix_balance", "risk_flags", "optimization_actions"]
+}

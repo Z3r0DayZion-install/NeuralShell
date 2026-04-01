@@ -1,0 +1,96 @@
+name: Release Provenance
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write # Required for Cosign keyless signing
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate SBOM
+        run: npm run sbom:generate
+
+      - name: Build Release Artifact
+        run: npm run build
+
+      - name: Generate Hashes
+        id: hash
+        shell: bash
+        run: |
+          # Generate hashes for SLSA provenance
+          cd dist
+          echo "hashes=$(sha256sum *.exe | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build-artifacts
+          path: dist/
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          name: build-artifacts
+          path: dist/
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Sign Build Artifact (Keyless)
+        run: |
+          INSTALLER=$(find dist/ -name "*.exe" | head -n 1)
+          echo "Signing $INSTALLER"
+          cosign sign-blob --yes "$INSTALLER" --output-signature release/manifest.sig --output-certificate release/manifest.pem
+          
+      - name: Verify Signature
+        run: |
+          INSTALLER=$(find dist/ -name "*.exe" | head -n 1)
+          # Use the environment-specific identity for verification
+          cosign verify-blob "$INSTALLER" --signature release/manifest.sig --certificate release/manifest.pem --certificate-identity "https://github.com/${{ github.repository_owner }}/${{ github.repository }}/.github/workflows/provenance.yml@refs/heads/master" --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+
+      - name: Upload provenance artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: provenance-artifacts
+          path: |
+            release/manifest.sig
+            release/manifest.pem
+
+  provenance:
+    needs: build
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: true

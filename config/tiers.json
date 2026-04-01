@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "defaultTier": "free",
+  "tiers": [
+    {
+      "id": "free",
+      "label": "Audit-Only",
+      "capabilities": [
+        "proof_view",
+        "roi_view",
+        "status_commands",
+        "session_read",
+        "issue_assist",
+        "support_bundle_export",
+        "onboarding_wizard",
+        "funnel_dashboard"
+      ]
+    },
+    {
+      "id": "pro",
+      "label": "Pro Operator",
+      "capabilities": [
+        "proof_view",
+        "roi_view",
+        "status_commands",
+        "session_read",
+        "session_write",
+        "provider_remote_enable",
+        "proof_relay_basic",
+        "issue_assist",
+        "support_bundle_export",
+        "policy_profiles_apply",
+        "onboarding_wizard",
+        "marketplace_paid_install",
+        "funnel_dashboard",
+        "enterprise_sales_console",
+        "pilot_kit_generator",
+        "certification_center",
+        "expansion_planner"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "label": "Enterprise",
+      "capabilities": [
+        "proof_view",
+        "roi_view",
+        "status_commands",
+        "session_read",
+        "session_write",
+        "provider_remote_enable",
+        "proof_relay_basic",
+        "proof_relay_map",
+        "issue_assist",
+        "support_bundle_export",
+        "policy_profiles_apply",
+        "onboarding_wizard",
+        "enterprise_deploy_pack",
+        "release_health_console",
+        "operator_dashboard",
+        "marketplace_paid_install",
+        "revenue_console",
+        "partner_kit",
+        "funnel_dashboard",
+        "enterprise_sales_console",
+        "pilot_kit_generator",
+        "white_label_mode",
+        "partner_ops_console",
+        "certification_center",
+        "board_reporting_console",
+        "enterprise_policy_suite",
+        "customer_success_console",
+        "expansion_planner"
+      ]
+    }
+  ]
+}

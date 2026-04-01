@@ -1,0 +1,66 @@
+[
+  {
+    "id": "provider-sweep-success-prompt-vault-save",
+    "label": "Provider sweep success -> prompt vault save",
+    "enabled": true,
+    "eventType": "provider.sweep.passed",
+    "actions": [
+      { "type": "prompt_vault_save" },
+      { "type": "write_audit_log", "payload": { "event": "provider_sweep_passed" } }
+    ]
+  },
+  {
+    "id": "proof-pass-share-and-snapshot",
+    "label": "Proof pass -> offer share badge + snapshot",
+    "enabled": true,
+    "eventType": "proof.passed",
+    "actions": [
+      { "type": "share_proof_badge" },
+      { "type": "snapshot_state" }
+    ]
+  },
+  {
+    "id": "policy-change-log-and-snapshot",
+    "label": "Policy change -> log + snapshot",
+    "enabled": true,
+    "eventType": "policy.changed",
+    "actions": [
+      { "type": "write_audit_log", "payload": { "event": "policy_changed" } },
+      { "type": "snapshot_state" }
+    ]
+  },
+  {
+    "id": "update-verify-failed-block-apply",
+    "label": "Update verification fail -> disable auto-apply + alert",
+    "enabled": true,
+    "eventType": "update.verification.failed",
+    "actions": [
+      { "type": "block_update_apply" },
+      { "type": "show_alert", "payload": { "severity": "critical", "message": "Update signature verification failed." } }
+    ]
+  },
+  {
+    "id": "relay-failure-x3-disable-relay",
+    "label": "Relay failure x3 -> disable relay + alert",
+    "enabled": true,
+    "eventType": "relay.failed",
+    "conditions": {
+      "relayFailureThreshold": 3
+    },
+    "actions": [
+      { "type": "disable_relay" },
+      { "type": "show_alert", "payload": { "severity": "degraded", "message": "Relay disabled after repeated failures." } }
+    ]
+  },
+  {
+    "id": "collab-disconnect-mark-degraded",
+    "label": "Collab disconnect -> mark session degraded",
+    "enabled": true,
+    "eventType": "collab.peer.left",
+    "actions": [
+      { "type": "show_alert", "payload": { "severity": "warning", "message": "Collab session degraded after peer disconnect." } },
+      { "type": "write_audit_log", "payload": { "event": "collab_peer_left" } }
+    ]
+  }
+]
+

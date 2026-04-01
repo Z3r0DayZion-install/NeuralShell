@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "agents": {
+    "proof_guard": {
+      "rating": 4.9,
+      "ratingsCount": 128,
+      "installAttempts": 145,
+      "installSuccess": 141
+    },
+    "refactor_pro": {
+      "rating": 4.7,
+      "ratingsCount": 39,
+      "installAttempts": 44,
+      "installSuccess": 40
+    }
+  }
+}

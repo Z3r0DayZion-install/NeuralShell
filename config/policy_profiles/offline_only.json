@@ -1,0 +1,12 @@
+{
+  "id": "offline_only",
+  "label": "Offline Only",
+  "description": "Strict local-only lane. Remote providers and relay are disabled.",
+  "settings": {
+    "allowRemoteBridge": false,
+    "proofRelayEnabled": false,
+    "hostedProxyEnabled": false,
+    "connectOnStartup": true,
+    "otelExportEnabled": false
+  }
+}

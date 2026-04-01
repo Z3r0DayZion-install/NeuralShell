@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NeuralShell Pricing</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #08121a;
+      color: #d7e7f0;
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 36px 20px 56px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      letter-spacing: 0.03em;
+    }
+    .sub {
+      color: #9db4c4;
+      margin-bottom: 26px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      border: 1px solid #264154;
+      border-radius: 12px;
+      background: #0e1b26;
+      padding: 16px;
+    }
+    .name {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #77d8d0;
+    }
+    .price {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+    a.btn {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 10px;
+      border: 1px solid #3ca7a0;
+      border-radius: 8px;
+      color: #b5f1eb;
+      text-decoration: none;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    a.btn:hover {
+      background: #123036;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>NeuralShell Pricing</h1>
+    <p class="sub">Choose Free, Pro, or Enterprise. Offline activation is supported for all paid tiers.</p>
+    <div class="grid">
+      <section class="card">
+        <div class="name">Free</div>
+        <div class="price">$0</div>
+        <div>Audit-only baseline, local proof workflows, and onboarding funnel access.</div>
+      </section>
+      <section class="card">
+        <div class="name">Pro</div>
+        <div class="price">$99</div>
+        <div>Unlock write actions, paid agent installs, and advanced operator controls.</div>
+        <a class="btn" href="https://gumroad.com/l/neuralshell-operator">Buy Pro (Gumroad)</a>
+      </section>
+      <section class="card">
+        <div class="name">Enterprise</div>
+        <div class="price">$499 / yr</div>
+        <div>Seat packs, release/revenue controls, relay mapping, and enterprise deployment support.</div>
+        <a class="btn" href="mailto:enterprise@neuralshell.app?subject=NeuralShell%20Enterprise%20Invoice%20Request">Request Invoice or Demo</a>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

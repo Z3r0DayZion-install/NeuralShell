@@ -1,0 +1,10 @@
+{
+  "schema": "neuralshell_trusted_publishers_v1",
+  "publishers": [
+    {
+      "publisherId": "demo-neuralshell-labs",
+      "displayName": "NeuralShell Labs Demo Publisher",
+      "fingerprint": "sha256:78b7d2a0650f9b1c022f22319e4ff326dae93e962735936d898675c4e10a21c0"
+    }
+  ]
+}

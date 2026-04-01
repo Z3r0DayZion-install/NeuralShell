@@ -96,6 +96,17 @@ jobs:
           );
           NODE
 
+      - name: Dependency Security Audit
+        run: npm audit --audit-level=high
+
+      - name: Verify SBOM Alignment
+        run: |
+          if [ ! -f "artifacts/sbom/latest.json" ]; then
+            echo "Error: SBOM missing."
+            exit 1
+          fi
+          echo "SBOM exists: artifacts/sbom/latest.json"
+
       - name: Build release metadata and verify freshness
         run: |
           npm run release:manifest
@@ -105,3 +116,13 @@ jobs:
           npm run release:upgrade:validate
           npm run release:checksums
           npm run release:verify:fresh
+
+      - name: Enforce Fail-Closed Provenance Gate
+        run: |
+          echo "Verifying mandatory CI-native provenance..."
+          node release/verify/veritas.js .
+          if [ $? -ne 0 ]; then
+            echo "Error: Release verification failed (Fail-Closed Policy)."
+            exit 1
+          fi
+          echo "CI Provenance Verified: SUCCESS (Mandatory)"

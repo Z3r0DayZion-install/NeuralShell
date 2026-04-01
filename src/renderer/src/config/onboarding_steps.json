@@ -1,0 +1,22 @@
+[
+  {
+    "id": "provider_sweep",
+    "title": "Provider Sweep",
+    "description": "Open settings and run provider health sweep."
+  },
+  {
+    "id": "vault_save",
+    "title": "Save Vault",
+    "description": "Store a demo secret in Vault+."
+  },
+  {
+    "id": "run_proof",
+    "title": "Run 90s Proof",
+    "description": "Execute /proof from the command lane."
+  },
+  {
+    "id": "share_badge",
+    "title": "Share Badge",
+    "description": "Open proof badge URL and confirm outbound share path."
+  }
+]

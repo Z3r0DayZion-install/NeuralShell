@@ -1,0 +1,197 @@
+[
+  {
+    "profileId": "institutional_exec_brief",
+    "title": "Institutional Executive Brief",
+    "description": "30-minute guided walkthrough for executive and procurement stakeholders.",
+    "presenterFlow": [
+      {
+        "panelId": "mission-control",
+        "title": "Mission Control",
+        "talkTrack": "Establish real-time operational posture and authority controls."
+      },
+      {
+        "panelId": "fleet-control",
+        "title": "Fleet Control",
+        "talkTrack": "Show multi-node visibility and deterministic control coverage."
+      },
+      {
+        "panelId": "recovery-center",
+        "title": "Recovery Center",
+        "talkTrack": "Demonstrate incident recovery and safe restore pathways."
+      },
+      {
+        "panelId": "airgap-operations",
+        "title": "Air-Gapped Operations",
+        "talkTrack": "Validate controlled transfer and no-cloud runtime operation."
+      },
+      {
+        "panelId": "trust-fabric",
+        "title": "PKI Trust Fabric",
+        "talkTrack": "Prove certificate lifecycle, revocation, and trust traceability."
+      },
+      {
+        "panelId": "procurement-command",
+        "title": "Procurement Command",
+        "talkTrack": "Generate buyer-ready review assets from runtime truth."
+      },
+      {
+        "panelId": "institutional-command",
+        "title": "Institutional Command",
+        "talkTrack": "Close with one-screen readiness posture and executive summary."
+      }
+    ],
+    "seedLocalStorage": {
+      "neuralshell_airgap_mode_v1": "1",
+      "neuralshell_demo_mode_v1": "1",
+      "neuralshell_demo_active_profile_v1": "institutional_exec_brief",
+      "neuralshell_pki_certificates_v1": [
+        {
+          "certificateId": "cert-node-01",
+          "subject": "Node-01",
+          "type": "node",
+          "issuedAt": "2026-03-25T10:00:00.000Z",
+          "expiresAt": "2027-03-25T10:00:00.000Z",
+          "status": "active"
+        },
+        {
+          "certificateId": "cert-relay-01",
+          "subject": "Relay-01",
+          "type": "relay",
+          "issuedAt": "2026-03-24T10:00:00.000Z",
+          "expiresAt": "2027-03-24T10:00:00.000Z",
+          "status": "active"
+        }
+      ],
+      "neuralshell_pki_revocations_v1": [
+        {
+          "certificateId": "cert-deprecated-01",
+          "revokedAt": "2026-03-22T14:00:00.000Z",
+          "reason": "key_compromise"
+        }
+      ],
+      "neuralshell_courier_transfer_ledger_v1": [
+        {
+          "entryId": "ledger-001",
+          "packageId": "courier-pkg-001",
+          "status": "released",
+          "sender": "TransferStation-A",
+          "receiver": "AirGap-Cluster-West",
+          "at": "2026-03-26T09:30:00.000Z"
+        },
+        {
+          "entryId": "ledger-002",
+          "packageId": "courier-pkg-002",
+          "status": "quarantined",
+          "sender": "TransferStation-B",
+          "receiver": "Oversight-Node-East",
+          "at": "2026-03-27T11:20:00.000Z"
+        }
+      ],
+      "neuralshell_continuity_runs_v1": [
+        {
+          "runId": "drill-001",
+          "templateId": "fleet_restore",
+          "passed": true,
+          "score": 96,
+          "generatedAt": "2026-03-25T18:00:00.000Z"
+        },
+        {
+          "runId": "drill-002",
+          "templateId": "vault_recovery",
+          "passed": true,
+          "score": 91,
+          "generatedAt": "2026-03-26T19:15:00.000Z"
+        }
+      ],
+      "neuralshell_procurement_pack_history_v1": [
+        {
+          "id": "proc-pack-demo-001",
+          "generatedAt": "2026-03-27T16:10:00.000Z",
+          "organization": "Critical Infrastructure Evaluator",
+          "reviewOwner": "security-architecture",
+          "currentVersion": "2.2.0",
+          "previousVersion": "2.1.29"
+        }
+      ],
+      "neuralshell_tamper_simulation_reports_v1": [
+        {
+          "reportId": "sim-001",
+          "scenarioId": "invalid_signature_injection",
+          "detected": true,
+          "status": "contained",
+          "generatedAt": "2026-03-26T15:45:00.000Z"
+        }
+      ],
+      "neuralshell_hardware_appliance_provision_v1": {
+        "desktop_appliance": {
+          "ready": true,
+          "lastProvisionedAt": "2026-03-25T12:05:00.000Z"
+        },
+        "relay_appliance": {
+          "ready": true,
+          "lastProvisionedAt": "2026-03-25T12:20:00.000Z"
+        },
+        "oversight_appliance": {
+          "ready": true,
+          "lastProvisionedAt": "2026-03-25T12:35:00.000Z"
+        }
+      }
+    },
+    "resetKeys": [
+      "neuralshell_demo_mode_v1",
+      "neuralshell_demo_active_profile_v1",
+      "neuralshell_demo_presenter_state_v1"
+    ]
+  },
+  {
+    "profileId": "operator_training_lab",
+    "title": "Operator Training Lab",
+    "description": "Hands-on training profile with continuity and support drill emphasis.",
+    "presenterFlow": [
+      {
+        "panelId": "training-delivery",
+        "title": "Training Delivery",
+        "talkTrack": "Introduce role-based curriculum and lab tracks."
+      },
+      {
+        "panelId": "support-ops",
+        "title": "Support Ops",
+        "talkTrack": "Run severity triage and escalation simulation."
+      },
+      {
+        "panelId": "continuity-drills",
+        "title": "Continuity Drills",
+        "talkTrack": "Validate remediation tracking from failed drills."
+      },
+      {
+        "panelId": "field-launch",
+        "title": "Field Launch",
+        "talkTrack": "Confirm pack freshness and launch blockers visibility."
+      }
+    ],
+    "seedLocalStorage": {
+      "neuralshell_demo_mode_v1": "1",
+      "neuralshell_demo_active_profile_v1": "operator_training_lab",
+      "neuralshell_support_triage_queue_v1": [
+        {
+          "ticketId": "SUP-214",
+          "severity": "high",
+          "summary": "Courier package quarantine mismatch",
+          "owner": "support-l2"
+        },
+        {
+          "ticketId": "SUP-215",
+          "severity": "medium",
+          "summary": "Operator training bundle hash mismatch",
+          "owner": "support-l1"
+        }
+      ]
+    },
+    "resetKeys": [
+      "neuralshell_demo_mode_v1",
+      "neuralshell_demo_active_profile_v1",
+      "neuralshell_demo_presenter_state_v1",
+      "neuralshell_support_triage_queue_v1"
+    ]
+  }
+]

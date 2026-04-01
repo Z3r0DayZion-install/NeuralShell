@@ -174,7 +174,10 @@ Respond with the updated 'INTENT_REGISTRY' entry.`;
   async executeInSandbox(code) {
     // HARDWARE ENFORCEMENT: Agent cannot run unless Silicon Anchor is verified
     const identityKernel = require("./identityKernel");
-    const currentFingerprint = identityKernel.getFingerprint();
+    const currentFingerprint =
+      typeof identityKernel.getHardwareFingerprint === "function"
+        ? identityKernel.getHardwareFingerprint()
+        : identityKernel.getFingerprint();
     const stateManager = require("./stateManager");
     if (stateManager.get("nodeId") && stateManager.get("nodeId") !== currentFingerprint) {
       throw new Error("OMEGA_BLOCK: Agent execution disabled. Physical hardware mismatch detected.");

@@ -1,0 +1,10 @@
+{
+  "schema": "neuralshell_training_tracks_manifest_v1",
+  "source": "src/renderer/src/config/training_tracks.json",
+  "tracks": [
+    "audit_operator",
+    "deployment_admin",
+    "compliance_lead",
+    "marketplace_builder"
+  ]
+}

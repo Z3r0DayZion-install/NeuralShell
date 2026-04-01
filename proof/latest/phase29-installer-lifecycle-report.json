@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-03-21T06:35:39.175Z",
+  "installerPath": "NeuralShell Setup 2.1.28.exe",
+  "scenarios": {
+    "install": {
+      "pass": true,
+      "durationMs": 3637
+    },
+    "first-launch": {
+      "pass": true,
+      "setupState": "unconfigured",
+      "notes": "Fresh install loads completely blank onboarding state as expected."
+    },
+    "post-onboarding": {
+      "pass": true,
+      "setupState": "ready",
+      "badgeClass": "badge-trust trust-invalid",
+      "notes": "Onboarding completed, transitioned to governed runtime. Profile is unsigned in test context, hence trust-invalid."
+    },
+    "relaunch-reconnect-on": {
+      "pass": true,
+      "activeId": "prof-installed",
+      "badgeClass": "badge-trust trust-invalid",
+      "notes": "App preserved user data. Resumed into target profile. Profile lacks hardware cryptographic signature in test context, resulting in trust-invalid."
+    },
+    "relaunch-reconnect-off": {
+      "pass": true,
+      "setupState": "ready",
+      "badgeClass": "badge-trust trust-invalid",
+      "notes": "App preserved reconnect=false policy. Re-attached to target profile (trust-invalid due to signature absence)."
+    },
+    "relaunch-offline": {
+      "pass": true,
+      "setupState": "ready",
+      "badgeClass": "badge-trust trust-invalid",
+      "notes": "App preserved offline policy. State remains ready; unsigned fixture profile remains trust-invalid."
+    },
+    "upgrade-relaunch": {
+      "pass": true,
+      "setupState": "ready",
+      "notes": "Installed app launched successfully after upgrade overlay. User data and active profile intact."
+    },
+    "uninstall": {
+      "pass": true,
+      "exeRemoved": true,
+      "userDataPreserved": true,
+      "notes": "Uninstaller executed silently. Program executable removed. UserData is preserved by default NSIS config."
+    }
+  }
+}

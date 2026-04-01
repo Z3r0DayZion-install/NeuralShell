@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2026-03-25T23:08:36.993Z",
+  "version": "2.1.29",
+  "betaRoot": "beta/founder-beta-v2.1.29",
+  "files": [
+    {
+      "path": "beta/founder-beta-v2.1.29/installer/NeuralShell Setup 2.1.29.exe",
+      "sizeBytes": 95791065,
+      "sha256": "b83a1019e488787ff7d544d2bc6786f5ce8de948a86bf6eba1a8fdef793d0e12"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/screenshots/ui_sales_quickstart_packaged.png",
+      "sizeBytes": 187645,
+      "sha256": "25cef2b3007d5bdb39cebe0f72478daffd35f2bcbbcb07296df6b98a20789d65"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/screenshots/ui_sales_proof_output_packaged.png",
+      "sizeBytes": 165153,
+      "sha256": "483cb7f3f49f31afa87581326d8c008c08ea54c283a83154216bf866d2cd7709"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/screenshots/ui_sales_roi_output_packaged.png",
+      "sizeBytes": 191494,
+      "sha256": "71b8d28fff6cce4ba01742e5e57ade6fe87aa06282f6d42afcb963c2788d4c79"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/screenshots/ui_sales_lock_flow_packaged.png",
+      "sizeBytes": 190576,
+      "sha256": "17aeab0ed795ee835f8c0f344f5b469541e6afdd9eec669caa9e446be6a842e8"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/screenshots/ui_sales_unlock_restored_packaged.png",
+      "sizeBytes": 134090,
+      "sha256": "761ee1ce70b513445ba1b90a1ef80acc9d40557f9da954f17bd98729cdb05a55"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/proof/ui-self-sell-proof-report-packaged.json",
+      "sizeBytes": 739,
+      "sha256": "082d4d3dca349d1f2a1deffc3779cc45f818eb0a2e4ee33362eefb971f89fe45"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/proof/ui-self-sell-proof-parity.json",
+      "sizeBytes": 1328,
+      "sha256": "25fe9db59adb7f143a000c36ea45c45da62be524163cf46bddc303c5b958f3f8"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/README.md",
+      "sizeBytes": 723,
+      "sha256": "b6af2a9446e82078341e71411bb465ca47e851f95dcae1076ae0d9197e5a136c"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/docs/FOUNDER_BETA_QUICKSTART.md",
+      "sizeBytes": 1326,
+      "sha256": "31360d4f66ebe14107f8c860d76be5de5dd4d85e08180789d400f341ba0dfe69"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/docs/FOUNDER_BETA_KNOWN_LIMITATIONS.md",
+      "sizeBytes": 1216,
+      "sha256": "130e4a10dd421a6fee030d9468fa442df5ce5688996a13224f521308a90cb9e0"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/docs/FOUNDER_BETA_FEEDBACK.md",
+      "sizeBytes": 968,
+      "sha256": "56ff9c93123ae6cfe57cc2705f04075a7261c3852cdaa81929ab508d0df1042d"
+    },
+    {
+      "path": "beta/founder-beta-v2.1.29/docs/FOUNDER_BETA_PROOF_SUMMARY.md",
+      "sizeBytes": 1081,
+      "sha256": "e7858d3ab42fecaf869611d414e8cbd09c660426cadc0bf0df832d78456c4f4c"
+    }
+  ]
+}

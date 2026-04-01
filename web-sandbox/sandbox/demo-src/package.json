@@ -1,0 +1,8 @@
+{
+  "name": "neuralshell-web-sandbox-demo",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "proof:bundle": "node proof-bundle.js"
+  }
+}

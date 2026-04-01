@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-03-25T22:22:51.253Z",
+  "runtimeReportPath": "release/ui-self-sell-proof-report.json",
+  "packagedReportPath": "release/ui-self-sell-proof-report-packaged.json",
+  "runtimeMode": "runtime",
+  "packagedMode": "packaged",
+  "runtimeChecks": {
+    "proof": true,
+    "roi": true,
+    "lockFlow": true
+  },
+  "packagedChecks": {
+    "proof": true,
+    "roi": true,
+    "lockFlow": true
+  },
+  "runtimeShotCoverage": {
+    "coverage": {
+      "quickstart": true,
+      "proof": true,
+      "roi": true,
+      "locked": true,
+      "unlocked": true
+    },
+    "all": true
+  },
+  "packagedShotCoverage": {
+    "coverage": {
+      "quickstart": true,
+      "proof": true,
+      "roi": true,
+      "locked": true,
+      "unlocked": true
+    },
+    "all": true
+  },
+  "match": {
+    "proof": true,
+    "roi": true,
+    "lockFlow": true,
+    "requiredShotsPresentInBoth": true
+  },
+  "triggerPath": {
+    "runtime": {
+      "proof": "[data-testid=\"quickstart-proof-btn\"]",
+      "roi": "[data-testid=\"run-roi-btn\"]"
+    },
+    "packaged": {
+      "proof": "[data-testid=\"quickstart-proof-btn\"]",
+      "roi": "[data-testid=\"run-roi-btn\"]"
+    }
+  },
+  "parityPass": true,
+  "notes": [
+    "Runtime and packaged checks are aligned for proof/roi/lockFlow and required screenshots exist in both modes."
+  ]
+}
