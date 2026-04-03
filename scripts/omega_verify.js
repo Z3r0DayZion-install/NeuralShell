@@ -84,8 +84,8 @@ async function verifyAll() {
     if (latestBundleSigned) {
         verRes = run('node tools/verify_external_proof.js artifacts/var_proof/latest .');
     } else if (runningInCi) {
-        console.log('[OMEGA] latest VAR_PROOF is unsigned in CI; verifying deterministic signed fixture bundle.');
-        verRes = run('node tools/verify_external_proof.js artifacts/var_proof/DETERMINISTIC_TEST');
+        console.log('[OMEGA] latest VAR_PROOF is unsigned in CI; verifying immutable signed fixture bundle.');
+        verRes = run('node tools/verify_external_proof.js tools/fixtures/signed_var_proof');
     } else {
         throw new Error('FAIL: Generated VAR_PROOF missing signatures and no CI fallback available.');
     }
