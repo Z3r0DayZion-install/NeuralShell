@@ -1,8 +1,8 @@
 # OPEN ITEMS AND RISKS - NeuralShell
 
 ## 1. Technical Debt & Open Items
-- **Pre-Push Gate Hygiene**: `.gitignore` and local drift controls exist, but strict release gating still blocks on large untracked residue sets in active workspaces.
-- **LLM Recovery Strings**: While localized, the recovery strings are still hardcoded in `renderer.js`. Move to a centralized configuration file.
+- **Pre-Push Gate Hygiene**: `.gitignore` and local drift controls are now paired with residue classification/archive discipline; `release:worktree:strict` is passing.
+- **LLM Recovery Strings**: Recovery and bridge operator copy has been centralized in `src/core/config.js` (`RECOVERY_COPY`) and consumed by `src/renderer.js`.
 
 ## 2. Release Lessons Learned
 - **Draft Release Integrity**: Interrupted or timed-out `gh release create` calls can result in "untagged" draft slugs. Always verify asset count and tag association via `gh release view` immediately after upload.
@@ -20,5 +20,7 @@
 Verified on 2026-04-03 against `.gitignore` and `scripts/release-verify.js`.
 
 ## 5. Remaining Finish Actions
-- [ ] Classify untracked workspace residue into commit/archive/ignore buckets so `release:worktree:strict` can pass without manual intervention.
-- [ ] Move LLM recovery strings out of renderer hardcoding into a centralized runtime config surface.
+- [x] Classify untracked workspace residue into commit/archive/ignore buckets so `release:worktree:strict` can pass without manual intervention.
+- [x] Move LLM recovery strings out of renderer hardcoding into a centralized runtime config surface.
+
+No open finish actions remain in this track as of 2026-04-03.
