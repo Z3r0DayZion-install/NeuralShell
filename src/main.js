@@ -1742,6 +1742,9 @@ app.whenReady().then(async () => {
   // --- INTEGRITY BOOT ---
   const report = await verifyIntegrity();
   const ignoreIntegrity = process.env.NEURAL_IGNORE_INTEGRITY === "1";
+  if (typeof identityKernel.setHarnessFallbackEnabled === "function") {
+    identityKernel.setHarnessFallbackEnabled(ignoreIntegrity);
+  }
   if (!report.ok && !ignoreIntegrity) {
     console.error('[SECURITY] Integrity check failed. Booting into Recovery Mode.');
     createRecoveryWindow(report);
@@ -3497,7 +3500,6 @@ ipcMain.handle("action:resume-chain", async (_event, chainId, workspacePath) => 
     return { ok: false, reason: err.message };
   }
 }); // end resume-chain
-
 
 
 

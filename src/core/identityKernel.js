@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { kernel, CAP_PROC } = require("../kernel");
 
@@ -10,6 +11,7 @@ const PEER_STORE_AAD = Buffer.from("NeuralShell.peers.v1", "utf8");
 
 let keyPair = null;
 let hardwareFingerprint = null;
+let harnessFallbackEnabled = false;
 const peers = new Map();
 
 /**
@@ -18,8 +20,11 @@ const peers = new Map();
  */
 function getAuditChain() {
   try {
-    const auditChain = require('./auditChain');
-    return auditChain;
+    const auditChain = require("./auditChain");
+    if (auditChain && typeof auditChain.append === "function") {
+      return auditChain;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -545,22 +550,48 @@ async function getWindowsHardwareId() {
       }
     }
   } else {
-    // Hard failure: No valid identifiers
-    if (auditChain) {
-      try {
-        auditChain.append({
-          event: 'hardware-binding',
-          platform: 'win32',
-          status: 'failed',
-          backend: backend,
-          method: 'none',
-          message: 'Hardware binding failed: no valid hardware identifiers available'
-        });
-      } catch (err) {
-        console.error('Audit chain write failed:', err.message);
+    if (harnessFallbackEnabled) {
+      const syntheticId = [
+        "harness",
+        os.hostname(),
+        process.platform,
+        process.arch
+      ].join(":");
+      compositeIdentifier = `fallback:${syntheticId}`;
+      mode = "degraded";
+      if (auditChain) {
+        try {
+          auditChain.append({
+            event: "hardware-binding",
+            platform: "win32",
+            status: "degraded",
+            backend,
+            method: "harness-fallback",
+            message:
+              "Hardware binding fallback enabled via runtime guard (test/integrity-bypass mode)."
+          });
+        } catch (err) {
+          console.error("Audit chain write failed:", err.message);
+        }
       }
+    } else {
+      // Hard failure: No valid identifiers
+      if (auditChain) {
+        try {
+          auditChain.append({
+            event: 'hardware-binding',
+            platform: 'win32',
+            status: 'failed',
+            backend: backend,
+            method: 'none',
+            message: 'Hardware binding failed: no valid hardware identifiers available'
+          });
+        } catch (err) {
+          console.error('Audit chain write failed:', err.message);
+        }
+      }
+      throw new Error('Hardware binding failed on Windows: No valid hardware identifiers available');
     }
-    throw new Error('Hardware binding failed on Windows: No valid hardware identifiers available');
   }
   
   // Step 6: Generate SHA-256 fingerprint
@@ -594,6 +625,10 @@ async function getWindowsHardwareId() {
   
   hardwareFingerprint = fingerprint;
   return fingerprint;
+}
+
+function setHarnessFallbackEnabled(enabled) {
+  harnessFallbackEnabled = Boolean(enabled);
 }
 
 /**
@@ -919,6 +954,7 @@ module.exports = {
   getPublicKeyPem,
   getFingerprint,
   getHardwareFingerprint,
+  setHarnessFallbackEnabled,
   trustPeer,
   revokePeer,
   listPeers,
