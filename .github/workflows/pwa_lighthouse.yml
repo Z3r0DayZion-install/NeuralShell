@@ -42,7 +42,7 @@ jobs:
         uses: treosh/lighthouse-ci-action@v10
         with:
           configPath: ./.lighthouserc.mobile.json
-          uploadArtifacts: true
+          uploadArtifacts: false
           temporaryPublicStorage: true
 
       - name: Stop static server
@@ -52,4 +52,3 @@ jobs:
           if [ -f /tmp/pwa_http_pid ]; then
             kill "$(cat /tmp/pwa_http_pid)" || true
           fi
-
