@@ -65,9 +65,43 @@
         RETRY_BASE_DELAY_MS: 1000
     };
 
+    const RECOVERY_COPY = {
+        FALLBACK_STATUS_DETAIL: "Open LLM Setup in the settings drawer to inspect the active bridge, model, and connection rules.",
+        STARTER_PROMPT_FALLBACK: "Diagnose the local bridge, recommend the smallest safe fix, and keep the workflow offline-first.",
+        BANNERS: {
+            OFFLINE_MODE_REVERTED: "Offline Mode turned on. Live bridge reverted to {profileName}.",
+            OFFLINE_MODE_BLOCKED: "Offline Mode turned on. Hosted profiles are blocked.",
+            OFFLINE_MODE_HOSTED_AVAILABLE: "Offline Mode turned off. Hosted profiles are available again.",
+            BRIDGE_CONNECTED: "Bridge connection established.",
+            BRIDGE_DISCONNECTED: "Bridge connection lost.",
+            STARTER_PROMPT_LOADED: "Starter prompt loaded.",
+            DETECTING_LOCAL_BRIDGE: "Detecting local bridge...",
+            LOCAL_BRIDGE_DETECTED: "Local bridge detected at {baseUrl}.",
+            LOCAL_BRIDGE_NOT_DETECTED: "Local bridge not detected: {reason}",
+            BRIDGE_DETECT_FAILED: "Bridge detect failed: {reason}",
+            CHECKING_BRIDGE_HEALTH: "Checking bridge health...",
+            BRIDGE_HEALTHY: "Bridge healthy at {baseUrl}.",
+            BRIDGE_HEALTH_FAILED: "Bridge health failed: {reason}"
+        },
+        EMPTY_STATE: {
+            TITLE: "No active conversation yet.",
+            HINTS: [
+                "1. Detect the bridge and confirm the base URL.",
+                "2. Pick a model in Chat Ops or LLM Setup.",
+                "3. Load a workflow prompt when you want a guided next step."
+            ],
+            ACTIONS: {
+                DETECT_LOCAL_BRIDGE: "Detect Local Bridge",
+                OPEN_SETTINGS_MENU: "Open Settings Menu",
+                LOAD_STARTER_PROMPT: "Load Starter Prompt"
+            }
+        }
+    };
+
     return {
         LLM_STATUS,
         LLM_STATUS_MESSAGES,
-        CONNECTION_DEFAULTS
+        CONNECTION_DEFAULTS,
+        RECOVERY_COPY
     };
 });
