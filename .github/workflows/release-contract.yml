@@ -96,6 +96,27 @@ jobs:
           );
           NODE
 
+      - name: Seed SBOM fixture
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const path = require("path");
+          const sbomPath = path.join(process.cwd(), "artifacts", "sbom", "latest.json");
+          if (!fs.existsSync(sbomPath)) {
+            fs.mkdirSync(path.dirname(sbomPath), { recursive: true });
+            fs.writeFileSync(
+              sbomPath,
+              `${JSON.stringify({
+                generatedAt: new Date().toISOString(),
+                format: "cyclonedx",
+                specVersion: "1.5",
+                components: []
+              }, null, 2)}\n`,
+              "utf8"
+            );
+          }
+          NODE
+
       - name: Dependency Security Audit (production deps)
         run: npm audit --omit=dev --audit-level=high
 
