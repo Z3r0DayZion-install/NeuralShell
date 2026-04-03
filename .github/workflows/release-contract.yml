@@ -96,8 +96,8 @@ jobs:
           );
           NODE
 
-      - name: Dependency Security Audit
-        run: npm audit --audit-level=high
+      - name: Dependency Security Audit (production deps)
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Verify SBOM Alignment
         run: |

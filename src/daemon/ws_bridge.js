@@ -1,7 +1,6 @@
 const crypto = require("crypto");
-const { spawn } = require("child_process");
-const path = require("path");
 const { WebSocketServer } = require("ws");
+const { getDaemonJwtSecret, runProofBundle, runGitSha } = require("../core/daemonBridgeRuntime");
 
 function base64UrlEncode(input) {
   return Buffer.from(input)
@@ -83,73 +82,11 @@ function parseCommandMessage(rawMessage) {
   }
 }
 
-function runProofBundle(workspacePath, send) {
-  return new Promise((resolve) => {
-    const started = Date.now();
-    const safeCwd = workspacePath && String(workspacePath).trim() ? String(workspacePath).trim() : process.cwd();
-    const proc = spawn("npm", ["run", "proof:bundle"], {
-      cwd: safeCwd,
-      shell: true
-    });
-    let stdout = "";
-    let stderr = "";
-
-    proc.stdout.on("data", (chunk) => {
-      const text = String(chunk || "");
-      stdout += text;
-      send({
-        action: "proof.log",
-        stream: "stdout",
-        line: text
-      });
-    });
-    proc.stderr.on("data", (chunk) => {
-      const text = String(chunk || "");
-      stderr += text;
-      send({
-        action: "proof.log",
-        stream: "stderr",
-        line: text
-      });
-    });
-
-    proc.on("close", (code) => {
-      resolve({
-        ok: Number(code || 0) === 0,
-        exitCode: Number(code || 0),
-        durationMs: Date.now() - started,
-        stdout,
-        stderr
-      });
-    });
-  });
-}
-
-function runGitSha(workspacePath) {
-  return new Promise((resolve) => {
-    const proc = spawn("git", ["rev-parse", "HEAD"], {
-      cwd: workspacePath,
-      shell: true
-    });
-    let out = "";
-    proc.stdout.on("data", (chunk) => {
-      out += String(chunk || "");
-    });
-    proc.on("close", (code) => {
-      if (Number(code || 0) !== 0) {
-        resolve("");
-        return;
-      }
-      resolve(String(out || "").trim());
-    });
-  });
-}
-
 class DaemonWsBridge {
   constructor(options = {}) {
     this.host = String(options.host || "127.0.0.1");
     this.port = Number(options.port || 55015);
-    this.secret = String(options.secret || process.env.NS_DAEMON_JWT_SECRET || crypto.randomBytes(32).toString("hex"));
+    this.secret = getDaemonJwtSecret(options.secret);
     this.logger = typeof options.logger === "function" ? options.logger : () => {};
     this.wss = null;
     this._activeProofRuns = new Set();
@@ -280,4 +217,3 @@ module.exports = {
   signJwt,
   verifyJwt
 };
-
