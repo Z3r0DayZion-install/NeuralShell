@@ -96,6 +96,10 @@ async function withMockedIdentity(userDataPath, fn, options = {}) {
 
   delete require.cache[identityKernelPath];
   try {
+    const identityKernel = require(identityKernelPath);
+    if (identityKernel && typeof identityKernel.setHarnessFallbackEnabled === "function") {
+      identityKernel.setHarnessFallbackEnabled(true);
+    }
     return await fn({
       identityPath: path.join(userDataPath, "identity.omega"),
       peerStorePath: path.join(userDataPath, "trusted-peers.omega"),

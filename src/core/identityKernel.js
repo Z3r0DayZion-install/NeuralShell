@@ -631,6 +631,40 @@ function setHarnessFallbackEnabled(enabled) {
   harnessFallbackEnabled = Boolean(enabled);
 }
 
+function getHarnessFallbackHardwareId(platformLabel) {
+  const auditChain = getAuditChain();
+  const syntheticId = [
+    "harness",
+    os.hostname(),
+    platformLabel,
+    process.arch
+  ].join(":");
+  const compositeIdentifier = `fallback:${syntheticId}`;
+  const fingerprint = crypto
+    .createHash("sha256")
+    .update(compositeIdentifier)
+    .digest("hex");
+
+  if (auditChain) {
+    try {
+      auditChain.append({
+        event: "hardware-binding",
+        platform: platformLabel,
+        status: "degraded",
+        backend: "harness",
+        method: "harness-fallback",
+        message:
+          "Hardware binding fallback enabled via runtime guard (test/integrity-bypass mode)."
+      });
+    } catch (err) {
+      console.error("Audit chain write failed:", err.message);
+    }
+  }
+
+  hardwareFingerprint = fingerprint;
+  return fingerprint;
+}
+
 /**
  * Gather immutable hardware IDs via the OMEGA-gated execution broker.
  */
@@ -647,6 +681,10 @@ async function getHardwareId() {
     return await getWindowsHardwareId();
   }
   
+  if (harnessFallbackEnabled) {
+    return getHarnessFallbackHardwareId(process.platform);
+  }
+
   // Linux backend (future - hard failure for now)
   throw new Error('Hardware binding not yet implemented for Linux');
 }
