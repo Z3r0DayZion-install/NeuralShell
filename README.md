@@ -8,7 +8,7 @@
 NeuralShell is a **local-first operator shell** designed for autonomous execution and workflow coordination. Built on a hardened **React/Electron desktop workflow**, it combines an intuitive **command palette as the control plane** with a robust **workbench and trust lane model**. Under the hood, it enforces strict **hardened state and contract discipline**, ensuring stability and security before speed.
 
 > [!TIP]
-> **Source of Truth**: See the [GA Knowledge Index](./GA_KNOWLEDGE_INDEX.md) for the authoritative release documentation and audit dossier.
+> **Source of Truth**: See [Documentation Canon](docs/CANON.md) for the authoritative release and operations document map.
 
 
 ## Demo Walkthrough
@@ -24,7 +24,7 @@ npx neuralshell-installer
 
 - Recruitment thread: [Call for Beta Testers](https://github.com/Z3r0DayZion-install/NeuralShell/issues/34)
 - Join via forms: [Issue Intake](https://github.com/Z3r0DayZion-install/NeuralShell/issues/new/choose)
-- Tester checklist: [BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md](docs/pilots/BETA_TESTER_CHECKLIST_v1.2.1-OMEGA.md)
+- Tester checklist: [BETA_TESTER_CHECKLIST_V2.0-RC-Final.md](docs/pilots/BETA_TESTER_CHECKLIST_V2.0-RC-Final.md)
 - Control tower: [Beta Control Tower](https://github.com/Z3r0DayZion-install/NeuralShell/issues/32)
 
 ## Launch Surface
@@ -33,8 +33,8 @@ npx neuralshell-installer
 - Public site asset bundle: [docs/site-assets/asset-manifest.json](docs/site-assets/asset-manifest.json)
 - Pricing page: [landing/pricing.html](landing/pricing.html)
 - Partners page: [landing/partners.html](landing/partners.html)
-- Press kit: [PRESS_KIT_v1.2.1-OMEGA.md](docs/pilots/PRESS_KIT_v1.2.1-OMEGA.md)
-- Channel submission playbook: [CHANNEL_SUBMISSION_PLAYBOOK_v1.2.1-OMEGA.md](docs/pilots/CHANNEL_SUBMISSION_PLAYBOOK_v1.2.1-OMEGA.md)
+- Press kit: [PRESS_KIT_V2.0-RC-Final.md](docs/pilots/PRESS_KIT_V2.0-RC-Final.md)
+- Channel submission playbook: [CHANNEL_SUBMISSION_PLAYBOOK_V2.0-RC-Final.md](docs/pilots/CHANNEL_SUBMISSION_PLAYBOOK_V2.0-RC-Final.md)
 
 ## Revenue Operations
 

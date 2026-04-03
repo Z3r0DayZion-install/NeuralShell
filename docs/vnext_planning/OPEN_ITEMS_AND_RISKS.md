@@ -1,7 +1,7 @@
 # OPEN ITEMS AND RISKS - NeuralShell
 
 ## 1. Technical Debt & Open Items
-- **Pre-Push Gate Hygiene**: The `prepush-gate.js` script currently blocks pushes when untracked release folders exist. This requires a dedicated "Skip Release Folders" flag or `.gitignore` refinement.
+- **Pre-Push Gate Hygiene**: `.gitignore` and local drift controls exist, but strict release gating still blocks on large untracked residue sets in active workspaces.
 - **LLM Recovery Strings**: While localized, the recovery strings are still hardcoded in `renderer.js`. Move to a centralized configuration file.
 
 ## 2. Release Lessons Learned
@@ -13,6 +13,12 @@
 - **Silent Rebuilds**: Rebuilding the evidence ZIP without a formal verification step risks introducing inconsistency between the local repository and the final shippable artifact.
 
 ## 4. Repo Hygiene Targets
-- [ ] Add `NeuralShell_Phases2-5_GoldMaster_Release/` to `.gitignore`.
-- [ ] Add `NeuralShell_Distribution_Ready/` to `.gitignore`.
-- [ ] Implement a `scripts/release-verify.js` for automated checksum and tag validation.
+- [x] Add `NeuralShell_Phases2-5_GoldMaster_Release/` to `.gitignore`.
+- [x] Add `NeuralShell_Distribution_Ready/` to `.gitignore`.
+- [x] Implement a `scripts/release-verify.js` for automated checksum and tag validation.
+
+Verified on 2026-04-03 against `.gitignore` and `scripts/release-verify.js`.
+
+## 5. Remaining Finish Actions
+- [ ] Classify untracked workspace residue into commit/archive/ignore buckets so `release:worktree:strict` can pass without manual intervention.
+- [ ] Move LLM recovery strings out of renderer hardcoding into a centralized runtime config surface.
