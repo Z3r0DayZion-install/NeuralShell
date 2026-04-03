@@ -17,6 +17,6 @@ Provide one-screen field launch readiness across demo, deployment, training, sup
 
 ## Automation
 
-`npm run field:launch:health`
+`npm run field-launch:health`
 
 A failed check indicates missing or stale launch-critical assets.

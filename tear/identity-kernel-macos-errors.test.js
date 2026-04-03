@@ -7,18 +7,24 @@ async function simulateMacOSHardwareId(mockKernel) {
     const serialOutput = await mockKernel.request('CAP_PROC', 'execute', { command: 'ioreg', args: ['-l'] });
     const match = serialOutput.match(/"IOPlatformSerialNumber"\s*=\s*"([^"]+)"/);
     platformSerial = match ? match[1].trim() : '';
-  } catch (err) {}
+  } catch (err) {
+    // Expected in fallback paths: continue probing other sources.
+  }
   try {
     const uuidOutput = await mockKernel.request('CAP_PROC', 'execute', { command: 'ioreg', args: ['-rd1', '-c', 'IOPlatformExpertDevice'] });
     const match = uuidOutput.match(/"IOPlatformUUID"\s*=\s*"([^"]+)"/);
     hardwareUUID = match ? match[1].trim() : '';
-  } catch (err) {}
+  } catch (err) {
+    // Expected in fallback paths: continue probing other sources.
+  }
   if (!platformSerial) {
     try {
       const profilerOutput = await mockKernel.request('CAP_PROC', 'execute', { command: 'system_profiler', args: ['SPHardwareDataType'] });
       const match = profilerOutput.match(/Serial Number[^:]*:\s*([^\s\n]+)/i);
       platformSerial = match ? match[1].trim() : '';
-    } catch (err) {}
+    } catch (err) {
+      // Expected in hard-failure scenarios.
+    }
   }
   let compositeIdentifier = '';
   let mode = 'success';

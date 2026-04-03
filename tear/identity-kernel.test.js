@@ -29,6 +29,19 @@ function hardwareFingerprintFor(cpuId, baseboard, biosSerial, systemUUID) {
     .digest("hex");
 }
 
+function harnessFallbackFingerprintFor(platformLabel = process.platform, arch = process.arch, host = os.hostname()) {
+  const syntheticId = [
+    "harness",
+    String(host || ""),
+    String(platformLabel || ""),
+    String(arch || "")
+  ].join(":");
+  return crypto
+    .createHash("sha256")
+    .update(`fallback:${syntheticId}`)
+    .digest("hex");
+}
+
 function encryptLegacyIdentityPem(pem, hardwareFingerprint) {
   const key = crypto.createHash("sha256").update(String(hardwareFingerprint)).digest();
   const iv = crypto.randomBytes(16);
@@ -96,10 +109,17 @@ async function withMockedIdentity(userDataPath, fn, options = {}) {
 
   delete require.cache[identityKernelPath];
   try {
+    const identityKernel = require(identityKernelPath);
+    if (identityKernel && typeof identityKernel.setHarnessFallbackEnabled === "function") {
+      identityKernel.setHarnessFallbackEnabled(true);
+    }
+    const expectedHardwareFingerprint = process.platform === "win32"
+      ? hardwareFingerprintFor(cpuId, baseboard, biosSerial, systemUUID)
+      : harnessFallbackFingerprintFor();
     return await fn({
       identityPath: path.join(userDataPath, "identity.omega"),
       peerStorePath: path.join(userDataPath, "trusted-peers.omega"),
-      hardwareFingerprint: hardwareFingerprintFor(cpuId, baseboard, biosSerial, systemUUID)
+      hardwareFingerprint: expectedHardwareFingerprint
     });
   } finally {
     Module._load = originalLoad;

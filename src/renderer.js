@@ -8504,13 +8504,68 @@ function showBanner(message, tone = "ok") {
   }
 }
 
+function formatTemplateString(template, values = {}) {
+  return String(template || "").replace(/\{(\w+)\}/g, (_, key) => {
+    if (!Object.prototype.hasOwnProperty.call(values, key)) return "";
+    const raw = values[key];
+    return raw == null ? "" : String(raw);
+  });
+}
+
+function recoveryCopy() {
+  const config = window.NeuralShellConfig || {};
+  return config.RECOVERY_COPY || {};
+}
+
+function recoveryBannerCopy(key, fallback, values = {}) {
+  const copy = recoveryCopy();
+  const banners = copy && copy.BANNERS && typeof copy.BANNERS === "object"
+    ? copy.BANNERS
+    : {};
+  return formatTemplateString(banners[key] || fallback, values);
+}
+
+function recoveryFallbackStatusDetail() {
+  const fallback = "Open LLM Setup in the settings drawer to inspect the active bridge, model, and connection rules.";
+  const value = recoveryCopy().FALLBACK_STATUS_DETAIL;
+  return String(value || fallback).trim() || fallback;
+}
+
+function recoveryStarterPromptFallback() {
+  const fallback = "Diagnose the local bridge, recommend the smallest safe fix, and keep the workflow offline-first.";
+  const value = recoveryCopy().STARTER_PROMPT_FALLBACK;
+  return String(value || fallback).trim() || fallback;
+}
+
+function recoveryEmptyStateTitle() {
+  const fallback = "No active conversation yet.";
+  const emptyState = recoveryCopy().EMPTY_STATE || {};
+  return String(emptyState.TITLE || fallback).trim() || fallback;
+}
+
+function recoveryEmptyStateHints() {
+  const fallback = [
+    "1. Detect the bridge and confirm the base URL.",
+    "2. Pick a model in Chat Ops or LLM Setup.",
+    "3. Load a workflow prompt when you want a guided next step."
+  ];
+  const emptyState = recoveryCopy().EMPTY_STATE || {};
+  return Array.isArray(emptyState.HINTS) && emptyState.HINTS.length ? emptyState.HINTS : fallback;
+}
+
+function recoveryEmptyStateActionLabel(key, fallback) {
+  const emptyState = recoveryCopy().EMPTY_STATE || {};
+  const actions = emptyState.ACTIONS || {};
+  return String(actions[key] || fallback).trim() || fallback;
+}
+
 function describeLlmStatus(status) {
   const normalized = String(status || "unknown").trim().toLowerCase();
   const config = window.NeuralShellConfig || {};
   const messages = config.LLM_STATUS_MESSAGES || {};
   return messages[normalized] || messages.UNKNOWN || {
     short: `LLM status: ${normalized}.`,
-    detail: "Open LLM Setup in the settings drawer to inspect the active bridge, model, and connection rules.",
+    detail: recoveryFallbackStatusDetail(),
     tone: "ok"
   };
 }
@@ -8579,11 +8634,19 @@ async function persistOfflineModePreference(offlineEnabled) {
   renderProviderPresetList();
   applyLlmStatus(appState.llmStatus);
   if (!allowRemoteBridge && fallbackSync.bridgeSelection && fallbackSync.bridgeSelection.liveProfile) {
-    showBanner(`Offline Mode turned on. Live bridge reverted to ${fallbackSync.bridgeSelection.liveProfile.name}.`, "ok");
+    showBanner(
+      recoveryBannerCopy("OFFLINE_MODE_REVERTED", "Offline Mode turned on. Live bridge reverted to {profileName}.", {
+        profileName: fallbackSync.bridgeSelection.liveProfile.name
+      }),
+      "ok"
+    );
   } else if (!allowRemoteBridge) {
-    showBanner("Offline Mode turned on. Hosted profiles are blocked.", "ok");
+    showBanner(recoveryBannerCopy("OFFLINE_MODE_BLOCKED", "Offline Mode turned on. Hosted profiles are blocked."), "ok");
   } else {
-    showBanner("Offline Mode turned off. Hosted profiles are available again.", "ok");
+    showBanner(
+      recoveryBannerCopy("OFFLINE_MODE_HOSTED_AVAILABLE", "Offline Mode turned off. Hosted profiles are available again."),
+      "ok"
+    );
   }
   return {
     ok: true,
@@ -8661,10 +8724,10 @@ function applyLlmStatus(status, options = {}) {
   // Provide immediate banner feedback for background transitions
   if (nextStatus !== previousStatus && !options.manual) {
     if (nextStatus === LLM_STATUS.ONLINE) {
-      showBanner("Bridge connection established.", "ok");
+      showBanner(recoveryBannerCopy("BRIDGE_CONNECTED", "Bridge connection established."), "ok");
       document.getElementById("recoveryBanner").classList.add("hidden");
     } else if (nextStatus === LLM_STATUS.RECONNECTING || nextStatus === LLM_STATUS.OFFLINE) {
-      showBanner("Bridge connection lost.", "warn");
+      showBanner(recoveryBannerCopy("BRIDGE_DISCONNECTED", "Bridge connection lost."), "warn");
       document.getElementById("recoveryBanner").classList.remove("hidden");
     }
   }
@@ -8727,49 +8790,73 @@ function seedStarterPrompt() {
   if (!el.promptInput) return;
   const workflow = getWorkflow(appState.workflowId);
   setPromptEditorValue(
-    workflowPromptTemplate(workflow) || "Diagnose the local bridge, recommend the smallest safe fix, and keep the workflow offline-first.",
+    workflowPromptTemplate(workflow) || recoveryStarterPromptFallback(),
     { focus: true }
   );
-  showBanner("Starter prompt loaded.", "ok");
+  showBanner(recoveryBannerCopy("STARTER_PROMPT_LOADED", "Starter prompt loaded."), "ok");
 }
 
 async function runBridgeAutoDetect() {
   if (!window.api || !window.api.llm) return;
-  showBanner("Detecting local bridge...", "ok");
+  showBanner(recoveryBannerCopy("DETECTING_LOCAL_BRIDGE", "Detecting local bridge..."), "ok");
   try {
     const result = await window.api.llm.autoDetect();
     if (result && result.ok) {
       await refreshModels();
       applyLlmStatus("bridge_online", { manual: true });
-      showBanner(`Local bridge detected at ${result.baseUrl}.`, "ok");
+      showBanner(
+        recoveryBannerCopy("LOCAL_BRIDGE_DETECTED", "Local bridge detected at {baseUrl}.", {
+          baseUrl: result.baseUrl
+        }),
+        "ok"
+      );
       return result;
     }
     applyLlmStatus(appState.settings.connectOnStartup !== false ? "bridge_reconnecting" : "bridge_offline", { manual: true });
-    showBanner(`Local bridge not detected: ${result && result.reason ? result.reason : "offline"}`, "bad");
+    showBanner(
+      recoveryBannerCopy("LOCAL_BRIDGE_NOT_DETECTED", "Local bridge not detected: {reason}", {
+        reason: result && result.reason ? result.reason : "offline"
+      }),
+      "bad"
+    );
     return result;
   } catch (err) {
     applyLlmStatus("error", { manual: true });
-    showBanner(`Bridge detect failed: ${err.message || String(err)}`, "bad");
+    showBanner(
+      recoveryBannerCopy("BRIDGE_DETECT_FAILED", "Bridge detect failed: {reason}", {
+        reason: err.message || String(err)
+      }),
+      "bad"
+    );
     throw err;
   }
 }
 
 async function runBridgeHealthCheck() {
   if (!window.api || !window.api.llm) return;
-  showBanner("Checking bridge health...", "ok");
+  showBanner(recoveryBannerCopy("CHECKING_BRIDGE_HEALTH", "Checking bridge health..."), "ok");
   try {
     const health = await window.api.llm.health();
     applyLlmStatus(health && health.ok ? "bridge_online" : "bridge_offline", { manual: true });
     showBanner(
       health && health.ok
-        ? `Bridge healthy at ${health.baseUrl}.`
-        : `Bridge health failed: ${health && health.reason ? health.reason : "offline"}`,
+        ? recoveryBannerCopy("BRIDGE_HEALTHY", "Bridge healthy at {baseUrl}.", {
+          baseUrl: health.baseUrl
+        })
+        : recoveryBannerCopy("BRIDGE_HEALTH_FAILED", "Bridge health failed: {reason}", {
+          reason: health && health.reason ? health.reason : "offline"
+        }),
       health && health.ok ? "ok" : "bad"
     );
     return health;
   } catch (err) {
     applyLlmStatus("error", { manual: true });
-    showBanner(`Bridge health failed: ${err.message || String(err)}`, "bad");
+    showBanner(
+      recoveryBannerCopy("BRIDGE_HEALTH_FAILED", "Bridge health failed: {reason}", {
+        reason: err.message || String(err)
+      }),
+      "bad"
+    );
     throw err;
   }
 }
@@ -8780,7 +8867,7 @@ function renderChatEmptyState() {
 
   const title = document.createElement("div");
   title.className = "chat-empty-title";
-  title.textContent = "No active conversation yet.";
+  title.textContent = recoveryEmptyStateTitle();
 
   const note = document.createElement("p");
   note.className = "chat-empty-note";
@@ -8788,11 +8875,7 @@ function renderChatEmptyState() {
 
   const hints = document.createElement("div");
   hints.className = "chat-empty-hints";
-  [
-    "1. Detect the bridge and confirm the base URL.",
-    "2. Pick a model in Chat Ops or LLM Setup.",
-    "3. Load a workflow prompt when you want a guided next step."
-  ].forEach((item) => {
+  recoveryEmptyStateHints().forEach((item) => {
     const row = document.createElement("div");
     row.className = "workspace-action-hint";
     row.textContent = item;
@@ -8803,19 +8886,19 @@ function renderChatEmptyState() {
   actions.className = "chat-empty-actions";
 
   const detectBtn = document.createElement("button");
-  detectBtn.textContent = "Detect Local Bridge";
+  detectBtn.textContent = recoveryEmptyStateActionLabel("DETECT_LOCAL_BRIDGE", "Detect Local Bridge");
   detectBtn.onclick = () => {
     runBridgeAutoDetect().catch((err) => showBanner(err.message || String(err), "bad"));
   };
 
   const settingsBtn = document.createElement("button");
-  settingsBtn.textContent = "Open Settings Menu";
+  settingsBtn.textContent = recoveryEmptyStateActionLabel("OPEN_SETTINGS_MENU", "Open Settings Menu");
   settingsBtn.onclick = () => {
     setSettingsMenuOpen(true);
   };
 
   const promptBtn = document.createElement("button");
-  promptBtn.textContent = "Load Starter Prompt";
+  promptBtn.textContent = recoveryEmptyStateActionLabel("LOAD_STARTER_PROMPT", "Load Starter Prompt");
   promptBtn.onclick = () => {
     seedStarterPrompt();
   };
@@ -15410,4 +15493,3 @@ async function startChain(chain, workspacePath) {
     }
   }
 }
-

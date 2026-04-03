@@ -1,20 +1,23 @@
-# Documentation Canon — NeuralShell V2.1.29 GA
+# Documentation Canon - NeuralShell (Current Branch)
 
-This file declares which documents are **authoritative** for the current release.
-If a document is not listed here, treat it as historical reference only.
+This file declares which documents are authoritative for the current repository state.
+If a document is not listed here, treat it as historical context or working material.
 
 ## Canonical Documents (Root)
 
 | Document | Authority |
 |:---|:---|
-| `GA_KNOWLEDGE_INDEX.md` | Master documentation entry point |
-| `walkthrough.md` | Proof-of-work and UI gallery |
-| `CHANGELOG.md` | Version history (authoritative through V2.1.29) |
-| `FINAL_HANDOFF_STATUS.md` | Executive release summary |
-| `RELEASE_MANIFEST.md` | Distribution file inventory |
-| `SYSTEM_MAP.md` | Architecture and TCB mapping |
-| `ARCHITECTURE_RISKS.md` | Security risk mitigations |
-| `WHITEPAPER_NeuralShell.md` | Conceptual security model |
+| `README.md` | Product entrypoint and operator command surface |
+| `task.md` | Current lifecycle state and completed stage record |
+| `walkthrough.md` | Proof-of-work narrative and release hardening context |
+| `CHANGELOG.md` | Release-line history and tag narrative |
+| `RELEASE_NOTES.md` | Current release-note delta summary |
+| `ARCHITECTURE_RULES.md` | Architecture constraints and guardrails |
+| `IPC_CONTRACT.md` | Main-to-renderer contract boundary |
+| `SHELL_CONTRACT.md` | Behavioral contract for shell operations |
+| `SOURCE_AUDIT_SNAPSHOT_HANDOFF.md` | Audit snapshot and handoff boundary |
+| `SOC2_PREP_REPORT.md` | SOC2 prep status output |
+| `HARD_PROOF_V2.1.29_EVIDENCE_LOG.md` | Consolidated hard-proof evidence index |
 
 ## Canonical Documents (Subdirectories)
 
@@ -23,25 +26,23 @@ If a document is not listed here, treat it as historical reference only.
 | `docs/install/INSTALL_WINDOWS.md` | Windows install guide |
 | `docs/install/INSTALL_MACOS.md` | macOS install guide |
 | `docs/install/INSTALL_LINUX.md` | Linux install guide |
-| `docs/release/PLATFORM_TRUST_PLAN.md` | Per-platform signing/trust plan |
-| `governance/OMEGA_RELEASE_LEDGER.md` | Release authority protocol |
+| `docs/maintops/MAINTOPS_HANDOFF.md` | Maintenance operations operating model |
+| `docs/maintenance/MAINTENANCE_HANDOFF.md` | Maintenance governance and LTS handoff |
+| `docs/rc/GA_PROMOTION_GATES.md` | GA blockers and promotion requirements |
+| `proof/latest/phase10-reproducibility-proof.md` | Reproducibility proof reference |
+| `governance/OMEGA_RELEASE_LEDGER.md` | Cryptographic release authority ledger |
 
-## Superseded / Historical
+## Historical References
 
-The following directories contain phase-specific documentation from earlier development.
-They are preserved for audit trail purposes but are **not authoritative** for V2.1.29 GA:
+The following legacy documents remain available under `archive/historical/` for audit traceability:
 
-- `docs/phase7/` — V7 release stewardship (superseded)
-- `docs/phase9/` — Certificate provisioning drafts (superseded by `PLATFORM_TRUST_PLAN.md`)
-- `docs/phase10/` — Reproducible build parity (merged into release pipeline)
-- `docs/phase11/` — Stage 11/12 changelogs (historical)
-- `docs/stage12/` — Stage 12 changelog (historical)
-- `docs/archive/` — Explicitly archived materials
-- `docs/pilots/` — Beta pilot tracking (operational, not release docs)
-- `docs/beta/` — Beta outreach materials (operational)
-- `docs/maintops/` — Maintenance operations (living docs, not release-specific)
+- `archive/historical/GA_KNOWLEDGE_INDEX.md`
+- `archive/historical/FINAL_HANDOFF_STATUS.md`
+- `archive/historical/RELEASE_MANIFEST.md`
+- `archive/historical/SYSTEM_MAP.md`
+- `archive/historical/ARCHITECTURE_RISKS.md`
+- `archive/historical/WHITEPAPER_NeuralShell.md`
 
 ## Rule
-> Any document not listed in the Canonical tables above should be treated as
-> context-only. Do not propagate claims from superseded documents into release
-> surfaces without explicit verification against the canonical source.
+
+Any claim promoted into release, launch, or compliance surfaces must be verifiable against canonical documents above.
