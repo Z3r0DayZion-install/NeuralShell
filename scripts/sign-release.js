@@ -42,6 +42,10 @@ async function run() {
     throw new Error(`Manifest not found: ${manifestPath}`);
   }
 
+  if (typeof identityKernel.setHarnessFallbackEnabled === "function") {
+    // Scripted signing runs under mocked Electron paths and may lack WMI/CIM access.
+    identityKernel.setHarnessFallbackEnabled(true);
+  }
   await identityKernel.init();
   
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
