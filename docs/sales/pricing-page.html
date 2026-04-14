@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NeuralShell Pro | Reliability Layer for AI Execution</title>
-  <meta name="description" content="NeuralShell Pro is a reliability layer for AI-assisted and autonomous execution, helping teams recover from startup failures before release confidence breaks down." />
-  <meta property="og:title" content="NeuralShell Pro | Reliability Layer for AI Execution" />
+  <title>NeuralShell Operator | Reliability Layer for AI Execution</title>
+  <meta name="description" content="NeuralShell Operator is a reliability layer for AI-assisted and autonomous execution, helping teams recover from startup failures before release confidence breaks down." />
+  <meta property="og:title" content="NeuralShell Operator | Reliability Layer for AI Execution" />
   <meta property="og:description" content="Startup health controls, plugin quarantine, trace export, and release confidence gating for engineering and platform teams." />
   <meta property="og:type" content="product" />
   <meta property="og:url" content="https://neuralshell.app" />
   <meta property="og:image" content="./assets/pricing-page-allout-preview.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="NeuralShell Pro | Reliability Layer for AI Execution" />
+  <meta name="twitter:title" content="NeuralShell Operator | Reliability Layer for AI Execution" />
   <meta name="twitter:description" content="Operational reliability for startup failure detection, trace evidence, and cleaner release decisions." />
   <meta name="twitter:image" content="./assets/pricing-page-allout-preview.png" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "NeuralShell Pro",
+      "name": "NeuralShell Operator",
       "description": "Reliability layer for AI-assisted and autonomous execution with startup health controls, plugin quarantine, and trace export.",
       "brand": {
         "@type": "Brand",
@@ -1072,7 +1072,7 @@
   <div class="bg-accent" aria-hidden="true"></div>
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><span class="brand-dot" aria-hidden="true"></span>NeuralShell Pro</div>
+      <div class="brand"><span class="brand-dot" aria-hidden="true"></span>NeuralShell Operator</div>
       <nav>
         <a href="#buyer-fit">Buyer Fit</a>
         <a href="#problem">Failure Surface</a>
@@ -1095,7 +1095,7 @@
           </p>
           <div class="actions">
             <a class="btn btn-primary" data-link="bookingLink" href="./sales/NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html">Book a Reliability Walkthrough</a>
-            <a class="btn btn-ghost" data-link="flowLink" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">See the Failure-to-Confidence Flow</a>
+            <a class="btn btn-ghost" data-link="flowLink" href="#proof">See the Failure-to-Confidence Flow</a>
           </div>
           <div class="trust-row">
             <div class="trust-item">Startup health controls</div>
@@ -1110,15 +1110,15 @@
           <p>These status rows are report-driven and refreshed from the same proof artifacts linked below.</p>
           <div class="hero-pair">
             <span>Commerce report</span>
-            <strong id="hero-commerce-status" class="status-chip review">REPORT SYNC IN PROGRESS</strong>
+            <strong id="hero-commerce-status" class="status-chip review">Latest verified report loading</strong>
           </div>
           <div class="hero-pair">
             <span>Runtime report</span>
-            <strong id="hero-runtime-status" class="status-chip review">REPORT SYNC IN PROGRESS</strong>
+            <strong id="hero-runtime-status" class="status-chip review">Latest verified report loading</strong>
           </div>
           <div class="hero-pair">
             <span>Last checked</span>
-            <span id="hero-last-checked" class="value">Syncing…</span>
+            <span id="hero-last-checked" class="value">Latest verification state loading</span>
           </div>
           <div class="hero-pair">
             <span>Owner route</span>
@@ -1184,14 +1184,14 @@
         <article class="proof-pillar">
           <h3>Startup health controls</h3>
           <p>Establish explicit startup checks before downstream work begins so degraded paths are visible immediately.</p>
-          <div class="proof-kv"><span>Commerce status</span><strong id="proof-checkout-status" class="review">REPORT SYNC IN PROGRESS</strong></div>
-          <div id="proof-checkout-time" class="proof-kv-meta">Last checked: pending report refresh</div>
+          <div class="proof-kv"><span>Commerce status</span><strong id="proof-checkout-status" class="review">Latest verified report loading</strong></div>
+          <div id="proof-checkout-time" class="proof-kv-meta">Latest proof report available below</div>
         </article>
         <article class="proof-pillar">
           <h3>Plugin quarantine</h3>
           <p>Isolate unstable runtime surfaces to reduce blast radius and speed targeted remediation.</p>
-          <div class="proof-kv"><span>Runtime status</span><strong id="runtime-proof-status" class="review">REPORT SYNC IN PROGRESS</strong></div>
-          <div id="runtime-proof-time" class="proof-kv-meta">Last checked: pending report refresh</div>
+          <div class="proof-kv"><span>Runtime status</span><strong id="runtime-proof-status" class="review">Latest verified report loading</strong></div>
+          <div id="runtime-proof-time" class="proof-kv-meta">Latest proof report available below</div>
         </article>
         <article class="proof-pillar">
           <h3>Trace export</h3>
@@ -1215,8 +1215,8 @@
       <p class="lede">The reliability story must stay concrete: startup issue detected, visibility improves, unstable surface isolated, trace exported, and release confidence restored.</p>
 
       <div class="proof-console-head">
-        <div id="proof-overall" class="proof-badge review">REPORT SYNC IN PROGRESS</div>
-        <div id="proof-generated-at" class="proof-meta">Last checked: pending report refresh</div>
+        <div id="proof-overall" class="proof-badge review">Latest verified report loading</div>
+        <div id="proof-generated-at" class="proof-meta">Latest proof report available below</div>
       </div>
 
       <div id="proof-status-grid" class="proof-status-grid"></div>
@@ -1268,11 +1268,11 @@
               <p>Plugin/runtime drift is isolated so teams can reduce blast radius and recover deterministic startup behavior.</p>
             </div>
             <div class="status-chip-row">
-              <span id="checkout-chip-route" class="status-chip review">Isolation route: pending report sync</span>
-              <span id="checkout-chip-price" class="status-chip review">Health gate: pending report sync</span>
-              <span id="checkout-chip-product" class="status-chip review">Surface match: pending report sync</span>
+              <span id="checkout-chip-route" class="status-chip review">Isolation route: verification loading</span>
+              <span id="checkout-chip-price" class="status-chip review">Health gate: verification loading</span>
+              <span id="checkout-chip-product" class="status-chip review">Surface match: verification loading</span>
             </div>
-            <div id="checkout-proof-note" class="proof-seq-note">Waiting for report note.</div>
+            <div id="checkout-proof-note" class="proof-seq-note">Latest verification report available below</div>
           </div>
         </article>
 
@@ -1287,9 +1287,9 @@
               <img src="./assets/ui_sales_proof_output_packaged.png" alt="Trace export runtime proof capture" loading="lazy" />
             </div>
             <div class="status-chip-row">
-              <span id="runtime-chip-proof" class="status-chip review">Trace check: pending report sync</span>
-              <span id="runtime-chip-roi" class="status-chip review">Evidence check: pending report sync</span>
-              <span id="runtime-chip-lock" class="status-chip review">Continuity check: pending report sync</span>
+               <span id="runtime-chip-proof" class="status-chip review">Trace check: verification loading</span>
+              <span id="runtime-chip-roi" class="status-chip review">Evidence check: verification loading</span>
+              <span id="runtime-chip-lock" class="status-chip review">Continuity check: verification loading</span>
             </div>
             <div class="proof-seq-actions">
               <a class="proof-seq-link" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime JSON</a>
@@ -1383,12 +1383,12 @@
       </div>
       <aside class="cta-panel">
         <a class="btn btn-primary" data-link="bookingLink" href="./sales/NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html">Book a Reliability Walkthrough</a>
-        <a class="btn btn-ghost" data-link="proofFlowLink" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">See the Proof Flow</a>
+        <a class="btn btn-ghost" data-link="proofFlowLink" href="#proof">See the Proof Flow</a>
       </aside>
     </section>
 
     <footer>
-      <p>NeuralShell Pro | Reliability layer for AI-assisted and autonomous execution | founder@getneuralshell.com</p>
+      <p>NeuralShell Operator | Reliability layer for AI-assisted and autonomous execution | founder@getneuralshell.com</p>
     </footer>
   </main>
   <script>
@@ -1412,8 +1412,8 @@
     const LANDING_CONFIG = Object.freeze({
       schedulerUrl: liveSchedulerUrl,
       bookingLink: buildBookingHref(bookingDoc, { scheduler: liveSchedulerUrl }),
-      flowLink: "./assets/launch-readiness-latest.json",
-      proofFlowLink: "./assets/launch-readiness-latest.json",
+      flowLink: "#proof",
+      proofFlowLink: "#proof",
       demoLink: "./assets/proof_walkthrough.webm",
       deckLink: resolveSalesDoc("NEURALSHELL_RELIABILITY_5_SLIDE_DECK.html"),
       pilotStartLink: buildBookingHref(bookingDoc, { intent: "pilot", scheduler: liveSchedulerUrl }),
@@ -1603,7 +1603,7 @@
             setChip(checkoutChipRoute, "Isolation route: unavailable", "unavailable");
             setChip(checkoutChipPrice, "Health gate: unavailable", "unavailable");
             setChip(checkoutChipProduct, "Surface match: unavailable", "unavailable");
-            if (checkoutNote) checkoutNote.textContent = "Report note: unavailable";
+            if (checkoutNote) checkoutNote.textContent = "Last verified state unavailable";
           }
 
           try {
