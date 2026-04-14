@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuralShell | 14-Day Reliability Pilot Scope</title>
+  <meta name="description" content="Fixed-scope 14-day NeuralShell reliability pilot for startup-failure detection, isolation, trace export, and release confidence gating." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060b12;
+      --surface: #0f1a2b;
+      --surface-soft: #111f32;
+      --line: #243449;
+      --ink: #e7f0ff;
+      --ink-soft: #a8b8cc;
+      --mint: #3fd0b1;
+      --amber: #d9994b;
+      --radius-lg: 22px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(48rem 24rem at 95% -15%, rgba(63, 208, 177, 0.18), transparent 70%),
+        radial-gradient(32rem 20rem at -6% 88%, rgba(217, 153, 75, 0.16), transparent 70%),
+        linear-gradient(180deg, #040911 0%, var(--bg) 100%);
+      min-height: 100vh;
+      line-height: 1.56;
+    }
+
+    .wrap {
+      width: min(1080px, calc(100% - 2rem));
+      margin: 1.2rem auto 2.8rem;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0.75rem;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      border: 1px solid rgba(138, 164, 195, 0.25);
+      border-radius: 999px;
+      background: rgba(12, 22, 35, 0.88);
+      padding: 0.58rem 0.86rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .topbar a {
+      text-decoration: none;
+      color: var(--ink);
+      border: 1px solid rgba(138, 164, 195, 0.3);
+      border-radius: 999px;
+      padding: 0.42rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .hero {
+      margin-top: 1rem;
+      border: 1px solid rgba(138, 164, 195, 0.22);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(150deg, rgba(13, 24, 39, 0.95), rgba(10, 20, 33, 0.95));
+      padding: 2rem;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #c8d8ef;
+      border: 1px solid rgba(138, 164, 195, 0.28);
+      border-radius: 999px;
+      padding: 0.35rem 0.66rem;
+    }
+
+    h1 {
+      margin-top: 0.9rem;
+      font-size: clamp(1.8rem, 4.1vw, 3rem);
+      line-height: 1.03;
+      max-width: 18ch;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin-top: 0.9rem;
+      color: var(--ink-soft);
+      max-width: 70ch;
+    }
+
+    .grid {
+      margin-top: 0.95rem;
+      display: grid;
+      gap: 0.85rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid rgba(138, 164, 195, 0.2);
+      border-radius: var(--radius-md);
+      background: linear-gradient(160deg, rgba(15, 27, 43, 0.95), rgba(11, 21, 34, 0.95));
+      padding: 0.95rem 1rem;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .card ul {
+      margin-top: 0.55rem;
+      list-style: none;
+      display: grid;
+      gap: 0.35rem;
+      color: var(--ink-soft);
+    }
+
+    .card li::before {
+      content: "- ";
+      color: var(--amber);
+      font-weight: 700;
+    }
+
+    .timeline {
+      margin-top: 1rem;
+      border: 1px solid rgba(138, 164, 195, 0.22);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: rgba(11, 21, 34, 0.92);
+    }
+
+    .phase {
+      padding: 0.9rem 1rem;
+      border-top: 1px solid rgba(138, 164, 195, 0.15);
+    }
+
+    .phase:first-child {
+      border-top: none;
+    }
+
+    .phase-head {
+      display: flex;
+      gap: 0.5rem;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .phase .days {
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.74rem;
+      color: var(--mint);
+      border: 1px solid rgba(63, 208, 177, 0.32);
+      border-radius: 999px;
+      padding: 0.2rem 0.4rem;
+    }
+
+    .phase h3 {
+      font-size: 0.98rem;
+      line-height: 1.2;
+    }
+
+    .phase p {
+      margin-top: 0.4rem;
+      color: var(--ink-soft);
+      font-size: 0.93rem;
+    }
+
+    .cta {
+      margin-top: 1rem;
+      border: 1px solid rgba(138, 164, 195, 0.24);
+      border-radius: var(--radius-md);
+      background: linear-gradient(150deg, rgba(16, 30, 47, 0.96), rgba(12, 22, 35, 0.96));
+      padding: 0.95rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cta p {
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      text-decoration: none;
+      border-radius: 999px;
+      padding: 0.48rem 0.78rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid rgba(138, 164, 195, 0.28);
+      color: var(--ink);
+      background: rgba(18, 31, 47, 0.88);
+    }
+
+    .btn.primary {
+      color: #0b171f;
+      background: linear-gradient(120deg, var(--mint), #67dfc4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    @media (max-width: 760px) {
+      .hero {
+        padding: 1.2rem;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .cta {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <div class="brand">NeuralShell 14-Day Pilot</div>
+      <nav>
+        <a href="../index.html">Back to Landing</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Fixed Scope Offer</div>
+      <h1>14-Day reliability pilot for teams dealing with startup failure under release pressure.</h1>
+      <p>
+        This pilot is designed to validate operational fit quickly: identify startup failure patterns, isolate unstable surfaces,
+        export structured evidence, and improve release confidence decisions.
+      </p>
+    </section>
+
+    <section class="timeline" aria-label="Pilot phases">
+      <article class="phase">
+        <div class="phase-head"><span class="days">Days 1-2</span><h3>Baseline snapshot</h3></div>
+        <p>Capture startup failure behavior, current triage loop friction, and release gate ambiguity in the target environment.</p>
+      </article>
+      <article class="phase">
+        <div class="phase-head"><span class="days">Days 3-5</span><h3>Controlled walkthrough</h3></div>
+        <p>Run the failure-to-confidence loop: detect startup degradation, isolate unstable surface, export trace evidence, review gate quality.</p>
+      </article>
+      <article class="phase">
+        <div class="phase-head"><span class="days">Days 6-12</span><h3>Metric tracking</h3></div>
+        <p>Track triage cycle quality, recovery posture, evidence quality, and release confidence signal consistency.</p>
+      </article>
+      <article class="phase">
+        <div class="phase-head"><span class="days">Days 13-14</span><h3>Final recommendation</h3></div>
+        <p>Deliver an adopt, expand, or hold recommendation with clear next-step execution guidance.</p>
+      </article>
+    </section>
+
+    <section class="grid" aria-label="Pilot inputs and outputs">
+      <article class="card">
+        <h2>Inputs needed from buyer</h2>
+        <ul>
+          <li>One technical owner for pilot coordination.</li>
+          <li>One target environment with startup instability pain.</li>
+          <li>Current release gate process and known incident examples.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>Pilot deliverables</h2>
+        <ul>
+          <li>Baseline reliability summary.</li>
+          <li>Walkthrough evidence pack.</li>
+          <li>Final recommendation and next-step plan.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="cta">
+      <p>If the startup failure path is blocking release confidence, this pilot is the fastest way to determine fit.</p>
+      <div class="actions">
+        <a class="btn primary" href="./NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html?intent=pilot">Start Pilot</a>
+        <a class="btn" href="../assets/proof_walkthrough.webm" target="_blank" rel="noopener noreferrer">Watch Demo</a>
+        <a class="btn" href="./NEURALSHELL_RELIABILITY_5_SLIDE_DECK.html">Open 5-Slide Deck</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

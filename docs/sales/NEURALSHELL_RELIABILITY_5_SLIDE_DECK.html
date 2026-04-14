@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuralShell | Reliability Deck (5 Slides)</title>
+  <meta name="description" content="Five-slide buyer deck for NeuralShell reliability positioning: startup failure to release confidence." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060b12;
+      --surface: #0f1a2b;
+      --surface-soft: #111f32;
+      --line: #243449;
+      --ink: #e7f0ff;
+      --ink-soft: #a8b8cc;
+      --mint: #3fd0b1;
+      --amber: #d9994b;
+      --radius-lg: 22px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(52rem 24rem at 95% -12%, rgba(63, 208, 177, 0.18), transparent 70%),
+        radial-gradient(38rem 22rem at -8% 90%, rgba(217, 153, 75, 0.16), transparent 70%),
+        linear-gradient(180deg, #040911 0%, var(--bg) 100%);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+
+    .wrap {
+      width: min(1080px, calc(100% - 2rem));
+      margin: 1.2rem auto 2.8rem;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0.75rem;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      border: 1px solid rgba(138, 164, 195, 0.25);
+      border-radius: 999px;
+      background: rgba(12, 22, 35, 0.88);
+      padding: 0.58rem 0.86rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .topbar a {
+      text-decoration: none;
+      color: var(--ink);
+      border: 1px solid rgba(138, 164, 195, 0.3);
+      border-radius: 999px;
+      padding: 0.42rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .hero {
+      margin-top: 1rem;
+      border: 1px solid rgba(138, 164, 195, 0.22);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(150deg, rgba(13, 24, 39, 0.95), rgba(10, 20, 33, 0.95));
+      padding: 2rem;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #c8d8ef;
+      border: 1px solid rgba(138, 164, 195, 0.28);
+      border-radius: 999px;
+      padding: 0.35rem 0.66rem;
+    }
+
+    h1 {
+      margin-top: 0.9rem;
+      font-size: clamp(1.8rem, 4.1vw, 3rem);
+      line-height: 1.03;
+      max-width: 16ch;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin-top: 0.9rem;
+      color: var(--ink-soft);
+      max-width: 68ch;
+    }
+
+    .slides {
+      margin-top: 1rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .slide {
+      border: 1px solid rgba(138, 164, 195, 0.2);
+      border-radius: var(--radius-md);
+      background: linear-gradient(160deg, rgba(15, 27, 43, 0.95), rgba(11, 21, 34, 0.95));
+      padding: 1rem 1.05rem;
+    }
+
+    .slide-head {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .slide-head .idx {
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.78rem;
+      color: var(--mint);
+      border: 1px solid rgba(63, 208, 177, 0.35);
+      border-radius: 999px;
+      padding: 0.2rem 0.42rem;
+    }
+
+    .slide h2 {
+      font-size: 1.02rem;
+      line-height: 1.2;
+    }
+
+    .slide ul {
+      margin-top: 0.6rem;
+      list-style: none;
+      display: grid;
+      gap: 0.38rem;
+      color: var(--ink-soft);
+    }
+
+    .slide li::before {
+      content: "- ";
+      color: var(--amber);
+      font-weight: 700;
+    }
+
+    .cta {
+      margin-top: 1rem;
+      border: 1px solid rgba(138, 164, 195, 0.26);
+      border-radius: var(--radius-md);
+      background: linear-gradient(150deg, rgba(16, 30, 47, 0.96), rgba(12, 22, 35, 0.96));
+      padding: 0.95rem;
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cta p {
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      text-decoration: none;
+      border-radius: 999px;
+      padding: 0.48rem 0.78rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid rgba(138, 164, 195, 0.28);
+      color: var(--ink);
+      background: rgba(18, 31, 47, 0.88);
+    }
+
+    .btn.primary {
+      color: #0b171f;
+      background: linear-gradient(120deg, var(--mint), #67dfc4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    @media (max-width: 740px) {
+      .hero {
+        padding: 1.2rem;
+      }
+      .cta {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <div class="brand">NeuralShell Reliability Deck</div>
+      <nav>
+        <a href="../index.html">Back to Landing</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Buyer Collateral</div>
+      <h1>NeuralShell Reliability Deck (5 Slides)</h1>
+      <p>
+        This deck is for engineering and platform buyers who need to understand how NeuralShell turns startup instability
+        into cleaner release confidence decisions.
+      </p>
+    </section>
+
+    <section class="slides" aria-label="Five slide content">
+      <article class="slide">
+        <div class="slide-head"><span class="idx">01</span><h2>The failure surface</h2></div>
+        <ul>
+          <li>Startup failures block work before value starts.</li>
+          <li>Drift creates unstable behavior across runtime surfaces.</li>
+          <li>Triage loops expand when evidence is weak and fragmented.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <div class="slide-head"><span class="idx">02</span><h2>What NeuralShell shows</h2></div>
+        <ul>
+          <li>Startup health controls expose degraded paths early.</li>
+          <li>Reliability owners get readable status before escalation spreads.</li>
+          <li>Teams align on one operator view instead of scattered traces.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <div class="slide-head"><span class="idx">03</span><h2>What NeuralShell isolates</h2></div>
+        <ul>
+          <li>Plugin quarantine contains unstable runtime surfaces.</li>
+          <li>Isolation reduces blast radius and recovery ambiguity.</li>
+          <li>Failure scope becomes explicit for platform and release owners.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <div class="slide-head"><span class="idx">04</span><h2>What NeuralShell exports</h2></div>
+        <ul>
+          <li>Structured trace export for incident review and handoff.</li>
+          <li>Runtime evidence packs for reproducible debugging.</li>
+          <li>Confidence gate support for cleaner release decisions.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <div class="slide-head"><span class="idx">05</span><h2>14-day pilot conversion path</h2></div>
+        <ul>
+          <li>Baseline snapshot of startup reliability state.</li>
+          <li>Controlled walkthrough of failure-to-confidence loop.</li>
+          <li>Metric tracking and final recommendation with clear next step.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="cta">
+      <p>Next move: run the walkthrough, review pilot scope, and decide if a fixed-scope pilot should start.</p>
+      <div class="actions">
+        <a class="btn primary" href="./NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html">Book Walkthrough</a>
+        <a class="btn" href="./NEURALSHELL_14_DAY_PILOT_SCOPE.html">Review Pilot Scope</a>
+        <a class="btn" href="../assets/proof_walkthrough.webm" target="_blank" rel="noopener noreferrer">Watch Demo</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
