@@ -1408,7 +1408,8 @@
     }
 
     const bookingDoc = resolveSalesDoc("NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html");
-    const liveSchedulerUrl = "https://calendar.google.com/calendar/u/0/r/eventedit?add=founder@getneuralshell.com";
+    // Honest fallback: if real scheduler link is missing, we use a direct email booking path.
+    const liveSchedulerUrl = ""; // Leave empty to trigger waitlist/manual email booking
     const LANDING_CONFIG = Object.freeze({
       schedulerUrl: liveSchedulerUrl,
       bookingLink: buildBookingHref(bookingDoc, { scheduler: liveSchedulerUrl }),
@@ -1419,7 +1420,8 @@
       pilotStartLink: buildBookingHref(bookingDoc, { intent: "pilot", scheduler: liveSchedulerUrl }),
       proofVideoLink: "./assets/proof_walkthrough.webm",
       pilotScopeLink: resolveSalesDoc("NEURALSHELL_14_DAY_PILOT_SCOPE.html"),
-      heroScreenshotPath: "./assets/ui_sales_quickstart_packaged.png"
+      heroScreenshotPath: "./assets/ui_sales_quickstart_packaged.png",
+      bookingStatusNote: liveSchedulerUrl ? "" : " (Manual Booking via Email)"
     });
 
     function applyLandingConfig(config) {

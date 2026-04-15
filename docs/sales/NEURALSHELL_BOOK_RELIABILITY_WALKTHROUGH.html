@@ -326,7 +326,7 @@
     const SEARCH = new URLSearchParams(window.location.search);
     const BOOKING_INTENT = (SEARCH.get("intent") || "").toLowerCase() === "pilot" ? "pilot" : "walkthrough";
     const SCHEDULER_OVERRIDE = normalizeSchedulerUrl(SEARCH.get("scheduler"));
-    const DEFAULT_SCHEDULER_URL = "https://calendar.google.com/calendar/u/0/r/eventedit?add=founder@getneuralshell.com";
+    const DEFAULT_SCHEDULER_URL = ""; // SET REAL SCHEDULER URL HERE (e.g. TidyCal/Calendly)
 
     const BOOKING_CONFIG = Object.freeze({
       schedulerUrl: SCHEDULER_OVERRIDE || DEFAULT_SCHEDULER_URL,
