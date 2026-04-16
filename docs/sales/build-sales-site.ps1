@@ -19,7 +19,14 @@ if (!(Test-Path $sourceAssets)) {
 
 New-Item -ItemType Directory -Force -Path $target,$targetAssets | Out-Null
 
+# Primary landing page
 Copy-Item -LiteralPath $sourceHtml -Destination (Join-Path $target "index.html") -Force
+
+# All other documentation pages
+Get-ChildItem -Path (Join-Path $repoRoot "docs/sales/*.html") | Where-Object { $_.Name -ne "pricing-page.html" } | ForEach-Object {
+  Copy-Item -LiteralPath $_.FullName -Destination $target -Force
+}
+
 Copy-Item -Path (Join-Path $sourceAssets "*") -Destination $targetAssets -Recurse -Force
 
 $html = Get-Content -LiteralPath (Join-Path $target "index.html") -Raw

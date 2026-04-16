@@ -218,6 +218,18 @@ function verifyBundleDeterminism(errors) {
 function main() {
   const errors = [];
   const warnings = [];
+
+  if (hasFlag("determinism-only")) {
+    verifyBundleDeterminism(errors);
+    if (errors.length) {
+      errors.forEach((msg) => console.error(`[release-truth] FAIL: ${msg}`));
+      console.error(`[release-truth] STATUS: FAIL (${errors.length} issue${errors.length === 1 ? "" : "s"})`);
+      process.exit(1);
+    }
+    console.log(`[release-truth] STATUS: PASS (Determinism Validated)`);
+    return;
+  }
+
   const truthPath = resolveArg("truth", "release/release-package/domination-delta10/release-truth.json");
   const truthAbs = toAbs(truthPath);
   const truth = readJson(truthAbs, errors, "Release truth JSON");
