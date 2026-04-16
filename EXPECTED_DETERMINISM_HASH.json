@@ -1,0 +1,6 @@
+{
+  "expected_bundle_hash": "a7e1db2b4b8ab40eca93be9b87777187f7ac97960bc510b50165369c3ff7162c",
+  "anchor_commit": "a50313bf2f7d94cb84f84223bd34bae94d1d6777",
+  "node_version": "v20.17.0",
+  "proof_command": "npm run proof:bundle"
+}
