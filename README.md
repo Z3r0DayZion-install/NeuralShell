@@ -117,6 +117,13 @@ npm run channel:site:prepare
 
 ## Release Flow
 
+Official determinism baseline verification (Node 20.17.x):
+
+```powershell
+npm run proof:bundle
+node scripts/release_truth_verify.cjs --determinism-only
+```
+
 Standard release verification:
 
 ```powershell
