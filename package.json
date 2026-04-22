@@ -221,6 +221,15 @@
       ],
       "icon": "assets/icon.ico"
     },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NeuralShell",
+      "include": "build/installer.nsh",
+      "license": "build/LICENSE.txt"
+    },
     "linux": {
       "target": [
         "AppImage"

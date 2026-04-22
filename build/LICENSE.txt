@@ -1,0 +1,50 @@
+NEURALSHELL END USER LICENSE AGREEMENT
+
+Version 2.1.29 | April 2026
+
+IMPORTANT: PLEASE READ THIS LICENSE CAREFULLY BEFORE USING THIS SOFTWARE.
+
+1. LICENSE GRANT
+   Subject to your compliance with this Agreement, NeuralShell is licensed to 
+   you on a limited, non-exclusive, non-transferable basis for personal or 
+   commercial use.
+
+2. PERMITTED USE
+   - Install and use on any number of devices you own
+   - Use for personal, educational, or commercial purposes
+   - Modify the open-source code (per repository license)
+   - Create and share workflows
+
+3. PROHIBITED USE
+   - Reverse engineer the compiled binary
+   - Remove security features or integrity checks
+   - Use to violate any laws or terms of service of integrated services
+   - Redistribute without attribution
+
+4. OPEN SOURCE
+   NeuralShell is open source (see LICENSE in repository). The source code is 
+   available at:
+   https://github.com/Z3r0DayZion-install/NeuralShell
+
+5. THIRD-PARTY SERVICES
+   NeuralShell integrates with third-party AI services (OpenAI, OpenRouter, 
+   Groq, Ollama). Your use of these services is governed by their respective 
+   terms of service.
+
+6. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+7. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE.
+
+8. PRIVACY
+   NeuralShell is local-first. Your data remains on your device unless you 
+   explicitly choose to use cloud AI providers. See PRIVACY.md for details.
+
+By installing NeuralShell, you agree to these terms.
+
+For questions: https://github.com/Z3r0DayZion-install/NeuralShell/issues
