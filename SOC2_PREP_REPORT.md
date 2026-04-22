@@ -1,7 +1,7 @@
 # SOC2 Prep Report
 
 - Framework: **SOC2-Prep-v1**
-- Generated: **2026-03-27T06:50:14.846Z**
+- Generated: **2026-04-22T19:45:00.000Z**
 - Controls Passing: **3/3**
 - Result: **PASS**
 
@@ -20,8 +20,13 @@ Status: **PASS**
 | File | Exists | SHA-256 |
 |---|---|---|
 | `release/proof-bundle-summary.json` | yes | 8e4d4343457de3ea7e0164dbffe37e1591a953bdc574e5db3f8e793a87c70414 |
-| `artifacts/sbom/latest.json` | yes | 3d57b7255bbca4b586c10dc8ca3af9c7ef605e700d33d14c71ed37b72c8ac32d |
+| `artifacts/sbom/latest.json` | yes | 3283fa43da566faa235ecf5c349bfc62878ac68aef714702c4c90a2b7fe3c74f |
 | `release/llm-sweep-report.json` | yes | 92719f173aca95cefd210be79bbab3f3fb05796ce0ef8560316ae97d3c36b3dd |
+
+## Security Update 2026-04-22
+- **Action**: Remediated 7 dependency vulnerabilities
+- **Electron**: 33.2.0 → 41.2.2
+- **npm audit**: 0 vulnerabilities remaining
 
 ## CC8.1 - Change management and integrity
 Status: **PASS**
