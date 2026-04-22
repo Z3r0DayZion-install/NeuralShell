@@ -1,0 +1,20 @@
+{
+  "id": "audit_logger",
+  "name": "Audit Logger",
+  "version": "1.0.0",
+  "description": "Every AI interaction logged with cryptographic integrity. Export compliance-ready PDF reports.",
+  "entry": "index.js",
+  "category": "compliance",
+  "tags": ["audit-trail", "compliance", "reporting"],
+  "demo": {
+    "title": "SOC2-Ready AI Session Logs",
+    "steps": [
+      "Chat with AI normally",
+      "Every prompt/response hashed and chained",
+      "Export tamper-evident audit report",
+      "Verify chain integrity with one click"
+    ]
+  },
+  "sha256": "demo_placeholder_hash",
+  "signature": "sha256:demo_placeholder_hash"
+}
