@@ -153,6 +153,7 @@
     "white-label:verify": "node scripts/verify_white_label_config.cjs",
     "white-label:build": "node scripts/gen_white_label_build.cjs",
     "release:truth:verify": "node scripts/release_truth_verify.cjs"
+    ,"site:smoke": "node scripts/site_smoke_check.cjs"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",
