@@ -4,7 +4,8 @@
 
 - **Branch:** `synced/master-2026-04-03` (HEAD: `ee52cce`)
 - **`master` is branch-protected** — requires 4 CI status checks to pass before merge
-- All landing page files are built and committed. The Pages workflow has been triggered.
+- **Live site:** `https://getneuralshell.com/` is serving the current landing page over HTTPS
+- **Pages deploy mode:** GitHub Actions deploys from `_site/` root with `CNAME=getneuralshell.com`
 
 ---
 
@@ -31,46 +32,40 @@
 
 ## What Still Needs To Be Done
 
-### 1. GitHub Pages source setting (browser — 2 min)
+### 1. Record and publish the proof demo video
 
-Go to:
+Use:
 ```
-https://github.com/Z3r0DayZion-install/NeuralShell/settings/pages
+docs/DEMO_VIDEO_STORYBOARD.md
 ```
-- Set **Source → GitHub Actions**
-- Save
 
-This is required exactly once. Without it the workflow uploads an artifact but never deploys.
+Target: 3-5 minute screencast showing setup, backup export, app-data wipe, restore, and hardware-signature verification.
+
+### 2. Update "Watch Proof Demo" CTA after upload
+
+File:
+```
+landing/index.html
+```
+
+Replace the current placeholder `#demo` link with the final hosted video URL.
+
+### 3. Merge branch to master (after CI passes)
+
+`master` is protected and requires 4 status checks. Open a PR:
+```
+https://github.com/Z3r0DayZion-install/NeuralShell/compare/master...synced/master-2026-04-03
+```
+
+Wait for CI to pass, then merge. This is for long-term hygiene.
+
+### 4. (Optional) Archive or trim this handoff doc
+
+Most deployment steps in this file are complete; keep only ongoing operational notes if needed.
 
 ---
 
-### 2. Verify the Pages workflow ran successfully
-
-Go to:
-```
-https://github.com/Z3r0DayZion-install/NeuralShell/actions/workflows/pages.yml
-```
-
-The push to `synced/master-2026-04-03` on 2026-04-23 ~17:27 PT should have triggered it.
-
-- If it **passed** → site is live at `https://z3r0dayzion-install.github.io/NeuralShell/`
-- If it **failed** → check the step logs, most likely cause is `web-sandbox/index.html` missing (see fix below)
-
-**If the web-sandbox step fails:**
-```bash
-# The workflow does: cp web-sandbox/index.html docs/web-sandbox/index.html
-# If web-sandbox/ doesn't exist it will fail. Fix in pages.yml:
-# Change that step to:
-mkdir -p docs/web-sandbox
-if [ -f web-sandbox/index.html ]; then
-  cp web-sandbox/index.html docs/web-sandbox/index.html
-fi
-```
-This is already guarded in the current `pages.yml` — but verify if the run failed.
-
----
-
-### 3. DNS records in Namecheap (already partially done)
+### 5. DNS records in Namecheap (reference)
 
 The user is on Namecheap with `getneuralshell.com` active.
 
@@ -90,32 +85,21 @@ Add these (keep the existing TXT record — it's domain verification):
 | A Record | `@` | `185.199.111.153` | Automatic |
 | CNAME Record | `www` | `z3r0dayzion-install.github.io.` | Automatic |
 
-Save all changes. Propagation: 5–30 minutes.
-
----
-
-### 4. Merge branch to master (after CI passes)
-
-`master` is protected and requires 4 status checks. Open a PR:
-```
-https://github.com/Z3r0DayZion-install/NeuralShell/compare/master...synced/master-2026-04-03
-```
-
-Wait for CI to pass, then merge. This is for long-term hygiene — the site deploys from the branch already.
+Save all changes. Propagation is typically 5–30 minutes.
 
 ---
 
 ## How the Deploy Pipeline Works
 
 ```
-landing/*.html  ──┐
+landing/*.html    ──┐
 landing/og-image.png │
 proof/ dir           │  pages.yml build step
 screenshots/ dir  ───┤  (sed rewrites ../docs/ → absolute paths)
 docs/ (existing)  ───┘
         │
         ▼
-   docs/ folder (in CI, not on disk)
+  _site/ folder (in CI, deploy root)
         │
         ├── index.html          ← landing/index.html (rewritten)
         ├── proof.html          ← landing/proof.html (rewritten)
@@ -127,13 +111,13 @@ docs/ (existing)  ───┘
         ├── CNAME               ← "getneuralshell.com" injected at build time
         ├── proof/              ← copied from repo root
         ├── screenshots/        ← copied from repo root
-        └── [all existing docs/ content]
+          └── docs/*              ← copied from repo docs/
         │
         ▼
   GitHub Pages artifact upload → deploy
         │
         ▼
-  getneuralshell.com  (once DNS propagates)
+        getneuralshell.com  (live)
 ```
 
 ---
@@ -143,13 +127,13 @@ docs/ (existing)  ───┘
 | URL | Source file |
 |-----|-------------|
 | `getneuralshell.com/` | `landing/index.html` |
-| `getneuralshell.com/proof` | `landing/proof.html` |
+| `getneuralshell.com/proof.html` | `landing/proof.html` |
 | `getneuralshell.com/pricing` | `landing/pricing.html` |
 | `getneuralshell.com/onboarding` | `landing/onboarding.html` |
 | `getneuralshell.com/evaluator` | `landing/evaluator.html` |
 | `getneuralshell.com/partners` | `landing/partners.html` |
 | `getneuralshell.com/docs/` | `docs/index.html` (operator docs) |
-| `getneuralshell.com/PRIVACY_POLICY.md` | `docs/PRIVACY_POLICY.md` |
+| `getneuralshell.com/docs/PRIVACY_POLICY.md` | `docs/PRIVACY_POLICY.md` |
 
 ---
 
@@ -184,4 +168,4 @@ INSTALL.md                      ← updated trust artifact links
 
 ## One Remaining Manual Item (not code)
 
-**Record the demo video** per `docs/DEMO_VIDEO_STORYBOARD.md`. Once uploaded, update the `Watch Demo` button in `landing/index.html` with the real URL. The button currently points to the proof page as a placeholder.
+**Record the demo video** per `docs/DEMO_VIDEO_STORYBOARD.md`. Once uploaded, update the `Watch Demo` button in `landing/index.html` with the real URL. The button currently points to `#demo` as a placeholder.
