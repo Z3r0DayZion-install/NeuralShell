@@ -41,10 +41,10 @@ function loadPolicy() {
                 },
                 constraints: data.constraints || {}
             };
-            console.log(`[POLICY] Hot-reloaded strategic rules from ${POLICY_PATH}`);
+            process.stdout.write(`[POLICY] Hot-reloaded strategic rules from ${POLICY_PATH}\n`);
         }
     } catch (err) {
-        console.warn(`[POLICY] Failed to reload policy: ${err.message}`);
+        process.stderr.write(`[POLICY] Failed to reload policy: ${err.message}\n`);
     }
 }
 

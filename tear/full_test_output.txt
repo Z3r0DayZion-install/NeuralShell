@@ -1,0 +1,435 @@
+
+> neuralshell-v5@2.1.29 test
+> node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/license-engine.test.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/security-abuse.test.js && node tear/branch-protection-policy.test.js && node tear/cleanup-guard.test.js && node tear/release-manifest.test.js && node tear/release-checksums.test.js && node tear/release-upgrade-validation.test.js && node tear/release-workflows-contract.test.js && node tear/ship-entrypoints.test.js && node tear/performance-gate-contract.test.js && node tear/release-freshness.test.js && node tear/release-status-contract.test.js && node tear/worktree-cleanliness.test.js && node tear/identity-kernel.test.js && node tear/hardware-binding-contract.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js && node tear/signed-artifacts.test.js && node tear/business-pack-generators.test.js && node tear/airgap-bundle.test.js && node tear/courier-package.test.js && node tear/hardware-appliance-build.test.js && node tear/commercialization-pack-generators.test.js && node tear/field-execution-pack-generators.test.js && node tear/scale-operations-pack-generators.test.js && node tear/ecosystem-dominance-pack-generators.test.js
+
+Smoke test passed (React Architecture).
+IPC surface test passed.
+Renderer bindings test passed.
+Linkage regression test passed.
+PASS ipcValidators
+PASS workspace action guards
+PASS workflow state validators
+PASS validator default branches
+PASS catalog helpers
+PASS patch plan helpers
+PASS bridge profile model
+PASS bridge settings feature module
+PASS bridge settings model
+PASS airgap policy
+PASS voice rtt badge thresholds
+PASS llmService retry
+PASS llmService offline
+PASS llmService cancel
+PASS llmService persona/config
+PASS llmService autodetect
+PASS llmService stream
+PASS llmService failure modes
+All unit tests passed.
+Γ£ô Real key configured: sign/verify works
+Γ£ô No key + no dev override: fails closed
+Γ£ô No key + explicit dev override: dev path works
+Γ£ô Mismatched key: verification fails
+Γ£ô Dev key cannot be exploited without explicit override
+Γ£ô Dev override requires explicit '1' value
+
+License engine test passed.
+Policy firewall test passed.
+Audit chain test passed.
+Security guards test passed.
+Security abuse test passed.
+Branch protection policy test passed.
+Cleanup guard test passed.
+Release manifest test passed.
+Release checksums test passed.
+Release upgrade validation test passed.
+Release workflow contract test passed.
+Ship entrypoint test passed.
+Performance gate contract test passed.
+Release freshness test passed.
+Release status contract test passed.
+Worktree cleanliness test passed.
+TAP version 13
+# Subtest: IdentityKernel persists rotated keypairs across reloads
+ok 1 - IdentityKernel persists rotated keypairs across reloads
+  ---
+  duration_ms: 12.5427
+  ...
+# Subtest: IdentityKernel migrates legacy encrypted identities to the authenticated format
+ok 2 - IdentityKernel migrates legacy encrypted identities to the authenticated format
+  ---
+  duration_ms: 4.1729
+  ...
+# Subtest: IdentityKernel quarantines tampered authenticated identities and regenerates a fresh keypair
+ok 3 - IdentityKernel quarantines tampered authenticated identities and regenerates a fresh keypair
+  ---
+  duration_ms: 6.8712
+  ...
+# Subtest: IdentityKernel persists trusted peers across reloads and revocations
+ok 4 - IdentityKernel persists trusted peers across reloads and revocations
+  ---
+  duration_ms: 8.5313
+  ...
+# Subtest: IdentityKernel quarantines tampered peer stores and recovers with an empty trust list
+ok 5 - IdentityKernel quarantines tampered peer stores and recovers with an empty trust list
+  ---
+  duration_ms: 6.3916
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47.83
+TAP version 13
+# Subtest: XP Manager accepts identity rotation when the stable hardware binding matches
+ok 1 - XP Manager accepts identity rotation when the stable hardware binding matches
+  ---
+  duration_ms: 3.493
+  ...
+# Subtest: XP Manager still blocks when the hardware binding changes
+ok 2 - XP Manager still blocks when the hardware binding changes
+  ---
+  duration_ms: 1.2893
+  ...
+# Subtest: AgentController sandbox execution allows rotated identities on the same hardware
+ok 3 - AgentController sandbox execution allows rotated identities on the same hardware
+  ---
+  duration_ms: 5.7665
+  ...
+# Subtest: AgentController sandbox execution still blocks on hardware mismatch
+ok 4 - AgentController sandbox execution still blocks on hardware mismatch
+  ---
+  duration_ms: 2.7568
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22.4924
+TAP version 13
+# Subtest: SessionManager saves and loads payload with object.chat tokens metadata
+ok 1 - SessionManager saves and loads payload with object.chat tokens metadata
+  ---
+  duration_ms: 74.2353
+  ...
+# Subtest: SessionManager stores workflow and release metadata in the index
+ok 2 - SessionManager stores workflow and release metadata in the index
+  ---
+  duration_ms: 35.015
+  ...
+# Subtest: SessionManager stores preview text and searches across preview metadata
+ok 3 - SessionManager stores preview text and searches across preview metadata
+  ---
+  duration_ms: 34.7113
+  ...
+# Subtest: SessionManager rejects invalid names and wrong passphrase
+ok 4 - SessionManager rejects invalid names and wrong passphrase
+  ---
+  duration_ms: 67.8053
+  ...
+# Subtest: SessionManager rename and delete keep index in sync
+ok 5 - SessionManager rename and delete keep index in sync
+  ---
+  duration_ms: 36.218
+  ...
+# Subtest: SessionManager detects envelope checksum tampering
+ok 6 - SessionManager detects envelope checksum tampering
+  ---
+  duration_ms: 36.5628
+  ...
+# Subtest: SessionManager search returns all metadata and filtered matches
+ok 7 - SessionManager search returns all metadata and filtered matches
+  ---
+  duration_ms: 79.6103
+  ...
+# Subtest: SessionManager repairIndex rebuilds missing in-memory index entries
+ok 8 - SessionManager repairIndex rebuilds missing in-memory index entries
+  ---
+  duration_ms: 35.499
+  ...
+# Subtest: SessionManager handles missing sessions and rename collisions
+ok 9 - SessionManager handles missing sessions and rename collisions
+  ---
+  duration_ms: 68.9352
+  ...
+# Subtest: SessionManager exportToPeer is blocked in local test mode
+ok 10 - SessionManager exportToPeer is blocked in local test mode
+  ---
+  duration_ms: 1.1289
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 481.4134
+TAP version 13
+# Subtest: StateManager setState merges nested settings instead of replacing
+ok 1 - StateManager setState merges nested settings instead of replacing
+  ---
+  duration_ms: 9.4664
+  ...
+# Subtest: StateManager load seeds workflow and release defaults on a fresh profile
+ok 2 - StateManager load seeds workflow and release defaults on a fresh profile
+  ---
+  duration_ms: 2.9777
+  ...
+# Subtest: StateManager migrates v1 state to v5 bridge profile settings
+ok 3 - StateManager migrates v1 state to v5 bridge profile settings
+  ---
+  duration_ms: 3.3592
+  ...
+# Subtest: StateManager set updates keys and writes encrypted state
+ok 4 - StateManager set updates keys and writes encrypted state
+  ---
+  duration_ms: 3.1204
+  ...
+# Subtest: StateManager setState ignores non-object updates and recovers null settings
+ok 5 - StateManager setState ignores non-object updates and recovers null settings
+  ---
+  duration_ms: 3.6111
+  ...
+# Subtest: StateManager quarantines corrupted state and regenerates defaults
+ok 6 - StateManager quarantines corrupted state and regenerates defaults
+  ---
+  duration_ms: 3.5387
+  ...
+# Subtest: StateManager upgrades v2 state with existing connectionProfiles to v5
+ok 7 - StateManager upgrades v2 state with existing connectionProfiles to v5
+  ---
+  duration_ms: 2.7063
+  ...
+# Subtest: StateManager migrates legacy encrypted v3 state into the authenticated v5 format
+ok 8 - StateManager migrates legacy encrypted v3 state into the authenticated v5 format
+  ---
+  duration_ms: 2.9311
+  ...
+# Subtest: StateManager quarantines tampered authenticated state and regenerates defaults
+ok 9 - StateManager quarantines tampered authenticated state and regenerates defaults
+  ---
+  duration_ms: 4.2744
+  ...
+# Subtest: StateManager migrates legacy authenticated v4 state to the stable hardware-bound v5 format
+ok 10 - StateManager migrates legacy authenticated v4 state to the stable hardware-bound v5 format
+  ---
+  duration_ms: 2.9264
+  ...
+# Subtest: StateManager preserves state across identity rotation when hardware binding is stable
+ok 11 - StateManager preserves state across identity rotation when hardware binding is stable
+  ---
+  duration_ms: 3.8661
+  ...
+# Subtest: StateManager handles deeply nested status updates and edge cases
+ok 12 - StateManager handles deeply nested status updates and edge cases
+  ---
+  duration_ms: 2.9584
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 57.727
+TAP version 13
+# Subtest: signed artifact utility supports sign and verify round-trip
+ok 1 - signed artifact utility supports sign and verify round-trip
+  ---
+  duration_ms: 3.7798
+  ...
+# Subtest: trusted signer verification passes for checked-in white-label config
+ok 2 - trusted signer verification passes for checked-in white-label config
+  ---
+  duration_ms: 2.2938
+  ...
+# Subtest: fingerprint in trusted publishers matches demo public key
+ok 3 - fingerprint in trusted publishers matches demo public key
+  ---
+  duration_ms: 0.69
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15.0193
+TAP version 13
+# Subtest: pilot pack generator creates complete non-placeholder bundle
+ok 1 - pilot pack generator creates complete non-placeholder bundle
+  ---
+  duration_ms: 45.9831
+  ...
+# Subtest: board pack generator creates markdown/pdf-or-fallback/zip artifacts
+ok 2 - board pack generator creates markdown/pdf-or-fallback/zip artifacts
+  ---
+  duration_ms: 696.879
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 750.5604
+TAP version 13
+# Subtest: air-gap bundle verify passes for valid and fails for tampered bundle
+ok 1 - air-gap bundle verify passes for valid and fails for tampered bundle
+  ---
+  duration_ms: 576.4283
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 583.2926
+TAP version 13
+# Subtest: courier package verify passes for valid and fails for tampered payload
+ok 1 - courier package verify passes for valid and fails for tampered payload
+  ---
+  duration_ms: 118.1005
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 125.0445
+TAP version 13
+# Subtest: hardware appliance build generator emits at least 3 profile bundles with decommission checklists
+ok 1 - hardware appliance build generator emits at least 3 profile bundles with decommission checklists
+  ---
+  duration_ms: 47.7716
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 55.1481
+TAP version 13
+# Subtest: demo bundle and reset plan generate deterministic-ready outputs
+ok 1 - demo bundle and reset plan generate deterministic-ready outputs
+  ---
+  duration_ms: 76.9891
+  ...
+# Subtest: training/support/pilot pack generators produce complete non-placeholder outputs
+ok 2 - training/support/pilot pack generators produce complete non-placeholder outputs
+  ---
+  duration_ms: 117.145
+  ...
+# Subtest: deployment preflight and field-launch health checks pass
+ok 3 - deployment preflight and field-launch health checks pass
+  ---
+  duration_ms: 66.3777
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 269.1133
+TAP version 13
+# Subtest: buyer follow-up and demo recap packs are generated and stage-correct
+ok 1 - buyer follow-up and demo recap packs are generated and stage-correct
+  ---
+  duration_ms: 75.8169
+  ...
+# Subtest: demo-to-pilot and expansion packs produce non-placeholder outputs
+ok 2 - demo-to-pilot and expansion packs produce non-placeholder outputs
+  ---
+  duration_ms: 75.5052
+  ...
+# Subtest: renewal and feedback summaries are generated and complete
+ok 3 - renewal and feedback summaries are generated and complete
+  ---
+  duration_ms: 72.7291
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 232.7714
+TAP version 13
+# Subtest: partner and managed-service packs are generated and complete
+ok 1 - partner and managed-service packs are generated and complete
+  ---
+  duration_ms: 79.1044
+  ...
+# Subtest: strategic, rollout, and revenue packs are generated with non-placeholder output
+ok 2 - strategic, rollout, and revenue packs are generated with non-placeholder output
+  ---
+  duration_ms: 110.5858
+  ...
+# Subtest: channel, renewal, and scale status packs are generated and internally consistent
+ok 3 - channel, renewal, and scale status packs are generated and internally consistent
+  ---
+  duration_ms: 108.7024
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 306.8072
+TAP version 13
+# Subtest: ecosystem portfolio/service/network/global packs are generated
+ok 1 - ecosystem portfolio/service/network/global packs are generated
+  ---
+  duration_ms: 150.0472
+  ...
+# Subtest: revenue/board/operator packs are generated and defensible
+ok 2 - revenue/board/operator packs are generated and defensible
+  ---
+  duration_ms: 108.2427
+  ...
+# Subtest: ecosystem command pack is generated and links drilldowns
+ok 3 - ecosystem command pack is generated and links drilldowns
+  ---
+  duration_ms: 35.8609
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 302.7115

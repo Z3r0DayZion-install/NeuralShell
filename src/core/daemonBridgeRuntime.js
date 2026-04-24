@@ -1,6 +1,9 @@
 const crypto = require("crypto");
 const { spawn } = require("node:child_process");
 
+const NPM_COMMAND = process.platform === "win32" ? "npm.cmd" : "npm";
+const GIT_COMMAND = process.platform === "win32" ? "git.exe" : "git";
+
 function getDaemonJwtSecret(candidateSecret = "") {
   const candidate = String(candidateSecret || "").trim();
   if (candidate) return candidate;
@@ -14,9 +17,10 @@ function runProofBundle(workspacePath, send) {
   return new Promise((resolve) => {
     const started = Date.now();
     const safeCwd = workspacePath && String(workspacePath).trim() ? String(workspacePath).trim() : process.cwd();
-    const proc = spawn("npm", ["run", "proof:bundle"], {
+    const proc = spawn(NPM_COMMAND, ["run", "proof:bundle"], {
       cwd: safeCwd,
-      shell: true
+      shell: false,
+      windowsHide: true
     });
     let stdout = "";
     let stderr = "";
@@ -55,9 +59,10 @@ function runProofBundle(workspacePath, send) {
 
 function runGitSha(workspacePath) {
   return new Promise((resolve) => {
-    const proc = spawn("git", ["rev-parse", "HEAD"], {
+    const proc = spawn(GIT_COMMAND, ["rev-parse", "HEAD"], {
       cwd: workspacePath,
-      shell: true
+      shell: false,
+      windowsHide: true
     });
     let out = "";
     proc.stdout.on("data", (chunk) => {

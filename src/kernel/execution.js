@@ -1,4 +1,4 @@
-const { spawn, execSync } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -87,6 +87,23 @@ function buildTaskRegistry() {
 const TASK_REGISTRY = buildTaskRegistry();
 
 class ExecutionBroker {
+  _runCommand(command, args = [], timeoutMs = 3000) {
+    const result = spawnSync(command, args, {
+      shell: false,
+      windowsHide: true,
+      timeout: timeoutMs,
+      encoding: 'utf8'
+    });
+    if (result.error) {
+      throw result.error;
+    }
+    if (Number(result.status) !== 0) {
+      const stderr = String(result.stderr || '').trim();
+      throw new Error(stderr || `Command failed with exit code ${result.status}`);
+    }
+    return String(result.stdout || '');
+  }
+
   /**
    * Verify binary integrity.
    */
@@ -219,30 +236,40 @@ class ExecutionBroker {
       
       // args should be ['-Command', '<query>']
       if (args.length === 2 && args[0] === '-Command' && allowedQueries.includes(args[1])) {
-        const output = execSync(`${command} ${args.join(' ')}`, { timeout: 5000 }).toString();
-        return output;
+        return this._runCommand(command, args, 5000);
       }
-      
+
       throw new Error('OMEGA_BLOCK: PowerShell command not in allowlist.');
     }
     
     // Windows hardware binding - wmic (fallback)
     if (command === 'wmic' && process.platform === 'win32') {
-      const output = execSync(`${command} ${args.join(' ')}`, { timeout: 3000 }).toString();
-      return output;
+      return this._runCommand(command, args, 3000);
     }
-    
+
     // macOS hardware binding
     if (command === 'ioreg' && process.platform === 'darwin') {
-      const output = execSync(`${command} ${args.join(' ')}`, { timeout: 3000 }).toString();
-      return output;
+      return this._runCommand(command, args, 3000);
     }
-    
+
     if (command === 'system_profiler' && process.platform === 'darwin') {
-      const output = execSync(`${command} ${args.join(' ')}`, { timeout: 3000 }).toString();
-      return output;
+      return this._runCommand(command, args, 3000);
     }
-    
+
+    // Linux hardware binding — machine-id and DMI reads (no shell, safe paths only)
+    if (process.platform === 'linux') {
+      const LINUX_ALLOWLIST = new Set([
+        '/etc/machine-id',
+        '/var/lib/dbus/machine-id',
+        '/sys/class/dmi/id/product_uuid',
+        '/sys/class/dmi/id/board_serial',
+        '/sys/class/dmi/id/product_serial'
+      ]);
+      if (command === 'cat' && args.length === 1 && LINUX_ALLOWLIST.has(args[0])) {
+        return this._runCommand('cat', [args[0]], 3000);
+      }
+    }
+
     throw new Error('OMEGA_BLOCK: Raw execute denied.');
   }
 }

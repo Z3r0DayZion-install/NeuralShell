@@ -54,43 +54,42 @@ async function onLoad() {
   if (!fs.existsSync(AUTONOMOUS_DIR)) fs.mkdirSync(AUTONOMOUS_DIR, { recursive: true });
   if (!fs.existsSync(MANIFESTS_DIR)) fs.mkdirSync(MANIFESTS_DIR, { recursive: true });
 
-  const files = fs.readdirSync(AUTONOMOUS_DIR);
-  for (const file of files) {
-    if (!file.endsWith(".js")) continue;
-    
+  const files = fs.readdirSync(AUTONOMOUS_DIR).filter(f => f.endsWith(".js"));
+
+  await Promise.all(files.map(async (file) => {
     try {
       const pluginPath = path.join(AUTONOMOUS_DIR, file);
       const manifestPath = path.join(MANIFESTS_DIR, file.replace(".js", ".json"));
-      
+
       if (!fs.existsSync(manifestPath)) {
         console.error(`[PLUGINS] Blocked: Plugin ${file} has no manifest.`);
-        continue;
+        return;
       }
 
       const manifest = parseManifest(manifestPath);
       const actualHash = calculateHash(pluginPath);
-      
+
       if (actualHash !== manifest.hash.toUpperCase()) {
         console.error(`[PLUGINS] Blocked: Integrity mismatch for ${file}. Expected ${manifest.hash}, got ${actualHash}`);
-        continue;
+        return;
       }
 
       const scopedKernel = createScopedKernel(manifest.permissions || []);
-      
+
       delete require.cache[require.resolve(pluginPath)];
       const plugin = require(pluginPath);
-      
+
       if (plugin && typeof plugin.register === "function") {
-        plugin.register({ 
-          registerCommand, 
-          kernel: scopedKernel 
+        plugin.register({
+          registerCommand,
+          kernel: scopedKernel
         });
         console.log(`[PLUGINS] Verified & Loaded: ${manifest.name} v${manifest.version}`);
       }
     } catch (err) {
       console.error(`[PLUGINS] Failed to load autonomous plugin ${file}:`, err.message);
     }
-  }
+  }));
   return true;
 }
 

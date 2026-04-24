@@ -312,6 +312,11 @@ function parseWmicOutput(output) {
   return '';
 }
 
+function parseLinuxSingleValue(output) {
+  const firstLine = String(output || '').split('\n')[0];
+  return String(firstLine || '').trim();
+}
+
 /**
  * Extract Windows hardware identifiers via Get-CimInstance (primary) or wmic (fallback).
  * @returns {Promise<string>} 64-character hex SHA-256 hash
@@ -627,6 +632,110 @@ async function getWindowsHardwareId() {
   return fingerprint;
 }
 
+async function getLinuxHardwareId() {
+  const auditChain = getAuditChain();
+  let machineId = '';
+  let productUuid = '';
+  let boardSerial = '';
+  let productSerial = '';
+
+  async function readAllowedLinuxPath(filePath, label) {
+    try {
+      const output = await kernel.request(CAP_PROC, 'execute', {
+        command: 'cat',
+        args: [filePath]
+      });
+      return parseLinuxSingleValue(output);
+    } catch (err) {
+      if (auditChain) {
+        try {
+          auditChain.append({
+            event: 'hardware-binding',
+            platform: 'linux',
+            status: 'warning',
+            method: label,
+            message: `${label} extraction failed: ${err.message}`
+          });
+        } catch (err2) {
+          console.error('Audit chain write failed:', err2.message);
+        }
+      }
+      return '';
+    }
+  }
+
+  machineId = await readAllowedLinuxPath('/etc/machine-id', 'machine-id');
+  if (!machineId) {
+    machineId = await readAllowedLinuxPath('/var/lib/dbus/machine-id', 'dbus-machine-id-fallback');
+  }
+  productUuid = await readAllowedLinuxPath('/sys/class/dmi/id/product_uuid', 'product-uuid');
+  boardSerial = await readAllowedLinuxPath('/sys/class/dmi/id/board_serial', 'board-serial');
+  productSerial = await readAllowedLinuxPath('/sys/class/dmi/id/product_serial', 'product-serial');
+
+  const availableIdentifiers = [];
+  if (isValidWindowsIdentifier(machineId)) availableIdentifiers.push(`machine:${machineId}`);
+  if (isValidWindowsIdentifier(productUuid)) availableIdentifiers.push(`uuid:${productUuid}`);
+  if (isValidWindowsIdentifier(boardSerial)) availableIdentifiers.push(`board:${boardSerial}`);
+  if (isValidWindowsIdentifier(productSerial)) availableIdentifiers.push(`product:${productSerial}`);
+
+  let compositeIdentifier = '';
+  let mode = 'unknown';
+
+  if (availableIdentifiers.length >= 2) {
+    compositeIdentifier = availableIdentifiers.join('|');
+    mode = 'success';
+  } else if (availableIdentifiers.length === 1) {
+    compositeIdentifier = availableIdentifiers[0];
+    mode = 'degraded';
+  } else if (harnessFallbackEnabled) {
+    return getHarnessFallbackHardwareId('linux');
+  } else {
+    if (auditChain) {
+      try {
+        auditChain.append({
+          event: 'hardware-binding',
+          platform: 'linux',
+          status: 'failed',
+          method: 'none',
+          message: 'Hardware binding failed on Linux: no valid identifiers available'
+        });
+      } catch (err) {
+        console.error('Audit chain write failed:', err.message);
+      }
+    }
+    throw new Error('Hardware binding failed on Linux: No valid hardware identifiers available');
+  }
+
+  const fingerprint = crypto
+    .createHash('sha256')
+    .update(compositeIdentifier)
+    .digest('hex');
+
+  if (auditChain) {
+    try {
+      auditChain.append({
+        event: 'hardware-binding',
+        platform: 'linux',
+        status: mode,
+        method: 'complete',
+        identifiers: {
+          machineId: !!machineId,
+          productUuid: !!productUuid,
+          boardSerial: !!boardSerial,
+          productSerial: !!productSerial,
+          count: availableIdentifiers.length
+        },
+        message: `Hardware fingerprint generated (${mode} mode, linux backend, ${availableIdentifiers.length} identifiers)`
+      });
+    } catch (err) {
+      console.error('Audit chain write failed:', err.message);
+    }
+  }
+
+  hardwareFingerprint = fingerprint;
+  return fingerprint;
+}
+
 function setHarnessFallbackEnabled(enabled) {
   harnessFallbackEnabled = Boolean(enabled);
 }
@@ -680,13 +789,17 @@ async function getHardwareId() {
   if (process.platform === 'win32') {
     return await getWindowsHardwareId();
   }
-  
+
+  // Linux backend (hardened)
+  if (process.platform === 'linux') {
+    return await getLinuxHardwareId();
+  }
+
   if (harnessFallbackEnabled) {
     return getHarnessFallbackHardwareId(process.platform);
   }
 
-  // Linux backend (future - hard failure for now)
-  throw new Error('Hardware binding not yet implemented for Linux');
+  throw new Error(`Hardware binding not yet implemented for platform: ${process.platform}`);
 }
 
 function getHardwareEncryptionKey() {

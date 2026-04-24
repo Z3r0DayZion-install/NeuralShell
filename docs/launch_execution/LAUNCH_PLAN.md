@@ -1,5 +1,9 @@
 # NeuralShell Launch Execution: Front 1-4 — Real World Validation
 
+## Active Execution Board
+- Week 1 operator board: [WEEK1_EXECUTION_BOARD.md](WEEK1_EXECUTION_BOARD.md)
+- Scope guardrail: no net-new features, only blocker fixes and UI clarity polish for v2.1.30.
+
 ## Front 1 — Controlled Distribution
 **Goal:** 5-20 high-signal early users.
 - **Distribution:** Private Gumroad link + Direct Outreach.

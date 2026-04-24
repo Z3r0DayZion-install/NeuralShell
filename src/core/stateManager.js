@@ -275,21 +275,37 @@ function normalizeLoadedState(parsed) {
   return merged;
 }
 
-function save() {
+let _saveTimer = null;
+
+function save(immediate = false) {
   state.nodeId = getStateBindingId(); // Link state record to the stable hardware binding
 
-  const rawJson = JSON.stringify(state, null, 2);
-  const encrypted = encrypt(rawJson);
+  function _flush() {
+    _saveTimer = null;
+    const rawJson = JSON.stringify(state, null, 2);
+    const encrypted = encrypt(rawJson);
+    fs.mkdirSync(path.dirname(stateFile), { recursive: true });
+    fs.writeFileSync(stateFile, encrypted, "utf8");
+  }
 
-  fs.mkdirSync(path.dirname(stateFile), { recursive: true });
-  fs.writeFileSync(stateFile, encrypted, "utf8");
+  if (immediate) {
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+    _flush();
+    return;
+  }
+
+  // Coalesce rapid writes — flush at most once per 200 ms
+  if (!_saveTimer) {
+    _saveTimer = setTimeout(_flush, 200);
+    if (_saveTimer.unref) _saveTimer.unref();
+  }
 }
 
 function load() {
   fs.mkdirSync(path.dirname(stateFile), { recursive: true });
   if (!fs.existsSync(stateFile)) {
     state = normalizeLoadedState(defaultState());
-    save();
+    save(true);
     return state;
   }
 
@@ -315,7 +331,7 @@ function load() {
     } catch {
       quarantineStateFile("hardware-lock-failure");
       state = defaultState();
-      save();
+      save(true);
       return state;
     }
   }
@@ -323,7 +339,7 @@ function load() {
   // Migration logic from v1/v2/v3/v4 to v5
   if (!parsed.stateVersion || parsed.stateVersion < 3) {
     state = normalizeLoadedState(parsed);
-    save(); // Re-encrypt in the authenticated v5 format and bind it to the stable hardware anchor
+    save(true); // Re-encrypt in the authenticated v5 format and bind it to the stable hardware anchor
     return state;
   }
 
@@ -340,7 +356,7 @@ function load() {
     requiresProfileNormalization ||
     requiresBindingRewrite
   ) {
-    save();
+    save(true);
   }
   return state;
 }
@@ -362,7 +378,8 @@ function set(key, value) {
   } else {
     state[key] = value;
   }
-  save();
+  // Preserve historical write-through semantics for single-key updates.
+  save(true);
   return true;
 }
 
@@ -375,7 +392,7 @@ function setState(updates) {
       ? mergeSettingsValue(state.settings, next.settings, next.model || state.model)
       : state.settings
   };
-  save();
+  save(true); // setState is a batch operation — flush immediately
   return state;
 }
 
@@ -414,7 +431,7 @@ function secureStoreSecret(profileId, key, value) {
 
   secrets[profileId][key] = storedValue;
   set("settings.secrets", secrets);
-  save();
+  save(true);
 }
 
 function retrieveSecret(profileId, key) {
@@ -451,7 +468,7 @@ function getBundleSigningKey() {
 
 function clear() {
   state = defaultState();
-  save();
+  save(true);
 }
 
 function reset() {
@@ -470,7 +487,7 @@ function addRepairTelemetry(entry) {
   });
   if (log.length > 50) log.splice(50);
   set("settings.repairTelemetryLog", log);
-  save();
+  save(true);
 }
 
 function logProfileEvent(profileId, type, summary, context = {}) {
@@ -489,7 +506,7 @@ function logProfileEvent(profileId, type, summary, context = {}) {
   log.unshift(event);
   if (log.length > 200) log.splice(200); // Expanded for professional forensics
   set("settings.profileTrustHistory", log);
-  save();
+  save(true);
 }
 
 function getProfileTrustReport(profileId) {

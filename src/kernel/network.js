@@ -49,6 +49,13 @@ class NetworkBroker {
   /**
    * Filter headers against allowlist.
    */
+  /**
+   * Exponential backoff with jitter: base 400ms, doubles per attempt, ±200ms jitter.
+   */
+  _backoffMs(attempt) {
+    return Math.min(400 * Math.pow(2, attempt), 8000) + Math.floor(Math.random() * 200);
+  }
+
   _filterHeaders(headers) {
     const filtered = {};
     for (const [key, value] of Object.entries(headers)) {
@@ -91,7 +98,9 @@ class NetworkBroker {
     const safeHeaders = this._filterHeaders(headers);
 
     let lastError;
-    const maxRetries = 2;
+    const maxRetries = 3;
+    const RETRYABLE_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND']);
+    const RETRYABLE_HTTP = new Set([429, 503, 504]);
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
@@ -110,22 +119,29 @@ class NetworkBroker {
           throw new Error('OMEGA_BLOCK: Response size exceeds limit.');
         }
 
+        // Retry on transient HTTP error codes before returning
+        if (RETRYABLE_HTTP.has(response.status) && attempt < maxRetries) {
+          const retryAfterMs = parseInt(response.headers.get('retry-after') || '0', 10) * 1000
+            || this._backoffMs(attempt);
+          await new Promise(res => setTimeout(res, retryAfterMs));
+          continue;
+        }
+
         // Return raw Buffer to prevent string-based kernel exploits
         const buffer = await response.buffer();
         return {
           status: response.status,
           headers: Object.fromEntries(response.headers.entries()),
-          data: buffer.toString('base64') 
+          data: buffer.toString('base64')
         };
       } catch (error) {
         lastError = error;
-        if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED' || error.type === 'request-timeout') {
-          if (attempt < maxRetries) {
-            await new Promise(res => setTimeout(res, 500 * (attempt + 1))); // Backoff
-            continue;
-          }
+        const isRetryable = RETRYABLE_CODES.has(error.code) || error.type === 'request-timeout';
+        if (isRetryable && attempt < maxRetries) {
+          await new Promise(res => setTimeout(res, this._backoffMs(attempt)));
+          continue;
         }
-        throw error; // Rethrow if not a retryable error or max retries reached
+        throw error;
       }
     }
     throw lastError;
