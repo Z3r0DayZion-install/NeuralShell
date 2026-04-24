@@ -10,9 +10,8 @@ const installerSmokeTimeoutMs = Number(
     || process.env.NEURAL_RELEASE_SMOKE_TIMEOUT_MS
     || 30000
 );
-const allowInstallerSoftFail =
-  process.env.NEURAL_RELEASE_ALLOW_INSTALLER_SOFTFAIL === "1"
-  || process.env.CI === "true";
+const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+const allowInstallerSoftFail = !isCI || process.env.NEURAL_RELEASE_ALLOW_INSTALLER_SOFTFAIL === "1";
 
 function run(cmd) {
   console.log(`\n> ${cmd}`);

@@ -1,7 +1,19 @@
-const { app, BrowserWindow, dialog, ipcMain, screen, session, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, session, shell, Tray } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+
+const emitWarningBase = process.emitWarning.bind(process);
+process.emitWarning = (warning, ...args) => {
+  const code =
+    (warning && typeof warning === "object" && warning.code) ||
+    (args[0] && typeof args[0] === "object" && args[0].code) ||
+    (typeof args[1] === "string" ? args[1] : "");
+  if (code === "DEP0040") {
+    return;
+  }
+  return emitWarningBase(warning, ...args);
+};
 
 const intentFirewall = require("./security/intentFirewall");
 const { kernel, CAP_NET } = require("./kernel");
@@ -111,6 +123,7 @@ let _agentController;
 let activeLicenseStatus = null;
 
 let mainWindow = null;
+let appTray = null;
 let bridgeHealthTimer = null;
 let smokeFinalized = false;
 const proofExecSessions = new Map();
@@ -1671,6 +1684,75 @@ function createWindow() {
     }
   });
 
+  // Native right-click context menu
+  mainWindow.webContents.on("context-menu", (_event, params) => {
+    const hasSelection = Boolean(params.selectionText && params.selectionText.trim());
+    const isEditable = Boolean(params.isEditable);
+    const isDev = process.env.NODE_ENV === "development";
+    const template = [];
+
+    if (isEditable) {
+      template.push(
+        { label: "Cut", role: "cut", accelerator: "CmdOrCtrl+X", enabled: hasSelection },
+        { label: "Copy", role: "copy", accelerator: "CmdOrCtrl+C", enabled: hasSelection },
+        { label: "Paste", role: "paste", accelerator: "CmdOrCtrl+V" },
+        { label: "Select All", role: "selectAll", accelerator: "CmdOrCtrl+A" }
+      );
+    } else if (hasSelection) {
+      template.push(
+        { label: "Copy", role: "copy", accelerator: "CmdOrCtrl+C" }
+      );
+    }
+
+    if (params.linkURL) {
+      if (template.length) template.push({ type: "separator" });
+      template.push({
+        label: "Copy Link",
+        click: () => {
+          const { clipboard } = require("electron");
+          clipboard.writeText(params.linkURL);
+        }
+      });
+    }
+
+    if (template.length) template.push({ type: "separator" });
+
+    template.push(
+      {
+        label: "Command Palette",
+        accelerator: "CmdOrCtrl+K",
+        click: () => sendToRenderer("tray:open-palette")
+      },
+      {
+        label: "Task Manager",
+        accelerator: "CmdOrCtrl+Shift+T",
+        click: () => sendToRenderer("tray:open-task-manager")
+      },
+      {
+        label: "Settings",
+        accelerator: "CmdOrCtrl+,",
+        click: () => sendToRenderer("tray:open-settings")
+      }
+    );
+
+    if (isDev) {
+      template.push(
+        { type: "separator" },
+        {
+          label: "Inspect Element",
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.inspectElement(params.x, params.y);
+            }
+          }
+        }
+      );
+    }
+
+    const menu = Menu.buildFromTemplate(template);
+    menu.popup({ window: mainWindow });
+  });
+
   // Zero-Renderer Network Lockdown
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     const url = details.url;
@@ -1738,10 +1820,157 @@ function createWindow() {
   }
 }
 
+function setupTray() {
+  const iconPath = path.join(__dirname, "..", "assets", process.platform === "win32" ? "icon.ico" : "icon.png");
+  const trayIcon = nativeImage.createFromPath(iconPath);
+  appTray = new Tray(trayIcon.isEmpty() ? nativeImage.createEmpty() : trayIcon);
+  appTray.setToolTip("NeuralShell");
+
+  const buildContextMenu = () => {
+    const currentModel = (stateManager && stateManager.get("model")) || "llama3";
+    const currentTheme = (stateManager && stateManager.get("settings") && stateManager.get("settings").theme) || "system";
+    const models = ["llama3", "mistral", "qwen", "gpt-4.1-mini", "gpt-4o-mini", "llama-3.3-70b-versatile"];
+
+    return Menu.buildFromTemplate([
+      {
+        label: mainWindow && mainWindow.isVisible() ? "Hide NeuralShell" : "Show NeuralShell",
+        click: () => {
+          if (!mainWindow || mainWindow.isDestroyed()) {
+            createWindow();
+            return;
+          }
+          if (mainWindow.isVisible()) {
+            mainWindow.hide();
+          } else {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Model",
+        submenu: models.map((m) => ({
+          label: m,
+          type: "radio",
+          checked: currentModel === m,
+          click: () => {
+            if (llmService && typeof llmService.setModel === "function") {
+              llmService.setModel(m);
+            }
+            if (stateManager) stateManager.set("model", m);
+            sendToRenderer("state-updated", { model: m });
+          }
+        }))
+      },
+      {
+        label: "Theme",
+        submenu: [
+          { label: "System", type: "radio", checked: currentTheme === "system", click: () => sendToRenderer("tray:set-theme", "system") },
+          { label: "Dark", type: "radio", checked: currentTheme === "dark", click: () => sendToRenderer("tray:set-theme", "dark") },
+          { label: "Light", type: "radio", checked: currentTheme === "light", click: () => sendToRenderer("tray:set-theme", "light") }
+        ]
+      },
+      { type: "separator" },
+      {
+        label: "New Workflow",
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+          sendToRenderer("tray:new-workflow");
+        }
+      },
+      {
+        label: "Open Command Palette",
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+          sendToRenderer("tray:open-palette");
+        }
+      },
+      {
+        label: "Settings",
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+          sendToRenderer("tray:open-settings");
+        }
+      },
+      {
+        label: "Task Manager",
+        click: () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+          sendToRenderer("tray:open-task-manager");
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Restart Daemon",
+        click: () => {
+          if (daemonWatchdog && typeof daemonWatchdog.restart === "function") {
+            daemonWatchdog.restart();
+          }
+        }
+      },
+      {
+        label: "Export Support Bundle",
+        click: async () => {
+          if (typeof exportSupportBundle === "function") {
+            try {
+              await exportSupportBundle({ userDataPath: app.getPath("userData") });
+              dialog.showMessageBox({ message: "Support bundle exported.", type: "info" });
+            } catch (err) {
+              dialog.showErrorBox("Export Failed", String(err && err.message ? err.message : err));
+            }
+          } else {
+            dialog.showMessageBox({ message: "Support bundle export is not available.", type: "warning" });
+          }
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Quit NeuralShell",
+        click: () => {
+          app.quit();
+        }
+      }
+    ]);
+  };
+
+  appTray.on("click", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createWindow();
+      return;
+    }
+    if (mainWindow.isVisible()) {
+      mainWindow.focus();
+    } else {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  appTray.on("right-click", () => {
+    const menu = buildContextMenu();
+    appTray.popUpContextMenu(menu);
+  });
+}
+
 app.whenReady().then(async () => {
   // --- INTEGRITY BOOT ---
   const report = await verifyIntegrity();
-  const ignoreIntegrity = process.env.NEURAL_IGNORE_INTEGRITY === "1";
+  const ignoreIntegrity =
+    process.env.NEURAL_IGNORE_INTEGRITY === "1" ||
+    !app.isPackaged;
   if (typeof identityKernel.setHarnessFallbackEnabled === "function") {
     identityKernel.setHarnessFallbackEnabled(ignoreIntegrity);
   }
@@ -1750,7 +1979,10 @@ app.whenReady().then(async () => {
     createRecoveryWindow(report);
     return; // Stop normal boot
   } else if (ignoreIntegrity) {
-    console.warn('[SECURITY] Integrity check bypass active (NEURAL_IGNORE_INTEGRITY=1). Proceeding with normal boot.');
+    const reason = process.env.NEURAL_IGNORE_INTEGRITY === "1"
+      ? "NEURAL_IGNORE_INTEGRITY=1"
+      : "unpackaged development runtime";
+    console.warn(`[SECURITY] Integrity check bypass active (${reason}). Proceeding with normal boot.`);
   }
 
   logger = require("./core/logger");
@@ -1866,6 +2098,7 @@ app.whenReady().then(async () => {
   await pluginLoader.onLoad();
   startBridgeHealthLoop();
   createWindow();
+  setupTray();
   const refitMainWindow = () => {
     fitWindowToDisplay(mainWindow);
   };
@@ -1925,10 +2158,22 @@ app.whenReady().then(async () => {
 
   const collabServer = ensureCollabSignalServer();
   collabServer.start();
+}).catch((err) => {
+  const message = err && err.message ? err.message : String(err);
+  console.error("[BOOT] Fatal startup error:", message);
+  try {
+    dialog.showErrorBox(
+      "NeuralShell Startup Error",
+      `NeuralShell could not start.\n\n${message}`
+    );
+  } catch {
+    // Ignore UI error reporting failures and exit.
+  }
+  app.exit(1);
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
+  if (process.platform !== "darwin" && !appTray) {
     app.quit();
   }
 });
@@ -1942,6 +2187,10 @@ app.on("activate", () => {
 });
 
 app.on("before-quit", async () => {
+  if (appTray) {
+    appTray.destroy();
+    appTray = null;
+  }
   if (bridgeHealthTimer) {
     clearInterval(bridgeHealthTimer);
     bridgeHealthTimer = null;
@@ -3113,6 +3362,59 @@ ipcMain.handle("chatlog:export", async () => {
 
 ipcMain.handle("chatlog:clear", async () => {
   return chatLogStore.clear();
+});
+
+// ---------------- ATTACHMENT IPC ----------------
+
+ipcMain.handle("attach:pickImages", async () => {
+  const targetWindow = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+  const result = await dialog.showOpenDialog(targetWindow || undefined, {
+    title: "Add Images",
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      { name: "Images", extensions: ["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg", "ico", "tiff"] },
+    ],
+  });
+  if (result.canceled || !Array.isArray(result.filePaths) || !result.filePaths.length) return [];
+  const fs = require("fs");
+  return result.filePaths.map((fp) => {
+    let size = 0;
+    try { size = fs.statSync(fp).size; } catch { /* ignore */ }
+    return { path: fp, name: path.basename(fp), size, type: "image" };
+  });
+});
+
+ipcMain.handle("attach:pickDocuments", async () => {
+  const targetWindow = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+  const result = await dialog.showOpenDialog(targetWindow || undefined, {
+    title: "Add Documents",
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      { name: "Documents", extensions: ["pdf", "txt", "md", "csv", "json", "yaml", "yml", "xml", "html", "log", "docx", "xlsx"] },
+      { name: "Code", extensions: ["js", "ts", "jsx", "tsx", "py", "rs", "go", "java", "c", "cpp", "h", "css", "scss", "sql", "sh", "bat", "toml"] },
+      { name: "All Files", extensions: ["*"] },
+    ],
+  });
+  if (result.canceled || !Array.isArray(result.filePaths) || !result.filePaths.length) return [];
+  const fs = require("fs");
+  return result.filePaths.map((fp) => {
+    let size = 0;
+    try { size = fs.statSync(fp).size; } catch { /* ignore */ }
+    const ext = path.extname(fp).replace(/^\./, "").toLowerCase();
+    const imageExts = new Set(["png", "jpg", "jpeg", "gif", "bmp", "webp", "svg", "ico", "tiff"]);
+    return { path: fp, name: path.basename(fp), size, type: imageExts.has(ext) ? "image" : "document" };
+  });
+});
+
+ipcMain.handle("attach:pickFolder", async () => {
+  const targetWindow = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+  const result = await dialog.showOpenDialog(targetWindow || undefined, {
+    title: "Add Folder",
+    properties: ["openDirectory"],
+  });
+  if (result.canceled || !Array.isArray(result.filePaths) || !result.filePaths[0]) return [];
+  const fp = result.filePaths[0];
+  return [{ path: fp, name: path.basename(fp), size: 0, type: "folder" }];
 });
 
 // ---------------- WORKSPACE IPC ----------------

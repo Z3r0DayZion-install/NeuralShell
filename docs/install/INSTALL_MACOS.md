@@ -1,5 +1,7 @@
 # Install Guide: macOS (DMG / ZIP)
 
+> **⚠️ Not yet available.** The macOS DMG build is planned but has not been published. This guide is provided for when the build ships. Currently only Windows x64 is available.
+
 ## Requirements
 - macOS 11 (Big Sur) or later
 - ~200 MB disk space

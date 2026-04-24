@@ -1,5 +1,6 @@
 import React from 'react';
 import { useShell } from './state/ShellContext';
+import { useUIPreferences } from './state/useUIPreferences';
 import TopStatusBar from './components/TopStatusBar';
 import ThreadRail from './components/ThreadRail';
 import WorkspacePanel from './components/WorkspacePanel';
@@ -18,6 +19,7 @@ import RuntimeAlertsDrawer from './components/RuntimeAlertsDrawer.jsx';
 import FirstBootWizard from './components/FirstBootWizard.jsx';
 import OnboardingProgressRail from './components/OnboardingProgressRail.jsx';
 import SplitWorkspace from './components/SplitWorkspace.jsx';
+import TaskManagerDrawer from './components/TaskManagerDrawer.jsx';
 import FleetControlPanel from './components/FleetControlPanel.jsx';
 import RecoveryCenter from './components/RecoveryCenter.jsx';
 import ApplianceConsole from './components/ApplianceConsole.jsx';
@@ -381,9 +383,31 @@ function App() {
     const roleCapabilities = React.useMemo(() => getRoleCapabilities(activeRuntimeRole), [activeRuntimeRole]);
     const [showNodeChainPanel, setShowNodeChainPanel] = React.useState(false);
     const [showRuntimeAlerts, setShowRuntimeAlerts] = React.useState(false);
-    const [showFirstBootWizard, setShowFirstBootWizard] = React.useState(false);
+    const [showFirstBootWizard, setShowFirstBootWizard] = React.useState(() => {
+        if (typeof window === 'undefined' || !window.localStorage) return false;
+        return window.localStorage.getItem('neuralshell_first_boot_completed_v1') !== '1';
+    });
     const [showSplitWorkspace, setShowSplitWorkspace] = React.useState(false);
+    const [showTaskManager, setShowTaskManager] = React.useState(false);
+    const [daemonStatus, setDaemonStatus] = React.useState({ status: 'unknown' });
     const [watchdogAlerts, setWatchdogAlerts] = React.useState([]);
+    const [viewHistory, setViewHistory] = React.useState(() => [{ view: 'home', ts: Date.now() }]);
+    const [viewHistoryIndex, setViewHistoryIndex] = React.useState(0);
+    const canGoBack = viewHistoryIndex > 0;
+    const canGoForward = viewHistoryIndex < viewHistory.length - 1;
+    const pushView = React.useCallback((viewName) => {
+        setViewHistory((prev) => {
+            const trimmed = prev.slice(0, viewHistoryIndex + 1);
+            return [...trimmed, { view: viewName, ts: Date.now() }].slice(-60);
+        });
+        setViewHistoryIndex((prev) => prev + 1);
+    }, [viewHistoryIndex]);
+    const goBack = React.useCallback(() => {
+        if (viewHistoryIndex > 0) setViewHistoryIndex((prev) => prev - 1);
+    }, [viewHistoryIndex]);
+    const goForward = React.useCallback(() => {
+        if (viewHistoryIndex < viewHistory.length - 1) setViewHistoryIndex((prev) => prev + 1);
+    }, [viewHistoryIndex, viewHistory.length]);
     const [showScratchpad, setShowScratchpad] = React.useState(() => (
         typeof window !== 'undefined'
         && (window.location.pathname === '/scratchpad' || window.location.hash === '#/scratchpad')
@@ -1135,6 +1159,10 @@ function App() {
             setShowSplitWorkspace(true);
             return;
         }
+        if (safePanel === 'task-manager' || safePanel === 'tasks') {
+            setShowTaskManager(true);
+            return;
+        }
         if (safePanel === 'settings') {
             openSettings();
         }
@@ -1421,6 +1449,38 @@ function App() {
         };
     }, [sessionDialog.open, sessionDialog.mode]);
 
+    React.useEffect(() => {
+        const handleMouseNav = (e) => {
+            if (e.button === 3) { e.preventDefault(); goBack(); }
+            if (e.button === 4) { e.preventDefault(); goForward(); }
+        };
+        window.addEventListener('mouseup', handleMouseNav);
+        return () => window.removeEventListener('mouseup', handleMouseNav);
+    }, [goBack, goForward]);
+
+    React.useEffect(() => {
+        const onTrayTheme = (e) => {
+            const theme = e && e.detail ? String(e.detail) : 'system';
+            useUIPreferences.getState().setTheme(theme);
+        };
+        const onTrayNewWorkflow = () => { openCreateDialog(); };
+        const onTrayOpenPalette = () => { openPalette(); };
+        const onTrayOpenSettings = () => { openSettings(); };
+        const onTrayOpenTaskManager = () => { setShowTaskManager(true); };
+        window.addEventListener('tray:set-theme', onTrayTheme);
+        window.addEventListener('tray:new-workflow', onTrayNewWorkflow);
+        window.addEventListener('tray:open-palette', onTrayOpenPalette);
+        window.addEventListener('tray:open-settings', onTrayOpenSettings);
+        window.addEventListener('tray:open-task-manager', onTrayOpenTaskManager);
+        return () => {
+            window.removeEventListener('tray:set-theme', onTrayTheme);
+            window.removeEventListener('tray:new-workflow', onTrayNewWorkflow);
+            window.removeEventListener('tray:open-palette', onTrayOpenPalette);
+            window.removeEventListener('tray:open-settings', onTrayOpenSettings);
+            window.removeEventListener('tray:open-task-manager', onTrayOpenTaskManager);
+        };
+    }, [openPalette, openSettings, openCreateDialog]);
+
     // Keyboard handler
     React.useEffect(() => {
         const handleKey = (e) => {
@@ -1435,6 +1495,29 @@ function App() {
                     || (active.dataset && (active.dataset.testid === 'chat-input' || active.dataset.testid === 'slash-palette-input'))
                 )
             );
+
+            if (e.altKey && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goBack();
+                return;
+            }
+            if (e.altKey && e.key === 'ArrowRight') {
+                e.preventDefault();
+                goForward();
+                return;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+                e.preventDefault();
+                openSettings();
+                return;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 't' || e.key === 'T')) {
+                e.preventDefault();
+                setShowTaskManager((prev) => !prev);
+                return;
+            }
 
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 if (isTypingTarget) {
@@ -1634,6 +1717,9 @@ function App() {
                 if (showSplitWorkspace) {
                     setShowSplitWorkspace(false);
                 }
+                if (showTaskManager) {
+                    setShowTaskManager(false);
+                }
                 if (sessionDialog.open) {
                     closeSessionDialog();
                 }
@@ -1651,6 +1737,9 @@ function App() {
         togglePalette,
         closePalette,
         closeSettings,
+        openSettings,
+        goBack,
+        goForward,
         showEcosystem,
         showMissionControl,
         showFleetControl,
@@ -1705,6 +1794,7 @@ function App() {
         showRuntimeAlerts,
         showFirstBootWizard,
         showSplitWorkspace,
+        showTaskManager,
         sessionDialog.open,
         closeSessionDialog,
         showInlineThreadRail,
@@ -2119,6 +2209,13 @@ function App() {
                         content: 'Opening first-boot authority funnel.',
                     });
                     appendRuntimeEvent('runtime.panel.opened', { panel: 'first-boot' }, { source: 'runtime', severity: 'info' });
+                } else if (command === '/tasks' || command === '/taskmanager' || command === '/processes') {
+                    setShowTaskManager(true);
+                    appendChat({
+                        role: 'kernel',
+                        content: 'Task Manager opened. View running processes, system resources, and daemon status.',
+                    });
+                    appendRuntimeEvent('runtime.panel.opened', { panel: 'task-manager' }, { source: 'runtime', severity: 'info' });
                 } else if (command === '/split') {
                     setShowSplitWorkspace(true);
                     appendChat({
@@ -2385,6 +2482,9 @@ function App() {
         }
         dismissFirstBoot();
         setShowFirstBootWizard(false);
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem('neuralshell_first_boot_completed_v1', '1');
+        }
     }, [dismissFirstBoot, firstBootAllDone]);
 
     const acknowledgeWatchdogAlert = React.useCallback((alertId) => {
@@ -2662,6 +2762,11 @@ function App() {
                 onOpenIssueAssist={canUseIssueAssist ? () => setShowIssueAssist(true) : undefined}
                 tierId={runtimeCapabilityPayload.tierId}
                 tierLabel={runtimeCapabilityPayload.tierLabel}
+                canGoBack={canGoBack}
+                canGoForward={canGoForward}
+                onGoBack={goBack}
+                onGoForward={goForward}
+                onOpenTaskManager={() => setShowTaskManager(true)}
             />
 
             {showLockBanner && (
@@ -2682,26 +2787,23 @@ function App() {
 
             <div
                 data-testid="layout-control-bar"
-                className="px-4 py-2 border-b border-white/5 bg-black/20 flex flex-wrap items-center justify-between gap-2"
+                className="px-4 py-1.5 border-b border-indigo-500/8 bg-[#1a1a2e]/25 flex flex-wrap items-center justify-between gap-2"
             >
-                <div className="flex flex-col">
-                    <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-slate-500">
-                        {layoutModeLabel} · {Math.round(viewportWidth)}px
-                    </div>
-                    <div className="text-[9px] font-mono text-slate-600">
-                        Alt+[ ] workflow · Alt+Shift+[ ] workbench
+                <div className="flex items-center gap-3">
+                    <div className="text-[11px] font-mono">
+                        <span className="text-violet-400">layout</span><span className="text-slate-600"> = </span><span className="text-green-300">"{layoutModeLabel}"</span>
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+                    <div className="inline-flex items-center rounded-lg border border-indigo-400/15 bg-indigo-500/5 overflow-hidden">
                         <button
                             type="button"
                             data-testid="layout-preset-compact-btn"
                             onClick={() => applyRailSizePreset('compact')}
                             className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors ${
                                 activeRailPresetId === 'compact'
-                                    ? 'bg-cyan-500/20 text-cyan-100'
-                                    : 'text-slate-300 hover:bg-white/10'
+                                    ? 'bg-sky-500/20 text-sky-200'
+                                    : 'text-slate-400 hover:bg-white/8 hover:text-slate-200'
                             }`}
                         >
                             Compact
@@ -2710,10 +2812,10 @@ function App() {
                             type="button"
                             data-testid="layout-preset-balanced-btn"
                             onClick={() => applyRailSizePreset('balanced')}
-                            className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors border-l border-white/10 ${
+                            className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors border-l border-indigo-400/15 ${
                                 activeRailPresetId === 'balanced'
-                                    ? 'bg-cyan-500/20 text-cyan-100'
-                                    : 'text-slate-300 hover:bg-white/10'
+                                    ? 'bg-sky-500/20 text-sky-200'
+                                    : 'text-slate-400 hover:bg-white/8 hover:text-slate-200'
                             }`}
                         >
                             Balanced
@@ -2722,10 +2824,10 @@ function App() {
                             type="button"
                             data-testid="layout-preset-wide-btn"
                             onClick={() => applyRailSizePreset('wide')}
-                            className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors border-l border-white/10 ${
+                            className={`px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] transition-colors border-l border-indigo-400/15 ${
                                 activeRailPresetId === 'wide'
-                                    ? 'bg-cyan-500/20 text-cyan-100'
-                                    : 'text-slate-300 hover:bg-white/10'
+                                    ? 'bg-sky-500/20 text-sky-200'
+                                    : 'text-slate-400 hover:bg-white/8 hover:text-slate-200'
                             }`}
                         >
                             Wide
@@ -2738,7 +2840,7 @@ function App() {
                             resetThreadRailWidth();
                             resetWorkbenchRailWidth();
                         }}
-                        className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-mono uppercase tracking-[0.12em] text-slate-300 hover:bg-white/10"
+                        className="px-2.5 py-1.5 rounded-lg border border-orange-400/15 bg-orange-500/5 text-[10px] font-mono uppercase tracking-[0.12em] text-orange-300/80 hover:bg-orange-500/10 hover:text-orange-200"
                     >
                         Reset Panels
                     </button>
@@ -3715,6 +3817,25 @@ function App() {
                 alerts={watchdogAlerts}
                 proofStdout={latestProofStdout}
                 releaseHealth={runtimeState && runtimeState.releaseHealth ? runtimeState.releaseHealth : {}}
+            />
+            <TaskManagerDrawer
+                open={showTaskManager}
+                onClose={() => setShowTaskManager(false)}
+                stats={stats}
+                daemonStatus={runtimeState && runtimeState.watchdog ? runtimeState.watchdog : daemonStatus}
+                connectionInfo={connectionInfo}
+                sessions={sessions}
+                accelStatus={accelStatus}
+                onRestartDaemon={() => {
+                    if (window.api && window.api.daemon && typeof window.api.daemon.restart === 'function') {
+                        window.api.daemon.restart();
+                    }
+                }}
+                onKillProofSession={(sessionId) => {
+                    if (window.api && window.api.proof && typeof window.api.proof.cancel === 'function') {
+                        window.api.proof.cancel(sessionId);
+                    }
+                }}
             />
             {showFirstBootWizard && (
                 <FirstBootWizard

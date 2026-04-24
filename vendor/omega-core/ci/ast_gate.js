@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const FORBIDDEN_PATTERNS = [
-  /require\(["']child_process["']\)/,
+  /require\(["'](?:node:)?child_process["']\)/,
   /eval\(/,
   /new Function\(/,
   /process\.env\./

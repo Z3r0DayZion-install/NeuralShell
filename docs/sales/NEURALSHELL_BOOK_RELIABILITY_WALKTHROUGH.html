@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuralShell Operator | Book Reliability Walkthrough</title>
+  <meta name="description" content="Book a NeuralShell Operator reliability walkthrough for startup-failure triage, runtime isolation, trace export, and release confidence review." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060b12;
+      --surface: #0f1a2b;
+      --surface-soft: #111f32;
+      --line: #243449;
+      --ink: #e7f0ff;
+      --ink-soft: #a8b8cc;
+      --mint: #3fd0b1;
+      --amber: #d9994b;
+      --radius-lg: 22px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(50rem 24rem at 95% -12%, rgba(63, 208, 177, 0.18), transparent 70%),
+        radial-gradient(36rem 22rem at -10% 90%, rgba(217, 153, 75, 0.16), transparent 70%),
+        linear-gradient(180deg, #040911 0%, var(--bg) 100%);
+      min-height: 100vh;
+      line-height: 1.56;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 2rem));
+      margin: 1.2rem auto 2.8rem;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0.75rem;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      border: 1px solid rgba(138, 164, 195, 0.25);
+      border-radius: 999px;
+      background: rgba(12, 22, 35, 0.88);
+      padding: 0.58rem 0.86rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .topbar a {
+      text-decoration: none;
+      color: var(--ink);
+      border: 1px solid rgba(138, 164, 195, 0.3);
+      border-radius: 999px;
+      padding: 0.42rem 0.7rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .hero {
+      margin-top: 1rem;
+      border: 1px solid rgba(138, 164, 195, 0.22);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(150deg, rgba(13, 24, 39, 0.95), rgba(10, 20, 33, 0.95));
+      padding: 2rem;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #c8d8ef;
+      border: 1px solid rgba(138, 164, 195, 0.28);
+      border-radius: 999px;
+      padding: 0.35rem 0.66rem;
+    }
+
+    h1 {
+      margin-top: 0.9rem;
+      font-size: clamp(1.8rem, 4.2vw, 3rem);
+      line-height: 1.03;
+      max-width: 19ch;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin-top: 0.9rem;
+      color: var(--ink-soft);
+      max-width: 70ch;
+    }
+
+    .layout {
+      margin-top: 1rem;
+      display: grid;
+      gap: 0.95rem;
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+
+    .panel {
+      border: 1px solid rgba(138, 164, 195, 0.2);
+      border-radius: var(--radius-md);
+      background: linear-gradient(160deg, rgba(15, 27, 43, 0.95), rgba(11, 21, 34, 0.95));
+      padding: 1rem;
+    }
+
+    .panel h2 {
+      font-size: 1.02rem;
+      line-height: 1.2;
+    }
+
+    .panel p {
+      margin-top: 0.45rem;
+      color: var(--ink-soft);
+      font-size: 0.94rem;
+    }
+
+    .fields {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.58rem;
+    }
+
+    .fields label {
+      display: grid;
+      gap: 0.3rem;
+      font-size: 0.86rem;
+      color: #cddcf0;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(138, 164, 195, 0.3);
+      border-radius: 10px;
+      background: rgba(9, 18, 29, 0.95);
+      color: var(--ink);
+      font: inherit;
+      padding: 0.52rem 0.6rem;
+      line-height: 1.45;
+    }
+
+    textarea {
+      min-height: 78px;
+      resize: vertical;
+    }
+
+    .actions {
+      margin-top: 0.8rem;
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    .status {
+      margin-top: 0.7rem;
+      font-size: 0.83rem;
+      color: #b6c8dd;
+      border: 1px dashed rgba(138, 164, 195, 0.28);
+      border-radius: 10px;
+      padding: 0.48rem 0.56rem;
+      background: rgba(10, 19, 31, 0.72);
+    }
+
+    .status.warn {
+      border-color: rgba(217, 153, 75, 0.4);
+      color: #e2c39a;
+    }
+
+    .btn {
+      text-decoration: none;
+      border-radius: 999px;
+      padding: 0.5rem 0.84rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid rgba(138, 164, 195, 0.3);
+      color: var(--ink);
+      background: rgba(18, 31, 47, 0.9);
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      color: #0b171f;
+      background: linear-gradient(120deg, var(--mint), #67dfc4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .list {
+      margin-top: 0.75rem;
+      list-style: none;
+      display: grid;
+      gap: 0.4rem;
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+    }
+
+    .list li::before {
+      content: "- ";
+      color: var(--amber);
+      font-weight: 700;
+    }
+
+    .note {
+      margin-top: 0.7rem;
+      font-size: 0.84rem;
+      color: #b2c5da;
+      border: 1px dashed rgba(138, 164, 195, 0.3);
+      border-radius: 10px;
+      padding: 0.5rem 0.58rem;
+      background: rgba(10, 19, 31, 0.72);
+    }
+
+    @media (max-width: 840px) {
+      .hero {
+        padding: 1.2rem;
+      }
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <div class="brand">NeuralShell Operator Booking</div>
+      <nav>
+        <a href="../index.html">Back to Landing</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div id="booking-eyebrow" class="eyebrow">30-Minute Technical Walkthrough</div>
+      <h1 id="booking-title">Book a reliability walkthrough focused on startup failure and release confidence.</h1>
+      <p>
+        This walkthrough is designed for engineering and platform owners who need a direct view of how NeuralShell Operator detects degraded startup paths,
+        isolates unstable surfaces, exports trace evidence, and supports cleaner release gates.
+      </p>
+    </section>
+
+    <section class="layout">
+      <article class="panel">
+        <h2 id="request-title">Request walkthrough</h2>
+        <p id="request-copy">Submit details below and send a structured booking request in one click.</p>
+
+        <form id="walkthrough-form" class="fields">
+          <label>Team name
+            <input type="text" id="teamName" placeholder="Example: Core Platform Team" />
+          </label>
+          <label>Owner name and role
+            <input type="text" id="ownerRole" placeholder="Example: Priya Shah, Platform Engineering Manager" />
+          </label>
+          <label>Primary environment (stack/runtime)
+            <textarea id="environment" placeholder="Cloud/runtime stack, deployment model, key startup dependencies"></textarea>
+          </label>
+          <label>Most costly startup failure pattern
+            <textarea id="failurePattern" placeholder="What fails, how often, and where triage usually stalls"></textarea>
+          </label>
+          <label>Triage loop pain and release gate impact
+            <textarea id="triagePain" placeholder="How this affects incident review speed and release confidence"></textarea>
+          </label>
+          <label>Timezone and preferred availability
+            <input type="text" id="availability" placeholder="Example: PT, Tue/Thu 10:00-14:00" />
+          </label>
+        </form>
+
+        <div class="actions">
+          <button id="sendRequest" class="btn primary" type="button">Send Booking Request</button>
+          <a class="btn" href="../assets/proof_walkthrough.webm" target="_blank" rel="noopener noreferrer">Watch Demo</a>
+          <a class="btn" href="./NEURALSHELL_14_DAY_PILOT_SCOPE.html">Review Pilot Scope</a>
+        </div>
+        <div id="booking-status" class="status">Fill the key fields and send. You will receive a follow-up to confirm the walkthrough window.</div>
+      </article>
+
+      <aside class="panel">
+        <h2>What happens in this walkthrough</h2>
+        <ul class="list">
+          <li>Map your startup failure surface and release confidence risks.</li>
+          <li>Show failure-to-confidence operator loop using real proof flow.</li>
+          <li>Assess fit for a fixed-scope 14-day reliability pilot.</li>
+        </ul>
+
+        <h2 style="margin-top:0.85rem;">What to prepare</h2>
+        <ul class="list">
+          <li>One concrete startup failure path your team is currently fighting.</li>
+          <li>Current triage and release-gate decision process.</li>
+          <li>Preferred 30-minute window and primary technical owner.</li>
+        </ul>
+        <div class="note">No generic discovery call. This session is scoped to reliability signal quality and release decision clarity.</div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    function normalizeSchedulerUrl(raw) {
+      if (!raw) return "";
+      try {
+        const parsed = new URL(raw);
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") return parsed.toString();
+      } catch (_err) {
+        return "";
+      }
+      return "";
+    }
+
+    const SEARCH = new URLSearchParams(window.location.search);
+    const BOOKING_INTENT = (SEARCH.get("intent") || "").toLowerCase() === "pilot" ? "pilot" : "walkthrough";
+    const SCHEDULER_OVERRIDE = normalizeSchedulerUrl(SEARCH.get("scheduler"));
+    const DEFAULT_SCHEDULER_URL = "https://calendly.com/founder-getneuralshell/30min"; // SET REAL SCHEDULER URL HERE (e.g. TidyCal/Calendly)
+
+    const BOOKING_CONFIG = Object.freeze({
+      schedulerUrl: SCHEDULER_OVERRIDE || DEFAULT_SCHEDULER_URL,
+      fallbackMailtoBase: "mailto:founder@getneuralshell.com",
+      fallbackSubjectByIntent: Object.freeze({
+        walkthrough: "Book NeuralShell Reliability Walkthrough",
+        pilot: "Start 14-Day NeuralShell Reliability Pilot"
+      })
+    });
+
+    function statusMessage(text, kind) {
+      const node = document.getElementById("booking-status");
+      if (!node) return;
+      node.textContent = text;
+      node.classList.remove("warn");
+      if (kind === "warn") node.classList.add("warn");
+    }
+
+    function requiredMissing() {
+      const checks = [
+        { id: "teamName", label: "team name" },
+        { id: "ownerRole", label: "owner name and role" },
+        { id: "availability", label: "timezone and availability" }
+      ];
+      return checks.filter((item) => !valueById(item.id)).map((item) => item.label);
+    }
+
+    function valueById(id) {
+      const node = document.getElementById(id);
+      return node ? String(node.value || "").trim() : "";
+    }
+
+    function applyIntentCopy() {
+      const intentIsPilot = BOOKING_INTENT === "pilot";
+      const eyebrow = document.getElementById("booking-eyebrow");
+      const title = document.getElementById("booking-title");
+      const requestTitle = document.getElementById("request-title");
+      const requestCopy = document.getElementById("request-copy");
+      const actionButton = document.getElementById("sendRequest");
+
+      if (intentIsPilot) {
+        if (eyebrow) eyebrow.textContent = "14-Day Reliability Pilot Intake";
+        if (title) title.textContent = "Start a fixed-scope pilot focused on startup failure recovery and release confidence.";
+        if (requestTitle) requestTitle.textContent = "Request pilot intake";
+        if (requestCopy) requestCopy.textContent = "Submit details below and send a structured pilot request in one click.";
+        if (actionButton) actionButton.textContent = "Send Pilot Request";
+        statusMessage("Fill the key fields and send. You will receive pilot intake follow-up and scheduling options.");
+      }
+    }
+
+    function buildBody() {
+      const lines = [
+        `Request intent: ${BOOKING_INTENT === "pilot" ? "14-day reliability pilot" : "reliability walkthrough"}`,
+        `Team name: ${valueById("teamName") || "[fill in]"}`,
+        `Owner name and role: ${valueById("ownerRole") || "[fill in]"}`,
+        `Primary environment (stack/runtime): ${valueById("environment") || "[fill in]"}`,
+        `Most costly startup failure pattern: ${valueById("failurePattern") || "[fill in]"}`,
+        `Triage loop pain and release gate impact: ${valueById("triagePain") || "[fill in]"}`,
+        `Timezone and preferred availability: ${valueById("availability") || "[fill in]"}`
+      ];
+      return lines.join("\n");
+    }
+
+    function buildSchedulerTarget() {
+      const raw = BOOKING_CONFIG.schedulerUrl;
+      try {
+        const scheduler = new URL(raw, window.location.href);
+        const isGoogleEventEdit = /(^|\.)calendar\.google\.com$/i.test(scheduler.hostname)
+          && /\/eventedit/i.test(scheduler.pathname);
+        if (isGoogleEventEdit) {
+          const title = BOOKING_INTENT === "pilot"
+            ? "NeuralShell 14-Day Reliability Pilot Intake"
+            : "NeuralShell Reliability Walkthrough";
+          if (!scheduler.searchParams.get("add")) scheduler.searchParams.set("add", "founder@getneuralshell.com");
+          scheduler.searchParams.set("text", title);
+          scheduler.searchParams.set("details", buildBody());
+          if (!scheduler.searchParams.get("ctz")) scheduler.searchParams.set("ctz", "America/Los_Angeles");
+        }
+        return scheduler.toString();
+      } catch (_err) {
+        return raw;
+      }
+    }
+
+    function launchBooking() {
+      const missing = requiredMissing();
+      if (missing.length > 0) {
+        statusMessage(`Please fill: ${missing.join(", ")}.`, "warn");
+        return;
+      }
+
+      if (BOOKING_CONFIG.schedulerUrl) {
+        statusMessage("Opening live scheduler with your intake details...");
+        window.location.href = buildSchedulerTarget();
+        return;
+      }
+
+      const fallbackSubject = BOOKING_CONFIG.fallbackSubjectByIntent[BOOKING_INTENT] || BOOKING_CONFIG.fallbackSubjectByIntent.walkthrough;
+      const subject = encodeURIComponent(fallbackSubject);
+      const body = encodeURIComponent(buildBody());
+      statusMessage("Opening your email client with the prefilled request...");
+      window.location.href = `${BOOKING_CONFIG.fallbackMailtoBase}?subject=${subject}&body=${body}`;
+    }
+
+    applyIntentCopy();
+
+    if (BOOKING_CONFIG.schedulerUrl) {
+      const btn = document.getElementById("sendRequest");
+      if (btn) btn.textContent = "Open Live Scheduler";
+      const schedulerCopy = BOOKING_INTENT === "pilot"
+        ? "Live scheduler is enabled for instant pilot intake booking."
+        : "Live scheduler is enabled for instant walkthrough slot booking.";
+      statusMessage(schedulerCopy);
+    }
+
+    document.getElementById("sendRequest").addEventListener("click", launchBooking);
+  </script>
+</body>
+</html>

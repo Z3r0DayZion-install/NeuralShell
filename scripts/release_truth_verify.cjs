@@ -186,15 +186,57 @@ function verifyRemoteReleaseAssets(truth, errors, warnings) {
   });
 }
 
+function verifyBundleDeterminism(errors) {
+  const expectedPath = path.join(root, "EXPECTED_DETERMINISM_HASH.json");
+  const expectedData = readJson(expectedPath, [], "Expected determinism JSON");
+  if (!expectedData) {
+    errors.push("EXPECTED_DETERMINISM_HASH.json is missing or invalid at root.");
+    return;
+  }
+
+  const expectedHash = expectedData.expected_bundle_hash;
+  if (!expectedHash) {
+    errors.push("EXPECTED_DETERMINISM_HASH.json is missing 'expected_bundle_hash'.");
+    return;
+  }
+
+  const manifestPath = path.join(root, "dist", "SHA256SUMS.txt");
+  if (!fs.existsSync(manifestPath)) {
+    errors.push("Proof bundle manifest is missing: dist/SHA256SUMS.txt. Please run 'npm run proof:bundle' first.");
+    return;
+  }
+
+  const crypto = require("crypto");
+  const data = fs.readFileSync(manifestPath);
+  const actualHash = crypto.createHash("sha256").update(data).digest("hex");
+
+  if (actualHash !== expectedHash) {
+    errors.push(`Bundle determinism hash mismatch! expected=${expectedHash} actual=${actualHash}`);
+  }
+}
+
 function main() {
   const errors = [];
   const warnings = [];
+
+  if (hasFlag("determinism-only")) {
+    verifyBundleDeterminism(errors);
+    if (errors.length) {
+      errors.forEach((msg) => console.error(`[release-truth] FAIL: ${msg}`));
+      console.error(`[release-truth] STATUS: FAIL (${errors.length} issue${errors.length === 1 ? "" : "s"})`);
+      process.exit(1);
+    }
+    console.log(`[release-truth] STATUS: PASS (Determinism Validated)`);
+    return;
+  }
+
   const truthPath = resolveArg("truth", "release/release-package/domination-delta10/release-truth.json");
   const truthAbs = toAbs(truthPath);
   const truth = readJson(truthAbs, errors, "Release truth JSON");
 
   verifyChecklist(errors);
   verifyWorkflowPatterns(errors);
+  verifyBundleDeterminism(errors);
 
   if (truth) {
     verifyTagCommit(truth, errors);

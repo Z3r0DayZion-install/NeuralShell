@@ -3,34 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NeuralShell Operator | Local-First AI Operator Shell</title>
-  <meta name="description" content="NeuralShell Operator is a local-first AI operator shell with hardware-bound licensing, encrypted session continuity, and proof-backed trust boundaries." />
-  <meta property="og:title" content="NeuralShell Operator | Local-First AI Operator Shell" />
-  <meta property="og:description" content="Hardware-bound activation, encrypted session continuity, and proof-backed launch language. $149 one-time." />
+  <title>NeuralShell Operator | Reliability Layer for AI Execution</title>
+  <meta name="description" content="NeuralShell Operator is a reliability layer for AI-assisted and autonomous execution, helping teams recover from startup failures before release confidence breaks down." />
+  <meta property="og:title" content="NeuralShell Operator | Reliability Layer for AI Execution" />
+  <meta property="og:description" content="Startup health controls, plugin quarantine, trace export, and release confidence gating for engineering and platform teams." />
   <meta property="og:type" content="product" />
-  <meta property="og:url" content="https://gumroad.com/l/neuralshell-operator" />
+  <meta property="og:url" content="https://neuralshell.app" />
   <meta property="og:image" content="./assets/pricing-page-allout-preview.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="NeuralShell Operator | Local-First AI Operator Shell" />
-  <meta name="twitter:description" content="Proof-backed operator shell for technical buyers. $149 one-time." />
+  <meta name="twitter:title" content="NeuralShell Operator | Reliability Layer for AI Execution" />
+  <meta name="twitter:description" content="Operational reliability for startup failure detection, trace evidence, and cleaner release decisions." />
   <meta name="twitter:image" content="./assets/pricing-page-allout-preview.png" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Product",
+      "@type": "SoftwareApplication",
       "name": "NeuralShell Operator",
-      "description": "Local-first AI operator shell with hardware-bound activation and encrypted session continuity.",
+      "description": "Reliability layer for AI-assisted and autonomous execution with startup health controls, plugin quarantine, and trace export.",
       "brand": {
         "@type": "Brand",
         "name": "NeuralShell"
       },
-      "offers": {
-        "@type": "Offer",
-        "priceCurrency": "USD",
-        "price": "149",
-        "availability": "https://schema.org/InStock",
-        "url": "https://gumroad.com/l/neuralshell-operator"
-      }
+      "applicationCategory": "DeveloperApplication"
     }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -38,20 +32,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #f2ede6;
-      --bg-soft: #f9f6f1;
-      --ink: #102033;
-      --ink-soft: #445669;
-      --line: #d2d9dc;
-      --mint: #0fa38c;
-      --mint-strong: #0a7a69;
-      --amber: #b86f20;
-      --navy: #19334f;
-      --white: #ffffff;
-      --shadow: 0 22px 52px rgba(16, 32, 51, 0.13);
-      --shadow-soft: 0 16px 34px rgba(16, 32, 51, 0.09);
-      --surface-a: rgba(255, 255, 255, 0.9);
-      --surface-b: rgba(246, 243, 236, 0.84);
+      --bg: #060b12;
+      --bg-soft: #0c1524;
+      --ink: #eaf2ff;
+      --ink-soft: #a4b4c8;
+      --line: #223247;
+      --mint: #3fd0b1;
+      --mint-strong: #2ca88f;
+      --amber: #d9994b;
+      --navy: #dbe8ff;
+      --white: #f8fbff;
+      --shadow: 0 24px 60px rgba(3, 8, 16, 0.54);
+      --shadow-soft: 0 14px 34px rgba(2, 8, 18, 0.45);
+      --surface-a: rgba(12, 20, 33, 0.9);
+      --surface-b: rgba(9, 16, 28, 0.82);
       --radius-lg: 24px;
       --radius-md: 14px;
       --radius-sm: 10px;
@@ -66,9 +60,9 @@
     body {
       font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
       background:
-        radial-gradient(56rem 24rem at 90% -12%, rgba(15, 163, 140, 0.14), transparent 70%),
-        radial-gradient(30rem 20rem at -8% 84%, rgba(184, 111, 32, 0.14), transparent 70%),
-        linear-gradient(180deg, #f8f5ed 0%, var(--bg) 100%);
+        radial-gradient(56rem 24rem at 90% -12%, rgba(63, 208, 177, 0.18), transparent 70%),
+        radial-gradient(30rem 20rem at -8% 84%, rgba(217, 153, 75, 0.16), transparent 70%),
+        linear-gradient(180deg, #040811 0%, var(--bg) 100%);
       color: var(--ink);
       line-height: 1.55;
       min-height: 100vh;
@@ -81,8 +75,8 @@
       pointer-events: none;
       z-index: -1;
       background:
-        radial-gradient(60rem 26rem at 92% -15%, rgba(15, 163, 140, 0.14), transparent 70%),
-        radial-gradient(36rem 20rem at -10% 85%, rgba(184, 111, 32, 0.14), transparent 72%);
+        radial-gradient(60rem 26rem at 92% -15%, rgba(63, 208, 177, 0.2), transparent 70%),
+        radial-gradient(36rem 20rem at -10% 85%, rgba(217, 153, 75, 0.2), transparent 72%);
     }
 
     .shell {
@@ -99,12 +93,12 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 1rem;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(16, 32, 51, 0.12);
+      background: rgba(10, 18, 30, 0.88);
+      border: 1px solid rgba(129, 159, 193, 0.28);
       border-radius: 999px;
       padding: 0.62rem 0.86rem 0.62rem 1.02rem;
       backdrop-filter: blur(10px);
-      box-shadow: 0 12px 24px rgba(16, 32, 51, 0.08);
+      box-shadow: 0 12px 24px rgba(3, 7, 14, 0.34);
     }
 
     .brand {
@@ -115,7 +109,7 @@
       letter-spacing: 0.03em;
       text-transform: uppercase;
       font-size: 0.84rem;
-      color: var(--ink);
+      color: var(--navy);
     }
 
     .brand-dot {
@@ -123,12 +117,12 @@
       height: 14px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--mint) 0%, var(--amber) 100%);
-      box-shadow: 0 0 0 4px rgba(15, 163, 140, 0.15);
+      box-shadow: 0 0 0 4px rgba(63, 208, 177, 0.15);
     }
 
     .topbar a {
       text-decoration: none;
-      color: var(--ink);
+      color: var(--navy);
       font-size: 0.84rem;
       font-weight: 600;
       padding: 0.42rem 0.75rem;
@@ -138,18 +132,18 @@
     }
 
     .topbar a:hover {
-      background: rgba(16, 32, 51, 0.08);
-      border-color: rgba(16, 32, 51, 0.1);
+      background: rgba(126, 160, 196, 0.14);
+      border-color: rgba(126, 160, 196, 0.24);
     }
 
     .hero {
       position: relative;
       margin-top: 1.45rem;
-      background: linear-gradient(140deg, rgba(255, 255, 255, 0.9) 0%, rgba(251, 248, 242, 0.94) 58%, rgba(231, 244, 241, 0.94) 100%);
-      border: 1px solid rgba(16, 32, 51, 0.14);
+      background: linear-gradient(140deg, rgba(11, 19, 30, 0.96) 0%, rgba(12, 24, 37, 0.94) 56%, rgba(12, 30, 30, 0.9) 100%);
+      border: 1px solid rgba(129, 159, 193, 0.28);
       border-radius: var(--radius-lg);
       padding: 2.9rem;
-      box-shadow: 0 24px 54px rgba(16, 32, 51, 0.14);
+      box-shadow: 0 24px 54px rgba(2, 7, 14, 0.48);
       overflow: hidden;
     }
 
@@ -179,9 +173,9 @@
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: var(--navy);
-      background: rgba(255, 255, 255, 0.88);
-      border: 1px solid rgba(16, 32, 51, 0.14);
+      color: #c8d9f1;
+      background: rgba(16, 28, 43, 0.88);
+      border: 1px solid rgba(129, 159, 193, 0.3);
       border-radius: 999px;
       padding: 0.45rem 0.8rem;
     }
@@ -209,13 +203,13 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(255, 255, 255, 0.94);
-      border: 1px solid rgba(16, 32, 51, 0.18);
+      background: rgba(18, 31, 46, 0.9);
+      border: 1px solid rgba(129, 159, 193, 0.26);
       border-radius: 999px;
       padding: 0.58rem 0.98rem;
       font-weight: 700;
-      color: var(--ink);
-      box-shadow: 0 12px 22px rgba(16, 32, 51, 0.09);
+      color: var(--navy);
+      box-shadow: 0 12px 22px rgba(3, 9, 17, 0.34);
     }
 
     .actions {
@@ -240,7 +234,7 @@
     }
 
     .btn:focus-visible {
-      outline: 3px solid rgba(16, 32, 51, 0.25);
+      outline: 3px solid rgba(130, 166, 204, 0.34);
       outline-offset: 2px;
     }
 
@@ -257,14 +251,14 @@
     }
 
     .btn-ghost {
-      background: rgba(25, 51, 79, 0.06);
+      background: rgba(130, 166, 204, 0.08);
       color: var(--navy);
-      border: 1px solid rgba(25, 51, 79, 0.18);
+      border: 1px solid rgba(130, 166, 204, 0.3);
     }
 
     .btn-ghost:hover {
       transform: translateY(-2px);
-      background: rgba(25, 51, 79, 0.12);
+      background: rgba(130, 166, 204, 0.14);
     }
 
     .trust-row {
@@ -275,21 +269,21 @@
     }
 
     .trust-item {
-      background: rgba(255, 255, 255, 0.84);
-      border: 1px solid rgba(16, 32, 51, 0.14);
+      background: rgba(15, 26, 41, 0.9);
+      border: 1px solid rgba(129, 159, 193, 0.24);
       border-radius: 999px;
       padding: 0.54rem 0.72rem;
       text-align: center;
       font-size: 0.78rem;
       font-weight: 600;
-      color: var(--ink-soft);
+      color: #b4c2d5;
     }
 
     .hero-evidence {
-      border: 1px solid rgba(16, 32, 51, 0.16);
+      border: 1px solid rgba(129, 159, 193, 0.24);
       border-radius: var(--radius-md);
-      background: linear-gradient(155deg, rgba(255, 255, 255, 0.95) 0%, rgba(237, 245, 245, 0.94) 100%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), var(--shadow-soft);
+      background: linear-gradient(155deg, rgba(15, 26, 41, 0.94) 0%, rgba(11, 21, 35, 0.94) 100%);
+      box-shadow: inset 0 1px 0 rgba(168, 196, 228, 0.12), var(--shadow-soft);
       padding: 1rem;
       display: grid;
       gap: 0.55rem;
@@ -304,7 +298,7 @@
     .hero-evidence p {
       margin: 0;
       font-size: 0.82rem;
-      color: #3f5569;
+      color: #9caec2;
     }
 
     .hero-pair {
@@ -312,28 +306,28 @@
       justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
-      border: 1px solid rgba(16, 32, 51, 0.16);
+      border: 1px solid rgba(129, 159, 193, 0.22);
       border-radius: var(--radius-sm);
       padding: 0.5rem 0.58rem;
       font-family: "IBM Plex Mono", Consolas, monospace;
       font-size: 0.72rem;
-      color: #3b5167;
-      background: rgba(255, 255, 255, 0.94);
+      color: #adc0d7;
+      background: rgba(11, 20, 32, 0.84);
     }
 
     .hero-pair .value {
       font-family: "IBM Plex Mono", Consolas, monospace;
-      color: #203a55;
+      color: #d5e3f8;
       font-size: 0.72rem;
     }
 
     section {
       margin-top: 1.45rem;
-      background: rgba(255, 255, 255, 0.86);
-      border: 1px solid rgba(16, 32, 51, 0.12);
+      background: rgba(10, 18, 29, 0.88);
+      border: 1px solid rgba(129, 159, 193, 0.2);
       border-radius: var(--radius-lg);
       padding: 2.1rem;
-      box-shadow: 0 16px 34px rgba(16, 32, 51, 0.09);
+      box-shadow: 0 16px 34px rgba(2, 7, 14, 0.35);
       animation: rise 420ms ease both;
     }
 
@@ -361,11 +355,11 @@
     }
 
     .card {
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 244, 236, 0.9) 100%);
-      border: 1px solid rgba(16, 32, 51, 0.14);
+      background: linear-gradient(160deg, rgba(16, 28, 43, 0.96) 0%, rgba(11, 21, 35, 0.94) 100%);
+      border: 1px solid rgba(129, 159, 193, 0.24);
       border-radius: var(--radius-md);
       padding: 1.08rem;
-      box-shadow: 0 8px 18px rgba(16, 32, 51, 0.06);
+      box-shadow: 0 8px 18px rgba(2, 8, 16, 0.3);
     }
 
     .card h3 {
@@ -389,8 +383,8 @@
 
     .step {
       position: relative;
-      background: var(--bg-soft);
-      border: 1px solid var(--line);
+      background: rgba(13, 24, 39, 0.9);
+      border: 1px solid rgba(129, 159, 193, 0.2);
       border-radius: var(--radius-md);
       padding: 0.9rem;
       overflow: hidden;
@@ -403,7 +397,7 @@
       top: 0.5rem;
       font-family: "IBM Plex Mono", Consolas, monospace;
       font-size: 0.75rem;
-      color: rgba(16, 32, 51, 0.38);
+      color: rgba(171, 192, 218, 0.52);
     }
 
     .step strong {
@@ -425,9 +419,9 @@
     }
 
     .proof {
-      border: 1px solid rgba(16, 32, 51, 0.11);
+      border: 1px solid rgba(129, 159, 193, 0.18);
       border-radius: var(--radius-md);
-      background: var(--white);
+      background: rgba(13, 24, 38, 0.88);
       padding: 0.8rem;
       display: grid;
       gap: 0.5rem;
@@ -436,11 +430,11 @@
     .proof img {
       width: 100%;
       border-radius: var(--radius-sm);
-      border: 1px solid rgba(16, 32, 51, 0.1);
+      border: 1px solid rgba(129, 159, 193, 0.22);
       display: block;
       aspect-ratio: 16 / 9;
       object-fit: cover;
-      background: #d9e7e4;
+      background: #17293f;
     }
 
     .proof span {
@@ -465,8 +459,8 @@
       padding: 0.44rem 0.76rem;
       font-weight: 700;
       font-size: 0.84rem;
-      border: 1px solid rgba(16, 32, 51, 0.15);
-      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(129, 159, 193, 0.22);
+      background: rgba(15, 27, 42, 0.82);
       color: var(--navy);
     }
 
@@ -486,9 +480,9 @@
 
     .proof-badge.fail,
     .proof-badge.unavailable {
-      color: #5a6f83;
-      border-color: rgba(90, 111, 131, 0.32);
-      background: rgba(90, 111, 131, 0.12);
+      color: #93a8bd;
+      border-color: rgba(147, 168, 189, 0.28);
+      background: rgba(147, 168, 189, 0.13);
     }
 
     .proof-meta {
@@ -505,8 +499,8 @@
     }
 
     .proof-status {
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(16, 32, 51, 0.12);
+      background: rgba(13, 24, 38, 0.95);
+      border: 1px solid rgba(129, 159, 193, 0.2);
       border-radius: var(--radius-sm);
       padding: 0.68rem 0.72rem;
       color: var(--ink-soft);
@@ -542,9 +536,9 @@
 
     .proof-status .state.fail,
     .proof-status .state.unavailable {
-      color: #546273;
-      border-color: rgba(84, 98, 115, 0.26);
-      background: rgba(84, 98, 115, 0.12);
+      color: #93a8bd;
+      border-color: rgba(147, 168, 189, 0.26);
+      background: rgba(147, 168, 189, 0.11);
     }
 
     .proof-links {
@@ -557,8 +551,8 @@
     .proof-links a {
       text-decoration: none;
       border-radius: 999px;
-      border: 1px solid rgba(16, 32, 51, 0.18);
-      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(129, 159, 193, 0.26);
+      background: rgba(15, 27, 42, 0.84);
       color: var(--navy);
       padding: 0.5rem 0.66rem;
       text-align: center;
@@ -569,7 +563,7 @@
 
     .proof-links a:hover {
       transform: translateY(-2px);
-      background: rgba(25, 51, 79, 0.12);
+      background: rgba(130, 166, 204, 0.16);
     }
 
     .proof-pillars {
@@ -580,13 +574,13 @@
     }
 
     .proof-pillar {
-      border: 1px solid rgba(16, 32, 51, 0.14);
+      border: 1px solid rgba(129, 159, 193, 0.23);
       border-radius: var(--radius-md);
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.96) 0%, rgba(239, 247, 244, 0.72) 100%);
+      background: linear-gradient(160deg, rgba(16, 28, 43, 0.96) 0%, rgba(11, 21, 35, 0.9) 100%);
       padding: 0.96rem;
       display: grid;
       gap: 0.5rem;
-      box-shadow: 0 9px 20px rgba(16, 32, 51, 0.06);
+      box-shadow: 0 9px 20px rgba(2, 8, 16, 0.28);
     }
 
     .proof-pillar h3 {
@@ -606,9 +600,9 @@
       font-family: "IBM Plex Mono", Consolas, monospace;
       font-size: 0.76rem;
       padding: 0.42rem 0.5rem;
-      border: 1px solid rgba(16, 32, 51, 0.15);
+      border: 1px solid rgba(129, 159, 193, 0.2);
       border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.82);
+      background: rgba(11, 20, 33, 0.82);
     }
 
     .proof-kv strong {
@@ -642,9 +636,9 @@
 
     .proof-pack-band {
       margin-top: 0.95rem;
-      border: 1px solid rgba(10, 122, 105, 0.32);
+      border: 1px solid rgba(63, 208, 177, 0.32);
       border-radius: var(--radius-md);
-      background: linear-gradient(145deg, rgba(10, 122, 105, 0.12) 0%, rgba(16, 32, 51, 0.04) 100%);
+      background: linear-gradient(145deg, rgba(63, 208, 177, 0.16) 0%, rgba(14, 26, 39, 0.62) 100%);
       padding: 0.9rem;
       display: flex;
       justify-content: space-between;
@@ -668,10 +662,10 @@
 
     .proof-seq {
       position: relative;
-      border: 1px solid rgba(16, 32, 51, 0.13);
+      border: 1px solid rgba(129, 159, 193, 0.2);
       border-radius: var(--radius-md);
-      background: linear-gradient(165deg, rgba(255, 255, 255, 0.95) 0%, rgba(247, 249, 245, 0.82) 100%);
-      box-shadow: 0 10px 22px rgba(16, 32, 51, 0.07);
+      background: linear-gradient(165deg, rgba(13, 24, 38, 0.95) 0%, rgba(11, 21, 34, 0.92) 100%);
+      box-shadow: 0 10px 22px rgba(2, 8, 16, 0.3);
       padding: 1rem;
       display: grid;
       grid-template-columns: 84px 1fr;
@@ -686,7 +680,7 @@
       top: 0.86rem;
       bottom: 0.86rem;
       width: 1px;
-      background: linear-gradient(180deg, rgba(25, 51, 79, 0.24), rgba(25, 51, 79, 0.08));
+      background: linear-gradient(180deg, rgba(129, 159, 193, 0.3), rgba(129, 159, 193, 0.08));
       pointer-events: none;
     }
 
@@ -700,8 +694,8 @@
       font-family: "IBM Plex Mono", Consolas, monospace;
       font-size: 0.76rem;
       color: var(--navy);
-      border: 1px solid rgba(25, 51, 79, 0.25);
-      background: rgba(25, 51, 79, 0.1);
+      border: 1px solid rgba(129, 159, 193, 0.36);
+      background: rgba(129, 159, 193, 0.14);
       margin-bottom: 0.5rem;
       position: relative;
       z-index: 1;
@@ -722,11 +716,11 @@
 
     .proof-seq-media {
       margin-top: 0.7rem;
-      border: 1px solid rgba(16, 32, 51, 0.14);
+      border: 1px solid rgba(129, 159, 193, 0.22);
       border-radius: var(--radius-sm);
       overflow: hidden;
-      background: #dce7e6;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      background: #16293e;
+      box-shadow: inset 0 1px 0 rgba(168, 196, 228, 0.12);
     }
 
     .proof-seq-media img {
@@ -738,12 +732,12 @@
 
     .proof-seq-note {
       margin-top: 0.65rem;
-      border: 1px dashed rgba(16, 32, 51, 0.2);
+      border: 1px dashed rgba(129, 159, 193, 0.26);
       border-radius: var(--radius-sm);
       padding: 0.55rem 0.65rem;
       font-size: 0.84rem;
       color: var(--ink-soft);
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(12, 20, 32, 0.66);
     }
 
     .proof-seq-actions {
@@ -756,8 +750,8 @@
     .proof-seq-link {
       text-decoration: none;
       border-radius: 999px;
-      border: 1px solid rgba(16, 32, 51, 0.18);
-      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(129, 159, 193, 0.3);
+      background: rgba(14, 25, 40, 0.92);
       color: var(--navy);
       padding: 0.44rem 0.7rem;
       font-size: 0.8rem;
@@ -766,7 +760,7 @@
     }
 
     .proof-seq-link:hover {
-      background: rgba(25, 51, 79, 0.12);
+      background: rgba(130, 166, 204, 0.14);
       transform: translateY(-1px);
     }
 
@@ -779,8 +773,8 @@
 
     .status-chip {
       border-radius: 999px;
-      border: 1px solid rgba(16, 32, 51, 0.2);
-      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(129, 159, 193, 0.3);
+      background: rgba(14, 25, 40, 0.84);
       color: var(--ink-soft);
       padding: 0.28rem 0.52rem;
       font-size: 0.74rem;
@@ -804,9 +798,9 @@
 
     .status-chip.fail,
     .status-chip.unavailable {
-      color: #546273;
-      border-color: rgba(84, 98, 115, 0.28);
-      background: rgba(84, 98, 115, 0.1);
+      color: #93a8bd;
+      border-color: rgba(147, 168, 189, 0.26);
+      background: rgba(147, 168, 189, 0.11);
     }
 
     .delivery-grid {
@@ -817,13 +811,13 @@
     }
 
     #delivery .card {
-      background: linear-gradient(155deg, rgba(255, 255, 255, 0.97) 0%, rgba(245, 250, 249, 0.78) 100%);
-      border-color: rgba(16, 32, 51, 0.16);
+      background: linear-gradient(155deg, rgba(16, 28, 43, 0.97) 0%, rgba(11, 21, 35, 0.86) 100%);
+      border-color: rgba(129, 159, 193, 0.22);
     }
 
     .boundary {
       border-left: 4px solid var(--amber);
-      background: linear-gradient(90deg, rgba(184, 111, 32, 0.12), rgba(184, 111, 32, 0.03));
+      background: linear-gradient(90deg, rgba(217, 153, 75, 0.16), rgba(217, 153, 75, 0.04));
       padding: 0.95rem 1rem;
       border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       margin-top: 0.9rem;
@@ -861,15 +855,15 @@
     }
 
     .cta-band p {
-      color: rgba(255, 255, 255, 0.86);
+      color: rgba(236, 245, 255, 0.86);
       margin-top: 0.7rem;
       line-height: 1.6;
       max-width: 48ch;
     }
 
     .cta-panel {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.34);
+      background: rgba(5, 13, 22, 0.32);
+      border: 1px solid rgba(214, 230, 249, 0.26);
       border-radius: var(--radius-md);
       padding: 1.02rem;
       display: grid;
@@ -894,6 +888,76 @@
 
     .mono {
       font-family: "IBM Plex Mono", Consolas, monospace;
+    }
+
+    .fit-rail {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .fit-rail .card h3,
+    .impact-grid .card h3 {
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+    }
+
+    .inline-actions {
+      margin-top: 0.95rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .pilot-list,
+    .faq-list {
+      list-style: none;
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 1rem;
+    }
+
+    .pilot-list li,
+    .faq-list li {
+      border: 1px solid rgba(129, 159, 193, 0.22);
+      background: rgba(13, 24, 38, 0.82);
+      border-radius: var(--radius-sm);
+      padding: 0.68rem 0.78rem;
+    }
+
+    .faq-list strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--navy);
+    }
+
+    .proof-visual {
+      margin-top: 0.75rem;
+      border: 1px solid rgba(129, 159, 193, 0.24);
+      border-radius: var(--radius-sm);
+      background: rgba(10, 19, 31, 0.92);
+      overflow: hidden;
+    }
+
+    .proof-visual img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-bottom: 1px solid rgba(129, 159, 193, 0.2);
+    }
+
+    .proof-visual video {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-bottom: 1px solid rgba(129, 159, 193, 0.2);
+      background: #07101b;
+    }
+
+    .proof-visual figcaption {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      padding: 0.5rem 0.66rem;
     }
 
     @keyframes rise {
@@ -1010,177 +1074,176 @@
     <header class="topbar">
       <div class="brand"><span class="brand-dot" aria-hidden="true"></span>NeuralShell Operator</div>
       <nav>
-        <a href="#proof-stack">Proof Stack</a>
-        <a href="#flow">Buyer Flow</a>
-        <a href="#delivery">Delivery</a>
-        <a href="#buy">Checkout</a>
+        <a href="#buyer-fit">Buyer Fit</a>
+        <a href="#problem">Failure Surface</a>
+        <a href="#proof">Proof Loop</a>
+        <a data-link="docsLink" href="./DOCS_HUB.html">Technical Documentation</a>
+        <a href="#pilot">14-Day Pilot</a>
       </nav>
     </header>
 
     <section class="hero">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow">Primary Offer: Operator Tier</div>
-          <h1>NeuralShell Operator is a local-first AI shell for users who need deterministic control.</h1>
+          <div class="eyebrow">Reliability Layer For AI-Assisted Execution</div>
+          <h1>Recover from startup failure before release confidence breaks down.</h1>
           <p>
-            One one-time license for one primary device. Hardware-bound activation, encrypted session continuity,
-            and proof-linked checkout signals so a buyer can verify before paying.
+            NeuralShell helps engineering, platform, and reliability teams see degraded startup paths earlier, isolate unstable runtime surfaces,
+            export structured trace evidence, and move toward cleaner release decisions.
           </p>
-          <div class="pricing-chip">$149 one-time | Single-device Operator license</div>
+          <p>
+            This is for teams dealing with long triage loops, weak operational evidence, and startup failure that blocks work before value starts.
+          </p>
           <div class="actions">
-            <a class="btn btn-primary" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Buy Operator on Gumroad</a>
-            <a class="btn btn-ghost" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Verification Report</a>
+            <a class="btn btn-primary" data-link="bookingLink" href="./sales/NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html">Book a Reliability Walkthrough</a>
+            <a class="btn btn-ghost" data-link="flowLink" href="#proof">See the Failure-to-Confidence Flow</a>
           </div>
           <div class="trust-row">
-            <div class="trust-item">Local-first runtime</div>
-            <div class="trust-item">Hardware-bound licensing</div>
-            <div class="trust-item">Encrypted continuity flow</div>
-            <div class="trust-item">Proof-backed launch language</div>
+            <div class="trust-item">Startup health controls</div>
+            <div class="trust-item">Plugin quarantine</div>
+            <div class="trust-item">Trace export</div>
+            <div class="trust-item">Release confidence gating</div>
           </div>
         </div>
 
         <aside class="hero-evidence">
-          <h3>Launch Snapshot</h3>
-          <p>This panel mirrors report data from the page below, not hardcoded trust signals.</p>
+          <h3>Live Reliability Snapshot</h3>
+          <p>These status rows are report-driven and refreshed from the same proof artifacts linked below.</p>
           <div class="hero-pair">
             <span>Commerce report</span>
-            <strong id="hero-commerce-status" class="status-chip unavailable">REPORT TEMPORARILY UNAVAILABLE</strong>
+            <strong id="hero-commerce-status" class="status-chip review">Latest verified report loading</strong>
           </div>
           <div class="hero-pair">
             <span>Runtime report</span>
-            <strong id="hero-runtime-status" class="status-chip unavailable">REPORT TEMPORARILY UNAVAILABLE</strong>
+            <strong id="hero-runtime-status" class="status-chip review">Latest verified report loading</strong>
           </div>
           <div class="hero-pair">
             <span>Last checked</span>
-            <span id="hero-last-checked" class="value">Unavailable</span>
+            <span id="hero-last-checked" class="value">Latest verification state loading</span>
           </div>
           <div class="hero-pair">
-            <span>Support path</span>
-            <span class="value">support@neuralshell.app</span>
+            <span>Owner route</span>
+            <span class="value">founder@getneuralshell.com</span>
           </div>
+          <figure class="proof-visual">
+            <img id="hero-runtime-image" data-src="heroScreenshotPath" src="./assets/ui_sales_quickstart_packaged.png" alt="NeuralShell runtime quickstart capture showing live reliability controls and proof workflow" loading="lazy" />
+            <figcaption>Runtime continuity capture from packaged validation run (March 30, 2026) used for reliability evidence review.</figcaption>
+          </figure>
         </aside>
       </div>
     </section>
 
-    <section id="proof-stack">
-      <h2>Proof Summary: Verify First, Scroll Deeper Second</h2>
-      <p class="lede">Top-level report state first. Full proof trail below. No fake trust blocks and no hidden qualifiers.</p>
-
-      <div class="proof-pillars">
-        <article class="proof-pillar">
-          <h3>Checkout Integrity</h3>
-          <p>Live page, product listing, and checkout route are checked against the active offer.</p>
-          <div class="proof-kv"><span>Commerce Status</span><strong id="proof-checkout-status" class="unavailable">REPORT TEMPORARILY UNAVAILABLE</strong></div>
-          <div id="proof-checkout-time" class="proof-kv-meta">Last checked: unavailable</div>
-          <a class="btn btn-ghost" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce Report</a>
+    <section id="buyer-fit">
+      <h2>Built for technical owners accountable for release confidence.</h2>
+      <p class="lede">NeuralShell is positioned for platform-heavy teams where runtime instability and weak incident evidence slow down decisions.</p>
+      <div class="grid fit-rail">
+        <article class="card">
+          <h3>Engineering managers</h3>
+          <p>Need startup risk surfaced early enough to stop firefighting from consuming sprint capacity.</p>
         </article>
-
-        <article class="proof-pillar">
-          <h3>Runtime Evidence</h3>
-          <p>Packaged runtime report tracks proof output, ROI output, and lock/unlock continuity checks.</p>
-          <div class="proof-kv"><span>Packaged Runtime</span><strong id="runtime-proof-status" class="unavailable">REPORT TEMPORARILY UNAVAILABLE</strong></div>
-          <div id="runtime-proof-time" class="proof-kv-meta">Last checked: unavailable</div>
-          <a class="btn btn-ghost" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime Report</a>
+        <article class="card">
+          <h3>Platform and reliability leads</h3>
+          <p>Need repeatable controls for runtime health, controlled isolation, and traceable evidence exports.</p>
         </article>
-
-        <article class="proof-pillar">
-          <h3>Offer Integrity</h3>
-          <p>One offer. One price. One checkout path. The page is optimized for a single clear buying decision.</p>
-          <div class="proof-kv"><span>Offer State</span><strong>LIVE</strong></div>
-          <a class="btn btn-ghost" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Open Checkout</a>
+        <article class="card">
+          <h3>Release engineering owners</h3>
+          <p>Need cleaner go or hold decisions when startup paths degrade before value starts.</p>
         </article>
-
-        <article class="proof-pillar">
-          <h3>Delivery + Support Path</h3>
-          <p>Single offer, clear delivery path, support contact, and refund handling via support@neuralshell.app.</p>
-          <div class="proof-kv"><span>Support Channel</span><strong>LIVE</strong></div>
-          <a class="btn btn-ghost" href="mailto:support@neuralshell.app">Contact Support</a>
+        <article class="card">
+          <h3>Infra-heavy SaaS teams</h3>
+          <p>Need deterministic operator loops under changing plugin/runtime surfaces, not another generic AI assistant.</p>
         </article>
-      </div>
-
-      <div class="proof-pack-band">
-        <p>Download the full proof bundle (JSON reports + screenshots) used to back this page.</p>
-        <a class="btn btn-primary" href="./assets/NeuralShell-Proof-Pack-latest.zip" target="_blank" rel="noopener noreferrer">Download Proof Pack (ZIP)</a>
       </div>
     </section>
 
-    <section>
-      <h2>What The Buyer Gets</h2>
-      <p class="lede">
-        One focused offer. No pricing maze. Operator is the primary tier for technical early adopters who need
-        a real workflow shell and honest boundaries.
-      </p>
+    <section id="problem">
+      <h2>When startup failure is messy, everything after it gets slower.</h2>
       <div class="grid">
         <article class="card">
-          <h3>Hardware-Bound License</h3>
-          <p>Device-bound activation designed to prevent key reuse across different hardware.</p>
+          <h3>Startup failures block work before value starts</h3>
+          <p>Initial instability holds back meaningful validation before teams can observe real workload behavior.</p>
         </article>
         <article class="card">
-          <h3>Encrypted Session Continuity</h3>
-          <p>Save, lock, and unlock session flows built for secure state restoration.</p>
+          <h3>Drift makes behavior unstable and inconsistent</h3>
+          <p>Runtime and plugin surfaces diverge across environments, causing inconsistent outcomes and repeated regressions.</p>
         </article>
         <article class="card">
-          <h3>Operator Control Surface</h3>
-          <p>Command-driven workspace with runtime status, guardrails, and execution context.</p>
+          <h3>Triage loops get longer than they should</h3>
+          <p>Teams spend too much time reconstructing startup state and too little time correcting the root failure path.</p>
         </article>
-      </div>
-      <div class="boundary">
-        <ul>
-          <li>Core operator paths are implementation-complete and test-backed.</li>
-          <li>Some broader real-device verification is still in progress.</li>
-          <li>No certification claims are made on this page.</li>
-          <li>Offer is sold on transparent scope and observable behavior.</li>
-        </ul>
+        <article class="card">
+          <h3>Release confidence weakens under uncertainty</h3>
+          <p>Without structured evidence, release calls become subjective and high-friction across engineering stakeholders.</p>
+        </article>
       </div>
     </section>
 
-    <section id="flow">
-      <h2>Buyer Path (No Guesswork)</h2>
-      <p class="lede">The path is designed to be deterministic: land, verify, pay, and know what happens next.</p>
-      <div class="steps">
-        <article class="step" data-step="01">
-          <strong>Checkout</strong>
-          <p>Purchase on Gumroad at a single, consistent price: <span class="mono">$149</span>.</p>
+    <section id="capabilities">
+      <h2>A reliability layer between failure and release.</h2>
+      <p class="lede">NeuralShell is not another generic AI tool. It is a control layer for unstable startup paths and proof-backed release decisions.</p>
+      <div class="proof-pillars">
+        <article class="proof-pillar">
+          <h3>Startup health controls</h3>
+          <p>Establish explicit startup checks before downstream work begins so degraded paths are visible immediately.</p>
+          <div class="proof-kv"><span>Commerce status</span><strong id="proof-checkout-status" class="review">Latest verified report loading</strong></div>
+          <div id="proof-checkout-time" class="proof-kv-meta">Latest proof report available below</div>
         </article>
-        <article class="step" data-step="02">
-          <strong>Receipt + Access</strong>
-          <p>Buyer receives confirmation and immediate next-step guidance.</p>
+        <article class="proof-pillar">
+          <h3>Plugin quarantine</h3>
+          <p>Isolate unstable runtime surfaces to reduce blast radius and speed targeted remediation.</p>
+          <div class="proof-kv"><span>Runtime status</span><strong id="runtime-proof-status" class="review">Latest verified report loading</strong></div>
+          <div id="runtime-proof-time" class="proof-kv-meta">Latest proof report available below</div>
         </article>
-        <article class="step" data-step="03">
-          <strong>Install + Activate</strong>
-          <p>Install desktop build, then activate on primary device.</p>
+        <article class="proof-pillar">
+          <h3>Trace export</h3>
+          <p>Export structured trace evidence for incident review, auditability, and faster engineering handoffs.</p>
+          <div class="inline-actions">
+            <a class="btn btn-ghost" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime Report</a>
+          </div>
         </article>
-        <article class="step" data-step="04">
-          <strong>Run First Proof</strong>
-          <p>Use save/lock/unlock + proof flow to validate runtime behavior fast.</p>
+        <article class="proof-pillar">
+          <h3>Release confidence gating</h3>
+          <p>Gate release confidence using observable evidence rather than assumptions or generic AI-output confidence.</p>
+          <div class="inline-actions">
+            <a class="btn btn-ghost" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce Report</a>
+          </div>
         </article>
       </div>
     </section>
 
     <section id="proof">
-      <h2>Why Trust This: Curated Proof Pipeline</h2>
-      <p class="lede">Each block has one role: live offer proof, product proof, checkout proof, runtime proof, and delivery/support proof.</p>
+      <h2>Show the operator loop. Do not ask the buyer to imagine it.</h2>
+      <p class="lede">The reliability story must stay concrete: startup issue detected, visibility improves, unstable surface isolated, trace exported, and release confidence restored.</p>
 
       <div class="proof-console-head">
-        <div id="proof-overall" class="proof-badge unavailable">REPORT TEMPORARILY UNAVAILABLE</div>
-        <div id="proof-generated-at" class="proof-meta">Last checked: unavailable</div>
+        <div id="proof-overall" class="proof-badge review">Latest verified report loading</div>
+        <div id="proof-generated-at" class="proof-meta">Latest proof report available below</div>
       </div>
 
       <div id="proof-status-grid" class="proof-status-grid"></div>
+
+      <div class="inline-actions">
+        <a class="btn btn-primary" data-link="demoLink" href="./assets/proof_walkthrough.webm" target="_blank" rel="noopener noreferrer">Watch the Demo</a>
+        <a class="btn btn-ghost" data-link="deckLink" href="./sales/NEURALSHELL_RELIABILITY_5_SLIDE_DECK.html">Open the 5-Slide Deck</a>
+      </div>
+      <figure class="proof-visual">
+        <video controls preload="metadata" poster="./assets/ui_sales_proof_output_packaged.png">
+          <source data-src="demoLink" src="./assets/proof_walkthrough.webm" type="video/webm" />
+          Your browser does not support the demo video tag.
+        </video>
+        <figcaption>Real operator walkthrough capture: startup issue -> isolation -> trace export -> cleaner release decision.</figcaption>
+      </figure>
 
       <div class="proof-sequence">
         <article class="proof-seq">
           <div><span class="proof-seq-index">01</span></div>
           <div>
             <div class="proof-seq-head">
-              <h3>Live Offer Proof</h3>
-              <p>Public landing page capture showing the Operator offer, price, and support route.</p>
+              <h3>Startup issue detected</h3>
+              <p>Teams can quickly identify degraded startup behavior before dependent workflows begin to fail silently.</p>
             </div>
             <div class="proof-seq-media">
-              <img src="./assets/proof-live-latest.png" alt="Live NeuralShell landing page proof capture" loading="lazy" />
-            </div>
-            <div class="proof-seq-actions">
-              <a class="proof-seq-link" href="./assets/proof-live-latest.png" target="_blank" rel="noopener noreferrer">Open Live Site Proof</a>
+              <img src="./assets/proof-live-latest.png" alt="Startup issue detection proof capture" loading="lazy" />
             </div>
           </div>
         </article>
@@ -1189,14 +1252,11 @@
           <div><span class="proof-seq-index">02</span></div>
           <div>
             <div class="proof-seq-head">
-              <h3>Gumroad Product Proof</h3>
-              <p>Product listing shows <span class="mono">NeuralShell Operator</span> with the same <span class="mono">$149</span> offer language.</p>
+              <h3>Health visibility improves</h3>
+              <p>Control checks and report state provide a readable startup health snapshot for platform and reliability owners.</p>
             </div>
             <div class="proof-seq-media">
-              <img src="./assets/proof-gumroad-latest.png" alt="Gumroad product listing proof capture" loading="lazy" />
-            </div>
-            <div class="proof-seq-actions">
-              <a class="proof-seq-link" href="./assets/proof-gumroad-latest.png" target="_blank" rel="noopener noreferrer">Open Gumroad Proof</a>
+              <img src="./assets/proof-gumroad-latest.png" alt="Health visibility evidence card" loading="lazy" />
             </div>
           </div>
         </article>
@@ -1205,19 +1265,15 @@
           <div><span class="proof-seq-index">03</span></div>
           <div>
             <div class="proof-seq-head">
-              <h3>Checkout Path Proof</h3>
-              <p>Checkout reachability is validated from the commerce report; status chips below are report-driven.</p>
+              <h3>Unstable surface isolated</h3>
+              <p>Plugin/runtime drift is isolated so teams can reduce blast radius and recover deterministic startup behavior.</p>
             </div>
             <div class="status-chip-row">
-              <span id="checkout-chip-route" class="status-chip unavailable">Checkout route unavailable</span>
-              <span id="checkout-chip-price" class="status-chip unavailable">Price check unavailable</span>
-              <span id="checkout-chip-product" class="status-chip unavailable">Product match unavailable</span>
+              <span id="checkout-chip-route" class="status-chip review">Isolation route: verification loading</span>
+              <span id="checkout-chip-price" class="status-chip review">Health gate: verification loading</span>
+              <span id="checkout-chip-product" class="status-chip review">Surface match: verification loading</span>
             </div>
-            <div id="checkout-proof-note" class="proof-seq-note">Report note unavailable.</div>
-            <div class="proof-seq-actions">
-              <a class="proof-seq-link" href="./assets/proof-checkout-latest.png" target="_blank" rel="noopener noreferrer">Open Checkout Proof</a>
-              <a class="proof-seq-link" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce JSON</a>
-            </div>
+            <div id="checkout-proof-note" class="proof-seq-note">Latest verification report available below</div>
           </div>
         </article>
 
@@ -1225,16 +1281,16 @@
           <div><span class="proof-seq-index">04</span></div>
           <div>
             <div class="proof-seq-head">
-              <h3>Packaged Runtime Proof</h3>
-              <p>Packaged build run validates proof output, ROI output, and lock/unlock continuity.</p>
+              <h3>Trace exported</h3>
+              <p>Structured evidence is exported for reproducible incident review and cross-team debugging continuity.</p>
             </div>
             <div class="proof-seq-media">
-              <img src="./assets/ui_sales_proof_output_packaged.png" alt="Packaged runtime proof capture in NeuralShell" loading="lazy" />
+              <img src="./assets/ui_sales_proof_output_packaged.png" alt="Trace export runtime proof capture" loading="lazy" />
             </div>
             <div class="status-chip-row">
-              <span id="runtime-chip-proof" class="status-chip unavailable">Proof check unavailable</span>
-              <span id="runtime-chip-roi" class="status-chip unavailable">ROI check unavailable</span>
-              <span id="runtime-chip-lock" class="status-chip unavailable">Lock flow unavailable</span>
+               <span id="runtime-chip-proof" class="status-chip review">Trace check: verification loading</span>
+              <span id="runtime-chip-roi" class="status-chip review">Evidence check: verification loading</span>
+              <span id="runtime-chip-lock" class="status-chip review">Continuity check: verification loading</span>
             </div>
             <div class="proof-seq-actions">
               <a class="proof-seq-link" href="./assets/ui-self-sell-proof-report-packaged-latest.json" target="_blank" rel="noopener noreferrer">Open Runtime JSON</a>
@@ -1247,69 +1303,149 @@
           <div><span class="proof-seq-index">05</span></div>
           <div>
             <div class="proof-seq-head">
-              <h3>Delivery and Support Path</h3>
-              <p>After payment: receipt, access path, install + activation steps, and support/refund contact.</p>
+              <h3>Release decision gets cleaner</h3>
+              <p>Release calls are made from observable startup and runtime evidence instead of vague confidence language.</p>
             </div>
             <div class="proof-seq-actions">
-              <a class="proof-seq-link" href="mailto:support@neuralshell.app">Support and Refund Contact</a>
-              <a class="proof-seq-link" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Open Checkout Page</a>
+              <a class="proof-seq-link" href="./assets/launch-readiness-latest.json" target="_blank" rel="noopener noreferrer">Open Commerce JSON</a>
+              <a class="proof-seq-link" href="./assets/NeuralShell-Proof-Pack-latest.zip" target="_blank" rel="noopener noreferrer">Download Proof Pack (ZIP)</a>
             </div>
           </div>
         </article>
       </div>
     </section>
 
-    <section id="delivery">
-      <h2>After Payment: What Happens</h2>
-      <p class="lede">Plain flow, concrete steps, and a clear support path.</p>
-      <div class="delivery-grid">
+    <section id="impact">
+      <h2>Operational value without fake numbers.</h2>
+      <div class="delivery-grid impact-grid">
         <article class="card">
-          <h3>What You Get</h3>
-          <p>Gumroad receipt plus access to the current Operator package and proof-linked onboarding context.</p>
+          <h3>Lower triage friction</h3>
+          <p>Faster first-pass understanding of startup failures and fewer dead-end debugging loops.</p>
         </article>
         <article class="card">
-          <h3>Install + Activate</h3>
-          <p>Install the desktop build and activate on one primary device using hardware-bound licensing.</p>
+          <h3>Faster recovery posture</h3>
+          <p>Teams isolate unstable surfaces sooner and regain control faster during reliability incidents.</p>
         </article>
         <article class="card">
-          <h3>First Validation Run</h3>
-          <p>Run proof/ROI and save-lock-unlock flows to verify deterministic behavior on your own machine.</p>
+          <h3>More reproducible incident review</h3>
+          <p>Trace exports and structured checks make cross-functional postmortems more repeatable and less subjective.</p>
         </article>
         <article class="card">
-          <h3>Support + Refund</h3>
-          <p>support@neuralshell.app handles install questions, activation issues, and refund routing.</p>
+          <h3>Cleaner release decisions</h3>
+          <p>Engineering and release stakeholders can align on evidence-backed confidence gates.</p>
         </article>
       </div>
     </section>
 
-    <section class="cta-band" id="buy">
+    <section class="cta-band" id="pilot">
       <div>
-        <h2>Launch Offer: NeuralShell Operator</h2>
-        <p>
-          <span class="mono">$149 one-time</span>, single-device Operator license.
-          If you evaluate software by evidence and clear operating boundaries, this is the direct checkout path.
-        </p>
+        <h2>Start with a fixed-scope 14-day reliability pilot.</h2>
+        <p>The pilot is scoped for buyer clarity and operational proof, not vague discovery consulting.</p>
+        <ul class="pilot-list">
+          <li>Baseline snapshot</li>
+          <li>Controlled walkthrough</li>
+          <li>Metric tracking</li>
+          <li>Final recommendation</li>
+        </ul>
       </div>
       <aside class="cta-panel">
-        <a class="btn btn-primary" href="https://gumroad.com/l/neuralshell-operator" target="_blank" rel="noopener noreferrer">Buy Now on Gumroad</a>
-        <a class="btn btn-ghost" href="mailto:support@neuralshell.app">Support and Refund Path</a>
+        <a class="btn btn-primary" data-link="pilotStartLink" href="./sales/NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html?intent=pilot">Start a 14-Day Pilot</a>
+        <a class="btn btn-ghost" data-link="proofVideoLink" href="./assets/proof_walkthrough.webm" target="_blank" rel="noopener noreferrer">Get the Proof Video</a>
+        <a class="btn btn-ghost" data-link="pilotScopeLink" href="./sales/NEURALSHELL_14_DAY_PILOT_SCOPE.html">Review the Pilot Scope</a>
+      </aside>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ</h2>
+      <ul class="faq-list">
+        <li>
+          <strong>Is this another generic AI tooling layer?</strong>
+          <span>No. NeuralShell focuses on reliability controls between startup failure and release confidence, with evidence-first operator workflows.</span>
+        </li>
+        <li>
+          <strong>Why lead with startup failure instead of AI capability?</strong>
+          <span>Because startup instability blocks value before capability matters. Stabilizing startup paths protects downstream velocity and release quality.</span>
+        </li>
+        <li>
+          <strong>What should the demo actually show?</strong>
+          <span>Detection of startup degradation, isolation controls for unstable surfaces, trace export flow, and how those outputs inform release decisions.</span>
+        </li>
+        <li>
+          <strong>How should the pilot be framed?</strong>
+          <span>As a fixed-scope 14-day reliability pilot with baseline capture, guided walkthrough, tracked metrics, and a final recommendation.</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="cta-band" id="final-cta">
+      <div>
+        <h2>For teams that need reliability under failure, not another AI demo.</h2>
+        <p>If startup failures and long triage loops are slowing release confidence, use the walkthrough and proof flow to evaluate fit quickly.</p>
+      </div>
+      <aside class="cta-panel">
+        <a class="btn btn-primary" data-link="bookingLink" href="./sales/NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html">Book a Reliability Walkthrough</a>
+        <a class="btn btn-ghost" data-link="proofFlowLink" href="#proof">See the Proof Flow</a>
       </aside>
     </section>
 
     <footer>
-      <p>NeuralShell Operator | <span class="mono">$149 one-time</span> | support@neuralshell.app</p>
+      <p>NeuralShell Operator | Reliability layer for AI-assisted and autonomous execution | founder@getneuralshell.com</p>
     </footer>
   </main>
   <script>
-    // Global error handler
-    window.addEventListener('error', (e) => {
-      console.error('[Proof Reports] Global error:', e.error, e.message, e.filename, e.lineno);
+    function resolveSalesDoc(filename) {
+      // Sibling resolution for flat directory deployment
+      return `./${filename}`;
+    }
+
+    function buildBookingHref(basePath, options) {
+      const opts = options || {};
+      const params = new URLSearchParams();
+      if (opts.intent) params.set("intent", opts.intent);
+      if (opts.scheduler) params.set("scheduler", opts.scheduler);
+      const query = params.toString();
+      return query ? `${basePath}?${query}` : basePath;
+    }
+
+    const bookingDoc = resolveSalesDoc("NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html");
+    // Honest fallback: if real scheduler link is missing, we use a direct email booking path.
+    const liveSchedulerUrl = "https://calendly.com/founder-getneuralshell/30min"; // Leave empty to trigger waitlist/manual email booking
+    const LANDING_CONFIG = Object.freeze({
+      schedulerUrl: liveSchedulerUrl,
+      bookingLink: buildBookingHref(bookingDoc, { scheduler: liveSchedulerUrl }),
+      flowLink: "#proof",
+      proofFlowLink: "#proof",
+      demoLink: "./assets/proof_walkthrough.webm",
+      deckLink: resolveSalesDoc("NEURALSHELL_RELIABILITY_5_SLIDE_DECK.html"),
+      pilotStartLink: buildBookingHref(bookingDoc, { intent: "pilot", scheduler: liveSchedulerUrl }),
+      proofVideoLink: "./assets/proof_walkthrough.webm",
+      pilotScopeLink: resolveSalesDoc("NEURALSHELL_14_DAY_PILOT_SCOPE.html"),
+      heroScreenshotPath: "./assets/ui_sales_quickstart_packaged.png",
+      docsLink: resolveSalesDoc("DOCS_HUB.html"),
+      bookingStatusNote: liveSchedulerUrl ? "" : " (Manual Booking via Email)"
     });
-    
-    window.addEventListener('unhandledrejection', (e) => {
-      console.error('[Proof Reports] Unhandled promise rejection:', e.reason);
+
+    function applyLandingConfig(config) {
+      document.querySelectorAll("[data-link]").forEach((node) => {
+        const key = node.getAttribute("data-link");
+        if (key && config[key]) node.setAttribute("href", config[key]);
+      });
+      document.querySelectorAll("[data-src]").forEach((node) => {
+        const key = node.getAttribute("data-src");
+        if (key && config[key]) node.setAttribute("src", config[key]);
+      });
+    }
+
+    applyLandingConfig(LANDING_CONFIG);
+
+    window.addEventListener("error", (e) => {
+      console.error("[Proof Reports] Global error:", e.error, e.message, e.filename, e.lineno);
     });
-    
+
+    window.addEventListener("unhandledrejection", (e) => {
+      console.error("[Proof Reports] Unhandled promise rejection:", e.reason);
+    });
+
     (function() {
       console.log('[Proof Reports] Script loaded and executing immediately');
       console.log('[Proof Reports] Current URL:', window.location.href);
@@ -1345,14 +1481,14 @@
 
           const MAX_REPORT_AGE_HOURS = 168;
           const order = [
-            ["livePageLoaded", "Live Page Reachable"],
-            ["liveHas149", "Price Check: $149 Visible"],
-            ["liveHasSupport", "Support Path Visible"],
-            ["liveHasGumroadLink", "Checkout Link Present"],
-            ["gumroadProductLoaded", "Gumroad Product Reachable"],
-            ["gumroadHasProductName", "Product Name Match"],
-            ["gumroadHas149", "Gumroad Price Match"],
-            ["checkoutPathReachable", "Checkout Path Reachable"]
+            ["livePageLoaded", "Startup surface reachable"],
+            ["liveHas149", "Offer signal present"],
+            ["liveHasSupport", "Support route visible"],
+            ["liveHasGumroadLink", "Commercial link present"],
+            ["gumroadProductLoaded", "Destination reachable"],
+            ["gumroadHasProductName", "Route integrity match"],
+            ["gumroadHas149", "Offer integrity check"],
+            ["checkoutPathReachable", "Isolation route reachable"]
           ];
 
           function parseDateMaybe(value) {
@@ -1409,10 +1545,8 @@
             grid.appendChild(row);
           }
 
-          // Robust path resolution for subfolders
           function getAssetPath(filename) {
-            // Since this file is in docs/sales/, we need to go up one level to find assets/
-            return "../assets/" + filename;
+            return "./assets/" + filename;
           }
 
           try {
@@ -1449,9 +1583,9 @@
             if (checkoutTime) checkoutTime.textContent = commerceTimeText;
             if (heroLastChecked) heroLastChecked.textContent = commerceTimeText.replace("Last checked: ", "");
 
-            setChip(checkoutChipRoute, checks.checkoutPathReachable ? "Checkout route: VERIFIED" : "Checkout route: REVIEW REQUIRED", checks.checkoutPathReachable ? "verified" : "review");
-            setChip(checkoutChipPrice, checks.gumroadHas149 ? "Price match: VERIFIED" : "Price match: REVIEW REQUIRED", checks.gumroadHas149 ? "verified" : "review");
-            setChip(checkoutChipProduct, checks.gumroadHasProductName ? "Product match: VERIFIED" : "Product match: REVIEW REQUIRED", checks.gumroadHasProductName ? "verified" : "review");
+            setChip(checkoutChipRoute, checks.checkoutPathReachable ? "Isolation route: VERIFIED" : "Isolation route: REVIEW REQUIRED", checks.checkoutPathReachable ? "verified" : "review");
+            setChip(checkoutChipPrice, checks.gumroadHas149 ? "Health gate: VERIFIED" : "Health gate: REVIEW REQUIRED", checks.gumroadHas149 ? "verified" : "review");
+            setChip(checkoutChipProduct, checks.gumroadHasProductName ? "Surface match: VERIFIED" : "Surface match: REVIEW REQUIRED", checks.gumroadHasProductName ? "verified" : "review");
 
             if (checkoutNote) {
               const note = data && Array.isArray(data.notes) && data.notes.length ? data.notes[0] : "No report note.";
@@ -1469,10 +1603,10 @@
             for (const [, label] of order) {
               addRow(label, "unavailable", "UNAVAILABLE");
             }
-            setChip(checkoutChipRoute, "Checkout route: unavailable", "unavailable");
-            setChip(checkoutChipPrice, "Price match: unavailable", "unavailable");
-            setChip(checkoutChipProduct, "Product match: unavailable", "unavailable");
-            if (checkoutNote) checkoutNote.textContent = "Report note: unavailable";
+            setChip(checkoutChipRoute, "Isolation route: unavailable", "unavailable");
+            setChip(checkoutChipPrice, "Health gate: unavailable", "unavailable");
+            setChip(checkoutChipProduct, "Surface match: unavailable", "unavailable");
+            if (checkoutNote) checkoutNote.textContent = "Last verified state unavailable";
           }
 
           try {
@@ -1497,17 +1631,17 @@
             }
             if (runtimeTime) runtimeTime.textContent = formatVerifiedAt(runtimeData && runtimeData.generatedAt);
 
-            setChip(runtimeChipProof, checks.proof ? "Proof output: VERIFIED" : "Proof output: REVIEW REQUIRED", checks.proof ? "verified" : "review");
-            setChip(runtimeChipRoi, checks.roi ? "ROI output: VERIFIED" : "ROI output: REVIEW REQUIRED", checks.roi ? "verified" : "review");
-            setChip(runtimeChipLock, checks.lockFlow ? "Lock flow: VERIFIED" : "Lock flow: REVIEW REQUIRED", checks.lockFlow ? "verified" : "review");
+            setChip(runtimeChipProof, checks.proof ? "Trace output: VERIFIED" : "Trace output: REVIEW REQUIRED", checks.proof ? "verified" : "review");
+            setChip(runtimeChipRoi, checks.roi ? "Evidence output: VERIFIED" : "Evidence output: REVIEW REQUIRED", checks.roi ? "verified" : "review");
+            setChip(runtimeChipLock, checks.lockFlow ? "Continuity flow: VERIFIED" : "Continuity flow: REVIEW REQUIRED", checks.lockFlow ? "verified" : "review");
           } catch (runtimeErr) {
             console.error('[Proof Reports] Runtime report failure:', runtimeErr);
             setStatusText(runtimeStatus, STATUS.unavailable, "unavailable");
             setStatusText(heroRuntimeStatus, STATUS.unavailable, "unavailable");
             if (runtimeTime) runtimeTime.textContent = "Last checked: unavailable";
-            setChip(runtimeChipProof, "Proof output: unavailable", "unavailable");
-            setChip(runtimeChipRoi, "ROI output: unavailable", "unavailable");
-            setChip(runtimeChipLock, "Lock flow: unavailable", "unavailable");
+            setChip(runtimeChipProof, "Trace output: unavailable", "unavailable");
+            setChip(runtimeChipRoi, "Evidence output: unavailable", "unavailable");
+            setChip(runtimeChipLock, "Continuity flow: unavailable", "unavailable");
           }
       
           console.log('[Proof Reports] Async IIFE completed successfully');

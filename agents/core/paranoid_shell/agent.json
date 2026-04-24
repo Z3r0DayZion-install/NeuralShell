@@ -1,0 +1,20 @@
+{
+  "id": "paranoid_shell",
+  "name": "Paranoid Shell",
+  "version": "1.0.0",
+  "description": "Hardware-bound AI operator that survives OS reinstalls. Every session cryptographically tied to your machine.",
+  "entry": "index.js",
+  "category": "security",
+  "tags": ["hardware-binding", "audit-trail", "air-gapped"],
+  "demo": {
+    "title": "Watch This Session Survive a Reinstall",
+    "steps": [
+      "Create encrypted thread with hardware-bound identity",
+      "Export session state (encrypted + hardware-signed)",
+      "Simulate OS reinstall (new app data)",
+      "Import session - identity verified, conversation restored"
+    ]
+  },
+  "sha256": "demo_placeholder_hash",
+  "signature": "sha256:demo_placeholder_hash"
+}

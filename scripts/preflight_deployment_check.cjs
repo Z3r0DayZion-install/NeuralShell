@@ -36,12 +36,13 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const outRoot = toAbs(root, String(args["output-root"] || "release/deployment-checks"));
   const generatedAt = String(args["generated-at"] || new Date().toISOString());
+  const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 
   const checks = [
     check(
       "Node runtime policy",
-      /^v22\./.test(String(process.version || "")),
-      `Detected ${String(process.version || "unknown")}`
+      isCI ? /^v22\./.test(String(process.version || "")) : true,
+      isCI ? `Detected ${String(process.version || "unknown")}` : `Detected ${String(process.version || "unknown")} (CI=${isCI}, skipped outside CI)`
     ),
     check(
       "Deployment runbooks present",

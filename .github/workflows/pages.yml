@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - synced/master-2026-04-03
     tags:
       - "neuralshell-v*"
   workflow_dispatch:
@@ -32,15 +33,43 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Sync web sandbox into docs
+      - name: Build _site deploy root
         run: |
-          mkdir -p docs/web-sandbox
-          cp web-sandbox/index.html docs/web-sandbox/index.html
+          mkdir -p _site/docs
 
-      - name: Upload docs artifact
+          # Rewrite relative paths to absolute for root deployment
+          FIX='s|href="../docs/index\.html"|href="/docs/"|g;
+               s|href="../docs/PRIVACY_POLICY\.md"|href="/docs/PRIVACY_POLICY.md"|g;
+               s|src="\.\./proof/latest/|src="/proof/latest/|g;
+               s|src="\.\./screenshots/|src="/screenshots/|g'
+
+          # Landing pages at root
+          sed "$FIX" landing/index.html > _site/index.html
+          for page in proof pricing onboarding evaluator partners; do
+            sed "$FIX" landing/${page}.html > _site/${page}.html
+          done
+
+          # OG image at root
+          cp landing/og-image.png _site/og-image.png
+
+          # Proof images and screenshots
+          [ -d proof ]       && cp -r proof       _site/proof
+          [ -d screenshots ] && cp -r screenshots _site/screenshots
+
+          # Docs subfolder — everything in docs/ served at /docs/
+          cp -r docs/. _site/docs/
+
+          # Web sandbox
+          mkdir -p _site/docs/web-sandbox
+          [ -f web-sandbox/index.html ] && cp web-sandbox/index.html _site/docs/web-sandbox/index.html
+
+          # CNAME — binds getneuralshell.com to this deploy
+          echo "getneuralshell.com" > _site/CNAME
+
+      - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

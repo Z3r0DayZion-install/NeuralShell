@@ -73,6 +73,9 @@ const ALLOWED_INVOKE_CHANNELS = new Set([
   "chatlog:tail",
   "chatlog:export",
   "chatlog:clear",
+  "attach:pickImages",
+  "attach:pickDocuments",
+  "attach:pickFolder",
   "workspace:pickRoot",
   "workspace:summarize",
   "workspace:suggestContextPack",
@@ -155,7 +158,12 @@ const ALLOWED_ON_CHANNELS = new Set([
   "workspace:changed",
   "workspace:list-updated",
   "state-updated",
-  "proof:stdout"
+  "proof:stdout",
+  "tray:set-theme",
+  "tray:new-workflow",
+  "tray:open-palette",
+  "tray:open-settings",
+  "tray:open-task-manager"
 ]);
 
 function assertAllowed(set, channel, type) {
@@ -455,6 +463,11 @@ contextBridge.exposeInMainWorld("api", {
     export: () => ipcRenderer.invoke("chatlog:export"),
     clear: () => ipcRenderer.invoke("chatlog:clear")
   },
+  attach: {
+    pickImages: () => ipcRenderer.invoke("attach:pickImages"),
+    pickDocuments: () => ipcRenderer.invoke("attach:pickDocuments"),
+    pickFolder: () => ipcRenderer.invoke("attach:pickFolder"),
+  },
   workspace: {
     pickRoot: () => ipcRenderer.invoke("workspace:pickRoot"),
     summarize: (rootPath) => ipcRenderer.invoke("workspace:summarize", rootPath),
@@ -556,4 +569,20 @@ ipcRenderer.on("llm-stream-error", (_event, message) => {
 });
 ipcRenderer.on("llm-stream-complete", () => {
   window.dispatchEvent(new Event("llm-stream-complete"));
+});
+
+ipcRenderer.on("tray:set-theme", (_event, theme) => {
+  window.dispatchEvent(new CustomEvent("tray:set-theme", { detail: theme }));
+});
+ipcRenderer.on("tray:new-workflow", () => {
+  window.dispatchEvent(new Event("tray:new-workflow"));
+});
+ipcRenderer.on("tray:open-palette", () => {
+  window.dispatchEvent(new Event("tray:open-palette"));
+});
+ipcRenderer.on("tray:open-settings", () => {
+  window.dispatchEvent(new Event("tray:open-settings"));
+});
+ipcRenderer.on("tray:open-task-manager", () => {
+  window.dispatchEvent(new Event("tray:open-task-manager"));
 });

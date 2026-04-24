@@ -7,9 +7,9 @@
     "machineId": "cb7abe7d53cb611f7db4f51851a58a444161ea024e2949ea41f3a94267d4ac7a"
   },
   "build": {
-    "commit": "bae44f633ad8a095dcef0fa48c02b3cbc86d7a9e",
-    "lockfile": "b517fcd75654d54815ccb665fbe6391ceee53c6f912faadf3052a96cec9f80e8",
-    "buildHash": "e6f2a724e3679e01369a640e5c04dcf4beac8c62e6972e76b5ceaf1ecb83861f"
+    "commit": "821dce8089adc69a5c353515ccd5575b89e1cf03",
+    "lockfile": "22276e272b86f633f5487dfbbdf88114d8b0a6f278b98468af2718041b20ab71",
+    "buildHash": "86d6992ca01668594007700971cd9eaa86a06c781301eea860df28c1d4701b79"
   },
   "enforcement": {
     "ast_gate": "PASSED",

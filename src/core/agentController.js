@@ -2,6 +2,18 @@ const path = require("path");
 const fs = require("fs");
 const { kernel, CAP_PROC } = require("../kernel");
 
+function resolveWritableRoot() {
+  try {
+    const { app } = require("electron");
+    if (app && typeof app.getPath === "function") {
+      return app.getPath("userData");
+    }
+  } catch {
+    // Electron may be unavailable in test/runtime shims.
+  }
+  return path.join(process.cwd(), "state");
+}
+
 /**
  * NeuralShell Agent Controller — Senior Grade Engineering Lifecycle
  * Implements [Research -> Plan -> Implementation -> Unit Test -> Audit -> Deploy]
@@ -12,14 +24,20 @@ class AgentController {
   constructor(options = {}) {
     this.llmService = options.llmService;
     this.sessionManager = options.sessionManager;
-    this.scratchpadDir = path.join(process.cwd(), "tmp", "agent-scratchpad");
+    this.storageRoot = resolveWritableRoot();
+    this.scratchpadDir = path.join(this.storageRoot, "tmp", "agent-scratchpad");
+    this.docsDir = path.join(this.storageRoot, "docs", "autonomous");
     this._ensureDirs();
-    this.maxRetries = 2; 
+    this.maxRetries = options.maxRetries != null ? Number(options.maxRetries) : 3; 
   }
 
   _ensureDirs() {
-    [this.scratchpadDir, path.join(process.cwd(), "docs", "autonomous")].forEach(d => {
-      if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+    [this.scratchpadDir, this.docsDir].forEach((d) => {
+      try {
+        if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+      } catch {
+        // Keep startup resilient even if a directory cannot be created.
+      }
     });
   }
 

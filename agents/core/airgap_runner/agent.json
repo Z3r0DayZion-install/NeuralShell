@@ -1,0 +1,20 @@
+{
+  "id": "airgap_runner",
+  "name": "Air-Gap Runner",
+  "version": "1.0.0",
+  "description": "100% offline AI workflows. No internet required after initial setup. Perfect for classified environments.",
+  "entry": "index.js",
+  "category": "offline",
+  "tags": ["air-gapped", "offline", "classified"],
+  "demo": {
+    "title": "AI That Works Without Internet",
+    "steps": [
+      "Download Ollama + models once",
+      "Disconnect from all networks",
+      "NeuralShell runs 100% locally",
+      "No data ever leaves your machine"
+    ]
+  },
+  "sha256": "demo_placeholder_hash",
+  "signature": "sha256:demo_placeholder_hash"
+}

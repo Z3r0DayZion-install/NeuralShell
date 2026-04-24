@@ -66,18 +66,34 @@ function resolveAnalyticsFile(explicitPath = '') {
   const configured = String(explicitPath || '').trim();
   if (configured) return path.resolve(configured);
 
+  try {
+    const { app } = require('electron');
+    if (app && typeof app.getPath === 'function') {
+      return path.join(app.getPath('userData'), 'analytics.json');
+    }
+  } catch {
+    // Electron may be unavailable in tests/CLI contexts.
+  }
+
   const env = (typeof process === 'object' && process)
     ? process['env']
     : null;
-  const appData = env && typeof env === 'object'
-    ? String(env['APPDATA'] || '').trim()
-    : '';
 
-  if (appData) {
-    return path.join(appData, 'NeuralShell', 'analytics.json');
+  if (process.platform === 'win32') {
+    const appData = env && typeof env === 'object'
+      ? String(env['APPDATA'] || '').trim()
+      : '';
+    if (appData) {
+      return path.join(appData, 'NeuralShell', 'analytics.json');
+    }
+    return path.join(os.homedir(), 'AppData', 'Roaming', 'NeuralShell', 'analytics.json');
   }
 
-  return path.join(os.homedir(), 'AppData', 'Roaming', 'NeuralShell', 'analytics.json');
+  const xdgConfigHome = env && typeof env === 'object'
+    ? String(env['XDG_CONFIG_HOME'] || '').trim()
+    : '';
+  const baseConfig = xdgConfigHome || path.join(os.homedir(), '.config');
+  return path.join(baseConfig, 'NeuralShell', 'analytics.json');
 }
 
 function createAnalyticsStore(options = {}) {

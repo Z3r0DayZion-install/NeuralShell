@@ -13,6 +13,7 @@ import ReferralCard from './ReferralCard';
 import SupportBundleCard from './SupportBundleCard';
 import ReleaseHealthConsole from './ReleaseHealthConsole';
 import PolicyProfileCard from './PolicyProfileCard';
+import UIAppearanceCard from './Settings/UIAppearanceCard';
 
 const PROVIDER_OPTIONS = [
     { id: 'ollama', label: 'Local Node (Ollama)', defaultBaseUrl: 'http://127.0.0.1:11434', remote: false },
@@ -542,9 +543,9 @@ export default function SettingsDrawer() {
     return (
         <>
             <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-all" onClick={closeSettings} />
-            <div data-testid="settings-drawer" className="fixed right-0 top-0 bottom-0 max-w-lg w-full z-50 bg-slate-950 border-l border-cyan-400/20 shadow-[-20px_0_50px_rgba(0,0,0,0.6)] p-8 flex flex-col animate-in slide-in-from-right duration-300">
+            <div data-testid="settings-drawer" className="fixed right-0 top-0 bottom-0 max-w-lg w-full z-50 bg-slate-950 border-l border-cyan-400/20 shadow-[-20px_0_50px_rgba(0,0,0,0.6)] p-8 flex flex-col animate-fade-up" style={{ borderImage: 'linear-gradient(180deg, rgba(6,182,212,0.3), rgba(139,92,246,0.15), rgba(217,70,239,0.08)) 1' }}>
                 <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">Configuration</h2>
+                    <h2 className="text-2xl font-bold tracking-tight text-gradient animate-gradient-shift" style={{ backgroundImage: 'linear-gradient(90deg, #06b6d4, #8b5cf6, #d946ef, #06b6d4)' }}>Configuration</h2>
                     <button data-testid="settings-close-btn" onClick={closeSettings} className="h-10 w-10 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
                 </div>
 
@@ -613,6 +614,11 @@ export default function SettingsDrawer() {
                                 />
                             </div>
                         </div>
+                    </section>
+
+                    <section>
+                        <div className="text-[10px] uppercase tracking-widest text-violet-300 mb-4 font-bold">Appearance & Layout</div>
+                        <UIAppearanceCard />
                     </section>
 
                     <section>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralShell — Verification Proof</title>
+    <meta name="description" content="Verifiable proof of NeuralShell's hardware-bound session recovery, offline execution, and audit export. All scenarios reproducible.">
+    <meta property="og:title" content="NeuralShell — Verification Proof">
+    <meta property="og:description" content="Hardware-bound session scenarios, offline validation, and audit artifacts. Testable claims only.">
+    <meta property="og:image" content="og-image.png">
+    <meta property="og:url" content="https://getneuralshell.com/proof.html">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --border: #2a2a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --accent: #00d4ff;
+            --accent-dim: #00d4ff40;
+            --success: #2ed573;
+            --danger: #ff4757;
+            --warning: #ffa502;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1; pointer-events: none;
+        }
+
+        nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10,10,15,0.8);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 20px; font-weight: 700;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links { display: flex; gap: 28px; }
+        .nav-links a {
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 14px; font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-links a.active { color: var(--accent); }
+
+        .page {
+            max-width: 1100px; margin: 0 auto;
+            padding: 140px 40px 80px;
+        }
+
+        .page-header { margin-bottom: 64px; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 14px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 50px; font-size: 12px; color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 48px; font-weight: 800; line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .page-subtitle {
+            font-size: 20px; color: var(--text-secondary);
+            max-width: 680px; margin-bottom: 32px;
+        }
+
+        .manifest-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; font-size: 13px; color: var(--text-secondary);
+            text-decoration: none; font-family: 'SF Mono', Monaco, monospace;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .manifest-link:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Section */
+        .section { margin-bottom: 80px; }
+        .section-label {
+            font-size: 11px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--accent);
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: 28px; font-weight: 700; margin-bottom: 8px;
+        }
+        .section-desc {
+            font-size: 15px; color: var(--text-secondary); margin-bottom: 32px;
+            max-width: 660px;
+        }
+
+        /* Scenario grid */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 24px;
+        }
+
+        .scenario-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .scenario-card:hover { border-color: var(--accent); }
+
+        .scenario-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .scenario-badge {
+            font-size: 11px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; padding: 3px 10px;
+            border-radius: 50px;
+        }
+        .badge-pass { background: rgba(46,213,115,0.15); color: var(--success); }
+        .badge-block { background: rgba(255,71,87,0.15); color: var(--danger); }
+        .badge-warn { background: rgba(255,165,2,0.15); color: var(--warning); }
+
+        .scenario-name {
+            font-size: 14px; font-weight: 600; color: var(--text-primary);
+        }
+        .scenario-id {
+            font-size: 12px; color: var(--text-secondary);
+            font-family: 'SF Mono', Monaco, monospace; margin-left: auto;
+        }
+
+        .scenario-img {
+            width: 100%; display: block;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .scenario-body { padding: 20px; }
+        .scenario-desc {
+            font-size: 14px; color: var(--text-secondary);
+            line-height: 1.6; margin-bottom: 12px;
+        }
+
+        .fingerprint {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 11px; color: #555;
+            word-break: break-all;
+        }
+        .fingerprint span { color: var(--accent); }
+
+        /* Installer section */
+        .installer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .installer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .installer-card img {
+            width: 100%; display: block;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .installer-card-body { padding: 16px; }
+        .installer-card-title {
+            font-size: 14px; font-weight: 600; margin-bottom: 4px;
+        }
+        .installer-card-desc {
+            font-size: 13px; color: var(--text-secondary);
+        }
+
+        /* CTA */
+        .proof-cta {
+            margin-top: 80px;
+            padding: 48px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            text-align: center;
+        }
+        .proof-cta h2 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+        .proof-cta p { font-size: 16px; color: var(--text-secondary); margin-bottom: 28px; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 28px; border-radius: 8px;
+            font-size: 15px; font-weight: 600; text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: var(--bg-dark); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,212,255,0.3); }
+        .btn-secondary {
+            background: transparent; color: var(--text-primary);
+            border: 1px solid var(--border); margin-left: 12px;
+        }
+        .btn-secondary:hover { border-color: var(--accent); }
+
+        footer {
+            padding: 48px 40px; border-top: 1px solid var(--border);
+            text-align: center; color: var(--text-secondary); font-size: 13px;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 28px; margin-bottom: 16px; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; }
+        .footer-links a:hover { color: var(--text-primary); }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .page { padding: 120px 20px 60px; }
+            .scenario-grid { grid-template-columns: 1fr; }
+            .installer-grid { grid-template-columns: 1fr; }
+            nav { padding: 16px 20px; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<nav>
+    <a href="index.html" class="logo">NeuralShell</a>
+    <div class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="proof.html" class="active">Proof</a>
+        <a href="../docs/index.html">Docs</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
+        <a href="pricing.html">Pricing</a>
+    </div>
+</nav>
+
+<div class="page">
+    <div class="page-header">
+        <div class="badge">Verifiable Artifacts · Reproducible Scenarios</div>
+        <h1>Verification Proof</h1>
+        <p class="page-subtitle">
+            Every claim NeuralShell makes about hardware binding, offline execution, and session recovery is backed by reproducible test scenarios. Download and run them yourself.
+        </p>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29" class="manifest-link">
+            ↓ proof-manifest.json · v2.1.29
+        </a>
+    </div>
+
+    <!-- Phase 25: Hardware Binding Scenarios -->
+    <div class="section">
+        <div class="section-label">Hardware Binding</div>
+        <h2 class="section-title">Session Trust Scenarios</h2>
+        <p class="section-desc">
+            Seven scenarios covering the full trust state machine — verified match, offline lock, hardware drift, missing secret, and signature tampering. Each is reproducible from a clean install.
+        </p>
+
+        <div class="scenario-grid">
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-badge badge-pass">PASS</span>
+                    <span class="scenario-name">Scenario A — Verified On</span>
+                    <span class="scenario-id">phase25-a</span>
+                </div>
+                <img src="../proof/latest/phase25-scenario-a-verified-on.png" alt="Scenario A: hardware fingerprint matches, session verified and active" class="scenario-img" loading="lazy">
+                <div class="scenario-body">
+                    <p class="scenario-desc">Hardware fingerprint matches stored value. Session is active and trusted. This is the baseline passing state.</p>
+                    <p class="fingerprint">stored: <span>7cebc682…f48832e</span> · live: <span>7cebc682…f48832e</span> · match: true</p>
+                </div>
+            </div>
+
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-badge badge-pass">PASS</span>
+                    <span class="scenario-name">Scenario B — Verified Off</span>
+                    <span class="scenario-id">phase25-b</span>
+                </div>
+                <img src="../proof/latest/phase25-scenario-b-verified-off.png" alt="Scenario B: hardware verified but session intentionally disabled" class="scenario-img" loading="lazy">
+                <div class="scenario-body">
+                    <p class="scenario-desc">Hardware matches but session is explicitly set to off. Demonstrates that session state is independent of hardware verification.</p>
+                </div>
+            </div>
+
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-badge badge-warn">DRIFT</span>
+                    <span class="scenario-name">Scenario C — Hardware Drifted</span>
+                    <span class="scenario-id">phase25-c</span>
+                </div>
+                <img src="../proof/latest/phase25-scenario-c-drifted.png" alt="Scenario C: hardware fingerprint has changed since session was created" class="scenario-img" loading="lazy">
+                <div class="scenario-body">
+                    <p class="scenario-desc">Stored fingerprint no longer matches live hardware. Session is flagged as drifted. Recovery requires re-verification on the original device.</p>
+                </div>
+            </div>
+
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-badge badge-block">BLOCKED</span>
+                    <span class="scenario-name">Scenario D — Missing Secret</span>
+                    <span class="scenario-id">phase25-d</span>
+                </div>
+                <img src="../proof/latest/phase25-scenario-d-missing-secret.png" alt="Scenario D: session secret has been deleted, session cannot be restored" class="scenario-img" loading="lazy">
+                <div class="scenario-body">
+                    <p class="scenario-desc">Session encryption key is absent. Session is blocked and unrecoverable without the original device and backup. Validates that there is no cloud fallback path.</p>
+                </div>
+            </div>
+
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-badge badge-block">BLOCKED</span>
+                    <span class="scenario-name">Scenario E — Signature Tampered</span>
+                    <span class="scenario-id">phase25-e</span>
+                </div>
+                <img src="../proof/latest/phase25-scenario-e-signature-tampered.png" alt="Scenario E: session signature has been modified, integrity check fails" class="scenario-img" loading="lazy">
+                <div class="scenario-body">
+                    <p class="scenario-desc">Session signature has been altered. Integrity check fails immediately. Demonstrates tamper detection independent of hardware fingerprint.</p>
+                </div>
+            </div>
+
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-badge badge-block">BLOCKED</span>
+                    <span class="scenario-name">Scenario F — Offline Locked</span>
+                    <span class="scenario-id">phase25-f</span>
+                </div>
+                <img src="../proof/latest/phase25-scenario-f-offline-locked.png" alt="Scenario F: network disconnected, session locked as expected for offline mode" class="scenario-img" loading="lazy">
+                <div class="scenario-body">
+                    <p class="scenario-desc">Network is disconnected and session is in locked state. Confirms that offline lock behaviour is deterministic and does not silently degrade.</p>
+                </div>
+            </div>
+
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-badge badge-block">INVALID</span>
+                    <span class="scenario-name">Scenario G — Invalid State</span>
+                    <span class="scenario-id">phase25-g</span>
+                </div>
+                <img src="../proof/latest/phase25-scenario-g-invalid.png" alt="Scenario G: session state is structurally invalid, session is rejected" class="scenario-img" loading="lazy">
+                <div class="scenario-body">
+                    <p class="scenario-desc">Session data is structurally corrupt or unrecognised. Session is rejected outright. Validates defensive handling of malformed state.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Installer lifecycle -->
+    <div class="section">
+        <div class="section-label">Installer Lifecycle</div>
+        <h2 class="section-title">First Launch → Reinstall → Recovery</h2>
+        <p class="section-desc">
+            Proof that sessions survive a full uninstall and reinstall cycle on the same machine, and fail cleanly on a different device.
+        </p>
+        <div class="installer-grid">
+            <div class="installer-card">
+                <img src="../proof/latest/phase29-01-installer-first-launch.png" alt="First launch after clean install" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">First Launch</div>
+                    <div class="installer-card-desc">Clean install, hardware fingerprint established on first run.</div>
+                </div>
+            </div>
+            <div class="installer-card">
+                <img src="../proof/latest/phase29-02-post-onboarding.png" alt="Post-onboarding state" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">Post-Onboarding</div>
+                    <div class="installer-card-desc">Session created and bound to hardware after onboarding completes.</div>
+                </div>
+            </div>
+            <div class="installer-card">
+                <img src="../proof/latest/phase29-04-relaunch-reconnect-on.png" alt="Session restored after reinstall" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">Restore After Reinstall</div>
+                    <div class="installer-card-desc">Session recovers on the same machine. Hardware fingerprint matches.</div>
+                </div>
+            </div>
+            <div class="installer-card">
+                <img src="../proof/latest/phase29-06-relaunch-offline.png" alt="Relaunch in offline mode" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">Offline Relaunch</div>
+                    <div class="installer-card-desc">Session relaunches with no network. Local model execution confirmed.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operator Actions -->
+    <div class="section">
+        <div class="section-label">Operator Actions</div>
+        <h2 class="section-title">Verify, Switch, Repair, Disconnect</h2>
+        <p class="section-desc">
+            Four core operator actions recorded as proof artifacts. Each is a discrete, auditable action with a logged outcome.
+        </p>
+        <div class="installer-grid">
+            <div class="installer-card">
+                <img src="../proof/latest/phase28-action-verify.png" alt="Verify action" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">Verify</div>
+                    <div class="installer-card-desc">Hardware fingerprint check triggered manually. Result logged.</div>
+                </div>
+            </div>
+            <div class="installer-card">
+                <img src="../proof/latest/phase28-action-switch.png" alt="Switch session action" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">Switch Session</div>
+                    <div class="installer-card-desc">Session switch between profiles. Each profile has its own bound state.</div>
+                </div>
+            </div>
+            <div class="installer-card">
+                <img src="../proof/latest/phase28-action-repair.png" alt="Repair action" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">Repair</div>
+                    <div class="installer-card-desc">Session repair flow on the original device. Fails on a different machine.</div>
+                </div>
+            </div>
+            <div class="installer-card">
+                <img src="../proof/latest/phase28-action-offline.png" alt="Offline action" loading="lazy">
+                <div class="installer-card-body">
+                    <div class="installer-card-title">Disconnect</div>
+                    <div class="installer-card-desc">Network disconnected. Local workflows continue. No cloud fallback triggered.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="proof-cta">
+        <h2>Run It Yourself</h2>
+        <p>Download NeuralShell, install it, and walk through the same scenarios. Every result shown here is reproducible on your own machine.</p>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29" class="btn btn-primary">Download v2.1.29</a>
+        <a href="../docs/index.html" class="btn btn-secondary">Read the Docs</a>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-links">
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
+        <a href="../docs/index.html">Documentation</a>
+        <a href="index.html">Landing Page</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/issues">Support</a>
+    </div>
+    <p>NeuralShell v2.1.29 · MIT License · All proof artifacts are reproducible</p>
+</footer>
+</body>
+</html>

@@ -11,6 +11,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node tear/smoke-test.js && node tear/ipc-surface-test.js && node tear/renderer-bindings-test.js && node tear/linkage-regression-test.js && node tear/unit-tests.js && node tear/license-engine.test.js && node tear/policy-firewall.test.js && node tear/audit-chain.test.js && node tear/security-guards.test.js && node tear/security-abuse.test.js && node tear/branch-protection-policy.test.js && node tear/cleanup-guard.test.js && node tear/release-manifest.test.js && node tear/release-checksums.test.js && node tear/release-upgrade-validation.test.js && node tear/release-workflows-contract.test.js && node tear/ship-entrypoints.test.js && node tear/performance-gate-contract.test.js && node tear/release-freshness.test.js && node tear/release-status-contract.test.js && node tear/worktree-cleanliness.test.js && node tear/identity-kernel.test.js && node tear/hardware-binding-contract.test.js && node tear/session-manager.test.js && node tear/state-manager.test.js && node tear/signed-artifacts.test.js && node tear/business-pack-generators.test.js && node tear/airgap-bundle.test.js && node tear/courier-package.test.js && node tear/hardware-appliance-build.test.js && node tear/commercialization-pack-generators.test.js && node tear/field-execution-pack-generators.test.js && node tear/scale-operations-pack-generators.test.js && node tear/ecosystem-dominance-pack-generators.test.js",
+    "setup": "npm ci && node scripts/install-hooks.js",
     "hooks:install": "node scripts/install-hooks.js",
     "gate:prepush": "node scripts/prepush-gate.js",
     "determinism:test": "node scripts/determinism_test.js",
@@ -153,6 +154,7 @@
     "white-label:verify": "node scripts/verify_white_label_config.cjs",
     "white-label:build": "node scripts/gen_white_label_build.cjs",
     "release:truth:verify": "node scripts/release_truth_verify.cjs"
+    ,"site:smoke": "node scripts/site_smoke_check.cjs"
   },
   "dependencies": {
     "@neural/omega-core": "file:vendor/omega-core",
@@ -168,12 +170,20 @@
     "@playwright/test": "^1.58.2",
     "ajv": "^6.14.0",
     "c8": "^11.0.0",
-    "electron": "^33.2.0",
+    "electron": "^41.2.2",
     "electron-builder": "^26.8.1",
     "eslint": "^9.39.3",
     "eslint-plugin-security": "^4.0.0",
     "icon-gen": "^5.0.0",
     "pngjs": "^7.0.0"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "^0.8.12",
+    "brace-expansion": "^5.0.1",
+    "flatted": "^3.3.3",
+    "lodash": "^4.17.21",
+    "picomatch": "^4.0.4",
+    "tar": "^7.5.1"
   },
   "build": {
     "productName": "NeuralShell",
@@ -212,6 +222,15 @@
         "nsis"
       ],
       "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NeuralShell",
+      "include": "build/installer.nsh",
+      "license": "build/LICENSE.txt"
     },
     "linux": {
       "target": [

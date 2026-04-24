@@ -44,3 +44,110 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(34, 211, 238, 0.3);
 }
+
+/* ─── Dynamic & Alive Animations ─── */
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes float-y {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+@keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(139, 92, 246, 0.15); }
+    50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.35); }
+}
+
+@keyframes bar-fill {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes orbit {
+    from { transform: rotate(0deg) translateX(3px) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(3px) rotate(-360deg); }
+}
+
+.animate-breathe { animation: breathe 3s ease-in-out infinite; }
+.animate-gradient-shift { animation: gradient-shift 6s ease infinite; background-size: 200% 200%; }
+.animate-shimmer { animation: shimmer 2.5s linear infinite; background-size: 200% 100%; }
+.animate-float-y { animation: float-y 3s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
+.animate-bar-fill { animation: bar-fill 0.6s ease-out forwards; transform-origin: left; }
+.animate-fade-up { animation: fade-up 0.3s ease-out both; }
+.animate-sparkle { animation: sparkle 2s ease-in-out infinite; }
+.animate-orbit { animation: orbit 8s linear infinite; }
+
+/* Staggered fade-up for lists */
+.animate-fade-up-1 { animation: fade-up 0.3s ease-out 0.05s both; }
+.animate-fade-up-2 { animation: fade-up 0.3s ease-out 0.1s both; }
+.animate-fade-up-3 { animation: fade-up 0.3s ease-out 0.15s both; }
+.animate-fade-up-4 { animation: fade-up 0.3s ease-out 0.2s both; }
+
+/* Gradient text helper */
+.text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Alive hover state for interactive elements */
+.alive-hover {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.alive-hover:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.15);
+}
+.alive-hover:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Ambient border glow */
+.border-glow {
+    position: relative;
+}
+.border-glow::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(217,70,239,0.15), rgba(6,182,212,0.15));
+    background-size: 200% 200%;
+    animation: gradient-shift 4s ease infinite;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.border-glow:hover::after {
+    opacity: 1;
+}
+
+/* No scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

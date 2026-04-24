@@ -27,6 +27,8 @@ class ExecutionEngine {
         this.CHAIN_TIMEOUT_MS = 1000 * 60 * 30; // 30 minutes
         this.WORKLOAD_HEARTBEAT_MS = 1000 * 60; // 1 minute
         this.heartbeatInterval = setInterval(() => this._reapStaleWorkloads(), this.WORKLOAD_HEARTBEAT_MS);
+        // Allow the process to exit cleanly without waiting for this interval
+        if (this.heartbeatInterval.unref) this.heartbeatInterval.unref();
     }
 
     _reapStaleWorkloads() {

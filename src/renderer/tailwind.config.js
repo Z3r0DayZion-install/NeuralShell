@@ -19,6 +19,9 @@ export default {
                     panel: '#071423',   // card/panel bg
                     overlay: '#0b1726',   // overlay/palette bg
                     drawer: '#071321',   // settings drawer bg
+                    deep: '#12121e',     // deep card/drawer bg
+                    mid: '#1a1a2e',      // footer/composer bg
+                    soft: '#1e1e2e',     // header/input bg
                     border: 'rgba(14, 37, 60, 0.4)',
                 },
                 cyan: {

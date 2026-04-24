@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralShell — Getting Started</title>
+    <meta name="description" content="Get NeuralShell running in 5 minutes. Install, configure a model provider, and verify hardware-binding yourself.">
+    <meta property="og:title" content="NeuralShell — Getting Started">
+    <meta property="og:image" content="og-image.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --border: #2a2a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --accent: #00d4ff;
+            --success: #2ed573;
+            --warning: #ffa502;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1; pointer-events: none;
+        }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10,10,15,0.8); backdrop-filter: blur(20px);
+            z-index: 1000; border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            font-size: 20px; font-weight: 700;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; text-decoration: none;
+        }
+        .nav-links { display: flex; gap: 28px; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text-primary); }
+
+        .page { max-width: 780px; margin: 0 auto; padding: 140px 40px 80px; }
+
+        .page-header { margin-bottom: 60px; }
+        .badge {
+            display: inline-flex; align-items: center;
+            padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 50px; font-size: 12px; color: var(--accent); margin-bottom: 20px;
+        }
+        h1 { font-size: 44px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; }
+        .page-sub { font-size: 18px; color: var(--text-secondary); }
+
+        /* Steps */
+        .steps { display: flex; flex-direction: column; gap: 0; }
+
+        .step {
+            display: flex; gap: 28px;
+            padding-bottom: 48px;
+            position: relative;
+        }
+        .step:last-child { padding-bottom: 0; }
+        .step:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 19px; top: 48px; bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .step-num {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--bg-card); border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 700; color: var(--accent);
+            flex-shrink: 0; position: relative; z-index: 1;
+        }
+        .step.done .step-num {
+            background: rgba(46,213,115,0.15); border-color: var(--success); color: var(--success);
+        }
+
+        .step-body { flex: 1; padding-top: 8px; }
+        .step-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .step-desc { font-size: 15px; color: var(--text-secondary); margin-bottom: 16px; }
+
+        pre, code {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
+        pre {
+            background: #0d0d15; border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px 20px;
+            font-size: 13px; color: var(--accent);
+            overflow-x: auto; margin-bottom: 16px;
+        }
+        code {
+            background: rgba(0,212,255,0.08); padding: 2px 7px;
+            border-radius: 4px; font-size: 13px; color: var(--accent);
+        }
+
+        .callout {
+            background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px; padding: 14px 18px;
+            font-size: 14px; color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .callout strong { color: var(--text-primary); }
+
+        .proof-steps {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden; margin-bottom: 16px;
+        }
+        .proof-steps-header {
+            padding: 12px 18px; border-bottom: 1px solid var(--border);
+            font-size: 12px; color: var(--text-secondary);
+            font-family: 'SF Mono', Monaco, monospace;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot-r { background: #ff4757; }
+        .dot-y { background: #ffa502; }
+        .dot-g { background: #2ed573; }
+        .proof-steps-body { padding: 20px; }
+        .proof-step {
+            display: flex; gap: 12px; margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .proof-step:last-child { margin-bottom: 0; }
+        .proof-step-icon { flex-shrink: 0; width: 20px; color: var(--success); font-weight: 700; }
+        .proof-step-text { color: var(--text-secondary); }
+        .proof-step-text strong { color: var(--text-primary); }
+
+        .shortcuts-table {
+            width: 100%; border-collapse: collapse; font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .shortcuts-table th {
+            text-align: left; padding: 10px 16px;
+            background: var(--bg-card); color: var(--text-secondary);
+            font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+        .shortcuts-table td {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .shortcuts-table td:first-child { color: var(--text-primary); }
+        .shortcuts-table td code { font-size: 12px; }
+
+        /* Next steps */
+        .next-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            margin-top: 60px;
+        }
+        .next-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 24px; text-decoration: none;
+            transition: border-color 0.2s;
+        }
+        .next-card:hover { border-color: var(--accent); }
+        .next-card-icon { font-size: 24px; margin-bottom: 12px; }
+        .next-card-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+        .next-card-desc { font-size: 13px; color: var(--text-secondary); }
+
+        footer {
+            padding: 48px 40px; border-top: 1px solid var(--border);
+            text-align: center; color: var(--text-secondary); font-size: 13px;
+            margin-top: 80px;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 28px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; }
+        .footer-links a:hover { color: var(--text-primary); }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .page { padding: 120px 20px 60px; }
+            nav { padding: 16px 20px; }
+            .nav-links { display: none; }
+            .next-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<nav>
+    <a href="index.html" class="logo">NeuralShell</a>
+    <div class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="proof.html">Proof</a>
+        <a href="../docs/index.html">Docs</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
+        <a href="pricing.html">Pricing</a>
+    </div>
+</nav>
+
+<div class="page">
+    <div class="page-header">
+        <div class="badge">5 minutes to running</div>
+        <h1>Getting Started</h1>
+        <p class="page-sub">Install NeuralShell, connect a model provider, and verify hardware binding yourself.</p>
+    </div>
+
+    <div class="steps">
+
+        <!-- Step 1 -->
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <div class="step-title">Download and Install</div>
+                <p class="step-desc">Download the Windows installer from the releases page.</p>
+                <pre>NeuralShell Setup 2.1.29.exe
+Windows x64 · 305 MB</pre>
+                <div class="callout">
+                    <strong>Verify before running:</strong> Open PowerShell in the repo root and run <code>.\VERIFY_RELEASE.ps1</code> to confirm the installer hash matches <code>SHA256SUMS.txt</code>.
+                </div>
+                <p class="step-desc">If Windows SmartScreen warns you — click "More info" → "Run anyway". Verify the installer hash against <code>SHA256SUMS.txt</code> before running.</p>
+                <a href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29"
+                   style="display:inline-flex;align-items:center;gap:8px;padding:12px 22px;background:var(--accent);color:#0a0a0f;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">
+                    ↓ Download v2.1.29
+                </a>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <div class="step-title">Connect a Model Provider</div>
+                <p class="step-desc">NeuralShell works with local and cloud providers. Choose one to start.</p>
+
+                <div class="callout">
+                    <strong>Fully offline:</strong> Install <a href="https://ollama.com" style="color:var(--accent);">Ollama</a>, then go to <strong>Settings → Model Provider → Ollama</strong>. Models auto-detect. No API key needed.
+                </div>
+
+                <p class="step-desc" style="margin-bottom:8px;">For cloud providers (OpenAI, OpenRouter, Groq):</p>
+                <ol style="font-size:14px;color:var(--text-secondary);padding-left:20px;margin-bottom:16px;">
+                    <li style="margin-bottom:6px;">Get your API key from the provider's dashboard</li>
+                    <li style="margin-bottom:6px;">Open <strong style="color:var(--text-primary);">Settings → Model Provider</strong></li>
+                    <li>Paste key → click <strong style="color:var(--text-primary);">Test Connection</strong></li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <div class="step-title">Create Your First Thread</div>
+                <p class="step-desc">Press <code>Ctrl+Shift+P</code> to open the Command Palette, then click <strong>+ New Thread</strong> in the left rail. Start typing — each thread is isolated and independently recoverable.</p>
+
+                <table class="shortcuts-table">
+                    <tr><th>Action</th><th>Shortcut</th></tr>
+                    <tr><td>Command Palette</td><td><code>Ctrl+Shift+P</code></td></tr>
+                    <tr><td>New Thread</td><td><code>Ctrl+N</code></td></tr>
+                    <tr><td>Settings</td><td><code>Ctrl+,</code></td></tr>
+                    <tr><td>Close Thread</td><td><code>Ctrl+W</code></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+                <div class="step-title">Run the Hardware-Binding Proof Flow</div>
+                <p class="step-desc">Before trusting NeuralShell with sensitive work, verify its core claim yourself. This takes about 3 minutes.</p>
+
+                <div class="proof-steps">
+                    <div class="proof-steps-header">
+                        <div class="dot dot-r"></div>
+                        <div class="dot dot-y"></div>
+                        <div class="dot dot-g"></div>
+                        Hardware binding verification · ~3 minutes
+                    </div>
+                    <div class="proof-steps-body">
+                        <div class="proof-step">
+                            <div class="proof-step-icon">1</div>
+                            <div class="proof-step-text">Create a thread, send a few messages, do some work</div>
+                        </div>
+                        <div class="proof-step">
+                            <div class="proof-step-icon">2</div>
+                            <div class="proof-step-text">Click <strong>Export Session</strong> → save <code>backup.enc</code> somewhere outside the app folder</div>
+                        </div>
+                        <div class="proof-step">
+                            <div class="proof-step-icon">3</div>
+                            <div class="proof-step-text">Close NeuralShell completely</div>
+                        </div>
+                        <div class="proof-step">
+                            <div class="proof-step-icon">4</div>
+                            <div class="proof-step-text">Delete <code>%APPDATA%/NeuralShell</code> entirely — this simulates a reinstall</div>
+                        </div>
+                        <div class="proof-step">
+                            <div class="proof-step-icon">5</div>
+                            <div class="proof-step-text">Reopen NeuralShell → <strong>Import from Backup</strong> → select <code>backup.enc</code></div>
+                        </div>
+                        <div class="proof-step">
+                            <div class="proof-step-icon" style="color:var(--success);">✓</div>
+                            <div class="proof-step-text"><strong>Expected result:</strong> session restores on this machine. If you copy <code>backup.enc</code> to another machine and attempt the same restore, it fails with a hardware mismatch error.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    All 7 trust-state scenarios are documented with screenshots in the <a href="proof.html" style="color:var(--accent);">Proof page</a>.
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+                <div class="step-title">Validate Offline Operation</div>
+                <p class="step-desc">If you're using Ollama, disconnect from the network and confirm that local workflows still execute with no errors. NeuralShell should not attempt any cloud calls.</p>
+                <div class="callout">
+                    Network monitoring: watch your system firewall or use <code>netstat</code> during an offline session to confirm no outbound connections are made.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Troubleshooting -->
+    <div style="margin-top:60px;padding:32px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;">
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:24px;">Troubleshooting</h2>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+            <div>
+                <div style="font-weight:600;margin-bottom:4px;">App won't start</div>
+                <div style="font-size:14px;color:var(--text-secondary);">Delete <code>%APPDATA%/NeuralShell/state</code> and restart. If that fails, run as Administrator once to initialize permissions.</div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:20px;">
+                <div style="font-weight:600;margin-bottom:4px;">No AI responses</div>
+                <div style="font-size:14px;color:var(--text-secondary);">Verify API key in Settings. For cloud providers, check your internet connection. Switch to Ollama for fully offline operation.</div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:20px;">
+                <div style="font-weight:600;margin-bottom:4px;">Session restore fails</div>
+                <div style="font-size:14px;color:var(--text-secondary);">Expected if you're restoring on different hardware — that's the hardware-binding working correctly. Restore must happen on the original machine.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Next steps -->
+    <div class="next-grid">
+        <a href="proof.html" class="next-card">
+            <div class="next-card-icon">🔬</div>
+            <div class="next-card-title">Verification Proof</div>
+            <div class="next-card-desc">All 7 hardware-binding scenarios with screenshots and fingerprint data.</div>
+        </a>
+        <a href="../docs/index.html" class="next-card">
+            <div class="next-card-icon">📖</div>
+            <div class="next-card-title">Documentation</div>
+            <div class="next-card-desc">Full operator reference, architecture, and audit documentation.</div>
+        </a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/issues/34" class="next-card">
+            <div class="next-card-icon">🧪</div>
+            <div class="next-card-title">Beta Program</div>
+            <div class="next-card-desc">Join the beta tester cohort and report findings.</div>
+        </a>
+        <a href="pricing.html" class="next-card">
+            <div class="next-card-icon">💳</div>
+            <div class="next-card-title">Pricing</div>
+            <div class="next-card-desc">Free for individuals. Pro and Enterprise for teams and compliance.</div>
+        </a>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="proof.html">Proof</a>
+        <a href="../docs/index.html">Documentation</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/issues">Support</a>
+    </div>
+    <p>NeuralShell v2.1.29 · MIT License · Windows 10/11 x64</p>
+</footer>
+</body>
+</html>

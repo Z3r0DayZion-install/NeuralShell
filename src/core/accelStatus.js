@@ -2,7 +2,8 @@ const { spawnSync } = require("node:child_process");
 
 function probeNvidia() {
   const result = spawnSync("nvidia-smi", ["--query-gpu=name", "--format=csv,noheader"], {
-    shell: true,
+    shell: false,
+    windowsHide: true,
     encoding: "utf8"
   });
   if (result.status !== 0) return "";

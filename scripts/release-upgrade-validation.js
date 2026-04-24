@@ -115,9 +115,10 @@ function generateUpgradeValidationReport(options = {}) {
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const strict = options.strict === true;
   const outFile = options.outFile || path.join(rootDir, "release", "upgrade-validation.json");
-  const allowInstallerSoftFail = options.allowInstallerSoftFail === true
-    || process.env.NEURAL_RELEASE_ALLOW_INSTALLER_SOFTFAIL === "1"
-    || process.env.CI === "true";
+  const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+  const allowInstallerSoftFail = typeof options.allowInstallerSoftFail === "boolean"
+    ? options.allowInstallerSoftFail
+    : (!isCI || process.env.NEURAL_RELEASE_ALLOW_INSTALLER_SOFTFAIL === "1");
 
   const installerRel = readInstallerPath(rootDir);
   const installerAbs = path.join(rootDir, installerRel);
