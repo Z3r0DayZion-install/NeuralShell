@@ -211,7 +211,7 @@ a0c1ede security: remediate 7 vulnerabilities (Electron 33→41)
 
 ### Build ✅
 - [x] `npm run build` succeeds (305MB installer)
-- [x] Code-signed with signtool.exe
+- [ ] Code-signing not yet applied (installer is unsigned)
 - [x] NSIS installer with EULA
 - [x] Auto-updater manifest generated
 - [x] SHA-256 checksums in release/

@@ -167,7 +167,7 @@ NeuralShell
 The AI operator shell for paranoid developers
 
 🖥️  Windows 10/11
-📦 305 MB • Code-signed • 0 vulnerabilities
+📦 305 MB • Checksum-verified • 0 vulnerabilities
 ⬇️  Download free at neuralshell.app
 
 🔒 Hardware-bound • 📴 Offline capable • 📋 Audit-ready

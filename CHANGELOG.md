@@ -37,7 +37,7 @@
 ### Artifacts
 | File | SHA-256 (see release/checksums.txt) |
 |------|-------------------------------------|
-| NeuralShell Setup 2.1.29.exe | 305 MB, code-signed |
+| NeuralShell Setup 2.1.29.exe | 305 MB |
 | latest.yml | Auto-update manifest |
 | manifest.json | 83 entries |
 | manifest.sig | ECDSA signature |

@@ -44,7 +44,7 @@ npx neuralshell-installer
 
 ## 🔐 Security
 
-- ✅ **Code-signed** Windows installer
+- ✅ **Checksum-verified** Windows installer
 - ✅ **SHA-256 checksums** verified
 - ✅ **0 vulnerabilities** (npm audit clean)
 - ✅ **Hardware binding** verified on install

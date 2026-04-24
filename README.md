@@ -1,9 +1,8 @@
 # NeuralShell
 
 <!-- neuralshell-proof-badge:start -->
-[![Proof Locked](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/proof_badge.svg)](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/proof_badge.svg)
+<!-- Badges temporarily removed — badge branch not yet published -->
 <!-- neuralshell-proof-badge:end -->
-[![SOC2 Prep](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/soc2_prep.svg)](https://raw.githubusercontent.com/Z3r0DayZion-install/NeuralShell/badges/soc2_prep.svg)
 
 NeuralShell is a **local-first operator shell** designed for autonomous execution and workflow coordination. Built on a hardened **React/Electron desktop workflow**, it combines an intuitive **command palette as the control plane** with a robust **workbench and trust lane model**. Under the hood, it enforces strict **hardened state and contract discipline**, ensuring stability and security before speed.
 
@@ -13,15 +12,19 @@ NeuralShell is a **local-first operator shell** designed for autonomous executio
 
 ## Install
 
-Download the signed Windows installer from the [Releases page](https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29):
+Download the Windows installer from the [Releases page](https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29):
 
-```
-NeuralShell Setup 2.1.29.exe  — Windows x64, code-signed, 305 MB
-```
+| Platform | File | Notes |
+|---|---|---|
+| **Windows** x64 | `NeuralShell Setup 2.1.29.exe` | NSIS installer, ~305 MB |
 
-Verify the installer hash before running:
+> macOS and Linux builds are planned but not yet available.
 
+**Verify before running:**
 ```powershell
+# Check the installer hash
+Get-FileHash ".\NeuralShell Setup 2.1.29.exe" -Algorithm SHA256
+# Compare against SHA256SUMS.txt, then run the full verification suite:
 .\VERIFY_RELEASE.ps1
 ```
 
@@ -63,28 +66,29 @@ Verify the installer hash before running:
 
 ## Quick Start
 
-1. Install dependencies:
+**One-liner setup (recommended):**
+```bash
+nvm use 22.12.0 && npm run setup
+```
 
-```powershell
+Or step by step:
+
+1. Install dependencies and git hooks:
+
+```bash
 nvm use 22.12.0
-npm ci
+npm run setup
 ```
 
-2. Install local git hooks (recommended):
+2. Run tests:
 
-```powershell
-npm run hooks:install
-```
-
-3. Run tests:
-
-```powershell
+```bash
 npm test
 ```
 
-4. Run app:
+3. Run app:
 
-```powershell
+```bash
 npm start
 ```
 

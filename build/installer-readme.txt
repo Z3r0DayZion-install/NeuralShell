@@ -28,7 +28,7 @@ all operations run locally on your machine.
 
 SECURITY
 --------
-• Code-signed installer (verified by Windows)
+• Verify installer hash against SHA256SUMS.txt before running
 • Local-first architecture - your data stays on your device
 • Encrypted identity storage
 • No telemetry without consent

@@ -6,18 +6,21 @@ NeuralShell is a local-first AI operator shell for secure, offline, hardware-bou
 
 ### 1. Download and Install
 
-Download `NeuralShell Setup 2.1.29.exe` from the [Releases page](https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29).
+Download from the [Releases page](https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29):
 
-Optionally verify the installer hash before running:
-
+#### Windows (available now)
 ```powershell
+# Verify the installer hash before running
+Get-FileHash ".\NeuralShell Setup 2.1.29.exe" -Algorithm SHA256
+# Run the full verification suite
 .\VERIFY_RELEASE.ps1
 ```
-
-Double-click the installer and follow the wizard (accept defaults). NeuralShell will:
+Double-click `NeuralShell Setup 2.1.29.exe` and follow the wizard (accept defaults). NeuralShell will:
 - Create a Start Menu shortcut and Desktop icon
 - Initialize a local workspace in `%APPDATA%/NeuralShell`
 - Establish a hardware-bound identity on first launch
+
+> **macOS and Linux** builds are planned but not yet available.
 
 ### 2. Configure Your AI Provider
 
@@ -75,7 +78,7 @@ With Ollama installed, NeuralShell runs fully offline. Disconnect your network a
 
 **SmartScreen warning on installer**
 - Click "More info" → "Run anyway"
-- The installer is code-signed; verify with `VERIFY_RELEASE.ps1`
+- Verify the installer hash against `SHA256SUMS.txt` before running
 
 ## More
 

@@ -392,7 +392,7 @@ Anyone building secure systems using local AI?
   <div class="cta">
     <a href="[download link]" class="btn">Download NeuralShell 2.1.29</a>
     <p style="margin-top: 15px; font-size: 13px; color: #666;">
-      Windows 10/11 • 305 MB • Code-signed • 0 vulnerabilities
+      Windows 10/11 • 305 MB • Checksum-verified • 0 vulnerabilities
     </p>
   </div>
   

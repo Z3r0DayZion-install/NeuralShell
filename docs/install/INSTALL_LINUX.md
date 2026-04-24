@@ -1,5 +1,7 @@
 # Install Guide: Linux (AppImage)
 
+> **⚠️ Not yet available.** The Linux AppImage build is planned but has not been published. This guide is provided for when the build ships. Currently only Windows x64 is available.
+
 ## Requirements
 - Linux x86_64 (Ubuntu 20.04+, Fedora 36+, Arch, etc.)
 - FUSE support (`libfuse2` on Ubuntu 22.04+)

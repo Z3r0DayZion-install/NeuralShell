@@ -46,7 +46,7 @@ NeuralShell works with these providers out of the box:
 
 ### Installer won't run
 - **Cause**: Windows SmartScreen or antivirus
-- **Fix**: Click "More info" → "Run anyway" (installer is code-signed)
+- **Fix**: Click "More info" → "Run anyway". Verify the installer hash against `SHA256SUMS.txt` before running.
 
 ### App won't start
 - **Fix 1**: Check Windows Event Viewer for errors
@@ -74,4 +74,4 @@ NeuralShell works with these providers out of the box:
 **Version**: 2.1.29  
 **Released**: April 22, 2026  
 **SHA-256**: See [`SHA256SUMS.txt`](SHA256SUMS.txt)  
-**Verify installer**: Run [`VERIFY_RELEASE.ps1`](VERIFY_RELEASE.ps1) in PowerShell to confirm signature and hash
+**Verify installer**: Run [`VERIFY_RELEASE.ps1`](VERIFY_RELEASE.ps1) in PowerShell to confirm integrity and hardware binding

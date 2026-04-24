@@ -1,8 +1,8 @@
 # NeuralShell Market Readiness: Front 4 — Packaging & Confidence
 
 ## 4.1 The Buyer-Facing Install Story
-**Platform Support:** Windows (Primary), macOS (Verified), Linux (Beta).
-**Recommended Install:** `.exe` installer (Windows) / `.dmg` (macOS).
+**Platform Support:** Windows x64 (available). macOS and Linux builds are planned but not yet published.
+**Recommended Install:** `.exe` installer (Windows).
 **Update Policy:** Deterministic, manual-triggered or scheduled. Rollback is native via the built-in OMEGA switcher.
 
 ## 4.2 Installation Guidance
