@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - synced/master-2026-04-03
     tags:
       - "neuralshell-v*"
   workflow_dispatch:
