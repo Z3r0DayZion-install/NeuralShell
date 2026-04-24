@@ -1,129 +1,199 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NeuralShell Evaluator Journey</title>
-  <style>
-    :root {
-      --bg: #f3f5f7;
-      --panel: #ffffff;
-      --ink: #0e2230;
-      --muted: #4b6272;
-      --accent: #127f8a;
-      --accent-2: #1d5f9a;
-      --warn: #8e6a00;
-    }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", "Trebuchet MS", "Franklin Gothic Medium", sans-serif;
-      color: var(--ink);
-      background: radial-gradient(circle at 20% 0%, #dff1f4, var(--bg) 45%), linear-gradient(160deg, #f9fcfd 0%, #eaf0f3 100%);
-    }
-    .wrap {
-      max-width: 960px;
-      margin: 2rem auto;
-      padding: 0 1rem 2rem;
-    }
-    .hero, .card {
-      background: var(--panel);
-      border: 1px solid #d6e1e8;
-      border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(5, 25, 38, 0.08);
-    }
-    .hero {
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-    }
-    h1 {
-      margin: 0 0 0.4rem;
-      font-size: 1.6rem;
-    }
-    p {
-      margin: 0.25rem 0;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 0.8rem;
-    }
-    .card {
-      padding: 0.9rem;
-    }
-    .badge {
-      display: inline-block;
-      border: 1px solid #b7d5db;
-      background: #e8f6f8;
-      color: var(--accent);
-      border-radius: 999px;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-    ul {
-      margin: 0.5rem 0 0;
-      padding-left: 1.1rem;
-      color: var(--ink);
-    }
-    li { margin: 0.2rem 0; }
-    .cta {
-      margin-top: 0.9rem;
-      display: inline-block;
-      text-decoration: none;
-      border: 1px solid var(--accent-2);
-      color: var(--accent-2);
-      padding: 0.45rem 0.8rem;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 0.9rem;
-    }
-    .warn {
-      color: var(--warn);
-      font-weight: 700;
-      margin-top: 0.5rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralShell — Evaluator Guide</title>
+    <meta name="description" content="30-minute institutional evaluation guide for NeuralShell. Verify product claims before committing to a pilot.">
+    <meta property="og:title" content="NeuralShell — Evaluator Guide">
+    <meta property="og:image" content="og-image.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-dark: #0a0a0f; --bg-card: #12121a; --border: #2a2a3a;
+            --text-primary: #ffffff; --text-secondary: #a0a0b0;
+            --accent: #00d4ff; --success: #2ed573; --warning: #ffa502; --danger: #ff4757;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-dark); color: var(--text-primary); line-height: 1.6; overflow-x: hidden; }
+        .bg-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px); background-size: 50px 50px; z-index: -1; pointer-events: none; }
+        nav { position: fixed; top: 0; left: 0; right: 0; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; background: rgba(10,10,15,0.8); backdrop-filter: blur(20px); z-index: 1000; border-bottom: 1px solid var(--border); }
+        .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+        .nav-links { display: flex; gap: 28px; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text-primary); }
+        .page { max-width: 900px; margin: 0 auto; padding: 140px 40px 80px; }
+        .page-header { margin-bottom: 56px; }
+        .badge { display: inline-flex; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 50px; font-size: 12px; color: var(--accent); margin-bottom: 20px; }
+        h1 { font-size: 44px; font-weight: 800; margin-bottom: 16px; }
+        .page-sub { font-size: 18px; color: var(--text-secondary); max-width: 620px; margin-bottom: 24px; }
+        .warning-bar { background: rgba(255,165,2,0.08); border: 1px solid rgba(255,165,2,0.25); border-left: 3px solid var(--warning); border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #c98a00; margin-bottom: 40px; }
+        .warning-bar strong { color: var(--warning); }
+
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 48px; }
+        .compare-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+        .compare-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+        .compare-card.is { border-color: rgba(46,213,115,0.3); }
+        .compare-card.is h2 { color: var(--success); }
+        .compare-card.not { border-color: rgba(255,71,87,0.3); }
+        .compare-card.not h2 { color: var(--danger); }
+        .compare-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+        .compare-card li { font-size: 14px; color: var(--text-secondary); display: flex; gap: 10px; align-items: flex-start; }
+        .compare-card.is li::before { content: "✓"; color: var(--success); font-weight: 700; flex-shrink: 0; }
+        .compare-card.not li::before { content: "✗"; color: var(--danger); font-weight: 700; flex-shrink: 0; }
+
+        .eval-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin-bottom: 24px; }
+        .eval-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .eval-section .sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+        .criteria-list { display: flex; flex-direction: column; gap: 0; }
+        .criteria-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .criteria-item:last-child { border-bottom: none; }
+        .criteria-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+        .criteria-body { flex: 1; }
+        .criteria-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+        .criteria-desc { font-size: 13px; color: var(--text-secondary); }
+
+        .cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 40px; }
+        .btn { display: inline-flex; align-items: center; padding: 13px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+        .btn-primary { background: var(--accent); color: #0a0a0f; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,255,0.3); }
+        .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--accent); }
+
+        footer { padding: 48px 40px; border-top: 1px solid var(--border); text-align: center; color: var(--text-secondary); font-size: 13px; margin-top: 60px; }
+        .footer-links { display: flex; justify-content: center; gap: 28px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; }
+        .footer-links a:hover { color: var(--text-primary); }
+        @media (max-width: 768px) { h1 { font-size: 32px; } .page { padding: 120px 20px 60px; } nav { padding: 16px 20px; } .nav-links { display: none; } .compare-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="hero">
-      <span class="badge">Evaluator Quickstart</span>
-      <h1>NeuralShell Institutional Evaluation Journey</h1>
-      <p>Use this page to run a clear 30-minute institutional walkthrough from verified product capabilities.</p>
-      <p class="warn">No certification or compliance claim should be made unless independently earned and documented.</p>
-      <a class="cta" href="../docs/buyer/30_MIN_WALKTHROUGH.md">Open 30-Min Walkthrough</a>
-    </section>
+<div class="bg-grid"></div>
+<nav>
+    <a href="index.html" class="logo">NeuralShell</a>
+    <div class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="proof.html">Proof</a>
+        <a href="../docs/index.html">Docs</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
+        <a href="pricing.html">Pricing</a>
+    </div>
+</nav>
+<div class="page">
+    <div class="page-header">
+        <div class="badge">Evaluator Quickstart · 30 minutes</div>
+        <h1>Institutional Evaluation Guide</h1>
+        <p class="page-sub">Use this page to run a structured 30-minute evaluation from verified product capabilities. All claims are testable.</p>
+        <div class="warning-bar">
+            <strong>Integrity notice:</strong> No certification or compliance claim should be made unless independently earned and documented. Verify before asserting.
+        </div>
+    </div>
 
-    <section class="grid">
-      <article class="card">
-        <h2>What This Is</h2>
-        <ul>
-          <li>Local-first institutional operations platform</li>
-          <li>Air-gapped and PKI-governed control workflows</li>
-          <li>Evidence-first continuity and procurement support</li>
-        </ul>
-      </article>
-      <article class="card">
-        <h2>What This Is Not</h2>
-        <ul>
-          <li>Cloud-only monitoring product</li>
-          <li>Offensive security tooling</li>
-          <li>Auto-generated compliance guarantee system</li>
-        </ul>
-      </article>
-      <article class="card">
+    <div class="compare-grid">
+        <div class="compare-card is">
+            <h2>What NeuralShell Is</h2>
+            <ul>
+                <li>Local-first AI operator shell with hardware-bound sessions</li>
+                <li>Offline-capable with air-gapped model execution</li>
+                <li>Evidence-first continuity with audit export</li>
+                <li>Verifiable — all claims backed by reproducible proof</li>
+            </ul>
+        </div>
+        <div class="compare-card not">
+            <h2>What NeuralShell Is Not</h2>
+            <ul>
+                <li>Cloud-only monitoring or observability product</li>
+                <li>Offensive security tooling</li>
+                <li>Auto-generated compliance guarantee system</li>
+                <li>Replacement for your existing SIEM or SOC tooling</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="eval-section">
         <h2>Evaluation Success Criteria</h2>
-        <ul>
-          <li>Demo path executes without manual repair</li>
-          <li>Security/procurement pack generated from runtime truth</li>
-          <li>Pilot scope and evidence criteria agreed in writing</li>
-        </ul>
-      </article>
-    </section>
-  </main>
+        <p class="sub">These are the three gates that should pass before recommending a pilot.</p>
+        <div class="criteria-list">
+            <div class="criteria-item">
+                <div class="criteria-num">1</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Demo path executes without manual repair</div>
+                    <div class="criteria-desc">Install the app, run the hardware-binding proof flow, and confirm session restore works end-to-end without intervention. See <a href="proof.html" style="color:var(--accent);">proof page</a> for all 7 scenarios.</div>
+                </div>
+            </div>
+            <div class="criteria-item">
+                <div class="criteria-num">2</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Security and procurement pack generated from runtime truth</div>
+                    <div class="criteria-desc">Run <code style="background:rgba(0,212,255,0.08);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);">.\VERIFY_RELEASE.ps1</code> to confirm installer hash. Review <code style="background:rgba(0,212,255,0.08);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);">SOC2_PREP_REPORT.md</code> for compliance posture. Audit artifacts are in <code style="background:rgba(0,212,255,0.08);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);">proof/latest/</code>.</div>
+                </div>
+            </div>
+            <div class="criteria-item">
+                <div class="criteria-num">3</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Pilot scope and evidence criteria agreed in writing</div>
+                    <div class="criteria-desc">Review the 14-day pilot scope document before committing. Pilot should have a defined baseline, a guided walkthrough, tracked metrics, and a final recommendation deliverable.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="eval-section">
+        <h2>30-Minute Walkthrough Order</h2>
+        <p class="sub">Run these in sequence. Each step has a pass/fail outcome.</p>
+        <div class="criteria-list">
+            <div class="criteria-item">
+                <div class="criteria-num">1</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Download and verify installer (5 min)</div>
+                    <div class="criteria-desc">Download from GitHub Releases. Run <code style="background:rgba(0,212,255,0.08);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent);">.\VERIFY_RELEASE.ps1</code>. Confirm hash matches SHA256SUMS.txt.</div>
+                </div>
+            </div>
+            <div class="criteria-item">
+                <div class="criteria-num">2</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Install and first launch (5 min)</div>
+                    <div class="criteria-desc">Run installer, confirm hardware identity is established, connect a model provider (Ollama for offline, API key for cloud).</div>
+                </div>
+            </div>
+            <div class="criteria-item">
+                <div class="criteria-num">3</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Run hardware-binding proof flow (10 min)</div>
+                    <div class="criteria-desc">Create thread, export session, wipe app data, restore — confirm session recovers on original machine. Attempt restore on a second machine to verify failure.</div>
+                </div>
+            </div>
+            <div class="criteria-item">
+                <div class="criteria-num">4</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Validate offline operation (5 min)</div>
+                    <div class="criteria-desc">Disconnect network, confirm local model execution continues with no errors or cloud fallback.</div>
+                </div>
+            </div>
+            <div class="criteria-item">
+                <div class="criteria-num">5</div>
+                <div class="criteria-body">
+                    <div class="criteria-title">Review audit export (5 min)</div>
+                    <div class="criteria-desc">Generate logs and validation artifacts. Confirm they are structured, readable, and sufficient for your compliance or security team to review independently.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cta-row">
+        <a href="onboarding.html" class="btn btn-primary">Start Getting Started Guide</a>
+        <a href="proof.html" class="btn btn-secondary">View Verification Proof</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29" class="btn btn-secondary">Download v2.1.29</a>
+    </div>
+</div>
+<footer>
+    <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="proof.html">Proof</a>
+        <a href="../docs/index.html">Documentation</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/issues">Support</a>
+    </div>
+    <p>NeuralShell v2.1.29 · MIT License · Windows 10/11 x64</p>
+</footer>
 </body>
 </html>

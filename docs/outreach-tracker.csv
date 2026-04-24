@@ -1,21 +1,21 @@
-Name,Source,Date_Contacted,Response,Interested,Installed,Using_Daily,Blocker,Notes
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,
+Name,Email,Title,Company,Lane,Status,Last_Contacted,Email_Status,Catch_All,Wave,Notes
+Brittany Pham,bpham@stripe.com,"Program Manager, Developer Productivity",Stripe,A,Approaching,2026-04-23,Verified,Yes,,In-flight
+Kam Kyrala,kkyrala@gitlab.com,"Engineering Manager, Reliability",GitLab,A,Approaching,2026-04-23,Verified,Yes,,In-flight
+Anand Vijay,avijay@pagerduty.com,"VP, Platform Engineering",PagerDuty,A,Approaching,2026-04-23,Verified,No,,In-flight
+Sankha Pathak,sankha.pathak@datadoghq.com,"Director of Engineering, Product Platform",Datadog,A,Approaching,2026-04-23,Verified,Yes,,In-flight
+Wesley Whetstone,wesw@stripe.com,Staff Client Platform Engineer,Stripe,A,Hold,,Verified,Yes,,HOLD - dup company Stripe
+David Fernandez Albo,david.albo@mongodb.com,"Director, Site Reliability Engineering",MongoDB,A,Hold,,Verified,No,,HOLD - dup company MongoDB
+Samuel Sun,shuyang.sun@salesforce.com,Head of Platform Engineering,Salesforce,A,Cold,,Verified,No,1,W1 #1
+Marc Cuva,marc@readme.com,Head of Developer Experience,ReadMe,B,Cold,,Verified,Yes,1,W1 #2 - DevEx title strong fit
+Aditya Tripathi,atripathi@zscaler.com,"Director, Site Reliability Engineering",Zscaler,A,Cold,,Verified,Yes,1,W1 #3
+Eri Bastos,ebastos@guidewire.com,"Director, Site Reliability Engineering",Guidewire,A,Cold,,Verified,No,1,W1 #4
+Amanda Collins,amanda.estes@toasttab.com,"Director, Site Reliability Engineering",Toast,A,Cold,,Verified,Yes,1,W1 #5
+Aine Molloy,aine.molloy@workday.com,"Manager, Site Reliability Engineering",Workday,A,Cold,,Verified,No,1,W1 #6
+Jacob Gorney,jgorney@cribl.io,"Manager, Site Reliability Engineering",Cribl,A,Cold,,Verified,No,1,W1 #7
+Chris Crabtree,chris.crabtree@elastic.co,"Manager, Site Reliability Engineering",Elastic,A,Cold,,Verified,No,1,W1 #8
+Syed Ks,syed.ks@broadcom.com,Manager - Site Reliability Engineering,VMware,A,Cold,,Verified,Yes,1,W1 #9
+Justin Stallard,justin.stallard@mongodb.com,"Director, Site Reliability Engineering",MongoDB,A,Cold,,Verified,No,1,W1 #10
+Laurence Pakenham-Smith,lpakenham-smith@kevel.co,Director of Site Reliability Engineering,Kevel,B,Cold,,Verified,No,2,Wave 2
+Oliver Weise,oliver.weise@consol.de,Head of Platform Engineering,ConSol,B,Cold,,Verified,No,2,Wave 2
+Thomas Webb,thomas@platform.sh,"Senior Director, Site Reliability Engineering",Upsun,B,Cold,,Verified,No,2,Wave 2
+Kevin Conklin,kconklin@idibilling.com,"Director, Site Reliability Engineering",IDI Billing,B,Cold,,Verified,No,2,Wave 2

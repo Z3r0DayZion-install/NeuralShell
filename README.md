@@ -11,13 +11,18 @@ NeuralShell is a **local-first operator shell** designed for autonomous executio
 > **Source of Truth**: See [Documentation Canon](docs/CANON.md) for the authoritative release and operations document map.
 
 
-## Demo Walkthrough
-[Watch Founder Walkthrough (120s)](docs/static/video/proof_walkthrough.webm)
+## Install
 
-## One-Command Install
+Download the signed Windows installer from the [Releases page](https://github.com/Z3r0DayZion-install/NeuralShell/releases/tag/v2.1.29):
 
-```bash
-npx neuralshell-installer
+```
+NeuralShell Setup 2.1.29.exe  — Windows x64, code-signed, 305 MB
+```
+
+Verify the installer hash before running:
+
+```powershell
+.\VERIFY_RELEASE.ps1
 ```
 
 ## Beta Program (Live)

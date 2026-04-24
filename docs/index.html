@@ -1223,15 +1223,12 @@
       <div id="proof-status-grid" class="proof-status-grid"></div>
 
       <div class="inline-actions">
-        <a class="btn btn-primary" data-link="demoLink" href="./assets/proof_walkthrough.webm" target="_blank" rel="noopener noreferrer">Watch the Demo</a>
+        <a class="btn btn-primary" href="../landing/proof.html" rel="noopener noreferrer">View Verification Proof</a>
         <a class="btn btn-ghost" data-link="deckLink" href="./sales/NEURALSHELL_RELIABILITY_5_SLIDE_DECK.html">Open the 5-Slide Deck</a>
       </div>
       <figure class="proof-visual">
-        <video controls preload="metadata" poster="./assets/ui_sales_proof_output_packaged.png">
-          <source data-src="demoLink" src="./assets/proof_walkthrough.webm" type="video/webm" />
-          Your browser does not support the demo video tag.
-        </video>
-        <figcaption>Real operator walkthrough capture: startup issue -> isolation -> trace export -> cleaner release decision.</figcaption>
+        <img src="./assets/ui_sales_proof_output_packaged.png" alt="NeuralShell proof output — trace export and session verification" style="width:100%;border-radius:12px;border:1px solid rgba(129,159,193,0.2);display:block;" loading="lazy">
+        <figcaption>Proof output capture: session verification, trace export, and hardware-bound recovery evidence.</figcaption>
       </figure>
 
       <div class="proof-sequence">
@@ -1350,7 +1347,7 @@
       </div>
       <aside class="cta-panel">
         <a class="btn btn-primary" data-link="pilotStartLink" href="./sales/NEURALSHELL_BOOK_RELIABILITY_WALKTHROUGH.html?intent=pilot">Start a 14-Day Pilot</a>
-        <a class="btn btn-ghost" data-link="proofVideoLink" href="./assets/proof_walkthrough.webm" target="_blank" rel="noopener noreferrer">Get the Proof Video</a>
+        <a class="btn btn-ghost" href="../landing/proof.html" rel="noopener noreferrer">View Proof Scenarios</a>
         <a class="btn btn-ghost" data-link="pilotScopeLink" href="./sales/NEURALSHELL_14_DAY_PILOT_SCOPE.html">Review the Pilot Scope</a>
       </aside>
     </section>
@@ -1415,10 +1412,10 @@
       bookingLink: buildBookingHref(bookingDoc, { scheduler: liveSchedulerUrl }),
       flowLink: "#proof",
       proofFlowLink: "#proof",
-      demoLink: "./assets/proof_walkthrough.webm",
+      demoLink: "../landing/proof.html",
       deckLink: resolveSalesDoc("NEURALSHELL_RELIABILITY_5_SLIDE_DECK.html"),
       pilotStartLink: buildBookingHref(bookingDoc, { intent: "pilot", scheduler: liveSchedulerUrl }),
-      proofVideoLink: "./assets/proof_walkthrough.webm",
+      proofVideoLink: "../landing/proof.html",
       pilotScopeLink: resolveSalesDoc("NEURALSHELL_14_DAY_PILOT_SCOPE.html"),
       heroScreenshotPath: "./assets/ui_sales_quickstart_packaged.png",
       docsLink: resolveSalesDoc("DOCS_HUB.html"),

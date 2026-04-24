@@ -37,6 +37,36 @@ jobs:
           mkdir -p docs/web-sandbox
           cp web-sandbox/index.html docs/web-sandbox/index.html
 
+      - name: Inject landing pages into docs root
+        run: |
+          # Rewrite ../docs/index.html → /index.html (same root) and fix asset paths
+          FIX='s|href="../docs/index\.html"|href="/"|g;
+               s|href="../docs/PRIVACY_POLICY\.md"|href="/PRIVACY_POLICY.md"|g;
+               s|src="\.\./proof/latest/|src="/proof/latest/|g;
+               s|src="\.\./screenshots/|src="/screenshots/|g'
+
+          # Main landing page replaces docs/index.html as homepage
+          sed "$FIX" landing/index.html > docs/index.html
+
+          # All other landing pages go into docs/ directly
+          for page in proof pricing onboarding evaluator partners; do
+            sed "$FIX" landing/${page}.html > docs/${page}.html
+          done
+
+          # OG image
+          cp landing/og-image.png docs/og-image.png
+
+          # Proof images and screenshots (referenced by proof.html)
+          if [ -d proof ]; then
+            cp -r proof docs/proof
+          fi
+          if [ -d screenshots ]; then
+            cp -r screenshots docs/screenshots
+          fi
+
+      - name: Inject CNAME for custom domain
+        run: echo "getneuralshell.com" > docs/CNAME
+
       - name: Upload docs artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -1,69 +1,149 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NeuralShell Partner Kits</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      background: #0b1117;
-      color: #d7e7f0;
-    }
-    main {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 36px 20px 56px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 14px;
-      margin-top: 18px;
-    }
-    .card {
-      border: 1px solid #2b3c4d;
-      border-radius: 12px;
-      background: #101a23;
-      padding: 16px;
-    }
-    h1 {
-      margin: 0 0 8px;
-      letter-spacing: 0.03em;
-    }
-    a {
-      color: #8ed8ff;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralShell — Partner Program</title>
+    <meta name="description" content="NeuralShell partner program for consultants, MSPs, compliance firms, and plugin communities.">
+    <meta property="og:title" content="NeuralShell — Partner Program">
+    <meta property="og:image" content="og-image.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-dark: #0a0a0f; --bg-card: #12121a; --border: #2a2a3a;
+            --text-primary: #ffffff; --text-secondary: #a0a0b0; --accent: #00d4ff; --success: #2ed573;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-dark); color: var(--text-primary); line-height: 1.6; overflow-x: hidden; }
+        .bg-grid { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px); background-size: 50px 50px; z-index: -1; pointer-events: none; }
+        nav { position: fixed; top: 0; left: 0; right: 0; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; background: rgba(10,10,15,0.8); backdrop-filter: blur(20px); z-index: 1000; border-bottom: 1px solid var(--border); }
+        .logo { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+        .nav-links { display: flex; gap: 28px; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text-primary); }
+        .page { max-width: 1000px; margin: 0 auto; padding: 140px 40px 80px; }
+        .page-header { margin-bottom: 56px; }
+        .badge { display: inline-flex; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 50px; font-size: 12px; color: var(--accent); margin-bottom: 20px; }
+        h1 { font-size: 44px; font-weight: 800; margin-bottom: 16px; }
+        .page-sub { font-size: 18px; color: var(--text-secondary); max-width: 620px; }
+        .partner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 56px; }
+        .partner-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; transition: border-color 0.2s; }
+        .partner-card:hover { border-color: var(--accent); }
+        .partner-icon { font-size: 32px; margin-bottom: 16px; }
+        .partner-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .partner-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+        .resources { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin-bottom: 56px; }
+        .resources h2 { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+        .resource-list { display: flex; flex-direction: column; gap: 0; }
+        .resource-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .resource-item:last-child { border-bottom: none; }
+        .resource-name { font-size: 14px; font-weight: 600; }
+        .resource-desc { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+        .resource-link { font-size: 13px; color: var(--accent); text-decoration: none; white-space: nowrap; margin-left: 16px; }
+        .resource-link:hover { text-decoration: underline; }
+        .cta-band { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 40px; text-align: center; }
+        .cta-band h2 { font-size: 26px; font-weight: 700; margin-bottom: 10px; }
+        .cta-band p { font-size: 15px; color: var(--text-secondary); margin-bottom: 24px; }
+        .btn { display: inline-flex; align-items: center; padding: 13px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+        .btn-primary { background: var(--accent); color: #0a0a0f; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,255,0.3); }
+        footer { padding: 48px 40px; border-top: 1px solid var(--border); text-align: center; color: var(--text-secondary); font-size: 13px; }
+        .footer-links { display: flex; justify-content: center; gap: 28px; margin-bottom: 16px; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; }
+        .footer-links a:hover { color: var(--text-primary); }
+        @media (max-width: 768px) { h1 { font-size: 32px; } .page { padding: 120px 20px 60px; } nav { padding: 16px 20px; } .nav-links { display: none; } }
+    </style>
 </head>
 <body>
-  <main>
-    <h1>NeuralShell Partner Program</h1>
-    <p>Distribution kit for consultants, MSPs, compliance teams, and IDE ecosystem partners.</p>
-    <div class="grid">
-      <section class="card">
-        <h2>Consultants</h2>
-        <p>Use NeuralShell to run proof-first delivery and offline support bundles for client environments.</p>
-      </section>
-      <section class="card">
-        <h2>MSPs</h2>
-        <p>Deploy unattended builds with policy profile defaults and auditable operator workflows.</p>
-      </section>
-      <section class="card">
-        <h2>Compliance Firms</h2>
-        <p>Pair proof artifacts with SOC2/SBOM evidence and repeatable validation checklists.</p>
-      </section>
-      <section class="card">
-        <h2>Plugin Communities</h2>
-        <p>Integrate marketplace trust and signed agent installs for controlled extension ecosystems.</p>
-      </section>
+<div class="bg-grid"></div>
+<nav>
+    <a href="index.html" class="logo">NeuralShell</a>
+    <div class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="proof.html">Proof</a>
+        <a href="../docs/index.html">Docs</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
+        <a href="pricing.html">Pricing</a>
     </div>
-    <p style="margin-top:18px">
-      Kit docs: <a href="../docs/partners/README.md">docs/partners/README.md</a><br />
-      Assets: <a href="../assets/partner-kit/one_pager.md">assets/partner-kit/one_pager.md</a><br />
-      Pricing: <a href="./pricing.html">landing/pricing.html</a>
-    </p>
-  </main>
+</nav>
+<div class="page">
+    <div class="page-header">
+        <div class="badge">Consultants · MSPs · Compliance · Plugins</div>
+        <h1>Partner Program</h1>
+        <p class="page-sub">Distribution kit for consultants, MSPs, compliance teams, and IDE ecosystem partners building on NeuralShell.</p>
+    </div>
+
+    <div class="partner-grid">
+        <div class="partner-card">
+            <div class="partner-icon">🏗️</div>
+            <div class="partner-name">Consultants</div>
+            <div class="partner-desc">Run proof-first delivery and offline support bundles for client environments. Use NeuralShell's audit export as a deliverable artifact.</div>
+        </div>
+        <div class="partner-card">
+            <div class="partner-icon">🖥️</div>
+            <div class="partner-name">MSPs</div>
+            <div class="partner-desc">Deploy unattended builds with policy profile defaults and auditable operator workflows across managed endpoints.</div>
+        </div>
+        <div class="partner-card">
+            <div class="partner-icon">📋</div>
+            <div class="partner-name">Compliance Firms</div>
+            <div class="partner-desc">Pair proof artifacts with SOC2/SBOM evidence and repeatable validation checklists for client audit packages.</div>
+        </div>
+        <div class="partner-card">
+            <div class="partner-icon">🔌</div>
+            <div class="partner-name">Plugin Communities</div>
+            <div class="partner-desc">Integrate marketplace trust and signed agent installs for controlled extension ecosystems with verifiable provenance.</div>
+        </div>
+    </div>
+
+    <div class="resources">
+        <h2>Partner Resources</h2>
+        <div class="resource-list">
+            <div class="resource-item">
+                <div>
+                    <div class="resource-name">Partner Kit Documentation</div>
+                    <div class="resource-desc">Distribution guide, deployment templates, and co-sell materials</div>
+                </div>
+                <a href="../docs/partners/README.md" class="resource-link">Open →</a>
+            </div>
+            <div class="resource-item">
+                <div>
+                    <div class="resource-name">Verification Proof Pack</div>
+                    <div class="resource-desc">Hardware-binding scenarios and audit artifacts for client demonstrations</div>
+                </div>
+                <a href="proof.html" class="resource-link">Open →</a>
+            </div>
+            <div class="resource-item">
+                <div>
+                    <div class="resource-name">Pricing &amp; Licensing</div>
+                    <div class="resource-desc">Seat packs, enterprise invoice, and offline activation details</div>
+                </div>
+                <a href="pricing.html" class="resource-link">Open →</a>
+            </div>
+            <div class="resource-item">
+                <div>
+                    <div class="resource-name">Technical Documentation</div>
+                    <div class="resource-desc">Architecture, IPC contract, and operator shell reference</div>
+                </div>
+                <a href="../docs/index.html" class="resource-link">Open →</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="cta-band">
+        <h2>Interested in partnering?</h2>
+        <p>Reach out directly to discuss distribution agreements, co-sell arrangements, or compliance integration.</p>
+        <a href="mailto:founder@getneuralshell.com?subject=NeuralShell%20Partner%20Program" class="btn btn-primary">Contact Us</a>
+    </div>
+</div>
+<footer>
+    <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="proof.html">Proof</a>
+        <a href="../docs/index.html">Documentation</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell">GitHub</a>
+        <a href="https://github.com/Z3r0DayZion-install/NeuralShell/issues">Support</a>
+    </div>
+    <p>NeuralShell v2.1.29 · MIT License · Windows 10/11 x64</p>
+</footer>
 </body>
 </html>
