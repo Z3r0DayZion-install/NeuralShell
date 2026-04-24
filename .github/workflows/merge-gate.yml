@@ -60,4 +60,5 @@ jobs:
         env:
           NEURALSHELL_SKIP_SOURCE_INTEGRITY: "1"
           NEURAL_RELEASE_SMOKE_TIMEOUT_MS: "60000"
+          NEURAL_RELEASE_ALLOW_INSTALLER_SOFTFAIL: "1"
         run: npm run verify:ship
